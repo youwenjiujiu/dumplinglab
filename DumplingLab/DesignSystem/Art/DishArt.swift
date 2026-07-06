@@ -109,12 +109,13 @@ struct PleatsShape: Shape {
         let center = CGPoint(x: 0.5 * w, y: 0.95 * h)
         for i in 0..<7 {
             let t = CGFloat(i) / 6.0
-            let angle = Angle.degrees(Double(210 + t * 120)).radians
+            let angle = CGFloat(Angle.degrees(Double(210 + t * 120)).radians)
             let rOuter = 0.62 * h
-            let outer = CGPoint(x: center.x + cos(angle) * rOuter * 1.25, y: center.y + sin(angle) * rOuter)
+            let ca = cos(angle), sa = sin(angle)
+            let outer = CGPoint(x: center.x + ca * rOuter * 1.25, y: center.y + sa * rOuter)
             let inner = CGPoint(
-                x: center.x + cos(angle) * rOuter * 0.62,
-                y: center.y + sin(angle) * rOuter * 0.55
+                x: center.x + ca * rOuter * 0.62,
+                y: center.y + sa * rOuter * 0.55
             )
             p.move(to: inner)
             p.addQuadCurve(to: outer, control: CGPoint(x: (inner.x + outer.x) / 2, y: inner.y - 0.06 * h))
