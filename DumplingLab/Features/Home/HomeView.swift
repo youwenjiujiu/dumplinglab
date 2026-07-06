@@ -42,6 +42,9 @@ struct HomeView: View {
         }
         .onAppear {
             withAnimation(.easeOut(duration: 1.2).delay(0.15)) { appeared = true }
+            if let raw = ProcessInfo.processInfo.environment["DL_PAGE"], let i = Int(raw) {
+                page = i
+            }
         }
     }
 

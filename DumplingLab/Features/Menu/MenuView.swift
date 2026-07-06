@@ -35,6 +35,17 @@ struct MenuView: View {
 
                 categoryRail(proxy: proxy)
             }
+            .onAppear {
+                if let raw = ProcessInfo.processInfo.environment["DL_SECTION"],
+                   let section = MenuSection(rawValue: raw) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                        activeSection = section
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.9)) {
+                            proxy.scrollTo(section, anchor: .top)
+                        }
+                    }
+                }
+            }
         }
     }
 

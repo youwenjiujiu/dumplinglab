@@ -213,7 +213,8 @@ enum Menu {
             pairings: ["garlic-greens", "egg-fried-rice"],
             isBestSeller: true, isFeatured: true,
             art: .wonton,
-            palette: .init(skin: (0.98, 0.90, 0.76), accent: (0.95, 0.60, 0.45), glow: (0.45, 0.30, 0.12))
+            palette: .init(skin: (0.98, 0.90, 0.76), accent: (0.95, 0.60, 0.45), glow: (0.45, 0.30, 0.12)),
+            imageName: "dish-wonton-soup"
         ),
         Dish(
             id: "pork-chive-wonton",
@@ -361,6 +362,80 @@ enum Menu {
             pairings: ["veggie-potsticker", "garlic-greens"],
             art: .noodleBowl,
             palette: .init(skin: (0.92, 0.84, 0.64), accent: (0.45, 0.52, 0.28), glow: (0.32, 0.26, 0.10))
+        ),
+        Dish(
+            id: "hot-oil-ribbons",
+            name: "Hot Oil Hand-Torn Ribbons",
+            chineseName: "油泼宽面",
+            section: .noodles,
+            price: 13.5, pieces: nil,
+            flavor: "Wide silk ribbons under a heap of chili, garlic, and crushed peanut — finished tableside with smoking oil.",
+            story: "The oil goes on at exactly 190 degrees. It hisses, the chili blooms, and the whole room turns around.",
+            nutrition: .init(calories: 540, protein: 14, carbs: 78, fat: 20),
+            spice: .hot,
+            allergens: [.gluten, .soybean, .peanut],
+            proteinType: .vegan,
+            ingredients: [
+                .init(name: "Hand-torn ribbons", emoji: "🍜"),
+                .init(name: "Blooming chili", emoji: "🌶️"),
+                .init(name: "Raw garlic", emoji: "🧄"),
+                .init(name: "Smoking oil", emoji: "💨"),
+            ],
+            recommendedSauce: "Already blooming",
+            pairings: ["cucumber-smash", "silk-tofu-soup", "mango-sago"],
+            isBestSeller: true, isFeatured: true,
+            art: .noodleBowl,
+            palette: .init(skin: (0.96, 0.90, 0.76), accent: (0.78, 0.22, 0.10), glow: (0.42, 0.14, 0.06)),
+            imageName: "dish-hot-oil-noodles"
+        ),
+        Dish(
+            id: "katsu-mazemen",
+            name: "Sesame Katsu Mazemen",
+            chineseName: "脆鸡排拌面",
+            section: .noodles,
+            price: 16, pieces: nil,
+            flavor: "A shattering sesame-crusted cutlet over springy brothless noodles, with two soy-cured eggs and crisped nori.",
+            story: "The cutlet rests exactly four minutes before it's sliced — long enough to stay crackling, short enough to stay warm.",
+            nutrition: .init(calories: 720, protein: 40, carbs: 66, fat: 32),
+            spice: .none,
+            allergens: [.gluten, .egg, .sesame, .soybean],
+            proteinType: .chicken,
+            ingredients: [
+                .init(name: "Sesame cutlet", emoji: "🍗"),
+                .init(name: "Soy-cured egg", emoji: "🥚"),
+                .init(name: "Crisped nori", emoji: "🟩"),
+                .init(name: "Brothless noodles", emoji: "🍜"),
+            ],
+            recommendedSauce: "Toss twelve times",
+            pairings: ["cucumber-smash", "chicken-broth"],
+            isFeatured: true,
+            art: .noodleBowl,
+            palette: .init(skin: (0.93, 0.82, 0.62), accent: (0.72, 0.48, 0.22), glow: (0.36, 0.24, 0.10)),
+            imageName: "dish-katsu-noodles"
+        ),
+        Dish(
+            id: "corn-pork-mazemen",
+            name: "Corn & Pork Mazemen",
+            chineseName: "玉米肉燥拌面",
+            section: .noodles,
+            price: 14.5, pieces: nil,
+            flavor: "Sweet corn, gingered pork crumble, two jammy eggs, and nori — a quiet bowl that disappears fast.",
+            story: "Our gentlest noodle bowl. The pork simmers in its own broth until it gives up and turns to velvet.",
+            nutrition: .init(calories: 640, protein: 32, carbs: 68, fat: 26),
+            spice: .none,
+            allergens: [.gluten, .egg, .soybean],
+            proteinType: .pork,
+            ingredients: [
+                .init(name: "Sweet corn", emoji: "🌽"),
+                .init(name: "Pork crumble", emoji: "🥓"),
+                .init(name: "Jammy egg", emoji: "🥚"),
+                .init(name: "Nori", emoji: "🟩"),
+            ],
+            recommendedSauce: "Mix from the bottom",
+            pairings: ["garlic-greens", "silk-tofu-soup"],
+            art: .noodleBowl,
+            palette: .init(skin: (0.95, 0.88, 0.68), accent: (0.94, 0.78, 0.32), glow: (0.40, 0.30, 0.10)),
+            imageName: "dish-corn-pork-mazemen"
         ),
     ]
 
@@ -581,6 +656,29 @@ enum Menu {
             art: .sidePlate,
             palette: .init(skin: (0.45, 0.30, 0.48), accent: (0.60, 0.66, 0.40), glow: (0.24, 0.14, 0.24))
         ),
+        Dish(
+            id: "crispy-tofu",
+            name: "Golden Crispy Tofu",
+            chineseName: "椒盐脆豆腐",
+            section: .sides,
+            price: 8.5, pieces: nil,
+            flavor: "Custard inside, crackling outside — dusted with chili salt and scallion, served on cold steel.",
+            story: "Pressed for an hour, fried for ninety seconds. The contrast is the entire point.",
+            nutrition: .init(calories: 280, protein: 14, carbs: 18, fat: 17),
+            spice: .mild,
+            allergens: [.soybean, .gluten],
+            proteinType: .vegan,
+            ingredients: [
+                .init(name: "Silken tofu", emoji: "🧊"),
+                .init(name: "Chili salt", emoji: "🌶️"),
+                .init(name: "Scallion", emoji: "🌿"),
+            ],
+            recommendedSauce: "The chili salt on the side",
+            pairings: ["hot-oil-ribbons", "chicken-broth"],
+            art: .sidePlate,
+            palette: .init(skin: (0.92, 0.84, 0.62), accent: (0.75, 0.35, 0.18), glow: (0.34, 0.22, 0.10)),
+            imageName: "dish-crispy-tofu"
+        ),
     ]
 
     // MARK: Vegetables
@@ -732,6 +830,32 @@ enum Menu {
     // MARK: Chef Specials
 
     static let specials: [Dish] = [
+        Dish(
+            id: "beef-yolk-bowl",
+            name: "Sukiyaki Beef & Golden Yolk Bowl",
+            chineseName: "月见牛肉丼",
+            section: .chefSpecials,
+            price: 19, pieces: nil,
+            flavor: "Sweet soy-glazed beef ribbons circling one perfect yolk, over rice dressed in sesame nori.",
+            story: "Break the yolk. Stir like you mean it. The chef calls this dish 'the moon over the field' — order it and you'll see.",
+            nutrition: .init(calories: 690, protein: 36, carbs: 62, fat: 31),
+            spice: .none,
+            allergens: [.soybean, .egg, .sesame, .gluten],
+            proteinType: .beef,
+            ingredients: [
+                .init(name: "Sukiyaki beef", emoji: "🥩"),
+                .init(name: "One perfect yolk", emoji: "🌕"),
+                .init(name: "Sesame nori", emoji: "🟩"),
+                .init(name: "Warm rice", emoji: "🍚"),
+            ],
+            recommendedSauce: "The yolk is the sauce",
+            pairings: ["silk-tofu-soup", "cucumber-smash"],
+            isBestSeller: true, isChefsChoice: true, isFeatured: true,
+            art: .riceBowl,
+            palette: .init(skin: (0.85, 0.72, 0.55), accent: (0.96, 0.62, 0.12), glow: (0.42, 0.26, 0.08)),
+            imageName: "dish-beef-yolk-bowl"
+        ),
+
         Dish(
             id: "lobster-dumpling",
             name: "Butter-Poached Lobster Dumplings",
