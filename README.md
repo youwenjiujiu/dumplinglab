@@ -1,72 +1,55 @@
-# Dumpling Lab
+# Dumpling Lab — 扫码点餐 Table Menu
 
-A premium interactive dining experience for iOS — a modern Chinese dumpling
-house rendered as something between Apple, Vision Pro, Airbnb, and a
-Michelin-star restaurant.
-
-Built entirely in SwiftUI with custom Metal shaders. No external dependencies,
-no network calls, no image assets — every dish is drawn procedurally.
-
-## Running
-
-Open `DumplingLab.xcodeproj` in Xcode 16+ and run on an iOS 17+ device or
-simulator (iPhone 16 Pro recommended).
-
-```sh
-xcodebuild -project DumplingLab.xcodeproj -scheme DumplingLab \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' build
-```
+A scan-to-order web menu for the Dumpling Lab restaurant chain (Singapore).
+One static site, no dependencies, no build step — every table's QR code
+points at `https://<host>/?table=<n>`.
 
 ## The experience
 
-- **The Table** — a cinematic opening reel. Steam rises off studio-lit
-  dishes, a warm key light glides across them, the camera breathes. Swipe
-  through the kitchen's proudest plates.
-- **The Menu** — eleven editorial chapters. Cards float at rest, parallax on
-  scroll, and can be *picked up* (long-press) and physically carried into a
-  bamboo drop zone to order.
-- **Dish pages** — each dish opens with a signature sequence: it drifts in,
-  the camera leans closer, the dumpling parts and its filling glistens
-  through, steam escapes — then, and only then, the information fades in.
-  Nutrition is drawn as a calorie dial and hand-tinted macro bars.
-- **The Host** — a conversational concierge that knows the menu the way a
-  maître d' does. "Two people, something spicy, my partner is vegetarian"
-  gets a composed, restriction-safe tasting set with one tap to add it all.
-- **The Steamer** — the cart is a bamboo steamer basket. Your order sits
-  inside it, steaming, until you send it to the kitchen and the lid closes.
+- **The Voyage** — landing is a candle-lit room; scrolling flies a true-3D
+  camera through the signature dishes, which surface from steam-fog with
+  name and price. Tap the dish in focus to open it.
+- **3D tile gallery** — eleven chapters of tilting, floating dish tiles
+  with quantity badges, search, and dietary filters (vegetarian / spicy /
+  no-pork).
+- **Gaussian splat transitions** — dishes dissolve into point clouds
+  sampled from their own pixels, fly as vapor between grid, dish page,
+  and the steamer cart, then reassemble.
+- **Dish pages** — staged reveal, calorie dial, macro bars, ingredients,
+  allergens, pairings rail.
+- **The Steamer** — cart drawer with kitchen notes, per-table order
+  history (add-a-round), lid-closing confirmation.
+- **Fully bilingual** — EN/中文 toggle, `?lang=` per-QR override,
+  system-language default. Currency S$.
 
-See `docs/DESIGN.md` for the design language and `docs/ARCHITECTURE.md` for
-how the project is put together.
+## Files
 
-## Dev hooks
+```
+web/
+  index.html      shell
+  style.css       design system (warm white · cream · wood · soy · red)
+  app.js          voyage, splats, tilt, cart, i18n runtime
+  menu-data.js    THE menu (edit dishes/prices here)
+  i18n.js         all Chinese copy + UI strings
+  img/            alpha-matted dish photography
+```
 
-Launch-environment variables (used for CLI-driven verification):
-
-| Variable | Effect |
-|---|---|
-| `DL_TAB` | Open on a tab: `Table`, `Menu`, `Host`, `Steamer` |
-| `DL_DISH` | Open a dish page by id, e.g. `black-pork-panfried` |
-| `DL_FILL_CART` | `1` seeds the steamer with a sample order |
-| `DL_HOST_QUERY` | Auto-sends a message to the Host on launch |
-
-## Web version (扫码点餐)
-
-`web/` contains the scan-to-order table menu — the same design language and
-"3D menu" experience as the app, rebuilt as a dependency-free static site:
-
-- CSS 3D tiles that tilt under the finger and float at rest
-- FLIP hero flight from tile → dish page (the web's matched geometry)
-- Canvas steam, candle-flicker glow, staged reveals
-- Steamer-basket cart drawer; per-table QR via `?table=N`
-- Real photography with procedural SVG fallback, generated from the same
-  menu source of truth (`web/menu-data.js`, converted from MenuData.swift)
-
-Serve it from any static host and point each table's QR code at
-`https://your-host/?table=<n>`. Local preview:
+## Run locally
 
 ```sh
 python3 -m http.server 8377 -d web
-# open http://localhost:8377/?table=12
+# http://localhost:8377/?table=12&lang=zh
 ```
 
-Debug hooks: `#dish=<id>` opens a dish page, `#cart` opens the steamer.
+## Operating notes
+
+- **New photos**: alpha-matted PNG into `web/img/`, set `"img"` on the
+  dish in `menu-data.js`. Missing photos auto-fall back to procedural art.
+- **Sold out**: set `"soldOut": true` on the dish.
+- **Ordering backend**: `sendOrder` in `app.js` logs the order JSON —
+  point it at your POS/backend. `bellBtn` is the waiter-call hook.
+- **Debug**: `#dish=<id>`, `#cart`, `#ordered`, `?vp=0..1` (voyage
+  progress), `?splatslow=1` (slow-motion transitions).
+
+The original iOS app prototype lives in git history (tag point: commit
+`e622e67` and earlier) if ever needed again.
