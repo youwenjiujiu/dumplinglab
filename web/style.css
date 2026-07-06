@@ -480,7 +480,7 @@ body {
 .splat-layer {
   position: fixed; inset: 0; z-index: 125; pointer-events: none;
   width: 100vw; height: 100vh; height: 100svh;
-  filter: blur(0.7px);
+  filter: blur(1.1px);
 }
 
 /* FLIP flyer */

@@ -239,7 +239,7 @@ async function splatPoints(d) {
       a: px[i + 3] / 255,
     });
   }
-  const target = 850;
+  const target = 1500;
   const out = pts.length > target
     ? Array.from({ length: target }, (_, k) => pts[Math.floor(k * pts.length / target)])
     : pts;
@@ -272,14 +272,14 @@ function splatTransition(d, fromRect, toRect, opts = {}) {
       arcY: -40 - Math.random() * 110,
       swirl: Math.random() * Math.PI * 2,
       spin: 4 + Math.random() * 5,
-      r: 1.8 + Math.random() * 3.4,
+      r: 0.8 + Math.random() * 1.6,
     }));
     const ease = t => 1 - Math.pow(1 - t, 3);
 
     function frame(now) {
       const T = Math.min((now - t0) / DUR, 1);
       ctx.clearRect(0, 0, cvs.width, cvs.height);
-      const sizeScale = ((1 - T) * fromRect.width + T * toRect.width) / 135;
+      const sizeScale = ((1 - T) * fromRect.width + T * toRect.width) / 165;
       for (let i = 0; i < pts.length; i++) {
         const p = pts[i], sd = seeds[i];
         let t = Math.min(Math.max((T - sd.dly) / (1 - sd.dly), 0), 1);
@@ -293,10 +293,10 @@ function splatTransition(d, fromRect, toRect, opts = {}) {
         const bx = q * q * x0 + 2 * q * t * mx + t * t * x1;
         const by = q * q * y0 + 2 * q * t * my + t * t * y1;
         const scatter = Math.sin(Math.PI * t);          // loose mid-flight
-        const x = bx + Math.cos(sd.swirl + t * sd.spin) * 26 * scatter;
-        const y = by + Math.sin(sd.swirl + t * sd.spin) * 17 * scatter;
-        const size = Math.max(0.6, (sd.r + scatter * 3.2) * sizeScale) * dpr;
-        ctx.fillStyle = p.c + (p.a * (0.96 - 0.3 * scatter)).toFixed(3) + ")";
+        const x = bx + Math.cos(sd.swirl + t * sd.spin) * 20 * scatter;
+        const y = by + Math.sin(sd.swirl + t * sd.spin) * 13 * scatter;
+        const size = Math.max(0.5, (sd.r + scatter * 1.4) * sizeScale) * dpr;
+        ctx.fillStyle = p.c + (p.a * (0.85 - 0.35 * scatter)).toFixed(3) + ")";
         ctx.beginPath();
         ctx.arc(x * dpr, y * dpr, size, 0, 7);
         ctx.fill();
