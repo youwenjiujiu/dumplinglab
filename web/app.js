@@ -14,7 +14,9 @@ addEventListener("error", e => {
 });
 
 const $ = (s, el = document) => el.querySelector(s);
-const fmt = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
+// Singapore dollars. Swap CURRENCY when a new market opens.
+const CURRENCY = "S$";
+const fmt = n => CURRENCY + (Number.isInteger(n) ? n : n.toFixed(2));
 
 const TABLE = new URLSearchParams(location.search).get("table");
 
