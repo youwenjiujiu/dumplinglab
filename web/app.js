@@ -797,21 +797,29 @@ function openDetail(d, fromEl, alreadyOpen) {
     else detail.scrollTo({ top: 0, behavior: "smooth" });
     const toRect = $("#detailArt").getBoundingClientRect();
     if (fromRect) {
-      // The dish dissolves into gaussian splats, drifts as vapor,
-      // and reassembles on the hero stage.
+      // The dish itself flies from the tile to the hero stage - crisp,
+      // recognizable, over in half a second.
       const art = $("#detailArt");
       art.style.opacity = "0";
       if (fromEl) fromEl.style.opacity = "0";
-      splatTransition(d, fromRect, toRect, {
-        onNearEnd: () => {
-          art.style.transition = "opacity 0.3s ease, transform 0.5s cubic-bezier(0.3, 1.6, 0.6, 1)";
-          art.style.transform = "scale(0.92)";
-          art.style.opacity = "1";
-          requestAnimationFrame(() => { art.style.transform = "scale(1)"; });
-          setTimeout(() => { art.style.transition = ""; art.style.transform = ""; }, 550);
-        },
-        onDone: () => { if (fromEl) fromEl.style.opacity = ""; },
+      const flyer = document.createElement("div");
+      flyer.id = "flyer";
+      flyer.innerHTML = artFor(d);
+      flyer.style.cssText = `left:${fromRect.left}px; top:${fromRect.top}px;
+        width:${fromRect.width}px; height:${fromRect.height}px;
+        transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1);`;
+      document.body.appendChild(flyer);
+      requestAnimationFrame(() => {
+        flyer.style.left = toRect.left + "px";
+        flyer.style.top = toRect.top + "px";
+        flyer.style.width = toRect.width + "px";
+        flyer.style.height = toRect.height + "px";
       });
+      setTimeout(() => {
+        art.style.opacity = "1";
+        flyer.remove();
+        if (fromEl) fromEl.style.opacity = "";
+      }, 560);
     }
     setTimeout(() => {
       detail.classList.add("staged");
@@ -853,10 +861,24 @@ function closeDetail() {
       const from = art.getBoundingClientRect();
       art.style.opacity = "0";
       origin.style.opacity = "0";
-      splatTransition(d, from, to, { duration: 620, onDone: () => {
+      const flyer = document.createElement("div");
+      flyer.id = "flyer";
+      flyer.innerHTML = artFor(d);
+      flyer.style.cssText = `left:${from.left}px; top:${from.top}px;
+        width:${from.width}px; height:${from.height}px;
+        transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);`;
+      document.body.appendChild(flyer);
+      requestAnimationFrame(() => {
+        flyer.style.left = to.left + "px";
+        flyer.style.top = to.top + "px";
+        flyer.style.width = to.width + "px";
+        flyer.style.height = to.height + "px";
+      });
+      setTimeout(() => {
+        flyer.remove();
         origin.style.opacity = "";
         art.style.opacity = "";
-      }});
+      }, 510);
     }
   }
   setTimeout(() => {
