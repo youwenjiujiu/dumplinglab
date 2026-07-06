@@ -22,10 +22,14 @@ const TABLE = new URLSearchParams(location.search).get("table");
 
 /* ============================== Language ============================== */
 
-const urlLang = new URLSearchParams(location.search).get("lang");
-let lang = urlLang || localStorage.getItem("dl-lang")
-  || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en");
-if (lang !== "zh" && lang !== "en") lang = "en";
+// Tolerant parsing: "zh", "zh-CN", even "zh（" from a mangled QR still work.
+const norm = v => {
+  v = (v || "").toLowerCase();
+  return v.startsWith("zh") ? "zh" : v.startsWith("en") ? "en" : null;
+};
+const urlLang = norm(new URLSearchParams(location.search).get("lang"));
+let lang = urlLang || norm(localStorage.getItem("dl-lang"))
+  || norm(navigator.language) || "en";
 
 const L = () => I18N.ui[lang];
 const secName = s => lang === "zh" ? I18N.sections[s] : s;
