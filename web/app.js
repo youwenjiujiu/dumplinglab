@@ -446,8 +446,18 @@ function renderMenu() {
     const chip = document.createElement("button");
     chip.className = "chip" + (idx === 0 ? " on" : "");
     chip.textContent = secName(sec);
-    chip.addEventListener("click", () =>
-      chapterEls[sec].scrollIntoView({ behavior: "smooth", block: "start" }));
+    chip.addEventListener("click", () => {
+      haptic();
+      const railH = $("#rail").offsetHeight;
+      const y = chapterEls[sec].getBoundingClientRect().top + scrollY - railH + 6;
+      scrollTo({ top: y, behavior: "smooth" });
+      // Heights can settle during the glide - re-align once at the end.
+      clearTimeout(chip._fix);
+      chip._fix = setTimeout(() => {
+        const y2 = chapterEls[sec].getBoundingClientRect().top + scrollY - railH + 6;
+        if (Math.abs(y2 - scrollY) > 24) scrollTo({ top: y2, behavior: "smooth" });
+      }, 620);
+    });
     railEl.appendChild(chip);
 
     const ch = document.createElement("section");
@@ -543,9 +553,11 @@ function applyFilter() {
     visible.set(chapter, (visible.get(chapter) || 0) + (ok ? 1 : 0));
   });
   let any = false;
-  Object.values(chapterEls).forEach(ch => {
+  const chips = [...$("#railInner").children];
+  Object.values(chapterEls).forEach((ch, i) => {
     const n = visible.get(ch) || 0;
     ch.style.display = n ? "" : "none";
+    if (chips[i]) chips[i].style.display = n ? "" : "none";
     if (n) any = true;
   });
   const empty = $("#noResults");
@@ -585,13 +597,20 @@ $("#bellBtn").addEventListener("click", () => {
 
 // Rail follows scroll
 addEventListener("scroll", () => {
+  const pinned = $("#rail").getBoundingClientRect().top <= 2;
+  $("#topChrome").classList.toggle("tucked", pinned);
   const chips = [...$("#railInner").children];
   const list = Object.values(chapterEls);
   if (!chips.length) return;
   let active = 0;
-  list.forEach((el, i) => { if (el.getBoundingClientRect().top < 140) active = i; });
+  const railH = $("#rail").offsetHeight + 10;
+  list.forEach((el, i) => { if (el.getBoundingClientRect().top < railH) active = i; });
   chips.forEach((c, i) => c.classList.toggle("on", i === active));
-  if (chips[active]) chips[active].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  const chip = chips[active], railInner = $("#railInner");
+  if (chip) railInner.scrollTo({
+    left: chip.offsetLeft - railInner.clientWidth / 2 + chip.offsetWidth / 2,
+    behavior: "smooth",
+  });
 }, { passive: true });
 
 function renderAll() {
@@ -1036,6 +1055,7 @@ function renderCart() {
     <div class="row"><span>${L().steamTime}</span><b>${L().steamTimeVal}</b></div>`;
   $("#sendLabel").textContent = L().send;
   $("#sendTotal").textContent = fmt(cartTotal());
+  $("#cartBell").textContent = "🔔 " + L().waiter;
   renderHistory();
 }
 
@@ -1057,6 +1077,12 @@ function renderHistory() {
 }
 
 $("#orderNote").addEventListener("input", e => localStorage.setItem("dl-note", e.target.value));
+
+$("#cartBell").addEventListener("click", () => {
+  console.log("WAITER →", TABLE);
+  haptic(true);
+  toast(L().waiterToast);
+});
 
 $("#sendOrder").addEventListener("click", () => {
   // In production this POSTs to the ordering backend with the table number.
@@ -1107,6 +1133,9 @@ function runHashHook() {
   } else if (h === "#cart") {
     if (!cart.size) { addToCart(MENU[0], 2); addToCart(MENU.find(d => d.id === "beef-yolk-bowl"), 1); addToCart(MENU.find(d => d.id === "mango-sago"), 2); }
     setTimeout(openCart, 400);
+  } else if (h.startsWith("#go=")) {
+    const i = parseInt(h.slice(4), 10) || 0;
+    setTimeout(() => { const c = $("#railInner").children[i]; if (c) c.click(); }, 600);
   } else if (h === "#ordered") {
     $("#orderedNote").textContent = L().orderedNote(TABLE, "8888");
     $("#ordered").hidden = false;
