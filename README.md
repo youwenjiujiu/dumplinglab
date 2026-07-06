@@ -48,3 +48,25 @@ Launch-environment variables (used for CLI-driven verification):
 | `DL_DISH` | Open a dish page by id, e.g. `black-pork-panfried` |
 | `DL_FILL_CART` | `1` seeds the steamer with a sample order |
 | `DL_HOST_QUERY` | Auto-sends a message to the Host on launch |
+
+## Web version (扫码点餐)
+
+`web/` contains the scan-to-order table menu — the same design language and
+"3D menu" experience as the app, rebuilt as a dependency-free static site:
+
+- CSS 3D tiles that tilt under the finger and float at rest
+- FLIP hero flight from tile → dish page (the web's matched geometry)
+- Canvas steam, candle-flicker glow, staged reveals
+- Steamer-basket cart drawer; per-table QR via `?table=N`
+- Real photography with procedural SVG fallback, generated from the same
+  menu source of truth (`web/menu-data.js`, converted from MenuData.swift)
+
+Serve it from any static host and point each table's QR code at
+`https://your-host/?table=<n>`. Local preview:
+
+```sh
+python3 -m http.server 8377 -d web
+# open http://localhost:8377/?table=12
+```
+
+Debug hooks: `#dish=<id>` opens a dish page, `#cart` opens the steamer.

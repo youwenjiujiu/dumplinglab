@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#241a12">
+<title>Dumpling Lab — Table Menu</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Cinematic header -->
+<header id="hero">
+  <div class="glow" id="heroGlow"></div>
+  <div class="wordmark">
+    <h1>Dumpling Lab</h1>
+    <p class="overline">A modern dumpling house</p>
+    <p class="table-tag" id="tableTag"></p>
+  </div>
+
+  <div class="reel" id="reel"></div>
+  <div class="reel-dots" id="reelDots"></div>
+</header>
+
+<!-- Chapter rail -->
+<nav id="rail"><div class="rail-inner" id="railInner"></div></nav>
+
+<!-- Menu chapters -->
+<main id="menu"></main>
+
+<footer id="colophon">
+  <p class="overline">Dumpling Lab</p>
+  <p>Folded by hand, daily · 手工现包</p>
+</footer>
+
+<!-- Bottom dock -->
+<div id="dock">
+  <button class="dock-cart" id="dockCart">
+    <span class="steamer-icon">
+      <svg viewBox="0 0 36 22" width="30" height="19">
+        <ellipse cx="18" cy="6" rx="16" ry="5" fill="#c29e75"/>
+        <rect x="2" y="6" width="32" height="10" rx="3" fill="#946f4a"/>
+        <ellipse cx="18" cy="16" rx="16" ry="5" fill="#7a5a3a"/>
+      </svg>
+      <span class="badge" id="cartBadge" hidden>0</span>
+    </span>
+    <span class="dock-label">The Steamer · 蒸笼</span>
+    <span class="dock-total" id="dockTotal"></span>
+  </button>
+</div>
+
+<!-- Dish detail takeover -->
+<div id="detail" hidden>
+  <div class="detail-hero">
+    <div class="glow" id="detailGlow"></div>
+    <canvas id="steamCanvas"></canvas>
+    <button class="close" id="detailClose" aria-label="Close">&#x2304;</button>
+    <div class="detail-art" id="detailArt"></div>
+    <div class="detail-caption" id="detailCaption"></div>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+  <div class="detail-bar" id="detailBar"></div>
+</div>
+
+<!-- Cart drawer -->
+<div id="cartScrim" hidden></div>
+<div id="cart" hidden>
+  <div class="cart-grab"></div>
+  <h2>The Steamer <span class="cn">蒸笼</span></h2>
+  <p class="overline" id="cartSubtitle"></p>
+  <div id="cartItems"></div>
+  <div class="cart-totals" id="cartTotals"></div>
+  <button class="send" id="sendOrder">
+    <span>Send to the kitchen · 下单</span><strong id="sendTotal"></strong>
+  </button>
+</div>
+
+<!-- Order confirmation -->
+<div id="ordered" hidden>
+  <div class="lid-stage">
+    <svg viewBox="0 0 200 120" width="230">
+      <ellipse cx="100" cy="72" rx="88" ry="26" fill="#c29e75"/>
+      <rect x="14" y="72" width="172" height="26" rx="8" fill="#946f4a"/>
+      <ellipse cx="100" cy="98" rx="88" ry="18" fill="#7a5a3a"/>
+      <g id="lid">
+        <ellipse cx="100" cy="52" rx="92" ry="28" fill="#a9825b"/>
+        <ellipse cx="100" cy="48" rx="40" ry="12" fill="none" stroke="#7a5a3a" stroke-width="3"/>
+      </g>
+    </svg>
+    <canvas id="orderSteam" width="200" height="220"></canvas>
+  </div>
+  <h2>It's steaming · 已送厨房</h2>
+  <p id="orderedNote"></p>
+  <button id="orderedDone">Back to the table · 返回</button>
+</div>
+
+<script src="menu-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
