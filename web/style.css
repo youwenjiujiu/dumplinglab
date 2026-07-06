@@ -620,3 +620,11 @@ body {
   #topChrome { right: max(14px, calc(50% - 240px + 14px)); }
   #toast { max-width: 440px; }
 }
+
+/* Chinese has no true italics - browsers fake a slant, and it reads cheap.
+   Keep italics as an English-only editorial voice. */
+body.zh .chapter .tagline,
+body.zh .kitchen-card p {
+  font-style: normal;
+}
+body.zh .chapter .tagline { letter-spacing: 0.06em; opacity: 0.9; }

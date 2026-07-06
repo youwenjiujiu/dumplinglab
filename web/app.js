@@ -626,6 +626,8 @@ addEventListener("scroll", () => {
 }, { passive: true });
 
 function renderAll() {
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+  document.body.classList.toggle("zh", lang === "zh");
   renderStatic();
   if (!vBuilt) { buildVoyage(); startSteam($("#voyageSteam")); }
   else { vFocus = -1; updateVoyage(); }
