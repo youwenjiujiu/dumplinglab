@@ -312,7 +312,7 @@ struct DishDetailView: View {
                         Text("Add to steamer")
                             .font(DL.text(15, weight: .semibold))
                         Spacer()
-                        Text(priceLabel(for: dish.price * Decimal(quantity)))
+                        Text((dish.price * Decimal(quantity)).dlPrice)
                             .font(DL.display(16, weight: .semibold))
                             .contentTransition(.numericText())
                             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: quantity)
@@ -343,14 +343,6 @@ struct DishDetailView: View {
                 .frame(width: 26, height: 26)
         }
         .buttonStyle(TactileButtonStyle(scale: 0.8))
-    }
-
-    private func priceLabel(for value: Decimal) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.minimumFractionDigits = 0
-        return f.string(from: value as NSDecimalNumber) ?? "$\(value)"
     }
 }
 

@@ -34,6 +34,21 @@ struct DragSession {
 @Observable
 final class AppState {
     var tab: AppTab = .table
+
+    init() {
+        // Dev hook: drive screens from the CLI for verification.
+        let env = ProcessInfo.processInfo.environment
+        if let raw = env["DL_TAB"], let t = AppTab(rawValue: raw) { tab = t }
+        if let id = env["DL_DISH"], let d = Menu.dish(id) { selectedDish = d }
+        if env["DL_FILL_CART"] == "1" {
+            cart = [
+                CartLine(dish: Menu.all[0], quantity: 2),
+                CartLine(dish: Menu.dish("pork-xlb")!, quantity: 1),
+                CartLine(dish: Menu.dish("chicken-ramen")!, quantity: 1),
+                CartLine(dish: Menu.dish("mango-sago")!, quantity: 2),
+            ]
+        }
+    }
     var cart: [CartLine] = []
     var selectedDish: Dish?
 

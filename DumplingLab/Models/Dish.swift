@@ -160,14 +160,7 @@ struct Dish: Identifiable, Hashable {
     var art: ArtStyle
     var palette: DishPalette
 
-    var priceLabel: String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.maximumFractionDigits = 2
-        f.minimumFractionDigits = 0
-        return f.string(from: price as NSDecimalNumber) ?? "$\(price)"
-    }
+    var priceLabel: String { price.dlPrice }
 
     var isVegetarian: Bool { proteinType == .vegetarian || proteinType == .vegan }
     var containsPork: Bool { proteinType == .pork }

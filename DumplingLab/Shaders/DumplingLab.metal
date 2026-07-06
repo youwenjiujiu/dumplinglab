@@ -46,10 +46,12 @@ static float fbm(float2 p) {
     float band = uv.x * 0.75 + uv.y * 0.35;
     float d = band - mix(-0.35, 1.35, phase);
     float glow = exp(-d * d * 22.0);
-    // Warm-tinted highlight, screen-ish blend.
+    // Warm-tinted highlight, screen-ish blend. Colors are premultiplied,
+    // so scale the additive term by coverage to avoid halo blowout.
     half3 warm = half3(1.0, 0.94, 0.82);
-    half3 lit = color.rgb + half3(glow * intensity) * warm * (half3(1.0) - color.rgb * 0.5);
-    return half4(lit, color.a);
+    half3 headroom = max(half3(color.a) - color.rgb * 0.5, half3(0.0));
+    half3 lit = color.rgb + half3(glow * intensity) * warm * headroom * color.a;
+    return half4(min(lit, half3(color.a)), color.a);
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +108,7 @@ static float fbm(float2 p) {
     // Fade at the sides and strongly toward the top and bottom edges.
     float edge = smoothstep(0.0, 0.28, uv.x) * smoothstep(1.0, 0.72, uv.x);
     float vert = smoothstep(1.0, 0.55, uv.y) * smoothstep(0.0, 0.35, uv.y);
-    float a = smoothstep(0.42, 0.9, n) * edge * vert * opacity;
-    return half4(1.0, 1.0, 1.0, a) * color.a;
+    // Premultiplied alpha: white wisps at coverage `a`.
+    half a = half(smoothstep(0.42, 0.9, n) * edge * vert * opacity) * color.a;
+    return half4(a, a, a, a);
 }

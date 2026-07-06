@@ -186,41 +186,56 @@ struct DumplingFigure: View {
                         )
                 )
 
-            // Golden crisped base for pan-fried
+            // Golden crisped base for pan-fried — hugs the silhouette
             if crisped {
-                Ellipse()
+                DumplingShape()
                     .fill(
                         LinearGradient(
-                            colors: [palette.accent.color.opacity(0.0), palette.accent.color],
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .clear, location: 0.52),
+                                .init(color: palette.accent.color.opacity(0.85), location: 0.86),
+                                .init(color: palette.accent.color, location: 1),
+                            ],
                             startPoint: .top, endPoint: .bottom
                         )
                     )
-                    .frame(width: w * 0.86, height: h * 0.34)
-                    .offset(y: h * 0.33)
-                    .mask(DumplingShape())
             }
 
-            // Filling reveal (signature animation): a warm window near the bite
+            // Filling reveal (signature animation): the wrapper parts and
+            // the filling glistens through a clean bite-window.
             if opened, reveal > 0.01 {
-                Ellipse()
-                    .fill(
-                        RadialGradient(
-                            colors: [palette.accent.color, palette.accent.color.opacity(0.6)],
-                            center: .center, startRadius: 0, endRadius: w * 0.2
+                ZStack {
+                    Ellipse()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    palette.accent.color.darker(-0.06),
+                                    palette.accent.color.darker(0.22),
+                                ],
+                                center: .init(x: 0.38, y: 0.32),
+                                startRadius: 0, endRadius: w * 0.13
+                            )
                         )
-                    )
-                    .frame(width: w * 0.34 * reveal, height: h * 0.4 * reveal)
-                    .offset(x: w * 0.22, y: -h * 0.05)
-                    .overlay(
-                        // A slow drop of juice
-                        Capsule()
-                            .fill(palette.accent.color.opacity(0.85))
-                            .frame(width: w * 0.035, height: h * 0.35 * reveal)
-                            .offset(x: w * 0.26, y: h * 0.28)
-                            .blur(radius: 0.4)
-                            .opacity(reveal > 0.6 ? 1 : 0)
-                    )
-                    .transition(.opacity)
+                        .overlay(Ellipse().strokeBorder(palette.skin.color.darker(0.30).opacity(0.8), lineWidth: max(1, w * 0.012)))
+                        .overlay(
+                            // Gloss — the juice catching the key light
+                            Ellipse()
+                                .fill(.white.opacity(0.5))
+                                .frame(width: w * 0.055, height: h * 0.05)
+                                .offset(x: -w * 0.045, y: -h * 0.055)
+                                .blur(radius: 1)
+                        )
+                    // A single bead of juice at the lip
+                    Circle()
+                        .fill(palette.accent.color.darker(0.10).opacity(0.9))
+                        .frame(width: w * 0.045, height: w * 0.045)
+                        .offset(x: w * 0.03, y: h * 0.16)
+                        .opacity(reveal > 0.7 ? 1 : 0)
+                }
+                .frame(width: w * 0.24 * reveal, height: h * 0.26 * reveal)
+                .offset(x: w * 0.20, y: -h * 0.10)
+                .opacity(Double(min(reveal * 1.4, 1)))
             }
 
             // Pleats

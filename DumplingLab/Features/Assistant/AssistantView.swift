@@ -72,6 +72,12 @@ struct AssistantView: View {
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: messages.count)
+        .onAppear {
+            // Dev hook: drive a conversation from the CLI for verification.
+            if let q = ProcessInfo.processInfo.environment["DL_HOST_QUERY"] {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { send(q) }
+            }
+        }
     }
 
     private var header: some View {
@@ -310,7 +316,7 @@ struct MealSetCard: View {
                     Text("≈ \(set.totalCalories) kcal")
                         .font(DL.text(12, weight: .medium))
                         .foregroundStyle(DL.sesame)
-                    Text(totalLabel)
+                    Text(set.totalPrice.dlPrice)
                         .font(DL.display(17, weight: .semibold))
                         .foregroundStyle(DL.warmWhite)
                 }
@@ -335,14 +341,6 @@ struct MealSetCard: View {
                 .fill(LinearGradient(colors: [DL.soy, DL.soyDark], startPoint: .topLeading, endPoint: .bottomTrailing))
         )
         .dlShadow(radius: 18, y: 12, opacity: 0.2)
-    }
-
-    private var totalLabel: String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.minimumFractionDigits = 0
-        return f.string(from: set.totalPrice as NSDecimalNumber) ?? "$\(set.totalPrice)"
     }
 }
 

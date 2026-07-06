@@ -69,7 +69,8 @@ struct CartView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 22) {
                     SteamerBasketView(dishes: app.cart.map(\.dish))
-                        .frame(height: 230)
+                        .frame(height: 200)
+                        .padding(.horizontal, 30)
                         .padding(.top, 10)
 
                     VStack(spacing: 10) {
@@ -87,7 +88,7 @@ struct CartView: View {
                     totals
                         .padding(.horizontal, 20)
 
-                    Color.clear.frame(height: 170)
+                    Color.clear.frame(height: 230)
                 }
             }
         }
@@ -96,7 +97,7 @@ struct CartView: View {
 
     private var totals: some View {
         VStack(spacing: 8) {
-            row("Kitchen total", totalLabel(app.cartTotal))
+            row("Kitchen total", app.cartTotal.dlPrice)
             row("Estimated calories", "≈ \(app.cart.reduce(0) { $0 + $1.dish.nutrition.calories * $1.quantity }) kcal")
             row("Steam time", "about 12 min")
         }
@@ -129,7 +130,7 @@ struct CartView: View {
                 Text("Send to the kitchen")
                     .font(DL.text(15, weight: .semibold))
                 Spacer()
-                Text(totalLabel(app.cartTotal))
+                Text(app.cartTotal.dlPrice)
                     .font(DL.display(17, weight: .semibold))
             }
             .foregroundStyle(DL.warmWhite)
@@ -169,14 +170,6 @@ struct CartView: View {
         .padding(.bottom, 60)
         .transition(.scale(scale: 0.92).combined(with: .opacity))
     }
-
-    private func totalLabel(_ value: Decimal) -> String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.minimumFractionDigits = 0
-        return f.string(from: value as NSDecimalNumber) ?? "$\(value)"
-    }
 }
 
 // MARK: - Cart line
@@ -194,7 +187,7 @@ private struct CartLineRow: View {
                 Text(line.dish.name)
                     .font(DL.text(14, weight: .semibold))
                     .foregroundStyle(DL.ink)
-                    .lineLimit(1)
+                    .lineLimit(2)
                 Text(line.dish.priceLabel)
                     .font(DL.text(12))
                     .foregroundStyle(DL.inkFaint)
@@ -237,30 +230,27 @@ struct SteamerBasketView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let w = geo.size.width
-            let rimH = w * 0.30
+            // Design against a clamped module so the basket always fits its frame.
+            let w = min(geo.size.width, geo.size.height * 1.55)
             ZStack {
                 // Basket wall
-                RoundedRectangle(cornerRadius: w * 0.06, style: .continuous)
-                    .fill(LinearGradient(colors: [DL.wood, DL.woodDeep], startPoint: .top, endPoint: .bottom))
-                    .frame(width: w * 0.92, height: rimH)
+                UnevenRoundedRectangle(bottomLeadingRadius: w * 0.07, bottomTrailingRadius: w * 0.07, style: .continuous)
+                    .fill(LinearGradient(colors: [DL.woodDeep.darker(-0.06), DL.woodDeep], startPoint: .top, endPoint: .bottom))
+                    .frame(width: w * 0.74, height: w * 0.15)
                     .offset(y: w * 0.16)
                     .overlay(
-                        // Bamboo binding lines
-                        VStack(spacing: rimH * 0.28) {
-                            Capsule().fill(DL.soyDark.opacity(0.25)).frame(width: w * 0.92, height: 2)
-                            Capsule().fill(DL.soyDark.opacity(0.25)).frame(width: w * 0.92, height: 2)
-                        }
-                        .offset(y: w * 0.16)
+                        // Bamboo binding line
+                        Capsule().fill(DL.soyDark.opacity(0.3)).frame(width: w * 0.74, height: 2)
+                            .offset(y: w * 0.185)
                     )
-                    .dlShadow(radius: w * 0.06, y: w * 0.04, opacity: 0.25)
+                    .dlShadow(radius: w * 0.05, y: w * 0.03, opacity: 0.28)
 
                 // Interior
                 Ellipse()
                     .fill(
-                        RadialGradient(colors: [DL.sesame, DL.wood.darker(0.05)], center: .init(x: 0.45, y: 0.4), startRadius: 0, endRadius: w * 0.45)
+                        RadialGradient(colors: [DL.sesame, DL.wood.darker(0.05)], center: .init(x: 0.45, y: 0.4), startRadius: 0, endRadius: w * 0.42)
                     )
-                    .frame(width: w * 0.88, height: w * 0.34)
+                    .frame(width: w * 0.86, height: w * 0.30)
                     .overlay(
                         // Slats
                         Canvas { ctx, size in
@@ -272,30 +262,34 @@ struct SteamerBasketView: View {
                                 ctx.stroke(p, with: .color(DL.woodDeep.opacity(0.28)), lineWidth: 2)
                             }
                         }
-                        .frame(width: w * 0.88, height: w * 0.34)
+                        .frame(width: w * 0.86, height: w * 0.30)
                         .clipShape(Ellipse())
                     )
-                    .offset(y: w * 0.02)
+                    .overlay(
+                        Ellipse().strokeBorder(DL.woodDeep.opacity(0.5), lineWidth: max(2, w * 0.012))
+                            .frame(width: w * 0.86, height: w * 0.30)
+                    )
+                    .offset(y: w * 0.045)
 
                 // The order, nestled inside
                 if !dishes.isEmpty {
-                    let shown = Array(dishes.prefix(5))
-                    HStack(spacing: -w * 0.05) {
+                    let shown = Array(dishes.prefix(4))
+                    HStack(spacing: -w * 0.04) {
                         ForEach(Array(shown.enumerated()), id: \.offset) { i, dish in
                             DishArtView(dish: dish, backdrop: false, steam: false)
-                                .frame(width: w * 0.26, height: w * 0.26)
-                                .offset(y: CGFloat(i % 2 == 0 ? 0 : -1) * w * 0.02)
+                                .frame(width: w * 0.27, height: w * 0.27)
+                                .offset(y: CGFloat(i % 2 == 0 ? 0 : -1) * w * 0.015)
                                 .floating(amplitude: 1.6, period: 4.0, phase: Double(i) * 0.4)
                         }
                     }
-                    .offset(y: -w * 0.06)
-                    if dishes.count > 5 {
-                        Text("+\(dishes.count - 5)")
+                    .offset(y: -w * 0.015)
+                    if dishes.count > 4 {
+                        Text("+\(dishes.count - 4)")
                             .font(DL.text(12, weight: .bold))
                             .foregroundStyle(DL.warmWhite)
                             .padding(.horizontal, 9).padding(.vertical, 4)
                             .background(Capsule().fill(DL.soy))
-                            .offset(x: w * 0.34, y: -w * 0.12)
+                            .offset(x: w * 0.33, y: -w * 0.14)
                     }
                 }
 
@@ -303,21 +297,21 @@ struct SteamerBasketView: View {
                 if lidClosed {
                     Ellipse()
                         .fill(LinearGradient(colors: [DL.wood.darker(-0.05), DL.woodDeep], startPoint: .top, endPoint: .bottom))
-                        .frame(width: w * 0.96, height: w * 0.36)
+                        .frame(width: w * 0.92, height: w * 0.32)
                         .overlay(
                             Ellipse()
                                 .strokeBorder(DL.soyDark.opacity(0.3), lineWidth: 2)
-                                .frame(width: w * 0.5, height: w * 0.18)
+                                .frame(width: w * 0.46, height: w * 0.16)
                         )
-                        .offset(y: -w * 0.02)
+                        .offset(y: w * 0.01)
                         .dlShadow(radius: 10, y: 6, opacity: 0.2)
                 }
 
                 // Ambient steam over the basket
                 if !dishes.isEmpty || lidClosed {
                     SteamVeil(opacity: 0.4)
-                        .frame(width: w * 0.5, height: w * 0.5)
-                        .offset(y: -w * 0.32)
+                        .frame(width: w * 0.44, height: w * 0.40)
+                        .offset(y: -w * 0.26)
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)

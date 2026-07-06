@@ -59,6 +59,21 @@ enum DL {
     }
 }
 
+// MARK: - Price formatting
+
+extension Decimal {
+    /// "$14.50" / "$12" — US dollars, cents only when needed.
+    var dlPrice: String {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.locale = Locale(identifier: "en_US")
+        let whole = self == Decimal(Int(NSDecimalNumber(decimal: self).doubleValue))
+        f.minimumFractionDigits = whole ? 0 : 2
+        f.maximumFractionDigits = 2
+        return f.string(from: self as NSDecimalNumber) ?? "$\(self)"
+    }
+}
+
 // MARK: - Haptics
 
 enum Haptics {
