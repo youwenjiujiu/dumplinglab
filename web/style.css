@@ -26,7 +26,7 @@
   --sans: -apple-system, "SF Pro Text", "PingFang SC", system-ui, sans-serif;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 html { scroll-behavior: smooth; }
 body {
   font-family: var(--sans);
@@ -72,6 +72,14 @@ body {
   color: var(--sesame); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
 }
 .table-tag:empty { display: none; }
+#langToggle {
+  position: absolute; top: max(14px, env(safe-area-inset-top)); right: 16px; z-index: 5;
+  padding: 8px 14px; border-radius: 999px;
+  border: 1px solid rgba(222, 204, 168, 0.35); background: rgba(246, 241, 231, 0.08);
+  color: var(--sesame); font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+#langToggle:active { transform: scale(0.94); }
 
 /* Featured reel */
 .reel {
@@ -111,7 +119,7 @@ body {
 .badge-pill.red { background: var(--red); }
 .badge-pill.wood { background: var(--wood-deep); }
 .slide h2 { font-family: var(--serif); font-size: 25px; color: var(--warm-white); line-height: 1.15; }
-.slide .cn-name { color: var(--sesame); letter-spacing: 0.3em; font-size: 12px; margin: 7px 0; }
+.slide .cn-name { color: var(--sesame); letter-spacing: 0.14em; font-size: 12px; margin: 7px 0; padding: 0 20px; }
 .slide .flavor {
   color: rgba(222, 204, 168, 0.92); font-size: 13px; line-height: 1.45;
   max-width: 300px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -157,6 +165,9 @@ body {
   font-family: var(--serif); font-size: 26px; color: var(--warm-white); margin: 5px 0 2px;
 }
 .chapter .tagline { color: rgba(222, 204, 168, 0.75); font-style: italic; font-size: 13px; margin-bottom: 16px; }
+.chapter .sec-sub { font-family: var(--sans); font-size: 12px; font-weight: 500; color: rgba(222, 204, 168, 0.6); letter-spacing: 0.08em; margin-left: 4px; }
+.chapter { content-visibility: auto; contain-intrinsic-size: auto 760px; }
+.tile.offstage .stage { animation-play-state: paused; }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 13px; }
 
@@ -287,7 +298,7 @@ body {
 .detail-caption { position: relative; z-index: 2; text-align: center; padding: 18px 26px 30px; }
 .detail-caption .badges { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
 .detail-caption h2 { font-family: var(--serif); font-size: 29px; color: var(--warm-white); line-height: 1.12; }
-.detail-caption .cn-name { color: var(--sesame); letter-spacing: 0.3em; font-size: 12px; margin: 8px 0 6px; }
+.detail-caption .cn-name { color: var(--sesame); letter-spacing: 0.14em; font-size: 12px; margin: 8px 0 6px; }
 .detail-caption .meta { color: rgba(222, 204, 168, 0.9); font-size: 13px; }
 .detail-caption, .detail-body > * { opacity: 0; transform: translateY(16px); }
 #detail.staged .detail-caption, #detail.staged .detail-body > * {
@@ -379,6 +390,37 @@ body {
 }
 .add-btn:active { transform: scale(0.97); }
 .add-btn strong { font-family: var(--serif); font-size: 16px; }
+
+/* Pairings */
+.pairings { display: flex; gap: 10px; overflow-x: auto; padding: 4px 0; scrollbar-width: none; }
+.pairings::-webkit-scrollbar { display: none; }
+.pairing {
+  flex: 0 0 auto; width: 118px; text-align: left;
+  background: var(--warm-white); border: 1px solid var(--cream-deep);
+  border-radius: 18px; padding: 10px;
+}
+.pairing:active { transform: scale(0.96); }
+.pairing .p-art { width: 96px; height: 76px; display: flex; margin: 0 auto; }
+.pairing .p-art img, .pairing .p-art svg { width: 100%; height: 100%; object-fit: contain; }
+.pairing .p-name {
+  font-weight: 600; font-size: 12px; color: var(--ink); line-height: 1.3; margin-top: 6px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em;
+}
+.pairing .p-price { font-family: var(--serif); font-size: 12px; color: var(--soy); margin-top: 2px; }
+
+/* Kitchen note */
+#noteWrap { margin-top: 12px; }
+#noteWrap .overline { margin-bottom: 8px; }
+#orderNote {
+  width: 100%; resize: none; font-family: var(--sans); font-size: 14px; color: var(--ink);
+  background: var(--warm-white); border: 1px solid var(--cream-deep); border-radius: 16px;
+  padding: 12px 14px; outline: none;
+}
+#orderNote:focus { border-color: var(--wood); }
+
+/* Fly-to-steamer morsel */
+.fly-morsel { position: fixed; z-index: 130; pointer-events: none; }
+.fly-morsel img, .fly-morsel svg { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 9px rgba(0,0,0,0.35)); }
 
 /* FLIP flyer */
 #flyer {

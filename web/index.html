@@ -12,9 +12,10 @@
 <!-- Cinematic header -->
 <header id="hero">
   <div class="glow" id="heroGlow"></div>
+  <button id="langToggle" aria-label="Language">中文</button>
   <div class="wordmark">
     <h1>Dumpling Lab</h1>
-    <p class="overline">A modern dumpling house</p>
+    <p class="overline" id="heroTagline">A modern dumpling house</p>
     <p class="table-tag" id="tableTag"></p>
   </div>
 
@@ -30,7 +31,7 @@
 
 <footer id="colophon">
   <p class="overline">Dumpling Lab</p>
-  <p>Folded by hand, daily · 手工现包</p>
+  <p id="colophonLine">Folded by hand, daily</p>
 </footer>
 
 <!-- Bottom dock -->
@@ -44,7 +45,7 @@
       </svg>
       <span class="badge" id="cartBadge" hidden>0</span>
     </span>
-    <span class="dock-label">The Steamer · 蒸笼</span>
+    <span class="dock-label" id="dockLabel">The Steamer · 蒸笼</span>
     <span class="dock-total" id="dockTotal"></span>
   </button>
 </div>
@@ -66,12 +67,16 @@
 <div id="cartScrim" hidden></div>
 <div id="cart" hidden>
   <div class="cart-grab"></div>
-  <h2>The Steamer <span class="cn">蒸笼</span></h2>
+  <h2 id="cartTitle">The Steamer <span class="cn">蒸笼</span></h2>
   <p class="overline" id="cartSubtitle"></p>
   <div id="cartItems"></div>
+  <div id="noteWrap">
+    <p class="overline" id="noteLabel">A note to the kitchen</p>
+    <textarea id="orderNote" rows="2"></textarea>
+  </div>
   <div class="cart-totals" id="cartTotals"></div>
   <button class="send" id="sendOrder">
-    <span>Send to the kitchen · 下单</span><strong id="sendTotal"></strong>
+    <span id="sendLabel">Send to the kitchen</span><strong id="sendTotal"></strong>
   </button>
 </div>
 
@@ -89,12 +94,13 @@
     </svg>
     <canvas id="orderSteam" width="200" height="220"></canvas>
   </div>
-  <h2>It's steaming · 已送厨房</h2>
+  <h2 id="orderedTitle">It's steaming · 已送厨房</h2>
   <p id="orderedNote"></p>
   <button id="orderedDone">Back to the table · 返回</button>
 </div>
 
 <script src="menu-data.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

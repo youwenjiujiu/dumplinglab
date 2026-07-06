@@ -1,7 +1,7 @@
 /* Dumpling Lab — table menu.
    The iOS app's experience, rebuilt for the browser: 3D tiles that tilt
    under the finger, a FLIP hero flight into the dish page, canvas steam,
-   and a steamer-basket cart. No dependencies. */
+   and a steamer-basket cart. Fully bilingual. No dependencies. */
 
 "use strict";
 
@@ -9,7 +9,7 @@
 addEventListener("error", e => {
   const el = document.createElement("div");
   el.style.cssText = "position:fixed;top:60px;left:8px;right:8px;z-index:999;background:#b00;color:#fff;font:12px monospace;padding:8px;border-radius:8px;white-space:pre-wrap;";
-  el.textContent = "JS ERROR: " + e.message + " @ " + (e.filename||"").split("/").pop() + ":" + e.lineno;
+  el.textContent = "JS ERROR: " + e.message + " @ " + (e.filename || "").split("/").pop() + ":" + e.lineno;
   document.body ? document.body.appendChild(el) : addEventListener("DOMContentLoaded", () => document.body.appendChild(el));
 });
 
@@ -17,13 +17,34 @@ const $ = (s, el = document) => el.querySelector(s);
 const fmt = n => "$" + (Number.isInteger(n) ? n : n.toFixed(2));
 
 const TABLE = new URLSearchParams(location.search).get("table");
-if (TABLE) $("#tableTag").textContent = `Table ${TABLE} · ${TABLE}号桌`;
 
-/* ============================== Procedural art ==============================
-   Dishes without photography get the app's studio illustration language,
-   as parametric SVG: crescent dumplings with pleats, bowls, plates, cups. */
+/* ============================== Language ============================== */
 
-function shade(hex, f) { // f<0 darkens, f>0 lightens toward white
+const urlLang = new URLSearchParams(location.search).get("lang");
+let lang = urlLang || localStorage.getItem("dl-lang")
+  || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en");
+if (lang !== "zh" && lang !== "en") lang = "en";
+
+const L = () => I18N.ui[lang];
+const secName = s => lang === "zh" ? I18N.sections[s] : s;
+const secTagline = s => lang === "zh" ? I18N.taglines[s] : TAGLINES[s];
+const dishName = d => lang === "zh" ? d.cn : d.name;
+const dishSub = d => lang === "zh" ? d.name : d.cn;
+const dishFlavor = d => lang === "zh" ? ((I18N.dishes[d.id] || {}).flavor || d.flavor) : d.flavor;
+const dishStory = d => lang === "zh" ? ((I18N.dishes[d.id] || {}).story || d.story) : d.story;
+const dishSauce = d => d.sauce ? (lang === "zh" ? (I18N.sauces[d.sauce] || d.sauce) : d.sauce) : null;
+const ingName = n => lang === "zh" ? (I18N.ingredients[n] || n) : n;
+const allergen = a => lang === "zh" ? (I18N.allergens[a] || a) : a;
+
+function setLang(next) {
+  lang = next;
+  localStorage.setItem("dl-lang", lang);
+  renderAll();
+}
+
+/* ============================== Procedural art ============================== */
+
+function shade(hex, f) {
   const v = hex.match(/\w\w/g).map(h => parseInt(h, 16));
   const t = f < 0 ? 0 : 255, a = Math.abs(f);
   return "#" + v.map(c => Math.round(c + (t - c) * a).toString(16).padStart(2, "0")).join("");
@@ -105,7 +126,6 @@ function bowlSVG(d, kind) {
     </radialGradient></defs>
     <ellipse cx="60" cy="88" rx="42" ry="7" fill="rgba(0,0,0,0.3)"/>
     <path d="M18,46 C22,74 40,82 60,82 C80,82 98,74 102,46" fill="#f2efe8"/>
-    <path d="M18,46 C22,74 40,82 60,82 C80,82 98,74 102,46" fill="url(#shadeBowl)" opacity="0.15"/>
     <ellipse cx="60" cy="46" rx="42" ry="12.5" fill="#fbfaf6"/>
     <ellipse cx="60" cy="47" rx="37" ry="10" fill="url(#soup${d.id})"/>
     ${surface}
@@ -150,7 +170,7 @@ function cupSVG(d) {
 }
 
 function artFor(d) {
-  if (d.img) return `<img src="img/${d.img}" alt="${d.name}" loading="lazy" draggable="false">`;
+  if (d.img) return `<img src="img/${d.img}" alt="${dishName(d)}" loading="lazy" draggable="false">`;
   switch (d.art) {
     case "pleatedDumpling": return dumplingSVG(d, false);
     case "pleatedDumplingCrisped": return dumplingSVG(d, true);
@@ -166,108 +186,151 @@ function artFor(d) {
   }
 }
 
-/* ============================== Featured reel ============================== */
+/* ============================== Rendering ============================== */
 
 const featured = MENU.filter(d => d.featured);
-const reel = $("#reel"), dots = $("#reelDots");
+let reelTimer = null, reelTouched = false;
 
-featured.forEach((d, i) => {
-  const s = document.createElement("div");
-  s.className = "slide";
-  s.innerHTML = `
-    <div class="stage3d"><div class="food">${artFor(d)}</div></div>
-    <div class="badges">
-      ${d.best ? '<span class="badge-pill red">Best Seller</span>' : ""}
-      ${d.chef ? '<span class="badge-pill wood">Chef’s Choice</span>' : ""}
-    </div>
-    <h2>${d.name}</h2>
-    <div class="cn-name">${d.cn}</div>
-    <p class="flavor">${d.flavor}</p>
-    <div class="price">${fmt(d.price)}</div>`;
-  s.addEventListener("click", () => openDetail(d, s.querySelector(".stage3d")));
-  reel.appendChild(s);
-  const dot = document.createElement("i");
-  if (i === 0) dot.className = "on";
-  dots.appendChild(dot);
-});
+function renderStatic() {
+  $("#tableTag").textContent = TABLE ? L().table(TABLE) : "";
+  $("#heroTagline").textContent = L().tagline;
+  $("#langToggle").textContent = lang === "zh" ? "EN" : "中文";
+  $("#dockLabel").textContent = lang === "zh" ? "蒸笼 · The Steamer" : "The Steamer · 蒸笼";
+  $("#colophonLine").textContent = L().colophon;
+  $("#orderedTitle").textContent = lang === "zh" ? "开始蒸了 · It’s steaming" : "It’s steaming · 开始蒸了";
+  $("#orderedDone").textContent = L().back;
+}
 
-reel.addEventListener("scroll", () => {
+function renderReel() {
+  const reel = $("#reel"), dots = $("#reelDots");
+  reel.innerHTML = ""; dots.innerHTML = "";
+  featured.forEach((d, i) => {
+    const s = document.createElement("div");
+    s.className = "slide";
+    s.innerHTML = `
+      <div class="stage3d"><div class="food">${artFor(d)}</div></div>
+      <div class="badges">
+        ${d.best ? `<span class="badge-pill red">${L().bestSeller}</span>` : ""}
+        ${d.chef ? `<span class="badge-pill wood">${L().chefsChoice}</span>` : ""}
+      </div>
+      <h2>${dishName(d)}</h2>
+      <div class="cn-name">${dishSub(d)}</div>
+      <p class="flavor">${dishFlavor(d)}</p>
+      <div class="price">${fmt(d.price)}</div>`;
+    s.addEventListener("click", () => openDetail(d, s.querySelector(".stage3d")));
+    reel.appendChild(s);
+    const dot = document.createElement("i");
+    if (i === 0) dot.className = "on";
+    dots.appendChild(dot);
+  });
+  $("#heroGlow").style.setProperty("--glow-c", featured[0].glow + "b0");
+
+  // Gentle autoplay until the guest takes over.
+  clearInterval(reelTimer);
+  reelTimer = setInterval(() => {
+    if (reelTouched || document.hidden || !$("#detail").hidden || !$("#cart").hidden) return;
+    const i = Math.round(reel.scrollLeft / reel.clientWidth);
+    reel.scrollTo({ left: ((i + 1) % featured.length) * reel.clientWidth, behavior: "smooth" });
+  }, 4600);
+  reel.addEventListener("touchstart", () => { reelTouched = true; }, { passive: true, once: true });
+}
+
+$("#reel").addEventListener("scroll", () => {
+  const reel = $("#reel"), dots = $("#reelDots");
   const i = Math.round(reel.scrollLeft / reel.clientWidth);
   [...dots.children].forEach((el, j) => el.classList.toggle("on", j === i));
   const d = featured[Math.max(0, Math.min(i, featured.length - 1))];
   if (d) $("#heroGlow").style.setProperty("--glow-c", d.glow + "b0");
 }, { passive: true });
-$("#heroGlow").style.setProperty("--glow-c", featured[0].glow + "b0");
 
-/* ============================== Menu chapters ============================== */
+let chapterEls = {};
 
-const menuEl = $("#menu"), railEl = $("#railInner");
-const chapterEls = {};
+function renderMenu() {
+  const menuEl = $("#menu"), railEl = $("#railInner");
+  menuEl.innerHTML = ""; railEl.innerHTML = "";
+  chapterEls = {};
 
-SECTIONS.forEach((sec, idx) => {
-  const dishes = MENU.filter(d => d.section === sec);
-  if (!dishes.length) return;
+  SECTIONS.forEach((sec, idx) => {
+    const dishes = MENU.filter(d => d.section === sec);
+    if (!dishes.length) return;
 
-  const chip = document.createElement("button");
-  chip.className = "chip" + (idx === 0 ? " on" : "");
-  chip.textContent = sec;
-  chip.addEventListener("click", () => {
-    chapterEls[sec].scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-  railEl.appendChild(chip);
+    const chip = document.createElement("button");
+    chip.className = "chip" + (idx === 0 ? " on" : "");
+    chip.textContent = secName(sec);
+    chip.addEventListener("click", () =>
+      chapterEls[sec].scrollIntoView({ behavior: "smooth", block: "start" }));
+    railEl.appendChild(chip);
 
-  const ch = document.createElement("section");
-  ch.className = "chapter";
-  ch.dataset.section = sec;
-  ch.innerHTML = `
-    <div class="num">CHAPTER ${String(idx + 1).padStart(2, "0")}</div>
-    <h2>${sec}</h2>
-    <div class="tagline">${TAGLINES[sec]}</div>
-    <div class="grid"></div>`;
-  const grid = ch.querySelector(".grid");
+    const ch = document.createElement("section");
+    ch.className = "chapter";
+    ch.innerHTML = `
+      <div class="num">${L().chapter(String(idx + 1).padStart(2, "0"))}</div>
+      <h2>${secName(sec)} <span class="sec-sub">${lang === "zh" ? sec : I18N.sections[sec]}</span></h2>
+      <div class="tagline">${secTagline(sec)}</div>
+      <div class="grid"></div>`;
+    const grid = ch.querySelector(".grid");
 
-  dishes.forEach((d, i) => {
-    const t = document.createElement("div");
-    t.className = "tile";
-    t.style.setProperty("--float-delay", (i * 0.6) + "s");
-    t.innerHTML = `
-      <div class="stage" style="--tile-glow:${d.glow}1f">
-        <div class="food">${artFor(d)}</div>
-        <button class="quick-add" aria-label="Add">+</button>
-      </div>
-      <div class="caption">
-        <div class="name">${d.best || d.chef ? '<span class="dot">•</span>' : ""}${d.name}</div>
-        <div class="meta">
-          <span class="price">${fmt(d.price)}</span>
-          ${d.spice ? `<span class="spice">${"🌶".repeat(Math.min(d.spice, 3))}</span>` : ""}
-          ${d.pieces ? `<span class="pieces">${d.pieces} pc</span>` : ""}
+    dishes.forEach((d, i) => {
+      const t = document.createElement("div");
+      t.className = "tile";
+      t.style.setProperty("--float-delay", (i * 0.6) + "s");
+      t.innerHTML = `
+        <div class="stage" style="--tile-glow:${d.glow}1f">
+          <div class="food">${artFor(d)}</div>
+          <button class="quick-add" aria-label="Add">+</button>
         </div>
-      </div>`;
-    attachTilt(t);
-    t.querySelector(".quick-add").addEventListener("click", e => {
-      e.stopPropagation();
-      addToCart(d, 1);
+        <div class="caption">
+          <div class="name">${d.best || d.chef ? '<span class="dot">•</span>' : ""}${dishName(d)}</div>
+          <div class="meta">
+            <span class="price">${fmt(d.price)}</span>
+            ${d.spice ? `<span class="spice">${"🌶".repeat(Math.min(d.spice, 3))}</span>` : ""}
+            ${d.pieces ? `<span class="pieces">${d.pieces} ${L().pieces}</span>` : ""}
+          </div>
+        </div>`;
+      attachTilt(t);
+      t.querySelector(".quick-add").addEventListener("click", e => {
+        e.stopPropagation();
+        addToCart(d, 1, t.querySelector(".food"));
+      });
+      t.addEventListener("click", () => openDetail(d, t.querySelector(".stage")));
+      grid.appendChild(t);
     });
-    t.addEventListener("click", () => openDetail(d, t.querySelector(".stage")));
-    grid.appendChild(t);
+
+    menuEl.appendChild(ch);
+    chapterEls[sec] = ch;
   });
 
-  menuEl.appendChild(ch);
-  chapterEls[sec] = ch;
-});
+  // Pause floats offscreen — 36 animated tiles shouldn't tax the phone.
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => e.target.classList.toggle("offstage", !e.isIntersecting));
+  }, { rootMargin: "120px" });
+  menuEl.querySelectorAll(".tile").forEach(t => io.observe(t));
+}
 
 // Rail follows scroll
-const chips = [...railEl.children];
-const sectionList = Object.entries(chapterEls);
 addEventListener("scroll", () => {
+  const chips = [...$("#railInner").children];
+  const list = Object.values(chapterEls);
+  if (!chips.length) return;
   let active = 0;
-  sectionList.forEach(([_, el], i) => {
-    if (el.getBoundingClientRect().top < 140) active = i;
-  });
+  list.forEach((el, i) => { if (el.getBoundingClientRect().top < 140) active = i; });
   chips.forEach((c, i) => c.classList.toggle("on", i === active));
-  const chip = chips[active];
-  if (chip) chip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  if (chips[active]) chips[active].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
 }, { passive: true });
+
+function renderAll() {
+  renderStatic();
+  renderReel();
+  renderMenu();
+  syncDock();
+  if (!$("#detail").hidden && currentDish) fillDetail(currentDish);
+  if (!$("#cart").hidden) renderCart();
+}
+
+$("#langToggle").addEventListener("click", () => {
+  haptic();
+  setLang(lang === "zh" ? "en" : "zh");
+});
 
 /* ============================== 3D tilt ============================== */
 
@@ -285,10 +348,7 @@ function attachTilt(tile) {
       raf = null;
     });
   };
-  const end = () => {
-    tile.classList.remove("tilting");
-    stage.style.transform = "";
-  };
+  const end = () => { tile.classList.remove("tilting"); stage.style.transform = ""; };
   tile.addEventListener("touchstart", () => tile.classList.add("tilting"), { passive: true });
   tile.addEventListener("touchmove", move, { passive: true });
   tile.addEventListener("touchend", end);
@@ -303,57 +363,55 @@ function attachTilt(tile) {
 const detail = $("#detail");
 let currentDish = null, qty = 1;
 
-function openDetail(d, fromEl) {
-  currentDish = d; qty = 1;
-  haptic();
-
-  // Build content
+function fillDetail(d) {
   $("#detailGlow").style.setProperty("--glow-c", d.glow + "b8");
   $(".detail-hero").style.setProperty("--hero-glow-bg", shade(d.glow, -0.1));
   $("#detailArt").innerHTML = `<div class="food">${artFor(d)}</div>`;
   $("#detailCaption").innerHTML = `
     <div class="badges">
-      <span class="badge-pill wood">Handmade Daily</span>
-      ${d.best ? '<span class="badge-pill red">Best Seller</span>'
-        : d.chef ? '<span class="badge-pill red">Chef’s Choice</span>' : ""}
+      <span class="badge-pill wood">${L().handmade}</span>
+      ${d.best ? `<span class="badge-pill red">${L().bestSeller}</span>`
+        : d.chef ? `<span class="badge-pill red">${L().chefsChoice}</span>` : ""}
     </div>
-    <h2>${d.name}</h2>
-    <div class="cn-name">${d.cn}</div>
-    <div class="meta">${d.kcal} kcal · ${fmt(d.price)}${d.pieces ? ` · ${d.pieces} pieces` : ""}</div>`;
+    <h2>${dishName(d)}</h2>
+    <div class="cn-name">${dishSub(d)}</div>
+    <div class="meta">${d.kcal} ${L().kcal} · ${fmt(d.price)}${d.pieces ? ` · ${d.pieces} ${L().pieces}` : ""}</div>`;
 
-  const calFrac = Math.min(d.kcal / 900, 1);
+  const pairs = (d.pairings || []).map(id => MENU.find(x => x.id === id)).filter(Boolean);
   $("#detailBody").innerHTML = `
     <section>
-      <div class="overline">The Flavor</div>
-      <div class="flavor-text">${d.flavor}</div>
+      <div class="overline">${L().theFlavor}</div>
+      <div class="flavor-text">${dishFlavor(d)}</div>
     </section>
     <section class="kitchen-card">
-      <div class="overline">From the Kitchen</div>
-      <p>${d.story}</p>
-      <div class="sig">— Chef Lin</div>
+      <div class="overline">${L().fromKitchen}</div>
+      <p>${dishStory(d)}</p>
+      <div class="sig">${L().chefSig}</div>
     </section>
     <section>
-      <div class="overline">What's Inside</div>
+      <div class="overline">${L().whatsInside}</div>
       <div class="ingredients">${d.ingredients.map(i =>
-        `<div class="ing"><div class="em">${i.emoji}</div><div class="nm">${i.name}</div></div>`).join("")}
+        `<div class="ing"><div class="em">${i.emoji}</div><div class="nm">${ingName(i.name)}</div></div>`).join("")}
       </div>
     </section>
     <section>
-      <div class="overline">On the Scale</div>
+      <div class="overline">${L().onTheScale}</div>
       <div class="nutrition">
         <div class="dial">
           <svg width="100" height="100">
             <circle cx="50" cy="50" r="43" fill="none" stroke="var(--cream-deep)" stroke-width="8"/>
             <circle cx="50" cy="50" r="43" fill="none" stroke="url(#dialGrad)" stroke-width="8"
-              stroke-linecap="round" stroke-dasharray="${270 * calFrac} 999"
+              stroke-linecap="round"
               style="stroke-dasharray:0 999; transition: stroke-dasharray 1.1s cubic-bezier(0.22,1,0.36,1) 0.45s;"
               class="dial-arc"/>
             <defs><linearGradient id="dialGrad"><stop offset="0" stop-color="var(--wood)"/><stop offset="1" stop-color="var(--red)"/></linearGradient></defs>
           </svg>
-          <div class="val"><b>${d.kcal}</b><span>kcal</span></div>
+          <div class="val"><b>${d.kcal}</b><span>${L().kcal}</span></div>
         </div>
         <div class="macros">
-          ${[["Protein", d.protein, 45, "var(--red)"], ["Carbs", d.carbs, 80, "var(--wood)"], ["Fat", d.fat, 40, "#b39b6d"]].map(([n, v, m, c]) => `
+          ${[[lang === "zh" ? "蛋白质" : "Protein", d.protein, 45, "var(--red)"],
+             [lang === "zh" ? "碳水" : "Carbs", d.carbs, 80, "var(--wood)"],
+             [lang === "zh" ? "脂肪" : "Fat", d.fat, 40, "#b39b6d"]].map(([n, v, m, c]) => `
             <div class="macro">
               <div class="row"><b>${n}</b><span>${v} g</span></div>
               <div class="track"><div class="fill" data-w="${Math.min(v / m, 1) * 100}" style="background:${c}"></div></div>
@@ -361,28 +419,53 @@ function openDetail(d, fromEl) {
         </div>
       </div>
       <div class="spice-row">
-        <b>Spice</b>
+        <b>${L().spice}</b>
         <span class="flames">${d.spice ? "🔥".repeat(d.spice) : "—"}</span>
-        <span>${["Not spicy", "Mild", "Medium", "Hot", "Fiery"][d.spice]}</span>
+        <span>${L().spiceLevels[d.spice]}</span>
       </div>
     </section>
     ${d.allergens.length || d.sauce ? `<section>
-      ${d.sauce ? `<div class="overline">Recommended Sauce</div>
-        <div class="flavor-text" style="font-size:15px; margin-bottom:14px;">${d.sauce}</div>` : ""}
-      ${d.allergens.length ? `<div class="overline">Allergens</div>
-        <div class="chips">${d.allergens.map(a => `<span class="chip-sm">${a}</span>`).join("")}</div>` : ""}
+      ${d.sauce ? `<div class="overline">${L().recSauce}</div>
+        <div class="flavor-text" style="font-size:15px; margin-bottom:14px;">${dishSauce(d)}</div>` : ""}
+      ${d.allergens.length ? `<div class="overline">${L().allergens}</div>
+        <div class="chips">${d.allergens.map(a => `<span class="chip-sm">${allergen(a)}</span>`).join("")}</div>` : ""}
+    </section>` : ""}
+    ${pairs.length ? `<section>
+      <div class="overline">${L().lovelyWith}</div>
+      <div class="pairings">${pairs.map(p => `
+        <button class="pairing" data-id="${p.id}">
+          <div class="p-art">${artFor(p)}</div>
+          <div class="p-name">${dishName(p)}</div>
+          <div class="p-price">${fmt(p.price)}</div>
+        </button>`).join("")}
+      </div>
     </section>` : ""}`;
 
-  renderDetailBar();
+  $("#detailBody").querySelectorAll(".pairing").forEach(b =>
+    b.addEventListener("click", () => {
+      const p = MENU.find(x => x.id === b.dataset.id);
+      if (!p) return;
+      detail.classList.remove("staged");
+      haptic();
+      setTimeout(() => openDetail(p, b.querySelector(".p-art"), true), 60);
+    }));
 
-  // FLIP: fly the food from the tile to the detail hero
+  renderDetailBar();
+}
+
+function openDetail(d, fromEl, alreadyOpen) {
+  currentDish = d; qty = 1;
+  haptic();
+  fillDetail(d);
+
   const fromRect = fromEl ? fromEl.getBoundingClientRect() : null;
   detail.hidden = false;
   document.body.style.overflow = "hidden";
 
   requestAnimationFrame(() => {
     detail.classList.add("open");
-    detail.scrollTop = 0;
+    if (!alreadyOpen) detail.scrollTop = 0;
+    else detail.scrollTo({ top: 0, behavior: "smooth" });
     const toRect = $("#detailArt").getBoundingClientRect();
     if (fromRect) {
       const flyer = document.createElement("div");
@@ -399,17 +482,14 @@ function openDetail(d, fromEl) {
         flyer.style.width = toRect.width + "px";
         flyer.style.height = toRect.height + "px";
       });
-      setTimeout(() => {
-        $("#detailArt").style.opacity = "1";
-        flyer.remove();
-      }, 540);
+      setTimeout(() => { $("#detailArt").style.opacity = "1"; flyer.remove(); }, 540);
     }
-    // Staged reveal, like the app: art lands → info fades in → bars fill
     setTimeout(() => {
       detail.classList.add("staged");
-      $(".dial-arc").style.strokeDasharray = `${270 * calFrac} 999`;
+      const arc = $(".dial-arc");
+      if (arc) arc.style.strokeDasharray = `${270 * Math.min(currentDish.kcal / 900, 1)} 999`;
       detail.querySelectorAll(".fill").forEach(f => f.style.width = f.dataset.w + "%");
-    }, 480);
+    }, fromRect ? 480 : 120);
     startSteam($("#steamCanvas"));
   });
 }
@@ -420,37 +500,59 @@ function renderDetailBar() {
       <button id="qMinus">−</button><b>${qty}</b><button id="qPlus">+</button>
     </div>
     <button class="add-btn" id="addBtn">
-      <span>Add to steamer</span><strong>${fmt(currentDish.price * qty)}</strong>
+      <span>${L().addToSteamer}</span><strong>${fmt(currentDish.price * qty)}</strong>
     </button>`;
   $("#qMinus").onclick = () => { if (qty > 1) { qty--; renderDetailBar(); haptic(); } };
   $("#qPlus").onclick = () => { qty++; renderDetailBar(); haptic(); };
   $("#addBtn").onclick = () => {
-    addToCart(currentDish, qty);
-    closeDetail();
-    openCart();
+    addToCart(currentDish, qty, $("#detailArt"));
+    setTimeout(() => { closeDetail(); openCart(); }, 480);
   };
 }
 
 function closeDetail() {
   detail.classList.remove("open", "staged");
-  stopSteam();
+  stopSteam($("#steamCanvas"));
   setTimeout(() => {
     detail.hidden = true;
+    detail.style.transform = "";
     if ($("#cart").hidden) document.body.style.overflow = "";
   }, 300);
 }
 $("#detailClose").addEventListener("click", closeDetail);
 
+// Drag the hero down to dismiss — sheets should follow the finger.
+(() => {
+  const hero = $(".detail-hero");
+  let startY = null, dy = 0;
+  hero.addEventListener("touchstart", e => {
+    if (detail.scrollTop > 4) return;
+    startY = e.touches[0].clientY; dy = 0;
+  }, { passive: true });
+  hero.addEventListener("touchmove", e => {
+    if (startY === null) return;
+    dy = e.touches[0].clientY - startY;
+    if (dy > 0) {
+      detail.style.transition = "none";
+      detail.style.transform = `translateY(${Math.pow(dy, 0.86)}px)`;
+    }
+  }, { passive: true });
+  hero.addEventListener("touchend", () => {
+    if (startY === null) return;
+    detail.style.transition = "transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.28s ease";
+    if (dy > 110) { detail.style.transform = "translateY(105%)"; closeDetail(); }
+    else detail.style.transform = "";
+    startY = null;
+  });
+})();
+
 /* ============================== Steam (canvas) ============================== */
 
-let steamRAF = null;
+const steamState = new Map();
 function startSteam(canvas) {
   const ctx = canvas.getContext("2d");
-  const resize = () => {
-    canvas.width = canvas.clientWidth * devicePixelRatio;
-    canvas.height = canvas.clientHeight * devicePixelRatio;
-  };
-  resize();
+  canvas.width = canvas.clientWidth * devicePixelRatio;
+  canvas.height = canvas.clientHeight * devicePixelRatio;
   const parts = [];
   const spawn = () => parts.push({
     x: canvas.width / 2 + (Math.random() - 0.5) * canvas.width * 0.16,
@@ -471,7 +573,6 @@ function startSteam(canvas) {
       const t = p.life / p.max;
       p.a = t < 0.2 ? t / 0.2 : 1 - (t - 0.2) / 0.8;
       if (t >= 1) { parts.splice(i, 1); continue; }
-      // Soft-edged puff via radial gradient — no canvas filter needed (iOS-safe).
       const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
       g.addColorStop(0, `rgba(255, 252, 246, ${p.a * 0.14})`);
       g.addColorStop(0.6, `rgba(255, 252, 246, ${p.a * 0.07})`);
@@ -481,42 +582,53 @@ function startSteam(canvas) {
       ctx.arc(p.x, p.y, p.r, 0, 7);
       ctx.fill();
     }
-    steamRAF = requestAnimationFrame(tick);
+    steamState.set(canvas, requestAnimationFrame(tick));
   };
-  stopSteam();
+  stopSteam(canvas);
   tick();
 }
-function stopSteam() { if (steamRAF) cancelAnimationFrame(steamRAF); steamRAF = null; }
+function stopSteam(canvas) {
+  if (canvas && steamState.has(canvas)) {
+    cancelAnimationFrame(steamState.get(canvas));
+    steamState.delete(canvas);
+  }
+}
 
 /* ============================== Cart ============================== */
 
-const cart = new Map(); // id -> qty
+const cart = new Map();
 const saved = localStorage.getItem("dl-cart");
 if (saved) try { JSON.parse(saved).forEach(([k, v]) => cart.set(k, v)); } catch (_) {}
 
 function persist() { localStorage.setItem("dl-cart", JSON.stringify([...cart])); }
 function cartCount() { return [...cart.values()].reduce((a, b) => a + b, 0); }
-function cartTotal() { return [...cart].reduce((a, [id, q]) => a + MENU.find(d => d.id === id).price * q, 0); }
+function cartTotal() { return [...cart].reduce((a, [id, q]) => a + (MENU.find(d => d.id === id) || {price: 0}).price * q, 0); }
 
-function addToCart(d, n) {
+function addToCart(d, n, fromEl) {
   cart.set(d.id, (cart.get(d.id) || 0) + n);
-  persist(); syncDock();
-
-/* Debug hooks: #dish=<id> opens a dish page, #cart opens the steamer. */
-function runHashHook() {
-  const h = location.hash;
-  if (h.startsWith("#dish=")) {
-    const d = MENU.find(x => x.id === h.slice(6));
-    if (d) setTimeout(() => openDetail(d, null), 400);
-  } else if (h === "#cart") {
-    if (!cart.size) { addToCart(MENU[0], 2); addToCart(MENU.find(d => d.id === "beef-yolk-bowl"), 1); addToCart(MENU.find(d => d.id === "mango-sago"), 2); }
-    setTimeout(openCart, 400);
-  }
-}
-addEventListener("load", runHashHook);
-addEventListener("hashchange", runHashHook); haptic(true);
+  persist(); syncDock(); haptic(true);
   const dock = $("#dockCart");
   dock.classList.remove("pulse"); void dock.offsetWidth; dock.classList.add("pulse");
+  if (fromEl) flyToDock(d, fromEl);
+}
+
+// A morsel physically flies from the dish into the steamer.
+function flyToDock(d, fromEl) {
+  const from = fromEl.getBoundingClientRect();
+  const to = $("#dockCart").getBoundingClientRect();
+  const fly = document.createElement("div");
+  fly.className = "fly-morsel";
+  fly.innerHTML = artFor(d);
+  const size = Math.min(from.width, 90);
+  fly.style.cssText = `left:${from.left + from.width / 2 - size / 2}px; top:${from.top + from.height / 2 - size / 2}px; width:${size}px; height:${size}px;`;
+  document.body.appendChild(fly);
+  const dx = (to.left + 44) - (from.left + from.width / 2);
+  const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
+  fly.animate([
+    { transform: "translate(0, 0) scale(1)", opacity: 1 },
+    { transform: `translate(${dx * 0.5}px, ${dy - 90}px) scale(0.62)`, opacity: 0.95, offset: 0.55 },
+    { transform: `translate(${dx}px, ${dy}px) scale(0.12)`, opacity: 0.4 },
+  ], { duration: 620, easing: "cubic-bezier(0.32, 0, 0.67, 0)" }).onfinish = () => fly.remove();
 }
 
 function syncDock() {
@@ -536,30 +648,57 @@ function closeCart() {
   $("#cartScrim").classList.remove("open"); $("#cart").classList.remove("open");
   setTimeout(() => {
     $("#cartScrim").hidden = true; $("#cart").hidden = true;
+    $("#cart").style.transform = "";
     if (detail.hidden) document.body.style.overflow = "";
   }, 400);
 }
 $("#dockCart").addEventListener("click", openCart);
 $("#cartScrim").addEventListener("click", closeCart);
 
+// Drag the drawer down to close.
+(() => {
+  const drawer = $("#cart");
+  let startY = null, dy = 0;
+  drawer.addEventListener("touchstart", e => {
+    if (drawer.scrollTop > 4) return;
+    startY = e.touches[0].clientY; dy = 0;
+  }, { passive: true });
+  drawer.addEventListener("touchmove", e => {
+    if (startY === null) return;
+    dy = e.touches[0].clientY - startY;
+    if (dy > 0) { drawer.style.transition = "none"; drawer.style.transform = `translateY(${dy}px)`; }
+  }, { passive: true });
+  drawer.addEventListener("touchend", () => {
+    if (startY === null) return;
+    drawer.style.transition = "";
+    if (dy > 130) closeCart(); else drawer.style.transform = "";
+    startY = null;
+  });
+})();
+
 function renderCart() {
   const items = $("#cartItems");
   const n = cartCount();
-  $("#cartSubtitle").textContent = n
-    ? `${n} pieces, ready for the kitchen${TABLE ? ` · Table ${TABLE}` : ""}`
-    : "";
+  $("#cartTitle").innerHTML = lang === "zh" ? `蒸笼 <span class="cn">The Steamer</span>` : `The Steamer <span class="cn">蒸笼</span>`;
+  $("#cartSubtitle").textContent = n ? L().steamerSub(n, TABLE) : "";
+  $("#noteLabel").textContent = L().noteLabel;
+  $("#orderNote").placeholder = L().notePlaceholder;
+  $("#orderNote").value = localStorage.getItem("dl-note") || "";
   if (!n) {
-    items.innerHTML = `<div class="cart-empty">The steamer is empty.<br>空蒸笼等着好菜 — 去菜单挑几样吧。</div>`;
+    items.innerHTML = `<div class="cart-empty">${L().emptyCart}</div>`;
     $("#cartTotals").innerHTML = "";
     $("#sendOrder").style.display = "none";
+    $("#noteWrap").style.display = "none";
     return;
   }
   $("#sendOrder").style.display = "";
+  $("#noteWrap").style.display = "";
   items.innerHTML = [...cart].map(([id, q]) => {
     const d = MENU.find(x => x.id === id);
+    if (!d) return "";
     return `<div class="cart-line">
       <div class="thumb">${artFor(d)}</div>
-      <div class="info"><div class="nm">${d.name}</div><div class="pr">${fmt(d.price)}</div></div>
+      <div class="info"><div class="nm">${dishName(d)}</div><div class="pr">${fmt(d.price)}</div></div>
       <div class="qty">
         <button data-id="${id}" data-d="-1">−</button><b>${q}</b><button data-id="${id}" data-d="1">+</button>
       </div>
@@ -568,58 +707,38 @@ function renderCart() {
   items.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
     const id = b.dataset.id, q = (cart.get(id) || 0) + Number(b.dataset.d);
     if (q <= 0) cart.delete(id); else cart.set(id, q);
-    persist(); syncDock();
-
-/* Debug hooks: #dish=<id> opens a dish page, #cart opens the steamer. */
-function runHashHook() {
-  const h = location.hash;
-  if (h.startsWith("#dish=")) {
-    const d = MENU.find(x => x.id === h.slice(6));
-    if (d) setTimeout(() => openDetail(d, null), 400);
-  } else if (h === "#cart") {
-    if (!cart.size) { addToCart(MENU[0], 2); addToCart(MENU.find(d => d.id === "beef-yolk-bowl"), 1); addToCart(MENU.find(d => d.id === "mango-sago"), 2); }
-    setTimeout(openCart, 400);
-  }
-}
-addEventListener("load", runHashHook);
-addEventListener("hashchange", runHashHook); renderCart(); haptic();
+    persist(); syncDock(); renderCart(); haptic();
   }));
-  const kcal = [...cart].reduce((a, [id, q]) => a + MENU.find(d => d.id === id).kcal * q, 0);
+  const kcal = [...cart].reduce((a, [id, q]) => a + (MENU.find(d => d.id === id) || {kcal: 0}).kcal * q, 0);
   $("#cartTotals").innerHTML = `
-    <div class="row"><span>Kitchen total · 合计</span><b>${fmt(cartTotal())}</b></div>
-    <div class="row"><span>Estimated calories</span><b>≈ ${kcal} kcal</b></div>
-    <div class="row"><span>Steam time</span><b>about 12 min</b></div>`;
+    <div class="row"><span>${L().kitchenTotal}</span><b>${fmt(cartTotal())}</b></div>
+    <div class="row"><span>${L().estCalories}</span><b>≈ ${kcal} ${L().kcal}</b></div>
+    <div class="row"><span>${L().steamTime}</span><b>${L().steamTimeVal}</b></div>`;
+  $("#sendLabel").textContent = L().send;
   $("#sendTotal").textContent = fmt(cartTotal());
 }
 
+$("#orderNote").addEventListener("input", e => localStorage.setItem("dl-note", e.target.value));
+
 $("#sendOrder").addEventListener("click", () => {
   // In production this POSTs to the ordering backend with the table number.
-  const order = { table: TABLE, items: [...cart], total: cartTotal(), at: new Date().toISOString() };
+  const orderNo = String(Math.floor(1000 + Math.random() * 9000));
+  const order = {
+    table: TABLE, no: orderNo, items: [...cart],
+    note: ($("#orderNote").value || "").trim() || null,
+    total: cartTotal(), at: new Date().toISOString(),
+  };
   console.log("ORDER →", JSON.stringify(order));
-  cart.clear(); persist(); syncDock();
-
-/* Debug hooks: #dish=<id> opens a dish page, #cart opens the steamer. */
-function runHashHook() {
-  const h = location.hash;
-  if (h.startsWith("#dish=")) {
-    const d = MENU.find(x => x.id === h.slice(6));
-    if (d) setTimeout(() => openDetail(d, null), 400);
-  } else if (h === "#cart") {
-    if (!cart.size) { addToCart(MENU[0], 2); addToCart(MENU.find(d => d.id === "beef-yolk-bowl"), 1); addToCart(MENU.find(d => d.id === "mango-sago"), 2); }
-    setTimeout(openCart, 400);
-  }
-}
-addEventListener("load", runHashHook);
-addEventListener("hashchange", runHashHook); closeCart();
-  $("#orderedNote").textContent =
-    (TABLE ? `Table ${TABLE} · ` : "") + "The kitchen has your order.\nAbout twelve minutes of good things ahead.";
+  cart.clear(); persist(); syncDock(); closeCart();
+  localStorage.removeItem("dl-note");
+  $("#orderedNote").textContent = L().orderedNote(TABLE, orderNo);
   $("#ordered").hidden = false;
   startSteam($("#orderSteam"));
   haptic(true);
 });
 $("#orderedDone").addEventListener("click", () => {
   $("#ordered").hidden = true;
-  stopSteam();
+  stopSteam($("#orderSteam"));
   document.body.style.overflow = "";
 });
 
@@ -629,7 +748,9 @@ function haptic(strong) {
   if (navigator.vibrate) navigator.vibrate(strong ? 18 : 8);
 }
 
-syncDock();
+/* ============================== Boot ============================== */
+
+renderAll();
 
 /* Debug hooks: #dish=<id> opens a dish page, #cart opens the steamer. */
 function runHashHook() {
@@ -640,6 +761,10 @@ function runHashHook() {
   } else if (h === "#cart") {
     if (!cart.size) { addToCart(MENU[0], 2); addToCart(MENU.find(d => d.id === "beef-yolk-bowl"), 1); addToCart(MENU.find(d => d.id === "mango-sago"), 2); }
     setTimeout(openCart, 400);
+  } else if (h === "#ordered") {
+    $("#orderedNote").textContent = L().orderedNote(TABLE, "8888");
+    $("#ordered").hidden = false;
+    startSteam($("#orderSteam"));
   }
 }
 addEventListener("load", runHashHook);
