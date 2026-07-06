@@ -179,9 +179,7 @@ window.__artFallback = (img, id) => {
   img.parentElement.innerHTML = artFor(d);
 };
 
-function artFor(d) {
-  if (d.img) return `<img src="img/${d.img}" alt="${dishName(d)}" loading="lazy" draggable="false"
-    onerror="__artFallback(this, '${d.id}')">`;
+function svgArtFor(d) {
   switch (d.art) {
     case "pleatedDumpling": return dumplingSVG(d, false);
     case "pleatedDumplingCrisped": return dumplingSVG(d, true);
@@ -195,6 +193,120 @@ function artFor(d) {
     case "dessertCup": return cupSVG(d);
     default: return dumplingSVG(d, false);
   }
+}
+
+function artFor(d) {
+  if (d.img) return `<img src="img/${d.img}" alt="${dishName(d)}" loading="lazy" draggable="false"
+    onerror="__artFallback(this, '${d.id}')">`;
+  return svgArtFor(d);
+}
+
+/* ===================== Gaussian splat transitions =====================
+   Every dish can dissolve into a cloud of soft gaussian points sampled
+   from its own pixels, fly as vapor, and reassemble somewhere else.
+   This replaces the flat FLIP flight between grid and card views. */
+
+const splatCache = new Map();
+
+function artImage(d) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    if (d.img) img.src = "img/" + d.img;
+    else img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(
+      svgArtFor(d).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" '));
+  });
+}
+
+async function splatPoints(d) {
+  if (splatCache.has(d.id)) return splatCache.get(d.id);
+  const W = 64, H = 52;
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const cx = cv.getContext("2d", { willReadFrequently: true });
+  const src = await artImage(d);
+  const sc = Math.min(W / (src.width || W), H / (src.height || H));
+  const dw = (src.width || W) * sc, dh = (src.height || H) * sc;
+  cx.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  const px = cx.getImageData(0, 0, W, H).data;
+  const pts = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
+    if (px[i + 3] > 60) pts.push({
+      u: (x + 0.5) / W, v: (y + 0.5) / H,
+      c: `rgba(${px[i]},${px[i + 1]},${px[i + 2]},`,
+      a: px[i + 3] / 255,
+    });
+  }
+  const target = 850;
+  const out = pts.length > target
+    ? Array.from({ length: target }, (_, k) => pts[Math.floor(k * pts.length / target)])
+    : pts;
+  splatCache.set(d.id, out);
+  return out;
+}
+
+const SPLAT_SLOW = new URLSearchParams(location.search).get("splatslow");
+
+function splatTransition(d, fromRect, toRect, opts = {}) {
+  const done = () => opts.onDone && opts.onDone();
+  const fix = r => (r && r.width > 20 && r.height > 20) ? r
+    : { left: innerWidth / 2 - 90, top: innerHeight + 40, width: 180, height: 150 };
+  fromRect = fix(fromRect); toRect = fix(toRect);
+  splatPoints(d).then(pts => {
+    if (opts.count && pts.length > opts.count) {
+      pts = Array.from({ length: opts.count }, (_, k) => pts[Math.floor(k * pts.length / opts.count)]);
+    }
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const cvs = document.createElement("canvas");
+    cvs.className = "splat-layer";
+    cvs.width = innerWidth * dpr; cvs.height = innerHeight * dpr;
+    document.body.appendChild(cvs);
+    const ctx = cvs.getContext("2d");
+    const DUR = (opts.duration || 720) * (SPLAT_SLOW ? 6 : 1);
+    const t0 = performance.now();
+    const seeds = pts.map(() => ({
+      dly: Math.random() * 0.22,
+      arcX: (Math.random() - 0.5) * 190,
+      arcY: -40 - Math.random() * 110,
+      swirl: Math.random() * Math.PI * 2,
+      spin: 4 + Math.random() * 5,
+      r: 1.8 + Math.random() * 3.4,
+    }));
+    const ease = t => 1 - Math.pow(1 - t, 3);
+
+    function frame(now) {
+      const T = Math.min((now - t0) / DUR, 1);
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+      const sizeScale = ((1 - T) * fromRect.width + T * toRect.width) / 135;
+      for (let i = 0; i < pts.length; i++) {
+        const p = pts[i], sd = seeds[i];
+        let t = Math.min(Math.max((T - sd.dly) / (1 - sd.dly), 0), 1);
+        t = ease(t);
+        const x0 = fromRect.left + p.u * fromRect.width;
+        const y0 = fromRect.top + p.v * fromRect.height;
+        const x1 = toRect.left + p.u * toRect.width;
+        const y1 = toRect.top + p.v * toRect.height;
+        const mx = (x0 + x1) / 2 + sd.arcX, my = (y0 + y1) / 2 + sd.arcY;
+        const q = 1 - t;
+        const bx = q * q * x0 + 2 * q * t * mx + t * t * x1;
+        const by = q * q * y0 + 2 * q * t * my + t * t * y1;
+        const scatter = Math.sin(Math.PI * t);          // loose mid-flight
+        const x = bx + Math.cos(sd.swirl + t * sd.spin) * 26 * scatter;
+        const y = by + Math.sin(sd.swirl + t * sd.spin) * 17 * scatter;
+        const size = Math.max(0.6, (sd.r + scatter * 3.2) * sizeScale) * dpr;
+        ctx.fillStyle = p.c + (p.a * (0.96 - 0.3 * scatter)).toFixed(3) + ")";
+        ctx.beginPath();
+        ctx.arc(x * dpr, y * dpr, size, 0, 7);
+        ctx.fill();
+      }
+      if (T >= 0.86 && !frame.revealed) { frame.revealed = true; opts.onNearEnd && opts.onNearEnd(); }
+      if (T < 1) requestAnimationFrame(frame);
+      else { cvs.remove(); done(); }
+    }
+    requestAnimationFrame(frame);
+  }).catch(done);
 }
 
 /* ============================== Rendering ============================== */
@@ -544,7 +656,7 @@ function attachTilt(tile) {
 /* ============================== Detail (FLIP flight) ============================== */
 
 const detail = $("#detail");
-let currentDish = null, qty = 1;
+let currentDish = null, qty = 1, detailOrigin = null;
 
 function fillDetail(d) {
   $("#detailGlow").style.setProperty("--glow-c", d.glow + "b8");
@@ -638,6 +750,7 @@ function fillDetail(d) {
 
 function openDetail(d, fromEl, alreadyOpen) {
   currentDish = d; qty = 1;
+  detailOrigin = fromEl || null;
   haptic();
   fillDetail(d);
 
@@ -651,21 +764,21 @@ function openDetail(d, fromEl, alreadyOpen) {
     else detail.scrollTo({ top: 0, behavior: "smooth" });
     const toRect = $("#detailArt").getBoundingClientRect();
     if (fromRect) {
-      const flyer = document.createElement("div");
-      flyer.id = "flyer";
-      flyer.innerHTML = artFor(d);
-      flyer.style.cssText = `left:${fromRect.left}px; top:${fromRect.top}px;
-        width:${fromRect.width}px; height:${fromRect.height}px;
-        transition: all 0.52s cubic-bezier(0.22, 1, 0.36, 1);`;
-      document.body.appendChild(flyer);
-      $("#detailArt").style.opacity = "0";
-      requestAnimationFrame(() => {
-        flyer.style.left = toRect.left + "px";
-        flyer.style.top = toRect.top + "px";
-        flyer.style.width = toRect.width + "px";
-        flyer.style.height = toRect.height + "px";
+      // The dish dissolves into gaussian splats, drifts as vapor,
+      // and reassembles on the hero stage.
+      const art = $("#detailArt");
+      art.style.opacity = "0";
+      if (fromEl) fromEl.style.opacity = "0";
+      splatTransition(d, fromRect, toRect, {
+        onNearEnd: () => {
+          art.style.transition = "opacity 0.3s ease, transform 0.5s cubic-bezier(0.3, 1.6, 0.6, 1)";
+          art.style.transform = "scale(0.92)";
+          art.style.opacity = "1";
+          requestAnimationFrame(() => { art.style.transform = "scale(1)"; });
+          setTimeout(() => { art.style.transition = ""; art.style.transform = ""; }, 550);
+        },
+        onDone: () => { if (fromEl) fromEl.style.opacity = ""; },
       });
-      setTimeout(() => { $("#detailArt").style.opacity = "1"; flyer.remove(); }, 540);
     }
     setTimeout(() => {
       detail.classList.add("staged");
@@ -694,11 +807,29 @@ function renderDetailBar() {
 }
 
 function closeDetail() {
+  // Reverse flight: the hero dissolves into splats that settle back
+  // into the tile it came from, while the page fades in beneath.
+  const d = currentDish, origin = detailOrigin;
+  const art = $("#detailArt");
   detail.classList.remove("open", "staged");
   stopSteam($("#steamCanvas"));
+  if (d && origin && origin.isConnected) {
+    const to = origin.getBoundingClientRect();
+    const visible = to.width > 20 && to.bottom > 0 && to.top < innerHeight;
+    if (visible) {
+      const from = art.getBoundingClientRect();
+      art.style.opacity = "0";
+      origin.style.opacity = "0";
+      splatTransition(d, from, to, { duration: 620, onDone: () => {
+        origin.style.opacity = "";
+        art.style.opacity = "";
+      }});
+    }
+  }
   setTimeout(() => {
     detail.hidden = true;
     detail.style.transform = "";
+    $("#detailArt").style.opacity = "";
     if ($("#cart").hidden) document.body.style.overflow = "";
   }, 300);
 }
@@ -810,23 +941,12 @@ function updateTileBadges() {
   });
 }
 
-// A morsel physically flies from the dish into the steamer.
+// A pinch of the dish — as gaussian vapor — flies into the steamer.
 function flyToDock(d, fromEl) {
   const from = fromEl.getBoundingClientRect();
-  const to = $("#dockCart").getBoundingClientRect();
-  const fly = document.createElement("div");
-  fly.className = "fly-morsel";
-  fly.innerHTML = artFor(d);
-  const size = Math.min(from.width, 90);
-  fly.style.cssText = `left:${from.left + from.width / 2 - size / 2}px; top:${from.top + from.height / 2 - size / 2}px; width:${size}px; height:${size}px;`;
-  document.body.appendChild(fly);
-  const dx = (to.left + 44) - (from.left + from.width / 2);
-  const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
-  fly.animate([
-    { transform: "translate(0, 0) scale(1)", opacity: 1 },
-    { transform: `translate(${dx * 0.5}px, ${dy - 90}px) scale(0.62)`, opacity: 0.95, offset: 0.55 },
-    { transform: `translate(${dx}px, ${dy}px) scale(0.12)`, opacity: 0.4 },
-  ], { duration: 620, easing: "cubic-bezier(0.32, 0, 0.67, 0)" }).onfinish = () => fly.remove();
+  const dock = $("#dockCart").getBoundingClientRect();
+  const to = { left: dock.left + 22, top: dock.top + 6, width: 44, height: 30 };
+  splatTransition(d, from, to, { count: 260, duration: 640 });
 }
 
 function syncDock() {
@@ -978,7 +1098,12 @@ function runHashHook() {
   const h = location.hash;
   if (h.startsWith("#dish=")) {
     const d = MENU.find(x => x.id === h.slice(6));
-    if (d) setTimeout(() => openDetail(d, null), 400);
+    const tile = tileIndex.find(t => t.d.id === h.slice(6));
+    if (d && tile) {
+      // Reproduce the real gesture: tile visible on screen, then opened.
+      tile.el.scrollIntoView({ block: "center", behavior: "instant" });
+      setTimeout(() => openDetail(d, tile.el.querySelector(".stage")), 700);
+    } else if (d) setTimeout(() => openDetail(d, null), 400);
   } else if (h === "#cart") {
     if (!cart.size) { addToCart(MENU[0], 2); addToCart(MENU.find(d => d.id === "beef-yolk-bowl"), 1); addToCart(MENU.find(d => d.id === "mango-sago"), 2); }
     setTimeout(openCart, 400);

@@ -476,6 +476,13 @@ body {
 .fly-morsel { position: fixed; z-index: 130; pointer-events: none; }
 .fly-morsel img, .fly-morsel svg { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 9px rgba(0,0,0,0.35)); }
 
+/* Gaussian splat layer — the vapor the food travels as */
+.splat-layer {
+  position: fixed; inset: 0; z-index: 125; pointer-events: none;
+  width: 100vw; height: 100vh; height: 100svh;
+  filter: blur(0.7px);
+}
+
 /* FLIP flyer */
 #flyer {
   position: fixed; z-index: 120; pointer-events: none;
