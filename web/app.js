@@ -338,12 +338,13 @@ let vNodes = [], vFocus = -1, vBuilt = false;
 function buildVoyage() {
   const world = $("#vWorld");
   world.innerHTML = "";
+  const lat = Math.min(innerWidth * 0.22, 170);
   vNodes = featured.map((d, i) => {
     const el = document.createElement("div");
     el.className = "v-dish";
     el.innerHTML = artFor(d);
     world.appendChild(el);
-    return { el, d, lateral: (i % 2 ? 1 : -1) * 60, drift: (i % 3 - 1) * 26 };
+    return { el, d, lateral: (i % 2 ? 1 : -1) * lat, drift: (i % 3 - 1) * 30 };
   });
   $("#voyage").style.height = ((featured.length + 1.9) * 100) + "vh";
   vBuilt = true;
@@ -390,7 +391,10 @@ function updateVoyage() {
     // Dishes surface out of the fog only once the flight has begun.
     const fadeIn = Math.min(1, Math.max(0, (2600 - rel) / 900)) * Math.min(1, prog * 9);
     const fadeOut = rel < 60 ? Math.max(0, (rel + 260) / 320) : 1;
-    n.el.style.opacity = (fadeIn * fadeOut).toFixed(3);
+    // Dishes deeper in the corridor recede into the dark - only the
+    // focused dish is fully lit, the next one is a dim silhouette.
+    const depthDim = Math.min(1, Math.max(0.1, 1.18 - rel / 1350));
+    n.el.style.opacity = (fadeIn * fadeOut * depthDim).toFixed(3);
     const sway = Math.sin((camZ + i * 700) * 0.0011) * 14;
     n.el.style.transform =
       `translate3d(${n.lateral + sway}px, ${n.drift}px, ${-rel}px) rotateY(${n.lateral * -0.09}deg)`;

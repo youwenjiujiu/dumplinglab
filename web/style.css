@@ -603,3 +603,20 @@ body {
 #colophon .overline { color: rgba(222, 204, 168, 0.75); margin-bottom: 6px; }
 
 [hidden] { display: none !important; }
+
+
+/* ---------- Desktop: the menu lives in a phone-width column ---------- */
+
+@media (min-width: 700px) {
+  body { background: #140f0b; }
+  #voyage, #rail, #finder, #menu, #colophon, #noResults {
+    max-width: 480px; margin-left: auto; margin-right: auto;
+  }
+  .v-stage { border-radius: 0 0 26px 26px; }
+  #dock, #detail, #cart {
+    left: max(0px, calc(50% - 240px));
+    right: max(0px, calc(50% - 240px));
+  }
+  #topChrome { right: max(14px, calc(50% - 240px + 14px)); }
+  #toast { max-width: 440px; }
+}
