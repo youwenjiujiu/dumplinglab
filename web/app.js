@@ -171,8 +171,17 @@ function cupSVG(d) {
   </svg>`;
 }
 
+// If a photo 404s (e.g. not uploaded yet), fall back to procedural art in place.
+window.__artFallback = (img, id) => {
+  const d = MENU.find(x => x.id === id);
+  if (!d || !img.parentElement) return;
+  d.img = null;
+  img.parentElement.innerHTML = artFor(d);
+};
+
 function artFor(d) {
-  if (d.img) return `<img src="img/${d.img}" alt="${dishName(d)}" loading="lazy" draggable="false">`;
+  if (d.img) return `<img src="img/${d.img}" alt="${dishName(d)}" loading="lazy" draggable="false"
+    onerror="__artFallback(this, '${d.id}')">`;
   switch (d.art) {
     case "pleatedDumpling": return dumplingSVG(d, false);
     case "pleatedDumplingCrisped": return dumplingSVG(d, true);
@@ -191,66 +200,132 @@ function artFor(d) {
 /* ============================== Rendering ============================== */
 
 const featured = MENU.filter(d => d.featured);
-let reelTimer = null, reelTouched = false;
 
 function renderStatic() {
   $("#tableTag").textContent = TABLE ? L().table(TABLE) : "";
   $("#heroTagline").textContent = L().tagline;
   $("#langToggle").textContent = lang === "zh" ? "EN" : "中文";
+  $("#bellBtn").title = L().waiter;
   $("#dockLabel").textContent = lang === "zh" ? "蒸笼 · The Steamer" : "The Steamer · 蒸笼";
   $("#colophonLine").textContent = L().colophon;
   $("#orderedTitle").textContent = lang === "zh" ? "开始蒸了 · It’s steaming" : "It’s steaming · 开始蒸了";
   $("#orderedDone").textContent = L().back;
+  $("#vHint").textContent = L().voyageHint;
+  $("#vEndTitle").textContent = L().voyageEnd;
+  $("#vEndSub").textContent = L().voyageEndSub;
+  $("#searchBox").placeholder = L().search;
 }
 
-function renderReel() {
-  const reel = $("#reel"), dots = $("#reelDots");
-  reel.innerHTML = ""; dots.innerHTML = "";
-  featured.forEach((d, i) => {
-    const s = document.createElement("div");
-    s.className = "slide";
-    s.innerHTML = `
-      <div class="stage3d"><div class="food">${artFor(d)}</div></div>
-      <div class="badges">
-        ${d.best ? `<span class="badge-pill red">${L().bestSeller}</span>` : ""}
-        ${d.chef ? `<span class="badge-pill wood">${L().chefsChoice}</span>` : ""}
-      </div>
-      <h2>${dishName(d)}</h2>
-      <div class="cn-name">${dishSub(d)}</div>
-      <p class="flavor">${dishFlavor(d)}</p>
-      <div class="price">${fmt(d.price)}</div>`;
-    s.addEventListener("click", () => openDetail(d, s.querySelector(".stage3d")));
-    reel.appendChild(s);
-    const dot = document.createElement("i");
-    if (i === 0) dot.className = "on";
-    dots.appendChild(dot);
+/* ---------- The Voyage: a scroll-flight through the signature dishes.
+   True 3D: dishes live at depths along a corridor; scrolling dollies the
+   camera through them. Tap the dish in focus to open it. ---------- */
+
+const SPACING = 1050;                   // z-distance between dishes
+let vNodes = [], vFocus = -1, vBuilt = false;
+
+function buildVoyage() {
+  const world = $("#vWorld");
+  world.innerHTML = "";
+  vNodes = featured.map((d, i) => {
+    const el = document.createElement("div");
+    el.className = "v-dish";
+    el.innerHTML = artFor(d);
+    world.appendChild(el);
+    return { el, d, lateral: (i % 2 ? 1 : -1) * 60, drift: (i % 3 - 1) * 26 };
   });
-  $("#heroGlow").style.setProperty("--glow-c", featured[0].glow + "b0");
-
-  // Gentle autoplay until the guest takes over.
-  clearInterval(reelTimer);
-  reelTimer = setInterval(() => {
-    if (reelTouched || document.hidden || !$("#detail").hidden || !$("#cart").hidden) return;
-    const i = Math.round(reel.scrollLeft / reel.clientWidth);
-    reel.scrollTo({ left: ((i + 1) % featured.length) * reel.clientWidth, behavior: "smooth" });
-  }, 4600);
-  reel.addEventListener("touchstart", () => { reelTouched = true; }, { passive: true, once: true });
+  $("#voyage").style.height = ((featured.length + 1.9) * 100) + "vh";
+  vBuilt = true;
+  updateVoyage();
 }
 
-$("#reel").addEventListener("scroll", () => {
-  const reel = $("#reel"), dots = $("#reelDots");
-  const i = Math.round(reel.scrollLeft / reel.clientWidth);
-  [...dots.children].forEach((el, j) => el.classList.toggle("on", j === i));
-  const d = featured[Math.max(0, Math.min(i, featured.length - 1))];
-  if (d) $("#heroGlow").style.setProperty("--glow-c", d.glow + "b0");
+function voyageCaption(d) {
+  return `
+    <div class="badges">
+      ${d.best ? `<span class="badge-pill red">${L().bestSeller}</span>` : ""}
+      ${d.chef ? `<span class="badge-pill wood">${L().chefsChoice}</span>` : ""}
+    </div>
+    <h2>${dishName(d)}</h2>
+    <div class="cn-name">${dishSub(d)}</div>
+    <div class="price">${fmt(d.price)}</div>
+    <div class="tap">${lang === "zh" ? "点按查看 · TAP" : "TAP TO OPEN · 点按查看"}</div>`;
+}
+
+function updateVoyage() {
+  if (!vBuilt) return;
+  const voyage = $("#voyage");
+  const vh = innerHeight;
+  const span = voyage.offsetHeight - vh;
+  const y = Math.min(Math.max(-voyage.getBoundingClientRect().top, 0), span);
+  const p = span > 0 ? y / span : 0;
+
+  // Debug: ?vp=0.4 pins the flight at a fixed progress for screenshots.
+  const vpOverride = new URLSearchParams(location.search).get("vp");
+  const prog = vpOverride !== null ? parseFloat(vpOverride) : p;
+
+  const totalDepth = (featured.length + 0.6) * SPACING;
+  const camZ = prog * totalDepth;
+
+  // Title sinks away as the flight begins
+  const title = $("#vTitle");
+  title.style.opacity = Math.max(0, 1 - prog * 13);
+  title.style.transform = `translateY(${-prog * 380}px)`;
+
+  let focus = -1, focusDist = 1e9;
+  vNodes.forEach((n, i) => {
+    const rel = (i + 1) * SPACING - camZ;      // distance ahead of the camera
+    if (rel < -260 || rel > 3400) { n.el.style.opacity = "0"; n.el.style.visibility = "hidden"; return; }
+    n.el.style.visibility = "visible";
+    // Dishes surface out of the fog only once the flight has begun.
+    const fadeIn = Math.min(1, Math.max(0, (2600 - rel) / 900)) * Math.min(1, prog * 9);
+    const fadeOut = rel < 60 ? Math.max(0, (rel + 260) / 320) : 1;
+    n.el.style.opacity = (fadeIn * fadeOut).toFixed(3);
+    const sway = Math.sin((camZ + i * 700) * 0.0011) * 14;
+    n.el.style.transform =
+      `translate3d(${n.lateral + sway}px, ${n.drift}px, ${-rel}px) rotateY(${n.lateral * -0.09}deg)`;
+    const d = Math.abs(rel - 210);
+    if (rel > -120 && d < focusDist) { focusDist = d; focus = i; }
+  });
+
+  // Caption follows the dish in focus
+  const cap = $("#vCaption");
+  if (focus !== vFocus) {
+    vFocus = focus;
+    if (focus >= 0) cap.innerHTML = voyageCaption(vNodes[focus].d);
+    const g = focus >= 0 ? vNodes[focus].d.glow : featured[0].glow;
+    $("#heroGlow").style.setProperty("--glow-c", g + "b0");
+  }
+  const capVis = focus >= 0 && focusDist < 460 && prog > 0.035 ? 1 - focusDist / 460 : 0;
+  cap.style.opacity = capVis.toFixed(3);
+  cap.style.transform = `translateY(${(1 - capVis) * 12}px)`;
+
+  // Arrival card
+  const endP = Math.max(0, (camZ - (featured.length * SPACING + 320)) / (0.6 * SPACING - 320));
+  $("#vEnd").style.opacity = Math.min(1, endP).toFixed(3);
+}
+
+let voyageRAF = null;
+addEventListener("scroll", () => {
+  if (voyageRAF) return;
+  voyageRAF = requestAnimationFrame(() => { voyageRAF = null; updateVoyage(); });
 }, { passive: true });
+addEventListener("resize", updateVoyage, { passive: true });
+
+// Tap the dish in focus to open it
+$(".v-stage").addEventListener("click", () => {
+  if (vFocus >= 0 && parseFloat($("#vCaption").style.opacity || 0) > 0.35) {
+    const n = vNodes[vFocus];
+    openDetail(n.d, n.el);
+  }
+});
 
 let chapterEls = {};
+let tileIndex = [];
 
 function renderMenu() {
   const menuEl = $("#menu"), railEl = $("#railInner");
   menuEl.innerHTML = ""; railEl.innerHTML = "";
   chapterEls = {};
+  tileIndex = [];
 
   SECTIONS.forEach((sec, idx) => {
     const dishes = MENU.filter(d => d.section === sec);
@@ -274,12 +349,14 @@ function renderMenu() {
 
     dishes.forEach((d, i) => {
       const t = document.createElement("div");
-      t.className = "tile";
+      t.className = "tile" + (d.soldOut ? " sold" : "");
+      t.dataset.id = d.id;
       t.style.setProperty("--float-delay", (i * 0.6) + "s");
       t.innerHTML = `
         <div class="stage" style="--tile-glow:${d.glow}1f">
           <div class="food">${artFor(d)}</div>
-          <button class="quick-add" aria-label="Add">+</button>
+          ${d.soldOut ? `<div class="sold-tag">${L().soldOut}</div>`
+                      : `<button class="quick-add" aria-label="Add">+</button>`}
         </div>
         <div class="caption">
           <div class="name">${d.best || d.chef ? '<span class="dot">•</span>' : ""}${dishName(d)}</div>
@@ -290,17 +367,22 @@ function renderMenu() {
           </div>
         </div>`;
       attachTilt(t);
-      t.querySelector(".quick-add").addEventListener("click", e => {
-        e.stopPropagation();
-        addToCart(d, 1, t.querySelector(".food"));
-      });
-      t.addEventListener("click", () => openDetail(d, t.querySelector(".stage")));
+      if (!d.soldOut) {
+        t.querySelector(".quick-add").addEventListener("click", e => {
+          e.stopPropagation();
+          addToCart(d, 1, t.querySelector(".food"));
+        });
+        t.addEventListener("click", () => openDetail(d, t.querySelector(".stage")));
+      }
       grid.appendChild(t);
+      tileIndex.push({ el: t, d, chapter: ch });
     });
 
     menuEl.appendChild(ch);
     chapterEls[sec] = ch;
   });
+
+  updateTileBadges();
 
   // Pause floats offscreen — 36 animated tiles shouldn't tax the phone.
   const io = new IntersectionObserver(entries => {
@@ -308,6 +390,86 @@ function renderMenu() {
   }, { rootMargin: "120px" });
   menuEl.querySelectorAll(".tile").forEach(t => io.observe(t));
 }
+
+/* ---------- Search & dietary filters ---------- */
+
+let filterMode = "all", query = "";
+
+function buildFinder() {
+  const box = $("#filters");
+  box.innerHTML = "";
+  [["all", L().fAll], ["veg", "🌱 " + L().fVeg], ["spicy", "🌶 " + L().fSpicy], ["noPork", "🚫 " + L().fNoPork]]
+    .forEach(([mode, label]) => {
+      const b = document.createElement("button");
+      b.className = "f-chip" + (filterMode === mode ? " on" : "");
+      b.textContent = label;
+      b.addEventListener("click", () => {
+        filterMode = filterMode === mode ? "all" : mode;
+        haptic();
+        buildFinder(); applyFilter();
+      });
+      box.appendChild(b);
+    });
+}
+
+function dishMatches(d) {
+  if (filterMode === "veg" && !d.veg) return false;
+  if (filterMode === "spicy" && d.spice < 2) return false;
+  if (filterMode === "noPork" && d.meat === "pork") return false;
+  if (query) {
+    const q = query.toLowerCase();
+    if (!d.name.toLowerCase().includes(q) && !d.cn.includes(query)) return false;
+  }
+  return true;
+}
+
+function applyFilter() {
+  const visible = new Map();
+  tileIndex.forEach(({ el, d, chapter }) => {
+    const ok = dishMatches(d);
+    el.style.display = ok ? "" : "none";
+    visible.set(chapter, (visible.get(chapter) || 0) + (ok ? 1 : 0));
+  });
+  let any = false;
+  Object.values(chapterEls).forEach(ch => {
+    const n = visible.get(ch) || 0;
+    ch.style.display = n ? "" : "none";
+    if (n) any = true;
+  });
+  const empty = $("#noResults");
+  empty.hidden = any;
+  empty.textContent = L().noResults;
+}
+
+let searchTimer = null;
+$("#searchBox").addEventListener("input", e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { query = e.target.value.trim(); applyFilter(); }, 160);
+});
+
+/* ---------- Toast ---------- */
+
+let toastTimer = null;
+function toast(msg) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.hidden = false;
+  requestAnimationFrame(() => el.classList.add("show"));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove("show");
+    setTimeout(() => { el.hidden = true; }, 300);
+  }, 1800);
+}
+
+/* ---------- Call a server ---------- */
+
+$("#bellBtn").addEventListener("click", () => {
+  // In production this pings the floor staff with the table number.
+  console.log("WAITER →", TABLE);
+  haptic(true);
+  toast(L().waiterToast);
+});
 
 // Rail follows scroll
 addEventListener("scroll", () => {
@@ -322,8 +484,11 @@ addEventListener("scroll", () => {
 
 function renderAll() {
   renderStatic();
-  renderReel();
+  if (!vBuilt) { buildVoyage(); startSteam($("#voyageSteam")); }
+  else { vFocus = -1; updateVoyage(); }
+  buildFinder();
   renderMenu();
+  applyFilter();
   syncDock();
   if (!$("#detail").hidden && currentDish) fillDetail(currentDish);
   if (!$("#cart").hidden) renderCart();
@@ -338,10 +503,9 @@ $("#langToggle").addEventListener("click", () => {
 
 function attachTilt(tile) {
   const stage = tile.querySelector(".stage");
-  let raf = null;
-  const move = e => {
+  let raf = null, t0 = null, p0 = null, active = false, dead = false;
+  const apply = p => {
     const r = stage.getBoundingClientRect();
-    const p = e.touches ? e.touches[0] : e;
     const x = (p.clientX - r.left) / r.width - 0.5;
     const y = (p.clientY - r.top) / r.height - 0.5;
     if (raf) return;
@@ -350,13 +514,30 @@ function attachTilt(tile) {
       raf = null;
     });
   };
-  const end = () => { tile.classList.remove("tilting"); stage.style.transform = ""; };
-  tile.addEventListener("touchstart", () => tile.classList.add("tilting"), { passive: true });
-  tile.addEventListener("touchmove", move, { passive: true });
+  const end = () => {
+    active = false; dead = false; p0 = null;
+    tile.classList.remove("tilting");
+    stage.style.transform = "";
+  };
+  tile.addEventListener("touchstart", e => {
+    t0 = performance.now(); p0 = e.touches[0]; active = false; dead = false;
+  }, { passive: true });
+  tile.addEventListener("touchmove", e => {
+    if (dead) return;
+    const p = e.touches[0];
+    if (!active) {
+      const dy = Math.abs(p.clientY - p0.clientY);
+      // A vertical swipe soon after touch = the user is scrolling, not playing.
+      if (dy > 12 && performance.now() - t0 < 160) { dead = true; return; }
+      if (performance.now() - t0 > 140) { active = true; tile.classList.add("tilting"); }
+      else return;
+    }
+    apply(p);
+  }, { passive: true });
   tile.addEventListener("touchend", end);
   tile.addEventListener("touchcancel", end);
   tile.addEventListener("mouseenter", () => tile.classList.add("tilting"));
-  tile.addEventListener("mousemove", move);
+  tile.addEventListener("mousemove", e => apply(e));
   tile.addEventListener("mouseleave", end);
 }
 
@@ -612,6 +793,21 @@ function addToCart(d, n, fromEl) {
   const dock = $("#dockCart");
   dock.classList.remove("pulse"); void dock.offsetWidth; dock.classList.add("pulse");
   if (fromEl) flyToDock(d, fromEl);
+  toast(L().addedToast(dishName(d)));
+}
+
+// Quantity badges on the tiles themselves — you can see your order at a glance.
+function updateTileBadges() {
+  tileIndex.forEach(({ el, d }) => {
+    let b = el.querySelector(".in-cart");
+    const q = cart.get(d.id) || 0;
+    if (q && !b) {
+      b = document.createElement("div");
+      b.className = "in-cart";
+      el.querySelector(".stage").appendChild(b);
+    }
+    if (b) { if (q) b.textContent = q; else b.remove(); }
+  });
 }
 
 // A morsel physically flies from the dish into the steamer.
@@ -638,6 +834,7 @@ function syncDock() {
   $("#cartBadge").hidden = n === 0;
   $("#cartBadge").textContent = n;
   $("#dockTotal").textContent = n ? fmt(cartTotal()) : "";
+  if (typeof tileIndex !== "undefined") updateTileBadges();
 }
 
 function openCart() {
@@ -691,6 +888,7 @@ function renderCart() {
     $("#cartTotals").innerHTML = "";
     $("#sendOrder").style.display = "none";
     $("#noteWrap").style.display = "none";
+    renderHistory();
     return;
   }
   $("#sendOrder").style.display = "";
@@ -718,6 +916,24 @@ function renderCart() {
     <div class="row"><span>${L().steamTime}</span><b>${L().steamTimeVal}</b></div>`;
   $("#sendLabel").textContent = L().send;
   $("#sendTotal").textContent = fmt(cartTotal());
+  renderHistory();
+}
+
+// What this table has already sent to the kitchen — the add-a-round view.
+function renderHistory() {
+  const past = JSON.parse(localStorage.getItem("dl-orders") || "[]");
+  const el = $("#history");
+  if (!past.length) { el.innerHTML = ""; return; }
+  el.innerHTML = `<p class="overline">${L().historyTitle}</p>` + past.slice(-4).reverse().map(o => {
+    const names = o.items.map(([id, q]) => {
+      const d = MENU.find(x => x.id === id);
+      return d ? `${dishName(d)} ×${q}` : "";
+    }).filter(Boolean).join("、");
+    return `<div class="h-order">
+      <div class="h-head"><span>${L().historyOrder(o.no, fmt(o.total))}</span></div>
+      <div class="h-items">${names}</div>
+    </div>`;
+  }).join("");
 }
 
 $("#orderNote").addEventListener("input", e => localStorage.setItem("dl-note", e.target.value));
@@ -731,6 +947,9 @@ $("#sendOrder").addEventListener("click", () => {
     total: cartTotal(), at: new Date().toISOString(),
   };
   console.log("ORDER →", JSON.stringify(order));
+  const past = JSON.parse(localStorage.getItem("dl-orders") || "[]");
+  past.push(order);
+  localStorage.setItem("dl-orders", JSON.stringify(past));
   cart.clear(); persist(); syncDock(); closeCart();
   localStorage.removeItem("dl-note");
   $("#orderedNote").textContent = L().orderedNote(TABLE, orderNo);

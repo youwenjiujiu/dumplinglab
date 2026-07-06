@@ -16,6 +16,8 @@ const MENU = [
   "carbs": 48,
   "fat": 31,
   "spice": 0,
+  "meat": "pork",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy",
@@ -52,6 +54,7 @@ const MENU = [
   "best": true,
   "chef": true,
   "featured": true,
+  "soldOut": false,
   "art": "pleatedDumplingCrisped",
   "skin": "#edd19e",
   "accent": "#9e6138",
@@ -72,6 +75,8 @@ const MENU = [
   "carbs": 44,
   "fat": 15,
   "spice": 0,
+  "meat": "chicken",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy"
@@ -102,6 +107,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "pleatedDumpling",
   "skin": "#f7ebc7",
   "accent": "#f2c74c",
@@ -122,6 +128,8 @@ const MENU = [
   "carbs": 42,
   "fat": 29,
   "spice": 3,
+  "meat": "pork",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy",
@@ -159,6 +167,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "pleatedDumpling",
   "skin": "#f0deb8",
   "accent": "#b82e1f",
@@ -179,6 +188,8 @@ const MENU = [
   "carbs": 46,
   "fat": 17,
   "spice": 0,
+  "meat": "vegetarian",
+  "veg": true,
   "allergens": [
    "Gluten",
    "Dairy"
@@ -209,6 +220,7 @@ const MENU = [
   "best": false,
   "chef": true,
   "featured": true,
+  "soldOut": false,
   "art": "pleatedDumpling",
   "skin": "#b8cc9e",
   "accent": "#6b523d",
@@ -229,6 +241,8 @@ const MENU = [
   "carbs": 40,
   "fat": 16,
   "spice": 1,
+  "meat": "chicken",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy",
@@ -260,6 +274,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "pleatedDumplingCrisped",
   "skin": "#f2e0b8",
   "accent": "#cc944c",
@@ -280,6 +295,8 @@ const MENU = [
   "carbs": 46,
   "fat": 29,
   "spice": 1,
+  "meat": "beef",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy"
@@ -306,6 +323,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "pleatedDumplingCrisped",
   "skin": "#e8cc99",
   "accent": "#7a4c33",
@@ -326,6 +344,8 @@ const MENU = [
   "carbs": 48,
   "fat": 14,
   "spice": 0,
+  "meat": "vegetarian",
+  "veg": true,
   "allergens": [
    "Gluten",
    "Soy",
@@ -358,6 +378,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "pleatedDumplingCrisped",
   "skin": "#f0e3bd",
   "accent": "#8c9e61",
@@ -378,6 +399,8 @@ const MENU = [
   "carbs": 38,
   "fat": 12,
   "spice": 0,
+  "meat": "shrimp",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Shellfish",
@@ -409,6 +432,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "wonton",
   "skin": "#fae6c2",
   "accent": "#f29973",
@@ -429,6 +453,8 @@ const MENU = [
   "carbs": 40,
   "fat": 18,
   "spice": 0,
+  "meat": "pork",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy",
@@ -456,6 +482,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "wonton",
   "skin": "#f7e8c7",
   "accent": "#809959",
@@ -476,6 +503,8 @@ const MENU = [
   "carbs": 42,
   "fat": 21,
   "spice": 0,
+  "meat": "pork",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy"
@@ -502,6 +531,7 @@ const MENU = [
   "best": true,
   "chef": true,
   "featured": true,
+  "soldOut": false,
   "art": "soupDumpling",
   "skin": "#f5e6c9",
   "accent": "#d9a873",
@@ -522,6 +552,8 @@ const MENU = [
   "carbs": 42,
   "fat": 23,
   "spice": 0,
+  "meat": "shrimp",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Shellfish",
@@ -549,6 +581,7 @@ const MENU = [
   "best": false,
   "chef": true,
   "featured": false,
+  "soldOut": false,
   "art": "soupDumpling",
   "skin": "#f7e6c2",
   "accent": "#f09e47",
@@ -569,6 +602,8 @@ const MENU = [
   "carbs": 62,
   "fat": 24,
   "spice": 1,
+  "meat": "chicken",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Egg",
@@ -600,6 +635,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "noodleBowl",
   "skin": "#f5e0b2",
   "accent": "#e6b866",
@@ -620,6 +656,8 @@ const MENU = [
   "carbs": 64,
   "fat": 28,
   "spice": 3,
+  "meat": "pork",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Sesame",
@@ -652,6 +690,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "noodleBowl",
   "skin": "#edd199",
   "accent": "#b2331f",
@@ -672,6 +711,8 @@ const MENU = [
   "carbs": 68,
   "fat": 18,
   "spice": 0,
+  "meat": "vegan",
+  "veg": true,
   "allergens": [
    "Gluten",
    "Soy"
@@ -698,6 +739,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "noodleBowl",
   "skin": "#ebd6a3",
   "accent": "#738547",
@@ -718,6 +760,8 @@ const MENU = [
   "carbs": 78,
   "fat": 20,
   "spice": 3,
+  "meat": "vegan",
+  "veg": true,
   "allergens": [
    "Gluten",
    "Soy",
@@ -750,6 +794,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "noodleBowl",
   "skin": "#f5e6c2",
   "accent": "#c7381a",
@@ -770,6 +815,8 @@ const MENU = [
   "carbs": 66,
   "fat": 32,
   "spice": 0,
+  "meat": "chicken",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Egg",
@@ -802,6 +849,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "noodleBowl",
   "skin": "#edd19e",
   "accent": "#b87a38",
@@ -822,6 +870,8 @@ const MENU = [
   "carbs": 68,
   "fat": 26,
   "spice": 0,
+  "meat": "pork",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Egg",
@@ -853,6 +903,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "noodleBowl",
   "skin": "#f2e0ad",
   "accent": "#f0c752",
@@ -873,6 +924,8 @@ const MENU = [
   "carbs": 70,
   "fat": 19,
   "spice": 0,
+  "meat": "vegetarian",
+  "veg": true,
   "allergens": [
    "Egg",
    "Soy"
@@ -903,6 +956,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "riceBowl",
   "skin": "#f7de8c",
   "accent": "#f0b240",
@@ -923,6 +977,8 @@ const MENU = [
   "carbs": 68,
   "fat": 23,
   "spice": 2,
+  "meat": "shrimp",
+  "veg": false,
   "allergens": [
    "Shellfish",
    "Egg",
@@ -950,6 +1006,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "riceBowl",
   "skin": "#f5db94",
   "accent": "#eb8559",
@@ -970,6 +1027,8 @@ const MENU = [
   "carbs": 22,
   "fat": 9,
   "spice": 2,
+  "meat": "vegetarian",
+  "veg": true,
   "allergens": [
    "Gluten",
    "Soy",
@@ -1001,6 +1060,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "soupBowl",
   "skin": "#9e663d",
   "accent": "#d98c4c",
@@ -1021,6 +1081,8 @@ const MENU = [
   "carbs": 8,
   "fat": 8,
   "spice": 0,
+  "meat": "chicken",
+  "veg": false,
   "allergens": [],
   "ingredients": [
    {
@@ -1048,6 +1110,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "soupBowl",
   "skin": "#f2d48c",
   "accent": "#d96640",
@@ -1068,6 +1131,8 @@ const MENU = [
   "carbs": 10,
   "fat": 13,
   "spice": 0,
+  "meat": "fish",
+  "veg": false,
   "allergens": [
    "Soy"
   ],
@@ -1093,6 +1158,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "soupBowl",
   "skin": "#f0ebdb",
   "accent": "#bfccb8",
@@ -1113,6 +1179,8 @@ const MENU = [
   "carbs": 8,
   "fat": 5,
   "spice": 0,
+  "meat": "vegan",
+  "veg": true,
   "allergens": [
    "Soy",
    "Sesame"
@@ -1139,6 +1207,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "soupBowl",
   "skin": "#e0e6d6",
   "accent": "#597361",
@@ -1159,6 +1228,8 @@ const MENU = [
   "carbs": 10,
   "fat": 5,
   "spice": 1,
+  "meat": "vegan",
+  "veg": true,
   "allergens": [
    "Soy",
    "Sesame"
@@ -1185,6 +1256,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "sidePlate",
   "skin": "#8cad66",
   "accent": "#cc4c33",
@@ -1205,6 +1277,8 @@ const MENU = [
   "carbs": 24,
   "fat": 26,
   "spice": 1,
+  "meat": "chicken",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy"
@@ -1231,6 +1305,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "sidePlate",
   "skin": "#e0a857",
   "accent": "#8c5926",
@@ -1251,6 +1326,8 @@ const MENU = [
   "carbs": 18,
   "fat": 9,
   "spice": 1,
+  "meat": "vegan",
+  "veg": true,
   "allergens": [
    "Soy",
    "Sesame"
@@ -1277,6 +1354,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "sidePlate",
   "skin": "#734c7a",
   "accent": "#99a866",
@@ -1297,6 +1375,8 @@ const MENU = [
   "carbs": 18,
   "fat": 17,
   "spice": 1,
+  "meat": "vegan",
+  "veg": true,
   "allergens": [
    "Soy",
    "Gluten"
@@ -1323,6 +1403,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "sidePlate",
   "skin": "#ebd69e",
   "accent": "#bf592e",
@@ -1343,6 +1424,8 @@ const MENU = [
   "carbs": 9,
   "fat": 7,
   "spice": 0,
+  "meat": "vegan",
+  "veg": true,
   "allergens": [
    "Soy"
   ],
@@ -1368,6 +1451,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "greens",
   "skin": "#6b9457",
   "accent": "#e6e0c7",
@@ -1388,6 +1472,8 @@ const MENU = [
   "carbs": 16,
   "fat": 14,
   "spice": 2,
+  "meat": "pork",
+  "veg": false,
   "allergens": [
    "Soy"
   ],
@@ -1417,6 +1503,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "greens",
   "skin": "#618047",
   "accent": "#b83d24",
@@ -1437,6 +1524,8 @@ const MENU = [
   "carbs": 10,
   "fat": 7,
   "spice": 0,
+  "meat": "chicken",
+  "veg": false,
   "allergens": [],
   "ingredients": [
    {
@@ -1464,6 +1553,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "greens",
   "skin": "#8cad6b",
   "accent": "#f2d98c",
@@ -1484,6 +1574,8 @@ const MENU = [
   "carbs": 52,
   "fat": 8,
   "spice": 0,
+  "meat": "vegetarian",
+  "veg": true,
   "allergens": [
    "Dairy"
   ],
@@ -1513,6 +1605,7 @@ const MENU = [
   "best": true,
   "chef": false,
   "featured": true,
+  "soldOut": false,
   "art": "dessertCup",
   "skin": "#facc5c",
   "accent": "#fcebbf",
@@ -1533,6 +1626,8 @@ const MENU = [
   "carbs": 30,
   "fat": 19,
   "spice": 0,
+  "meat": "vegetarian",
+  "veg": true,
   "allergens": [
    "Dairy"
   ],
@@ -1558,6 +1653,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "dessertCup",
   "skin": "#f7f0db",
   "accent": "#ebbf66",
@@ -1578,6 +1674,8 @@ const MENU = [
   "carbs": 56,
   "fat": 11,
   "spice": 0,
+  "meat": "vegan",
+  "veg": true,
   "allergens": [
    "Sesame"
   ],
@@ -1603,6 +1701,7 @@ const MENU = [
   "best": false,
   "chef": false,
   "featured": false,
+  "soldOut": false,
   "art": "dessertCup",
   "skin": "#f0ebe0",
   "accent": "#2e2926",
@@ -1623,6 +1722,8 @@ const MENU = [
   "carbs": 62,
   "fat": 31,
   "spice": 0,
+  "meat": "beef",
+  "veg": false,
   "allergens": [
    "Soy",
    "Egg",
@@ -1655,6 +1756,7 @@ const MENU = [
   "best": true,
   "chef": true,
   "featured": true,
+  "soldOut": false,
   "art": "riceBowl",
   "skin": "#d9b88c",
   "accent": "#f59e1f",
@@ -1675,6 +1777,8 @@ const MENU = [
   "carbs": 36,
   "fat": 19,
   "spice": 0,
+  "meat": "shrimp",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Shellfish",
@@ -1702,6 +1806,7 @@ const MENU = [
   "best": false,
   "chef": true,
   "featured": true,
+  "soldOut": false,
   "art": "pleatedDumpling",
   "skin": "#f0b8b2",
   "accent": "#e66b52",
@@ -1722,6 +1827,8 @@ const MENU = [
   "carbs": 40,
   "fat": 26,
   "spice": 1,
+  "meat": "beef",
+  "veg": false,
   "allergens": [
    "Gluten",
    "Soy"
@@ -1748,6 +1855,7 @@ const MENU = [
   "best": false,
   "chef": true,
   "featured": false,
+  "soldOut": false,
   "art": "pleatedDumpling",
   "skin": "#d19e70",
   "accent": "#733d24",

@@ -3,31 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#241a12">
+<meta name="theme-color" content="#211a15">
 <title>Dumpling Lab — Table Menu</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- Cinematic header -->
-<header id="hero">
-  <div class="glow" id="heroGlow"></div>
+<!-- Fixed chrome: language + waiter call -->
+<div id="topChrome">
+  <button id="bellBtn" aria-label="Call a server">🔔</button>
   <button id="langToggle" aria-label="Language">中文</button>
-  <div class="wordmark">
-    <h1>Dumpling Lab</h1>
-    <p class="overline" id="heroTagline">A modern dumpling house</p>
-    <p class="table-tag" id="tableTag"></p>
-  </div>
+</div>
 
-  <div class="reel" id="reel"></div>
-  <div class="reel-dots" id="reelDots"></div>
-</header>
+<!-- The Voyage: a scroll-driven flight through the kitchen's proudest dishes -->
+<section id="voyage">
+  <div class="v-stage">
+    <div class="glow" id="heroGlow"></div>
+    <canvas id="voyageSteam"></canvas>
+    <div class="v-world" id="vWorld"></div>
+
+    <div class="v-title" id="vTitle">
+      <h1>Dumpling Lab</h1>
+      <p class="overline" id="heroTagline">A modern dumpling house</p>
+      <p class="table-tag" id="tableTag"></p>
+      <div class="v-hint">
+        <span id="vHint">Scroll to be seated</span>
+        <div class="v-chevron">⌄</div>
+      </div>
+    </div>
+
+    <div class="v-caption" id="vCaption"></div>
+
+    <div class="v-end" id="vEnd">
+      <div class="num" id="vEndNum">THE MENU</div>
+      <h2 id="vEndTitle">The Menu</h2>
+      <p class="overline" id="vEndSub">Eleven small chapters</p>
+    </div>
+  </div>
+</section>
 
 <!-- Chapter rail -->
 <nav id="rail"><div class="rail-inner" id="railInner"></div></nav>
 
+<!-- Search & dietary filters -->
+<div id="finder">
+  <input id="searchBox" type="search" autocomplete="off">
+  <div class="filters" id="filters"></div>
+</div>
+
 <!-- Menu chapters -->
 <main id="menu"></main>
+<div id="noResults" hidden></div>
 
 <footer id="colophon">
   <p class="overline">Dumpling Lab</p>
@@ -49,6 +75,9 @@
     <span class="dock-total" id="dockTotal"></span>
   </button>
 </div>
+
+<!-- Toast -->
+<div id="toast" hidden></div>
 
 <!-- Dish detail takeover -->
 <div id="detail" hidden>
@@ -78,6 +107,7 @@
   <button class="send" id="sendOrder">
     <span id="sendLabel">Send to the kitchen</span><strong id="sendTotal"></strong>
   </button>
+  <div id="history"></div>
 </div>
 
 <!-- Order confirmation -->
