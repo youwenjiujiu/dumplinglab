@@ -386,18 +386,22 @@ function updateVoyage() {
   let focus = -1, focusDist = 1e9;
   vNodes.forEach((n, i) => {
     const rel = (i + 1) * SPACING - camZ;      // distance ahead of the camera
-    if (rel < -260 || rel > 3400) { n.el.style.opacity = "0"; n.el.style.visibility = "hidden"; return; }
+    if (rel < 10 || rel > 2200) { n.el.style.opacity = "0"; n.el.style.visibility = "hidden"; return; }
     n.el.style.visibility = "visible";
-    // Dishes surface out of the fog only once the flight has begun.
-    const fadeIn = Math.min(1, Math.max(0, (2600 - rel) / 900)) * Math.min(1, prog * 9);
-    const fadeOut = rel < 60 ? Math.max(0, (rel + 260) / 320) : 1;
-    // Dishes deeper in the corridor recede into the dark - only the
-    // focused dish is fully lit, the next one is a dim silhouette.
-    const depthDim = Math.min(1, Math.max(0.1, 1.18 - rel / 1350));
+    // One dish at a time: the leaving dish is fully gone (rel<30) well
+    // before the next one (a full SPACING away) gains any presence.
+    const fadeIn = Math.min(1, Math.max(0, (1500 - rel) / 700)) * Math.min(1, prog * 9);
+    const fadeOut = rel < 150 ? Math.max(0, (rel - 30) / 120) : 1;
+    const depthDim = Math.min(1, Math.max(0.08, 1.25 - rel / 1250));
     n.el.style.opacity = (fadeIn * fadeOut * depthDim).toFixed(3);
-    const sway = Math.sin((camZ + i * 700) * 0.0011) * 14;
+    // Far dishes hug the corridor walls, then glide to center as they
+    // approach the focal plane - never clipped at the screen edge.
+    const closeness = Math.min(Math.max(rel / 900, 0), 1);
+    const sway = Math.sin((camZ + i * 700) * 0.0011) * 10;
+    const lx = (n.lateral + sway) * closeness;
+    const ly = n.drift * closeness;
     n.el.style.transform =
-      `translate3d(${n.lateral + sway}px, ${n.drift}px, ${-rel}px) rotateY(${n.lateral * -0.09}deg)`;
+      `translate3d(${lx}px, ${ly}px, ${-rel}px) rotateY(${lx * -0.06}deg)`;
     const d = Math.abs(rel - 210);
     if (rel > -120 && d < focusDist) { focusDist = d; focus = i; }
   });
