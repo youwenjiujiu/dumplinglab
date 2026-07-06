@@ -30,8 +30,17 @@ struct DishArtView: View {
                     .blur(radius: s * 0.035)
                     .offset(y: s * 0.30)
 
-                food(size: s)
-                    .frame(width: s * 0.78, height: s * 0.78)
+                if let name = dish.imageName, UIImage(named: name) != nil {
+                    // Real photography (alpha-matted) on the same studio stage.
+                    Image(name)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: s * 0.78, height: s * 0.78)
+                        .dlShadow(radius: s * 0.06, y: s * 0.03, opacity: 0.28)
+                } else {
+                    food(size: s)
+                        .frame(width: s * 0.78, height: s * 0.78)
+                }
 
                 if steam && isHot {
                     SteamVeil(opacity: backdrop ? 0.42 : 0.25, drift: Double(dish.id.hashValue % 97))
@@ -93,34 +102,79 @@ struct DumplingShape: Shape {
         // Crown (top arc back to start)
         p.addCurve(
             to: CGPoint(x: 0.06 * w, y: 0.62 * h),
-            control1: CGPoint(x: 0.80 * w, y: 0.10 * h),
-            control2: CGPoint(x: 0.20 * w, y: 0.10 * h)
+            control1: CGPoint(x: 0.80 * w, y: 0.04 * h),
+            control2: CGPoint(x: 0.20 * w, y: 0.04 * h)
         )
         p.closeSubpath()
         return p
     }
 }
 
-/// Pleat creases fanned along the crown.
-struct PleatsShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        let w = rect.width, h = rect.height
-        let center = CGPoint(x: 0.5 * w, y: 0.95 * h)
-        for i in 0..<7 {
-            let t = CGFloat(i) / 6.0
-            let angle = CGFloat(Angle.degrees(Double(210 + t * 120)).radians)
-            let rOuter = 0.62 * h
-            let ca = cos(angle), sa = sin(angle)
-            let outer = CGPoint(x: center.x + ca * rOuter * 1.25, y: center.y + sa * rOuter)
-            let inner = CGPoint(
-                x: center.x + ca * rOuter * 0.62,
-                y: center.y + sa * rOuter * 0.55
-            )
-            p.move(to: inner)
-            p.addQuadCurve(to: outer, control: CGPoint(x: (inner.x + outer.x) / 2, y: inner.y - 0.06 * h))
+/// The sealed seam along the crown, with real embossed pleats fanned
+/// across it: each fold has a shadowed crease and a lit ridge.
+struct PleatsCanvas: View {
+    var crease: Color
+    var ridge: Color
+
+    var body: some View {
+        Canvas { ctx, size in
+            let w = size.width, h = size.height
+            // Crown cubic, matching DumplingShape's top arc.
+            let p0 = CGPoint(x: 0.94 * w, y: 0.62 * h)
+            let c1 = CGPoint(x: 0.80 * w, y: 0.04 * h)
+            let c2 = CGPoint(x: 0.20 * w, y: 0.04 * h)
+            let p3 = CGPoint(x: 0.06 * w, y: 0.62 * h)
+
+            func bez(_ t: CGFloat) -> CGPoint {
+                let u = 1 - t
+                let x = u*u*u*p0.x + 3*u*u*t*c1.x + 3*u*t*t*c2.x + t*t*t*p3.x
+                let y = u*u*u*p0.y + 3*u*u*t*c1.y + 3*u*t*t*c2.y + t*t*t*p3.y
+                return CGPoint(x: x, y: y)
+            }
+            func tangentAt(_ t: CGFloat) -> CGPoint {
+                let u = 1 - t
+                let x = 3*u*u*(c1.x-p0.x) + 6*u*t*(c2.x-c1.x) + 3*t*t*(p3.x-c2.x)
+                let y = 3*u*u*(c1.y-p0.y) + 6*u*t*(c2.y-c1.y) + 3*t*t*(p3.y-c2.y)
+                let len = max(sqrt(x*x + y*y), 0.0001)
+                return CGPoint(x: x/len, y: y/len)
+            }
+            func inward(_ t: CGFloat) -> CGPoint {
+                let d = tangentAt(t)
+                let n = CGPoint(x: -d.y, y: d.x)
+                return n.y >= 0 ? n : CGPoint(x: d.y, y: -d.x)
+            }
+
+            // Seam ridge: the crown arc nudged toward the belly.
+            var seam = Path()
+            for i in 0...24 {
+                let t = CGFloat(i) / 24
+                let b = bez(t), n = inward(t)
+                let pt = CGPoint(x: b.x + n.x * h * 0.035, y: b.y + n.y * h * 0.035)
+                if i == 0 { seam.move(to: pt) } else { seam.addLine(to: pt) }
+            }
+            ctx.stroke(seam, with: .color(crease.opacity(0.45)), style: StrokeStyle(lineWidth: max(1, w * 0.010), lineCap: .round))
+
+            // Pleats: folds crossing the seam, fanned by the curve itself.
+            for i in 1...7 {
+                let t = CGFloat(i) / 8
+                let b = bez(t), n = inward(t), d = tangentAt(t)
+                let len = h * 0.30 * (0.82 + 0.18 * sin(.pi * t))
+                let start = CGPoint(x: b.x - n.x * h * 0.015, y: b.y - n.y * h * 0.015)
+                let end = CGPoint(x: start.x + n.x * len, y: start.y + n.y * len)
+                let ctrl = CGPoint(
+                    x: (start.x + end.x) / 2 + d.x * len * 0.18,
+                    y: (start.y + end.y) / 2 + d.y * len * 0.18
+                )
+                var fold = Path()
+                fold.move(to: start)
+                fold.addQuadCurve(to: end, control: ctrl)
+
+                var lit = ctx
+                lit.translateBy(x: -w * 0.006, y: -w * 0.006)
+                lit.stroke(fold, with: .color(ridge), style: StrokeStyle(lineWidth: max(0.7, w * 0.008), lineCap: .round))
+                ctx.stroke(fold, with: .color(crease.opacity(0.55)), style: StrokeStyle(lineWidth: max(1, w * 0.011), lineCap: .round))
+            }
         }
-        return p
     }
 }
 
@@ -185,6 +239,22 @@ struct DumplingFigure: View {
                             )
                         )
                 )
+                .overlay(
+                    // Rim light along the crown, catching the key light
+                    DumplingShape()
+                        .stroke(
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .white.opacity(0.75), location: 0),
+                                    .init(color: .white.opacity(0.10), location: 0.45),
+                                    .init(color: .clear, location: 0.8),
+                                ],
+                                startPoint: .topLeading, endPoint: .bottom
+                            ),
+                            lineWidth: max(1, w * 0.007)
+                        )
+                        .blur(radius: 0.4)
+                )
 
             // Golden crisped base for pan-fried — hugs the silhouette
             if crisped {
@@ -238,13 +308,10 @@ struct DumplingFigure: View {
                 .opacity(Double(min(reveal * 1.4, 1)))
             }
 
-            // Pleats
-            PleatsShape()
-                .stroke(
-                    palette.skin.color.darker(0.28),
-                    style: StrokeStyle(lineWidth: max(1, w * 0.012), lineCap: .round)
-                )
-                .opacity(0.7)
+            // Seam & pleats: the eighteen folds, embossed
+            PleatsCanvas(crease: palette.skin.color.darker(0.34), ridge: .white.opacity(0.45))
+                .frame(width: w, height: h)
+                .opacity(0.9)
         }
         .frame(width: w, height: h)
         .dlShadow(radius: w * 0.10, y: w * 0.05, opacity: 0.28)

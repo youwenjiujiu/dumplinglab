@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// The Menu — an editorial, chaptered browse. Sections read like a magazine;
-/// cards float, tilt, and can be physically dragged into the steamer.
+/// The Menu — an editorial, image-forward gallery. Eleven chapters,
+/// each a calm two-column grid of studio tiles. Tap a tile and it
+/// *becomes* the dish page (matched-geometry hero transition);
+/// long-press to pick the dish up and carry it to the steamer.
 struct MenuView: View {
     @Environment(AppState.self) private var app
     var namespace: Namespace.ID
@@ -14,7 +16,7 @@ struct MenuView: View {
                 DL.canvas.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: 44, pinnedViews: []) {
+                    LazyVStack(spacing: 52, pinnedViews: []) {
                         menuHeader
                             .padding(.top, 68)
 
@@ -102,9 +104,17 @@ struct MenuSectionView: View {
     var dishes: [Dish]
     var namespace: Namespace.ID
 
+    private let columns = [
+        GridItem(.flexible(), spacing: 14),
+        GridItem(.flexible(), spacing: 14),
+    ]
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 5) {
+                Text("Chapter \(String(format: "%02d", (MenuSection.allCases.firstIndex(of: section) ?? 0) + 1))")
+                    .overlineStyle(DL.wood, size: 10)
+                    .padding(.bottom, 1)
                 HStack(spacing: 9) {
                     Text(section.emoji).font(.system(size: 17))
                     Text(section.rawValue)
@@ -117,111 +127,140 @@ struct MenuSectionView: View {
                     .foregroundStyle(DL.inkFaint)
             }
 
-            VStack(spacing: 16) {
+            LazyVGrid(columns: columns, spacing: 22) {
                 ForEach(Array(dishes.enumerated()), id: \.element.id) { i, dish in
-                    DishCard(dish: dish, namespace: namespace)
-                        .floating(amplitude: 2.2, period: 4.6, phase: Double(i) * 0.37)
-                        .scrollParallax(14)
+                    DishTile(dish: dish, namespace: namespace)
+                        .floating(amplitude: 1.4, period: 4.8, phase: Double(i) * 0.43)
                 }
             }
         }
     }
 }
 
-// MARK: - Dish card
+// MARK: - Dish tile
 
-/// A living card: art on cream, tilts under the finger, floats at rest,
-/// long-press to pick the dish up and carry it to the steamer.
-struct DishCard: View {
+/// One tile of the gallery. The image is the whole story — a studio stage
+/// with the dish floating on it; a single quiet line of type below.
+struct DishTile: View {
     @Environment(AppState.self) private var app
     var dish: Dish
     var namespace: Namespace.ID
 
     @State private var lifted = false
 
+    private var isPresented: Bool { app.selectedDish?.id == dish.id }
+
     var body: some View {
-        HStack(spacing: 14) {
-            DishArtView(dish: dish, backdrop: false, steam: true)
-                .frame(width: 118, height: 118)
-                .background(
-                    RadialGradient(
-                        colors: [dish.palette.glow.color.opacity(0.14), .clear],
-                        center: .center, startRadius: 6, endRadius: 66
-                    )
-                )
-
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 6) {
-                    if dish.isBestSeller { Badge(text: "Best Seller", tint: DL.red) }
-                    if dish.isChefsChoice { Badge(text: "Chef", tint: DL.wood) }
-                }
-
-                Text(dish.name)
-                    .font(DL.display(17, weight: .semibold))
-                    .foregroundStyle(DL.ink)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
-
-                Text(dish.flavor)
-                    .font(DL.text(12))
-                    .foregroundStyle(DL.inkFaint)
-                    .lineLimit(2)
-
-                HStack {
-                    Text(dish.priceLabel)
-                        .font(DL.display(16, weight: .semibold))
-                        .foregroundStyle(DL.soy)
-                    if let pieces = dish.pieces {
-                        Text("· \(pieces) pc")
-                            .font(DL.text(12))
-                            .foregroundStyle(DL.inkFaint)
-                    }
-                    if dish.spice.rawValue > 0 {
-                        Text(String(repeating: "🌶", count: min(dish.spice.rawValue, 3)))
-                            .font(.system(size: 10))
-                    }
-                    Spacer()
-                    addButton
-                }
-                .padding(.top, 2)
-            }
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 10) {
+            stage
+            caption
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(DL.warmWhite)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 26, style: .continuous)
-                        .strokeBorder(
-                            LinearGradient(colors: [.white, DL.creamDeep.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                            lineWidth: 1
-                        )
-                )
-        )
-        .dlShadow(radius: 16, y: 10, opacity: lifted ? 0.26 : 0.10)
-        .scaleEffect(lifted ? 1.04 : 1)
-        .opacity(app.drag?.dish.id == dish.id ? 0.35 : 1)
-        .contentShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .contentShape(Rectangle())
+        .scaleEffect(lifted ? 1.05 : 1)
         .onTapGesture {
             Haptics.tap()
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) { app.selectedDish = dish }
+            withAnimation(.spring(response: 0.48, dampingFraction: 0.86)) { app.selectedDish = dish }
         }
         .gesture(pickUpGesture)
         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: lifted)
     }
 
-    private var addButton: some View {
-        Button {
-            withAnimation { app.add(dish) }
-        } label: {
-            Image(systemName: "plus")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(DL.warmWhite)
-                .frame(width: 30, height: 30)
-                .background(Circle().fill(LinearGradient(colors: [DL.soy, DL.soyDark], startPoint: .top, endPoint: .bottom)))
+    // MARK: The image stage
+
+    private var stage: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [.white, DL.cream],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white, DL.creamDeep.opacity(0.6)],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .overlay(
+                    // A whisper of the dish's own glow behind it
+                    RadialGradient(
+                        colors: [dish.palette.glow.color.opacity(0.10), .clear],
+                        center: .init(x: 0.5, y: 0.55),
+                        startRadius: 4, endRadius: 90
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+                )
+
+            DishArtView(dish: dish, backdrop: false, steam: true)
+                .padding(10)
+                .matchedGeometryEffect(id: "hero-\(dish.id)", in: namespace, isSource: !isPresented)
+                .opacity(isPresented ? 0 : 1)
+
+            // Quiet quick-add, tucked into the corner
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        withAnimation { app.add(dish) }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(DL.soy)
+                            .frame(width: 26, height: 26)
+                            .background(Circle().fill(.ultraThinMaterial))
+                            .overlay(Circle().strokeBorder(DL.creamDeep.opacity(0.8), lineWidth: 1))
+                    }
+                    .buttonStyle(TactileButtonStyle(scale: 0.82))
+                }
+                Spacer()
+            }
+            .padding(9)
         }
-        .buttonStyle(TactileButtonStyle(scale: 0.85))
+        .aspectRatio(0.94, contentMode: .fit)
+        .dlShadow(radius: 14, y: 9, opacity: lifted ? 0.24 : 0.09)
+    }
+
+    // MARK: The caption
+
+    private var caption: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .top, spacing: 6) {
+                if dish.isBestSeller || dish.isChefsChoice {
+                    Circle()
+                        .fill(dish.isBestSeller ? DL.red : DL.wood)
+                        .frame(width: 5, height: 5)
+                        .padding(.top, 6)
+                }
+                Text(dish.name)
+                    .font(DL.display(15, weight: .semibold))
+                    .foregroundStyle(DL.ink)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+            .frame(height: 40, alignment: .topLeading)
+
+            HStack(spacing: 6) {
+                Text(dish.priceLabel)
+                    .font(DL.display(14, weight: .semibold))
+                    .foregroundStyle(DL.soy)
+                if dish.spice.rawValue > 0 {
+                    Text(String(repeating: "🌶", count: min(dish.spice.rawValue, 3)))
+                        .font(.system(size: 9))
+                }
+                Spacer()
+                if let pieces = dish.pieces {
+                    Text("\(pieces) pc")
+                        .font(DL.text(11))
+                        .foregroundStyle(DL.inkFaint)
+                }
+            }
+        }
+        .padding(.horizontal, 3)
     }
 
     /// Long-press, then carry the dish anywhere — food physically in hand.

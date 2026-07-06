@@ -34,14 +34,22 @@ struct RootView: View {
             if let dish = app.selectedDish {
                 DishDetailView(dish: dish, namespace: heroNamespace)
                     .zIndex(10)
-                    .transition(.asymmetric(
-                        insertion: .opacity.animation(.easeOut(duration: 0.22)),
-                        removal: .opacity.animation(.easeIn(duration: 0.18))
-                    ))
+                    .transition(.opacity)
             }
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.86), value: app.tab)
         .animation(.spring(response: 0.5, dampingFraction: 0.86), value: app.selectedDish?.id)
+        .onAppear {
+            // Dev hook: auto-open a dish after a beat, so the hero flight
+            // can be captured frame-by-frame from the CLI.
+            if let id = ProcessInfo.processInfo.environment["DL_AUTOSELECT"], let d = Menu.dish(id) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation(.spring(response: 0.48, dampingFraction: 0.86)) {
+                        app.selectedDish = d
+                    }
+                }
+            }
+        }
     }
 }
 

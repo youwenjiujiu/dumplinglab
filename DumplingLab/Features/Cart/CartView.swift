@@ -143,6 +143,15 @@ struct CartView: View {
         .buttonStyle(TactileButtonStyle())
         .padding(.horizontal, 20)
         .padding(.bottom, 96)
+        .background(alignment: .bottom) {
+            LinearGradient(
+                colors: [DL.warmWhite.opacity(0), DL.warmWhite.opacity(0.9), DL.warmWhite],
+                startPoint: .top, endPoint: .bottom
+            )
+            .frame(height: 230)
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+        }
     }
 
     // MARK: Ordered
@@ -254,12 +263,30 @@ struct SteamerBasketView: View {
                     .overlay(
                         // Slats
                         Canvas { ctx, size in
-                            for i in 1..<6 {
-                                let x = size.width * CGFloat(i) / 6
+                            // Woven bamboo lattice
+                            for i in 1..<8 {
+                                let x = size.width * CGFloat(i) / 8
                                 var p = Path()
-                                p.move(to: CGPoint(x: x, y: size.height * 0.12))
-                                p.addLine(to: CGPoint(x: x, y: size.height * 0.88))
-                                ctx.stroke(p, with: .color(DL.woodDeep.opacity(0.28)), lineWidth: 2)
+                                p.move(to: CGPoint(x: x, y: size.height * 0.08))
+                                p.addLine(to: CGPoint(x: x, y: size.height * 0.92))
+                                ctx.stroke(p, with: .color(DL.woodDeep.opacity(0.22)), lineWidth: 1.6)
+                            }
+                            for j in 1..<5 {
+                                let y = size.height * CGFloat(j) / 5
+                                var p = Path()
+                                p.move(to: CGPoint(x: size.width * 0.06, y: y))
+                                p.addLine(to: CGPoint(x: size.width * 0.94, y: y))
+                                ctx.stroke(p, with: .color(DL.woodDeep.opacity(0.16)), lineWidth: 1.6)
+                            }
+                            for i in 1..<8 {
+                                for j in 1..<5 where (i + j) % 2 == 0 {
+                                    let x = size.width * CGFloat(i) / 8
+                                    let y = size.height * CGFloat(j) / 5
+                                    ctx.fill(
+                                        Path(ellipseIn: CGRect(x: x - 2.2, y: y - 1.4, width: 4.4, height: 2.8)),
+                                        with: .color(DL.wood.opacity(0.5))
+                                    )
+                                }
                             }
                         }
                         .frame(width: w * 0.86, height: w * 0.30)

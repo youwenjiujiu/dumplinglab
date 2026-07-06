@@ -159,6 +159,9 @@ struct Dish: Identifiable, Hashable {
     var isFeatured: Bool = false // appears in the cinematic home reel
     var art: ArtStyle
     var palette: DishPalette
+    /// Optional real photograph (asset name, alpha-matted). When present it
+    /// replaces the procedural art on the same studio stage.
+    var imageName: String? = nil
 
     var priceLabel: String { price.dlPrice }
 

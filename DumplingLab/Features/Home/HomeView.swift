@@ -16,12 +16,17 @@ struct HomeView: View {
             DL.heroNight.ignoresSafeArea()
                 .paperGrain(0.015)
 
-            // Ambient candle glow that drifts with the current dish
-            RadialGradient(
-                colors: [currentDish.palette.glow.color.opacity(0.55), .clear],
-                center: .init(x: 0.5, y: 0.44),
-                startRadius: 40, endRadius: 420
-            )
+            // Ambient candle glow that drifts with the current dish, and
+            // flickers faintly, the way real flame light does.
+            TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { context in
+                let t = context.date.timeIntervalSinceReferenceDate
+                let flicker = 0.52 + 0.05 * sin(t * 1.7) + 0.03 * sin(t * 4.3 + 1.2)
+                RadialGradient(
+                    colors: [currentDish.palette.glow.color.opacity(flicker), .clear],
+                    center: .init(x: 0.5, y: 0.44),
+                    startRadius: 40, endRadius: 430
+                )
+            }
             .ignoresSafeArea()
             .animation(.easeInOut(duration: 0.8), value: pageIndex)
 
@@ -145,8 +150,11 @@ struct HomeView: View {
 /// A single frame of the reel: studio artwork breathing under moving light,
 /// with editorial captions below.
 struct FeaturedDishCard: View {
+    @Environment(AppState.self) private var app
     var dish: Dish
     var namespace: Namespace.ID
+
+    private var isPresented: Bool { app.selectedDish?.id == dish.id }
 
     var body: some View {
         VStack(spacing: 4) {
@@ -160,8 +168,23 @@ struct FeaturedDishCard: View {
                     .offset(x: sway)
             }
             .lightSweep(intensity: 0.14)
-            .frame(maxHeight: 380)
-            .padding(.horizontal, 22)
+            .matchedGeometryEffect(id: "hero-\(dish.id)", in: namespace, isSource: !isPresented)
+            .opacity(isPresented ? 0 : 1)
+            .background(alignment: .bottom) {
+                // The table itself: a warm pool of reflected light
+                Ellipse()
+                    .fill(
+                        RadialGradient(
+                            colors: [DL.sesame.opacity(0.16), .clear],
+                            center: .center, startRadius: 6, endRadius: 150
+                        )
+                    )
+                    .frame(width: 290, height: 64)
+                    .offset(y: 10)
+                    .blur(radius: 6)
+            }
+            .frame(maxHeight: 400)
+            .padding(.horizontal, 18)
 
             VStack(spacing: 10) {
                 HStack(spacing: 8) {

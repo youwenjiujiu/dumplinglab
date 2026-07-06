@@ -8,8 +8,8 @@ struct DishDetailView: View {
     var dish: Dish
     var namespace: Namespace.ID
 
-    // Signature animation staging
-    @State private var arrived = false      // dish drifts in
+    // Signature animation staging. Arrival is the matched-geometry flight
+    // from the menu tile; the rest of the sequence follows it.
     @State private var leanedIn = false     // camera zoom
     @State private var reveal: CGFloat = 0  // dumpling opens, juice flows
     @State private var infoShown = false    // captions fade in
@@ -40,10 +40,9 @@ struct DishDetailView: View {
     }
 
     private func runSignatureSequence() {
-        withAnimation(.spring(response: 0.9, dampingFraction: 0.8).delay(0.1)) { arrived = true }
-        withAnimation(.easeInOut(duration: 1.4).delay(0.9)) { leanedIn = true }
-        withAnimation(.spring(response: 1.1, dampingFraction: 0.85).delay(1.6)) { reveal = 1 }
-        withAnimation(.easeOut(duration: 0.7).delay(2.1)) { infoShown = true }
+        withAnimation(.easeInOut(duration: 1.0).delay(0.5)) { leanedIn = true }
+        withAnimation(.spring(response: 1.0, dampingFraction: 0.85).delay(0.95)) { reveal = 1 }
+        withAnimation(.easeOut(duration: 0.6).delay(1.15)) { infoShown = true }
     }
 
     // MARK: Hero
@@ -71,17 +70,19 @@ struct DishDetailView: View {
                         .rotationEffect(.degrees(idleSpin))
                 }
                 .lightSweep(intensity: 0.16)
+                .matchedGeometryEffect(id: "hero-\(dish.id)", in: namespace)
                 .frame(maxHeight: 340)
                 .scaleEffect(heroScale)
-                .offset(y: arrived ? 0 : 46)
-                .opacity(arrived ? 1 : 0)
 
                 // The information arrives only after the food has spoken.
                 VStack(spacing: 9) {
                     HStack(spacing: 8) {
                         Badge(text: "Handmade Daily", tint: DL.wood)
-                        if dish.isBestSeller { Badge(text: "Best Seller", tint: DL.red) }
-                        if dish.isChefsChoice { Badge(text: "Chef Recommendation", tint: DL.soy) }
+                        if dish.isBestSeller {
+                            Badge(text: "Best Seller", tint: DL.red)
+                        } else if dish.isChefsChoice {
+                            Badge(text: "Chef's Choice", tint: DL.soy)
+                        }
                     }
                     Text(dish.name)
                         .font(DL.display(30, weight: .semibold))
@@ -106,8 +107,7 @@ struct DishDetailView: View {
     }
 
     private var heroScale: CGFloat {
-        if !arrived { return 0.82 }
-        return leanedIn ? 1.08 : 1.0
+        leanedIn ? 1.08 : 1.0
     }
 
     // MARK: Content
@@ -330,6 +330,16 @@ struct DishDetailView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 16)
             .dlShadow(radius: 22, y: 12, opacity: 0.2)
+            .background(alignment: .bottom) {
+                // Legibility scrim: content dissolves before it reaches the bar
+                LinearGradient(
+                    colors: [DL.cream.opacity(0), DL.cream.opacity(0.85), DL.cream],
+                    startPoint: .top, endPoint: .bottom
+                )
+                .frame(height: 190)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
             .opacity(infoShown ? 1 : 0)
             .offset(y: infoShown ? 0 : 30)
         }
