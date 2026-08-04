@@ -93,6 +93,25 @@ function renderFilters() {
   });
 }
 
+/* ---------------- Dish tile visual ---------------- */
+// Photo when available; otherwise an elegant warm gradient card with the
+// dish name set in serif — premium editorial look, varied per dish colour.
+function tileFor(d, opts={}) {
+  if (d.img) return `<img class="ph" src="img/${d.img}" alt="${d.cn||d.name}" loading="lazy">`;
+  const a = d.accent || "#8a6a45", g = d.glow || "#3a271a";
+  const nm = (lang==="zh"?d.cn:d.name);
+  const em = SECTION_EMOJI[d.section] || "";
+  return `<div class="gtile" style="--a:${a};--b:${g}">
+    <span class="gt-em">${em}</span>
+    <span class="gt-nm">${nm}</span>
+    <span class="gt-line"></span>
+  </div>`;
+}
+const SECTION_EMOJI = {
+  signature:"🥟", diy:"🥟", noodles:"🍜", buns:"🫓", tangzi:"🍡",
+  rice:"🍚", soup:"🥣", sides:"🍢", fried:"🍤", veg:"🥬", dessert:"🍧"
+};
+
 /* ---------------- Render: menu grid ---------------- */
 function renderMenu() {
   const menu = $("#menu"); menu.innerHTML = "";
@@ -114,19 +133,19 @@ function renderMenu() {
 
 function card(d) {
   const el = document.createElement("div");
-  el.className = "card" + (d.soldOut?" sold":"");
+  el.className = "card" + (d.soldOut?" sold":"") + (d.img?" hasphoto":"");
   el.dataset.id = d.id;
   const spice = d.spice ? `<span class="spice">${"🌶".repeat(Math.min(d.spice,3))}</span>` : "";
   el.innerHTML = `
     <div class="pic">
-      ${artFor(d)}
+      ${tileFor(d)}
       ${d.soldOut ? `<div class="sold-tag">${L().soldOut}</div>`
         : `<button class="add" aria-label="add">+</button>`}
     </div>
     <div class="cap">
-      <div class="nm">${(d.best||d.chef)?'<span class="dot">•</span>':""}${dName(d)}</div>
-      <div class="en">${dOther(d)}</div>
-      <div class="row"><span class="price">${fmt(d.price)}</span>${spice}</div>
+      ${d.img?`<div class="nm">${(d.best||d.chef)?'<span class="dot">•</span>':""}${dName(d)}</div>`:""}
+      <div class="en">${(!d.img&&(d.best||d.chef))?'<span class="dot">•</span>':""}${dOther(d)}</div>
+      <div class="row"><span class="price">${fmt(d.price)}</span>${spice}${d.pieces?`<span class="pc">${d.pieces} ${L().pieces}</span>`:""}</div>
     </div>`;
   if (!d.soldOut) {
     el.querySelector(".pic").onclick = e => { if (e.target.classList.contains("add")) return; openDish(d); };
@@ -209,7 +228,7 @@ function renderSheet() {
     <div class="styles">${d.styles.map(s=>`<button class="style-opt${s===sheetStyle?" on":""}" data-s="${s}">${styleLabel(s)}</button>`).join("")}</div>
   ` : "";
   $("#sheetBody").innerHTML = `
-    <div class="d-pic">${artFor(d)}</div>
+    <div class="d-pic">${tileFor(d,{big:true})}</div>
     ${badges?`<div class="d-badges">${badges}</div>`:""}
     <div class="d-name">${dName(d)}</div>
     <div class="d-en">${dOther(d)}</div>
@@ -261,7 +280,7 @@ function renderCart() {
     const d=dishById(v.id); if(!d) return "";
     const sub = v.style ? styleLabel(v.style) : fmt(d.price);
     return `<div class="cart-line" data-k="${k}">
-      <div class="th">${artFor(d)}</div>
+      <div class="th">${tileFor(d)}</div>
       <div class="info"><div class="nm">${dName(d)}</div><div class="sub">${sub}${v.style?` · ${fmt(d.price)}`:""}</div></div>
       <div class="stepper"><button data-d="-1">−</button><b>${v.qty}</b><button data-d="1">+</button></div>
     </div>`;

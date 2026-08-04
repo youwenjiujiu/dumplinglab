@@ -190,3 +190,42 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; }
   #cartBar,#sheet,#cart,#done { left:max(0px,calc(50% - 240px)); right:max(0px,calc(50% - 240px)); }
   #toast { max-width:440px; }
 }
+
+/* ---------- Visual upgrade: gradient name tiles + warmth ---------- */
+body { background:linear-gradient(180deg,#f6f1e7,#efe7d7 60%,#f6f1e7); }
+.card .pic img.ph { object-fit:cover; }
+.gtile {
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px; padding:14px; text-align:center;
+  background:
+    radial-gradient(120% 90% at 28% 22%, rgba(255,255,255,.18), transparent 55%),
+    linear-gradient(155deg, var(--a), var(--b));
+}
+.gtile::after { /* soft top sheen */
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(255,255,255,.10), transparent 40%);
+}
+.gt-em { font-size:26px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.25)); opacity:.9; }
+.gt-nm {
+  position:relative; z-index:1; font-family:var(--serif); font-weight:600;
+  font-size:20px; line-height:1.2; color:#fdf6ea;
+  text-shadow:0 1px 8px rgba(0,0,0,.35); letter-spacing:.02em;
+}
+.card .pic { box-shadow:0 12px 26px rgba(20,12,6,.14), 0 3px 8px rgba(20,12,6,.10); }
+.card .cap .nm { font-size:14.5px; }
+.d-pic .gtile { border-radius:0; }
+.d-pic .gt-nm { font-size:30px; }
+.d-pic .gt-em { font-size:38px; }
+.cart-line .th .gtile { border-radius:0; padding:2px; }
+.cart-line .th .gt-nm { font-size:9px; -webkit-line-clamp:2; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
+.cart-line .th .gt-em { display:none; }
+
+/* tile refinement: corner emoji, editorial name, hairline */
+.gt-em { position:absolute; top:10px; left:12px; font-size:15px; opacity:.85; z-index:2; }
+.gtile { justify-content:center; }
+.gt-nm { font-size:22px; padding:0 6px; }
+.gt-line { position:absolute; bottom:14px; width:26px; height:2px; border-radius:2px; background:rgba(253,246,234,.5); z-index:1; }
+.card .cap .en { font-size:12px; color:var(--ink-faint); font-weight:500; }
+.card .cap .en .dot { color:var(--red); }
+.card.hasphoto .cap .nm { font-size:14.5px; font-weight:600; }
+.card .cap .pc { margin-left:auto; font-size:11px; color:var(--ink-faint); }
