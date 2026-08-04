@@ -76,7 +76,9 @@
     b.onclick = () => show(it);
     pick.appendChild(b);
   });
-  show(items[0]);
+  // ?dish=<id> auto-selects for verification
+  const want = new URLSearchParams(location.search).get("dish");
+  show(items.find(i => i.id === want) || items[0]);
 </script>
 </body>
 </html>

@@ -15,15 +15,15 @@ const Dish3D = (() => {
   const modelCache = new Map();
 
   function studioLights(scene) {
-    scene.add(new THREE.AmbientLight(0xfff4e6, 0.7));
-    const key = new THREE.DirectionalLight(0xffffff, 2.2);
+    scene.add(new THREE.AmbientLight(0xfff4e6, 1.0));
+    const key = new THREE.DirectionalLight(0xffffff, 3.0);
     key.position.set(-3, 5, 4);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
     key.shadow.camera.near = 0.5;
     key.shadow.camera.far = 20;
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0xffd9a0, 1.1);
+    const rim = new THREE.DirectionalLight(0xffd9a0, 1.6);
     rim.position.set(4, 2, -3);
     scene.add(rim);
     const fill = new THREE.DirectionalLight(0xffe8cc, 0.5);
@@ -87,7 +87,7 @@ const Dish3D = (() => {
     const center = box.getCenter(new THREE.Vector3());
     obj.position.sub(center);                       // center at origin
     const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    const scale = 1.6 / maxDim;
+    const scale = 2.2 / maxDim;
     obj.scale.setScalar(scale);
     obj.position.multiplyScalar(scale);
   }
@@ -97,7 +97,7 @@ const Dish3D = (() => {
     const height = container.clientHeight || 300;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(0, 0.35, 4.2);
+    camera.position.set(0, 0.5, 3.2);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
