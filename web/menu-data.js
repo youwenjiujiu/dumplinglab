@@ -99,7 +99,7 @@ const MENU = [
   "skin": "#edd19e",
   "accent": "#9e6138",
   "glow": "#5c3d26",
-  "img": null,
+  "img": "wonton-soup.png",
   "meat": "shrimp",
   "veg": false
  },
@@ -667,7 +667,7 @@ const MENU = [
   "skin": "#f2dead",
   "accent": "#e0a85c",
   "glow": "#66471f",
-  "img": null,
+  "img": "hot-oil-noodles.png",
   "meat": "vegan",
   "veg": true
  },
@@ -1479,13 +1479,13 @@ const MENU = [
   "pairings": [],
   "best": false,
   "chef": false,
-  "featured": false,
+  "featured": true,
   "soldOut": false,
   "art": "sidePlate",
   "skin": "#e0a857",
   "accent": "#8c5926",
   "glow": "#613d14",
-  "img": null,
+  "img": "crispy-tofu.png",
   "meat": "vegetarian",
   "veg": true
  },
