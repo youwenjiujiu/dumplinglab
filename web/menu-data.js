@@ -1,56 +1,30 @@
-// Generated from DumplingLab/Data/MenuData.swift — single source of truth for the web menu.
-const SECTIONS = ["Signature Dumplings", "Pan Fried", "Wontons", "Soup Dumplings", "Noodles", "Fried Rice", "Soups", "Side Dishes", "Vegetables", "Desserts", "Chef Specials"];
-const TAGLINES = {"Signature Dumplings": "Folded by hand, eighteen pleats each", "Pan Fried": "Golden lace, crisp underneath", "Wontons": "Silk-thin wrappers in warm broth", "Soup Dumplings": "Hold the spoon close — they pour", "Noodles": "Pulled this morning", "Fried Rice": "Day-old rice, screaming-hot wok", "Soups": "Slow-simmered, never rushed", "Side Dishes": "Small plates, big opinions", "Vegetables": "From the market, barely touched", "Desserts": "A soft landing", "Chef Specials": "What the kitchen is proud of this week"};
+// Generated from the real A1 order sheet. Prices are placeholders — confirm.
+const SECTIONS = ["signature", "diy", "noodles", "buns", "tangzi", "rice", "soup", "sides", "fried", "veg", "dessert"];
+const SECTION_LABELS = {"signature": "Signature", "diy": "Build Your Own", "noodles": "Noodles", "buns": "Buns & Soup Buns", "tangzi": "Wuxi Tangzi", "rice": "Fried Rice", "soup": "Soups", "sides": "Sides", "fried": "Fried", "veg": "Vegetables", "dessert": "Guizhou Ice"};
+const TAGLINES = {"signature": "", "diy": "", "noodles": "", "buns": "", "tangzi": "", "rice": "", "soup": "", "sides": "", "fried": "", "veg": "", "dessert": ""};
+const STYLE_LABELS = {"水煮": "Boiled", "煎饺": "Pan-fried", "清汤": "Clear soup", "辣拌": "Spicy-tossed", "混酱": "Mixed sauce"};
 const MENU = [
  {
-  "id": "black-pork-panfried",
-  "name": "Black Pork Pan Fried Dumplings",
-  "cn": "黑豚煎饺",
-  "section": "Signature Dumplings",
-  "price": 14.5,
-  "pieces": 6,
-  "flavor": "Deep, sweet Berkshire pork with charred cabbage and a whisper of white pepper — under a shattering golden crust.",
-  "story": "Chef Lin spent two years on this filling. The pork is hand-chopped, never ground, so each bite keeps its bounce. The lace crust is poured tableside in the kitchen's imagination — a flour slurry that fries into glass.",
-  "kcal": 580,
-  "protein": 26,
-  "carbs": 48,
-  "fat": 31,
+  "id": "beijing-pork-guotie",
+  "name": "Beijing Pork Potstickers",
+  "cn": "北京猪肉锅贴",
+  "section": "signature",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Juicy pork in a crackling pan-seared skin.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
   "spice": 0,
-  "meat": "pork",
-  "veg": false,
   "allergens": [
    "Gluten",
-   "Soy",
-   "Sesame"
+   "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Berkshire pork",
-    "emoji": "🥩"
-   },
-   {
-    "name": "Charred cabbage",
-    "emoji": "🥬"
-   },
-   {
-    "name": "Ginger",
-    "emoji": "🫚"
-   },
-   {
-    "name": "Chive",
-    "emoji": "🌿"
-   },
-   {
-    "name": "White pepper",
-    "emoji": "✨"
-   }
-  ],
-  "sauce": "Black vinegar & young ginger",
-  "pairings": [
-   "cucumber-smash",
-   "hot-sour-soup",
-   "jasmine-panna-cotta"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": true,
   "chef": true,
   "featured": true,
@@ -59,476 +33,829 @@ const MENU = [
   "skin": "#edd19e",
   "accent": "#9e6138",
   "glow": "#5c3d26",
-  "img": null
+  "img": null,
+  "meat": "pork",
+  "veg": false
  },
  {
-  "id": "chicken-corn",
-  "name": "Chicken & Sweet Corn Dumplings",
-  "cn": "鸡肉玉米饺",
-  "section": "Signature Dumplings",
-  "price": 12.5,
-  "pieces": 6,
-  "flavor": "Bright, gently sweet, and impossibly juicy — summer corn folded into free-range chicken.",
-  "story": "A staff-meal experiment that never left the menu. The corn is cut fresh each morning; its milk binds the filling with no starch at all.",
-  "kcal": 430,
-  "protein": 28,
-  "carbs": 44,
-  "fat": 15,
-  "spice": 0,
-  "meat": "chicken",
-  "veg": false,
+  "id": "jp-chicken-gyoza",
+  "name": "Japanese Chicken Gyoza",
+  "cn": "日式鸡肉煎饺",
+  "section": "signature",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Thin-skinned chicken gyoza, garlicky and crisp.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
+  "spice": 1,
   "allergens": [
    "Gluten",
    "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Free-range chicken",
-    "emoji": "🍗"
-   },
-   {
-    "name": "Sweet corn",
-    "emoji": "🌽"
-   },
-   {
-    "name": "Scallion",
-    "emoji": "🌿"
-   },
-   {
-    "name": "Shaoxing wine",
-    "emoji": "🍶"
-   }
-  ],
-  "sauce": "Light soy & scallion oil",
-  "pairings": [
-   "chicken-broth",
-   "garlic-greens"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": true,
   "chef": false,
   "featured": true,
   "soldOut": false,
-  "art": "pleatedDumpling",
-  "skin": "#f7ebc7",
-  "accent": "#f2c74c",
-  "glow": "#6b5224",
-  "img": null
+  "art": "pleatedDumplingCrisped",
+  "skin": "#edd19e",
+  "accent": "#9e6138",
+  "glow": "#5c3d26",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
  },
  {
-  "id": "sichuan-chili",
-  "name": "Sichuan Chili Dumplings",
-  "cn": "红油抄手",
-  "section": "Signature Dumplings",
-  "price": 13.0,
-  "pieces": 8,
-  "flavor": "Silken pork dumplings drowned — happily — in fragrant chili oil, Sichuan pepper, and black vinegar.",
-  "story": "The chili oil steeps for three days with cassia and star anise. It should tingle, then hum, then make you order rice.",
-  "kcal": 520,
-  "protein": 22,
-  "carbs": 42,
-  "fat": 29,
-  "spice": 3,
-  "meat": "pork",
-  "veg": false,
-  "allergens": [
-   "Gluten",
-   "Soy",
-   "Sesame",
-   "Peanut"
-  ],
-  "ingredients": [
-   {
-    "name": "Pork shoulder",
-    "emoji": "🥩"
-   },
-   {
-    "name": "Three-day chili oil",
-    "emoji": "🌶️"
-   },
-   {
-    "name": "Sichuan pepper",
-    "emoji": "🔥"
-   },
-   {
-    "name": "Black vinegar",
-    "emoji": "🍶"
-   },
-   {
-    "name": "Crushed peanut",
-    "emoji": "🥜"
-   }
-  ],
-  "sauce": "Already dressed — bring rice",
-  "pairings": [
-   "cucumber-smash",
-   "egg-fried-rice",
-   "mango-sago"
-  ],
-  "best": true,
-  "chef": false,
-  "featured": true,
-  "soldOut": false,
-  "art": "pleatedDumpling",
-  "skin": "#f0deb8",
-  "accent": "#b82e1f",
-  "glow": "#661f14",
-  "img": null
- },
- {
-  "id": "mushroom-truffle",
-  "name": "Wild Mushroom & Truffle Dumplings",
-  "cn": "松露野菌饺",
-  "section": "Signature Dumplings",
-  "price": 15.0,
-  "pieces": 6,
-  "flavor": "Five mushrooms, brown butter, and a breath of black truffle inside a spinach-jade wrapper.",
-  "story": "Our vegetarian flagship. The mushrooms are roasted until they give up every drop of water, then folded warm so the wrapper takes their perfume.",
-  "kcal": 390,
-  "protein": 12,
-  "carbs": 46,
-  "fat": 17,
+  "id": "hk-crab-roe-wonton",
+  "name": "HK Crab Roe Wontons",
+  "cn": "港式蟹籽汤云吞",
+  "section": "signature",
+  "price": 10.8,
+  "pieces": null,
+  "flavor": "Silky wontons with crab roe in golden broth.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
   "spice": 0,
-  "meat": "vegetarian",
-  "veg": true,
   "allergens": [
    "Gluten",
-   "Dairy"
+   "Shellfish"
   ],
-  "ingredients": [
-   {
-    "name": "Five wild mushrooms",
-    "emoji": "🍄"
-   },
-   {
-    "name": "Black truffle",
-    "emoji": "⚫"
-   },
-   {
-    "name": "Brown butter",
-    "emoji": "🧈"
-   },
-   {
-    "name": "Spinach wrapper",
-    "emoji": "🥬"
-   }
-  ],
-  "sauce": "Aged soy pearls",
-  "pairings": [
-   "garlic-greens",
-   "silk-tofu-soup"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": false,
   "chef": true,
   "featured": true,
   "soldOut": false,
-  "art": "pleatedDumpling",
-  "skin": "#b8cc9e",
-  "accent": "#6b523d",
-  "glow": "#334729",
-  "img": null
+  "art": "wonton",
+  "skin": "#edd19e",
+  "accent": "#9e6138",
+  "glow": "#5c3d26",
+  "img": null,
+  "meat": "shrimp",
+  "veg": false
  },
  {
-  "id": "chicken-gyoza",
-  "name": "Japanese Chicken Gyoza",
-  "cn": "鸡肉煎饺",
-  "section": "Pan Fried",
-  "price": 11.5,
-  "pieces": 6,
-  "flavor": "Thin-skinned, garlicky, seared hard on one side and steamed soft on the other.",
-  "story": "A bow to our sister izakaya in Osaka. The wrappers are rolled to 0.8 millimeters — thin enough to read a menu through.",
-  "kcal": 410,
-  "protein": 24,
-  "carbs": 40,
-  "fat": 16,
-  "spice": 1,
-  "meat": "chicken",
-  "veg": false,
-  "allergens": [
-   "Gluten",
-   "Soy",
-   "Sesame"
-  ],
-  "ingredients": [
-   {
-    "name": "Chicken thigh",
-    "emoji": "🍗"
-   },
-   {
-    "name": "Garlic chive",
-    "emoji": "🌿"
-   },
-   {
-    "name": "Ginger",
-    "emoji": "🫚"
-   },
-   {
-    "name": "Sesame oil",
-    "emoji": "🫗"
-   }
-  ],
-  "sauce": "Yuzu ponzu",
-  "pairings": [
-   "chicken-ramen",
-   "cucumber-smash"
-  ],
-  "best": true,
-  "chef": false,
-  "featured": true,
-  "soldOut": false,
-  "art": "pleatedDumplingCrisped",
-  "skin": "#f2e0b8",
-  "accent": "#cc944c",
-  "glow": "#574224",
-  "img": null
- },
- {
-  "id": "beef-scallion-panfried",
-  "name": "Beef & Charred Scallion Pan Fried",
-  "cn": "葱香牛肉锅贴",
-  "section": "Pan Fried",
-  "price": 13.5,
-  "pieces": 6,
-  "flavor": "Rich short-rib beef sweetened with scallions blistered over open flame.",
-  "story": "The scallions go over the binchotan until their edges blacken. That smoke is the whole dish.",
-  "kcal": 560,
-  "protein": 27,
-  "carbs": 46,
-  "fat": 29,
-  "spice": 1,
-  "meat": "beef",
-  "veg": false,
-  "allergens": [
-   "Gluten",
-   "Soy"
-  ],
-  "ingredients": [
-   {
-    "name": "Short rib",
-    "emoji": "🥩"
-   },
-   {
-    "name": "Charred scallion",
-    "emoji": "🌿"
-   },
-   {
-    "name": "Toasted cumin",
-    "emoji": "✨"
-   }
-  ],
-  "sauce": "Chili crisp & vinegar",
-  "pairings": [
-   "hot-sour-soup",
-   "smacked-eggplant"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "pleatedDumplingCrisped",
-  "skin": "#e8cc99",
-  "accent": "#7a4c33",
-  "glow": "#4c331f",
-  "img": null
- },
- {
-  "id": "veggie-potsticker",
-  "name": "Garden Potstickers",
-  "cn": "素锅贴",
-  "section": "Pan Fried",
-  "price": 10.5,
-  "pieces": 6,
-  "flavor": "Cabbage, glass noodle, shiitake, and egg — the classic, crisped.",
-  "story": "Grandmother Wei's recipe, unchanged since the first Dumpling Lab. We tried to improve it once. We apologized.",
-  "kcal": 370,
-  "protein": 11,
-  "carbs": 48,
+  "id": "grandma-fried-wonton",
+  "name": "Grandma's Fried Wontons",
+  "cn": "外婆煎馄饨",
+  "section": "signature",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Home-style wontons, pan-fried till golden.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
   "fat": 14,
   "spice": 0,
-  "meat": "vegetarian",
-  "veg": true,
   "allergens": [
    "Gluten",
-   "Soy",
-   "Egg",
-   "Sesame"
+   "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Napa cabbage",
-    "emoji": "🥬"
-   },
-   {
-    "name": "Shiitake",
-    "emoji": "🍄"
-   },
-   {
-    "name": "Glass noodle",
-    "emoji": "🍜"
-   },
-   {
-    "name": "Egg",
-    "emoji": "🥚"
-   }
-  ],
-  "sauce": "Black vinegar & chili crisp",
-  "pairings": [
-   "silk-tofu-soup",
-   "garlic-greens"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": false,
   "chef": false,
   "featured": false,
   "soldOut": false,
   "art": "pleatedDumplingCrisped",
-  "skin": "#f0e3bd",
-  "accent": "#8c9e61",
-  "glow": "#474c26",
-  "img": null
+  "skin": "#edd19e",
+  "accent": "#9e6138",
+  "glow": "#5c3d26",
+  "img": null,
+  "meat": "pork",
+  "veg": false
  },
  {
-  "id": "shrimp-wonton",
-  "name": "Shrimp Wontons in Golden Broth",
-  "cn": "鲜虾云吞",
-  "section": "Wontons",
-  "price": 13.5,
-  "pieces": 8,
-  "flavor": "Whole tiger prawns in silk wrappers, floating in a broth clarified to amber glass.",
-  "story": "The broth starts at 5 a.m. — chicken frames, pork bone, dried flounder — and is rafted clear like consommé. You can read the bottom of the bowl.",
-  "kcal": 380,
-  "protein": 24,
-  "carbs": 38,
-  "fat": 12,
-  "spice": 0,
-  "meat": "shrimp",
-  "veg": false,
+  "id": "nanjing-beef-guotie",
+  "name": "Nanjing Beef Potstickers",
+  "cn": "南京牛肉锅贴",
+  "section": "signature",
+  "price": 10.8,
+  "pieces": null,
+  "flavor": "Rich beef potstickers with charred scallion.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
+  "spice": 1,
   "allergens": [
    "Gluten",
-   "Shellfish",
-   "Egg"
+   "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Tiger prawn",
-    "emoji": "🦐"
-   },
-   {
-    "name": "Golden broth",
-    "emoji": "🥣"
-   },
-   {
-    "name": "Yellow chive",
-    "emoji": "🌿"
-   },
-   {
-    "name": "Flounder dust",
-    "emoji": "🐟"
-   }
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumplingCrisped",
+  "skin": "#edd19e",
+  "accent": "#9e6138",
+  "glow": "#5c3d26",
+  "img": null,
+  "meat": "beef",
+  "veg": false
+ },
+ {
+  "id": "sichuan-red-oil-chaoshou",
+  "name": "Sichuan Red Oil Wontons",
+  "cn": "四川红油抄手",
+  "section": "signature",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Silken pork wontons in fragrant chili oil.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
+  "spice": 3,
+  "allergens": [
+   "Gluten",
+   "Soy"
   ],
-  "sauce": "A drop of red vinegar",
-  "pairings": [
-   "garlic-greens",
-   "egg-fried-rice"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": true,
   "chef": false,
   "featured": true,
   "soldOut": false,
   "art": "wonton",
-  "skin": "#fae6c2",
-  "accent": "#f29973",
-  "glow": "#734c1f",
-  "img": "wonton-soup.png"
+  "skin": "#edd19e",
+  "accent": "#9e6138",
+  "glow": "#5c3d26",
+  "img": null,
+  "meat": "pork",
+  "veg": false
  },
  {
-  "id": "pork-chive-wonton",
-  "name": "Pork & Chive Wontons",
-  "cn": "韭菜猪肉云吞",
-  "section": "Wontons",
-  "price": 11.5,
-  "pieces": 8,
-  "flavor": "The comfort classic — juicy, green-flecked, endless.",
-  "story": "Folded at the window bar every afternoon at four. Regulars set their watches by it.",
-  "kcal": 420,
-  "protein": 21,
-  "carbs": 40,
-  "fat": 18,
+  "id": "diy-chicken-cabbage",
+  "name": "Chicken & Cabbage",
+  "cn": "鸡肉包菜",
+  "section": "diy",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
   "spice": 0,
-  "meat": "pork",
-  "veg": false,
   "allergens": [
    "Gluten",
-   "Soy",
-   "Egg"
+   "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Pork belly & loin",
-    "emoji": "🥩"
-   },
-   {
-    "name": "Chinese chive",
-    "emoji": "🌿"
-   },
-   {
-    "name": "Ginger water",
-    "emoji": "🫚"
-   }
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "chicken",
+  "veg": false,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-beef-curry-onion",
+  "name": "Beef, Curry & Onion",
+  "cn": "牛肉咖喱洋葱",
+  "section": "diy",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 1,
+  "allergens": [
+   "Gluten",
+   "Soy"
   ],
-  "sauce": "Scallion oil",
-  "pairings": [
-   "hot-sour-soup",
-   "cucumber-smash"
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "beef",
+  "veg": false,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-pork-celery-shrimp",
+  "name": "Pork, Celery & Shrimp",
+  "cn": "猪肉芹菜虾仁",
+  "section": "diy",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
   ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "pork",
+  "veg": false,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-saltedegg-roe-shrimp",
+  "name": "Salted Egg, Roe & Shrimp",
+  "cn": "咸蛋鱼子虾仁",
+  "section": "diy",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Shellfish"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "shrimp",
+  "veg": false,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-pork-scallion",
+  "name": "Pork & Scallion",
+  "cn": "猪肉大葱",
+  "section": "diy",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "pork",
+  "veg": false,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-chicken-corn-carrot",
+  "name": "Chicken, Corn & Carrot",
+  "cn": "鸡肉玉米胡萝卜",
+  "section": "diy",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "chicken",
+  "veg": false,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-pork-chive",
+  "name": "Pork & Chive",
+  "cn": "猪肉韭菜",
+  "section": "diy",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "pork",
+  "veg": false,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-tomato-egg",
+  "name": "Tomato & Egg",
+  "cn": "番茄鸡蛋",
+  "section": "diy",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "vegetarian",
+  "veg": true,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-four-veg",
+  "name": "Four-Vegetable",
+  "cn": "四素饺子",
+  "section": "diy",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "pleatedDumpling",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "vegan",
+  "veg": true,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-veg-pork-wonton",
+  "name": "Pork & Veg Wontons",
+  "cn": "菜肉馄饨",
+  "section": "diy",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": false,
   "chef": false,
   "featured": false,
   "soldOut": false,
   "art": "wonton",
-  "skin": "#f7e8c7",
-  "accent": "#809959",
-  "glow": "#5c4724",
-  "img": null
- },
- {
-  "id": "pork-xlb",
-  "name": "Pork Soup Dumplings",
-  "cn": "小笼包",
-  "section": "Soup Dumplings",
-  "price": 13.0,
-  "pieces": 6,
-  "flavor": "Eighteen pleats around a spoonful of hot pork consommé. Bite, sip, then eat.",
-  "story": "The soup is a jellied stock folded in cold; steam melts it back to broth. Six minutes, not seven — the timer is sacred.",
-  "kcal": 450,
-  "protein": 22,
-  "carbs": 42,
-  "fat": 21,
-  "spice": 0,
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
   "meat": "pork",
   "veg": false,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "diy-chive-wonton",
+  "name": "Chive Wontons",
+  "cn": "韭菜馄饨",
+  "section": "diy",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Choose your filling, then your cooking style.",
+  "story": "",
+  "kcal": 380,
+  "protein": 13,
+  "carbs": 47,
+  "fat": 12,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "wonton",
+  "skin": "#f5e6c2",
+  "accent": "#d99e66",
+  "glow": "#664724",
+  "img": null,
+  "meat": "vegetarian",
+  "veg": true,
+  "styles": [
+   "水煮",
+   "煎饺",
+   "清汤",
+   "辣拌",
+   "混酱"
+  ]
+ },
+ {
+  "id": "xian-hot-oil-noodles",
+  "name": "Xi'an Hot Oil Noodles",
+  "cn": "西安油泼面",
+  "section": "noodles",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Wide ribbons under a sizzle of hot chili oil.",
+  "story": "",
+  "kcal": 560,
+  "protein": 19,
+  "carbs": 70,
+  "fat": 18,
+  "spice": 3,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": true,
+  "chef": false,
+  "featured": true,
+  "soldOut": false,
+  "art": "noodleBowl",
+  "skin": "#f2dead",
+  "accent": "#e0a85c",
+  "glow": "#66471f",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "xinjiang-dapanji-noodles",
+  "name": "Xinjiang Big-Plate Chicken Noodles",
+  "cn": "新疆大盘鸡面",
+  "section": "noodles",
+  "price": 12.8,
+  "pieces": null,
+  "flavor": "Big-plate chicken over hand-pulled noodles.",
+  "story": "",
+  "kcal": 560,
+  "protein": 19,
+  "carbs": 70,
+  "fat": 18,
+  "spice": 2,
   "allergens": [
    "Gluten",
    "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Pork",
-    "emoji": "🥩"
-   },
-   {
-    "name": "Jellied consommé",
-    "emoji": "✨"
-   },
-   {
-    "name": "Young ginger",
-    "emoji": "🫚"
-   }
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "noodleBowl",
+  "skin": "#f2dead",
+  "accent": "#e0a85c",
+  "glow": "#66471f",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
+ },
+ {
+  "id": "shanghai-scallion-noodles",
+  "name": "Shanghai Scallion Oil Noodles",
+  "cn": "上海葱油面",
+  "section": "noodles",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "Mahogany scallions, sweet soy, thin noodles.",
+  "story": "",
+  "kcal": 560,
+  "protein": 19,
+  "carbs": 70,
+  "fat": 18,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
   ],
-  "sauce": "Black vinegar & ginger threads",
-  "pairings": [
-   "garlic-greens",
-   "jasmine-panna-cotta"
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "noodleBowl",
+  "skin": "#f2dead",
+  "accent": "#e0a85c",
+  "glow": "#66471f",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "beijing-zhajiang-noodles",
+  "name": "Beijing Zhajiang Noodles",
+  "cn": "北京炸酱面",
+  "section": "noodles",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Springy noodles under savory bean-paste pork.",
+  "story": "",
+  "kcal": 560,
+  "protein": 19,
+  "carbs": 70,
+  "fat": 18,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
   ],
-  "best": true,
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "noodleBowl",
+  "skin": "#f2dead",
+  "accent": "#e0a85c",
+  "glow": "#66471f",
+  "img": null,
+  "meat": "pork",
+  "veg": false
+ },
+ {
+  "id": "signature-chicken-ramen",
+  "name": "Signature Chicken Ramen",
+  "cn": "招牌鸡汤拉面",
+  "section": "noodles",
+  "price": 11.8,
+  "pieces": null,
+  "flavor": "Twelve-hour chicken broth, hand-pulled noodles.",
+  "story": "",
+  "kcal": 560,
+  "protein": 19,
+  "carbs": 70,
+  "fat": 18,
+  "spice": 1,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": true,
+  "featured": true,
+  "soldOut": false,
+  "art": "noodleBowl",
+  "skin": "#f2dead",
+  "accent": "#e0a85c",
+  "glow": "#66471f",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
+ },
+ {
+  "id": "yangzhou-plain-noodles",
+  "name": "Yangzhou Plain Noodles",
+  "cn": "扬州阳春素面",
+  "section": "noodles",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "The gentlest bowl — clear broth, thin noodles.",
+  "story": "",
+  "kcal": 560,
+  "protein": 19,
+  "carbs": 70,
+  "fat": 18,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "noodleBowl",
+  "skin": "#f2dead",
+  "accent": "#e0a85c",
+  "glow": "#66471f",
+  "img": null,
+  "meat": "vegetarian",
+  "veg": true
+ },
+ {
+  "id": "nanjing-soup-bun",
+  "name": "Nanjing Soup Buns",
+  "cn": "南京汤包",
+  "section": "buns",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "Eighteen pleats around a spoonful of hot broth.",
+  "story": "",
+  "kcal": 430,
+  "protein": 15,
+  "carbs": 53,
+  "fat": 14,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
   "chef": true,
   "featured": true,
   "soldOut": false,
@@ -536,772 +863,620 @@ const MENU = [
   "skin": "#f5e6c9",
   "accent": "#d9a873",
   "glow": "#664724",
-  "img": null
+  "img": null,
+  "meat": "pork",
+  "veg": false
  },
  {
-  "id": "crab-pork-xlb",
-  "name": "Crab & Pork Soup Dumplings",
-  "cn": "蟹粉小笼包",
-  "section": "Soup Dumplings",
-  "price": 16.5,
-  "pieces": 6,
-  "flavor": "Sweet crab and golden roe fold into the broth — richer, rounder, unforgettable.",
-  "story": "We pick the crab by hand every morning. On days the crab isn't right, this dish simply isn't served.",
-  "kcal": 480,
-  "protein": 24,
-  "carbs": 42,
-  "fat": 23,
+  "id": "traditional-pork-bun",
+  "name": "Traditional Pork Bun",
+  "cn": "传统猪肉包",
+  "section": "buns",
+  "price": 4.8,
+  "pieces": null,
+  "flavor": "Fluffy steamed bun, classic pork filling.",
+  "story": "",
+  "kcal": 430,
+  "protein": 15,
+  "carbs": 53,
+  "fat": 14,
   "spice": 0,
-  "meat": "shrimp",
-  "veg": false,
   "allergens": [
    "Gluten",
-   "Shellfish",
    "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Hand-picked crab",
-    "emoji": "🦀"
-   },
-   {
-    "name": "Crab roe",
-    "emoji": "🟠"
-   },
-   {
-    "name": "Pork",
-    "emoji": "🥩"
-   }
-  ],
-  "sauce": "Black vinegar & ginger threads",
-  "pairings": [
-   "garlic-greens",
-   "silk-tofu-soup"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": false,
-  "chef": true,
+  "chef": false,
   "featured": false,
   "soldOut": false,
   "art": "soupDumpling",
-  "skin": "#f7e6c2",
-  "accent": "#f09e47",
-  "glow": "#70471a",
-  "img": null
- },
- {
-  "id": "chicken-ramen",
-  "name": "Chicken Ramen",
-  "cn": "鸡汤拉面",
-  "section": "Noodles",
-  "price": 15.5,
-  "pieces": null,
-  "flavor": "Paitan broth blended to silk, hand-pulled noodles, chashu-style chicken, and a six-minute egg.",
-  "story": "Twelve hours of simmering collapses the whole bird into cream. The noodles are pulled to order — you can hear the slap from the dining room.",
-  "kcal": 640,
-  "protein": 38,
-  "carbs": 62,
-  "fat": 24,
-  "spice": 1,
-  "meat": "chicken",
-  "veg": false,
-  "allergens": [
-   "Gluten",
-   "Egg",
-   "Sesame"
-  ],
-  "ingredients": [
-   {
-    "name": "12-hour paitan",
-    "emoji": "🥣"
-   },
-   {
-    "name": "Hand-pulled noodles",
-    "emoji": "🍜"
-   },
-   {
-    "name": "Chicken chashu",
-    "emoji": "🍗"
-   },
-   {
-    "name": "Six-minute egg",
-    "emoji": "🥚"
-   }
-  ],
-  "sauce": "Chili oil, if you dare",
-  "pairings": [
-   "chicken-gyoza",
-   "cucumber-smash"
-  ],
-  "best": true,
-  "chef": false,
-  "featured": true,
-  "soldOut": false,
-  "art": "noodleBowl",
-  "skin": "#f5e0b2",
-  "accent": "#e6b866",
-  "glow": "#6b4c1f",
-  "img": null
- },
- {
-  "id": "dan-dan",
-  "name": "Dan Dan Noodles",
-  "cn": "担担面",
-  "section": "Noodles",
-  "price": 13.5,
-  "pieces": null,
-  "flavor": "Sesame, chili, crispy pork, and a slow Sichuan-pepper hum under springy noodles.",
-  "story": "Mix twelve times before the first bite — chef counts, and yes, she's watching.",
-  "kcal": 610,
-  "protein": 25,
-  "carbs": 64,
-  "fat": 28,
-  "spice": 3,
+  "skin": "#f5e6c9",
+  "accent": "#d9a873",
+  "glow": "#664724",
+  "img": null,
   "meat": "pork",
-  "veg": false,
+  "veg": false
+ },
+ {
+  "id": "wildrice-pork-tangzi",
+  "name": "Wild Rice & Minced Pork Tangzi",
+  "cn": "茭白肉末团子",
+  "section": "tangzi",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Chewy tangzi with wild rice stem and pork.",
+  "story": "",
+  "kcal": 300,
+  "protein": 10,
+  "carbs": 37,
+  "fat": 10,
+  "spice": 0,
   "allergens": [
    "Gluten",
-   "Sesame",
-   "Peanut",
    "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Sesame paste",
-    "emoji": "🫙"
-   },
-   {
-    "name": "Chili oil",
-    "emoji": "🌶️"
-   },
-   {
-    "name": "Crispy pork",
-    "emoji": "🥓"
-   },
-   {
-    "name": "Ya cai",
-    "emoji": "🥬"
-   }
-  ],
-  "sauce": "Already dressed",
-  "pairings": [
-   "cucumber-smash",
-   "mango-sago"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": false,
   "chef": false,
   "featured": false,
   "soldOut": false,
-  "art": "noodleBowl",
-  "skin": "#edd199",
-  "accent": "#b2331f",
-  "glow": "#5c2414",
-  "img": null
+  "art": "soupDumpling",
+  "skin": "#f5eddb",
+  "accent": "#d98c59",
+  "glow": "#614c2e",
+  "img": null,
+  "meat": "pork",
+  "veg": false
  },
  {
-  "id": "scallion-oil-noodles",
-  "name": "Scallion Oil Noodles",
-  "cn": "葱油拌面",
-  "section": "Noodles",
-  "price": 11.0,
+  "id": "radish-pork-tangzi",
+  "name": "Radish & Pork Tangzi",
+  "cn": "萝卜猪肉团子",
+  "section": "tangzi",
+  "price": 7.8,
   "pieces": null,
-  "flavor": "Four ingredients. Scallions fried to mahogany, sweet soy, thin noodles, patience.",
-  "story": "Shanghai's quietest masterpiece. We fry the scallions for forty minutes over the lowest possible flame.",
-  "kcal": 480,
-  "protein": 12,
-  "carbs": 68,
+  "flavor": "Chewy tangzi with radish and pork.",
+  "story": "",
+  "kcal": 300,
+  "protein": 10,
+  "carbs": 37,
+  "fat": 10,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "soupDumpling",
+  "skin": "#f5eddb",
+  "accent": "#d98c59",
+  "glow": "#614c2e",
+  "img": null,
+  "meat": "pork",
+  "veg": false
+ },
+ {
+  "id": "redbean-tangyuan",
+  "name": "Red Bean Tangyuan",
+  "cn": "豆沙汤圆",
+  "section": "tangzi",
+  "price": 4.8,
+  "pieces": null,
+  "flavor": "Warm glutinous balls with sweet red bean.",
+  "story": "",
+  "kcal": 300,
+  "protein": 10,
+  "carbs": 37,
+  "fat": 10,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "dessertCup",
+  "skin": "#f5eddb",
+  "accent": "#d98c59",
+  "glow": "#614c2e",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "sesame-tangyuan",
+  "name": "Black Sesame Tangyuan",
+  "cn": "芝麻汤圆",
+  "section": "tangzi",
+  "price": 4.8,
+  "pieces": null,
+  "flavor": "Molten black sesame in chewy rice moons.",
+  "story": "",
+  "kcal": 300,
+  "protein": 10,
+  "carbs": 37,
+  "fat": 10,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "dessertCup",
+  "skin": "#f5eddb",
+  "accent": "#d98c59",
+  "glow": "#614c2e",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "shrimp-egg-fried-rice",
+  "name": "Shrimp & Egg Fried Rice",
+  "cn": "传统虾仁蛋炒饭",
+  "section": "rice",
+  "price": 10.8,
+  "pieces": null,
+  "flavor": "Prawns and egg, every grain gilded.",
+  "story": "",
+  "kcal": 560,
+  "protein": 19,
+  "carbs": 70,
   "fat": 18,
   "spice": 0,
-  "meat": "vegan",
-  "veg": true,
   "allergens": [
    "Gluten",
-   "Soy"
+   "Shellfish"
   ],
-  "ingredients": [
-   {
-    "name": "Mahogany scallions",
-    "emoji": "🌿"
-   },
-   {
-    "name": "Sweet soy",
-    "emoji": "🍶"
-   },
-   {
-    "name": "Thin wheat noodles",
-    "emoji": "🍜"
-   }
-  ],
-  "sauce": "Nothing. Trust it.",
-  "pairings": [
-   "veggie-potsticker",
-   "garlic-greens"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "noodleBowl",
-  "skin": "#ebd6a3",
-  "accent": "#738547",
-  "glow": "#52421a",
-  "img": null
- },
- {
-  "id": "hot-oil-ribbons",
-  "name": "Hot Oil Hand-Torn Ribbons",
-  "cn": "油泼宽面",
-  "section": "Noodles",
-  "price": 13.5,
-  "pieces": null,
-  "flavor": "Wide silk ribbons under a heap of chili, garlic, and crushed peanut — finished tableside with smoking oil.",
-  "story": "The oil goes on at exactly 190 degrees. It hisses, the chili blooms, and the whole room turns around.",
-  "kcal": 540,
-  "protein": 14,
-  "carbs": 78,
-  "fat": 20,
-  "spice": 3,
-  "meat": "vegan",
-  "veg": true,
-  "allergens": [
-   "Gluten",
-   "Soy",
-   "Peanut"
-  ],
-  "ingredients": [
-   {
-    "name": "Hand-torn ribbons",
-    "emoji": "🍜"
-   },
-   {
-    "name": "Blooming chili",
-    "emoji": "🌶️"
-   },
-   {
-    "name": "Raw garlic",
-    "emoji": "🧄"
-   },
-   {
-    "name": "Smoking oil",
-    "emoji": "💨"
-   }
-  ],
-  "sauce": "Already blooming",
-  "pairings": [
-   "cucumber-smash",
-   "silk-tofu-soup",
-   "mango-sago"
-  ],
-  "best": true,
-  "chef": false,
-  "featured": true,
-  "soldOut": false,
-  "art": "noodleBowl",
-  "skin": "#f5e6c2",
-  "accent": "#c7381a",
-  "glow": "#6b240f",
-  "img": "hot-oil-noodles.png"
- },
- {
-  "id": "katsu-mazemen",
-  "name": "Sesame Katsu Mazemen",
-  "cn": "脆鸡排拌面",
-  "section": "Noodles",
-  "price": 16.0,
-  "pieces": null,
-  "flavor": "A shattering sesame-crusted cutlet over springy brothless noodles, with two soy-cured eggs and crisped nori.",
-  "story": "The cutlet rests exactly four minutes before it's sliced — long enough to stay crackling, short enough to stay warm.",
-  "kcal": 720,
-  "protein": 40,
-  "carbs": 66,
-  "fat": 32,
-  "spice": 0,
-  "meat": "chicken",
-  "veg": false,
-  "allergens": [
-   "Gluten",
-   "Egg",
-   "Sesame",
-   "Soy"
-  ],
-  "ingredients": [
-   {
-    "name": "Sesame cutlet",
-    "emoji": "🍗"
-   },
-   {
-    "name": "Soy-cured egg",
-    "emoji": "🥚"
-   },
-   {
-    "name": "Crisped nori",
-    "emoji": "🟩"
-   },
-   {
-    "name": "Brothless noodles",
-    "emoji": "🍜"
-   }
-  ],
-  "sauce": "Toss twelve times",
-  "pairings": [
-   "cucumber-smash",
-   "chicken-broth"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": true,
-  "soldOut": false,
-  "art": "noodleBowl",
-  "skin": "#edd19e",
-  "accent": "#b87a38",
-  "glow": "#5c3d1a",
-  "img": "katsu-noodles.png"
- },
- {
-  "id": "corn-pork-mazemen",
-  "name": "Corn & Pork Mazemen",
-  "cn": "玉米肉燥拌面",
-  "section": "Noodles",
-  "price": 14.5,
-  "pieces": null,
-  "flavor": "Sweet corn, gingered pork crumble, two jammy eggs, and nori — a quiet bowl that disappears fast.",
-  "story": "Our gentlest noodle bowl. The pork simmers in its own broth until it gives up and turns to velvet.",
-  "kcal": 640,
-  "protein": 32,
-  "carbs": 68,
-  "fat": 26,
-  "spice": 0,
-  "meat": "pork",
-  "veg": false,
-  "allergens": [
-   "Gluten",
-   "Egg",
-   "Soy"
-  ],
-  "ingredients": [
-   {
-    "name": "Sweet corn",
-    "emoji": "🌽"
-   },
-   {
-    "name": "Pork crumble",
-    "emoji": "🥓"
-   },
-   {
-    "name": "Jammy egg",
-    "emoji": "🥚"
-   },
-   {
-    "name": "Nori",
-    "emoji": "🟩"
-   }
-  ],
-  "sauce": "Mix from the bottom",
-  "pairings": [
-   "garlic-greens",
-   "silk-tofu-soup"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "noodleBowl",
-  "skin": "#f2e0ad",
-  "accent": "#f0c752",
-  "glow": "#664c1a",
-  "img": "corn-pork-mazemen.png"
- },
- {
-  "id": "egg-fried-rice",
-  "name": "Golden Egg Fried Rice",
-  "cn": "黄金蛋炒饭",
-  "section": "Fried Rice",
-  "price": 12.0,
-  "pieces": null,
-  "flavor": "Every grain gilded in yolk before it meets the wok. Smoky, loose, luminous.",
-  "story": "Day-old jasmine rice, separated grain by grain, coated in raw yolk so each one fries in its own golden jacket.",
-  "kcal": 520,
-  "protein": 16,
-  "carbs": 70,
-  "fat": 19,
-  "spice": 0,
-  "meat": "vegetarian",
-  "veg": true,
-  "allergens": [
-   "Egg",
-   "Soy"
-  ],
-  "ingredients": [
-   {
-    "name": "Day-old jasmine rice",
-    "emoji": "🍚"
-   },
-   {
-    "name": "Egg yolk",
-    "emoji": "🥚"
-   },
-   {
-    "name": "Scallion",
-    "emoji": "🌿"
-   },
-   {
-    "name": "Wok smoke",
-    "emoji": "💨"
-   }
-  ],
-  "sauce": "White pepper on top",
-  "pairings": [
-   "sichuan-chili",
-   "hot-sour-soup"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": true,
   "chef": false,
   "featured": true,
   "soldOut": false,
   "art": "riceBowl",
-  "skin": "#f7de8c",
+  "skin": "#f5db94",
   "accent": "#f0b240",
-  "glow": "#73571a",
-  "img": null
+  "glow": "#6b4c1a",
+  "img": null,
+  "meat": "shrimp",
+  "veg": false
  },
  {
-  "id": "shrimp-fried-rice",
-  "name": "Shrimp & XO Fried Rice",
-  "cn": "XO虾仁炒饭",
-  "section": "Fried Rice",
-  "price": 15.5,
+  "id": "spicy-chicken-fried-rice",
+  "name": "Spicy Chicken Fried Rice",
+  "cn": "特色辣鸡肉炒饭",
+  "section": "rice",
+  "price": 10.8,
   "pieces": null,
-  "flavor": "Sweet prawns, house XO sauce, and enough wok hei to fog your glasses.",
-  "story": "The XO is made in-house each month — dried scallop, ham, and chilies reduced to umami gravel.",
-  "kcal": 590,
-  "protein": 26,
-  "carbs": 68,
-  "fat": 23,
+  "flavor": "Wok-smoky rice with spicy chicken.",
+  "story": "",
+  "kcal": 560,
+  "protein": 19,
+  "carbs": 70,
+  "fat": 18,
   "spice": 2,
-  "meat": "shrimp",
-  "veg": false,
   "allergens": [
-   "Shellfish",
-   "Egg",
+   "Gluten",
    "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Tiger prawn",
-    "emoji": "🦐"
-   },
-   {
-    "name": "House XO",
-    "emoji": "🫙"
-   },
-   {
-    "name": "Jasmine rice",
-    "emoji": "🍚"
-   }
-  ],
-  "sauce": "It brought its own",
-  "pairings": [
-   "garlic-greens",
-   "silk-tofu-soup"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": false,
   "chef": false,
   "featured": false,
   "soldOut": false,
   "art": "riceBowl",
   "skin": "#f5db94",
-  "accent": "#eb8559",
-  "glow": "#6b3d1a",
-  "img": null
+  "accent": "#f0b240",
+  "glow": "#6b4c1a",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
  },
  {
-  "id": "hot-sour-soup",
-  "name": "Hot & Sour Soup",
-  "cn": "酸辣汤",
-  "section": "Soups",
-  "price": 8.5,
+  "id": "chaozhou-fishball-soup",
+  "name": "Chaozhou Fishball Soup",
+  "cn": "潮州鱼丸汤",
+  "section": "soup",
+  "price": 8.8,
   "pieces": null,
-  "flavor": "Black vinegar bite, white pepper heat, silk tofu, wood ear — the wake-up call.",
-  "story": "Thickened to exactly the weight of velvet. The pepper goes in off the heat so it stings, not burns.",
-  "kcal": 210,
-  "protein": 10,
-  "carbs": 22,
-  "fat": 9,
-  "spice": 2,
-  "meat": "vegetarian",
-  "veg": true,
+  "flavor": "Bouncy hand-made fishballs in clear soup.",
+  "story": "",
+  "kcal": 220,
+  "protein": 7,
+  "carbs": 27,
+  "fat": 7,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "soupBowl",
+  "skin": "#e6b873",
+  "accent": "#d97340",
+  "glow": "#5c381a",
+  "img": null,
+  "meat": "fish",
+  "veg": false
+ },
+ {
+  "id": "tomato-beef-soup",
+  "name": "Tomato & Beef Soup",
+  "cn": "番茄牛肉汤",
+  "section": "soup",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Sweet-tart tomato broth with tender beef.",
+  "story": "",
+  "kcal": 220,
+  "protein": 7,
+  "carbs": 27,
+  "fat": 7,
+  "spice": 0,
   "allergens": [
    "Gluten",
-   "Soy",
-   "Egg"
-  ],
-  "ingredients": [
-   {
-    "name": "Black vinegar",
-    "emoji": "🍶"
-   },
-   {
-    "name": "White pepper",
-    "emoji": "✨"
-   },
-   {
-    "name": "Silk tofu",
-    "emoji": "🧊"
-   },
-   {
-    "name": "Wood ear",
-    "emoji": "🍄"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "black-pork-panfried",
-   "egg-fried-rice"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "soupBowl",
-  "skin": "#9e663d",
-  "accent": "#d98c4c",
-  "glow": "#4c2e14",
-  "img": null
- },
- {
-  "id": "chicken-broth",
-  "name": "Old Hen Chicken Soup",
-  "cn": "老母鸡汤",
-  "section": "Soups",
-  "price": 9.5,
-  "pieces": null,
-  "flavor": "Clear, deep, restorative. Goji, jujube, and a whole afternoon of simmering.",
-  "story": "The pot never boils — it shivers. Four hours later the broth tastes like being taken care of.",
-  "kcal": 180,
-  "protein": 18,
-  "carbs": 8,
-  "fat": 8,
-  "spice": 0,
-  "meat": "chicken",
-  "veg": false,
-  "allergens": [],
-  "ingredients": [
-   {
-    "name": "Old hen",
-    "emoji": "🍗"
-   },
-   {
-    "name": "Goji berry",
-    "emoji": "🔴"
-   },
-   {
-    "name": "Jujube",
-    "emoji": "🟤"
-   },
-   {
-    "name": "Ginger",
-    "emoji": "🫚"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "chicken-corn",
-   "garlic-greens"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": true,
-  "soldOut": false,
-  "art": "soupBowl",
-  "skin": "#f2d48c",
-  "accent": "#d96640",
-  "glow": "#6b4c1f",
-  "img": null
- },
- {
-  "id": "fish-tofu-soup",
-  "name": "Milky Fish & Tofu Soup",
-  "cn": "鱼头豆腐汤",
-  "section": "Soups",
-  "price": 11.5,
-  "pieces": null,
-  "flavor": "Seared fish blasted with boiling water until the broth turns white as jade.",
-  "story": "The sear is the secret — protein and fat emulsify into that famous milky cloud. No dairy, only physics.",
-  "kcal": 260,
-  "protein": 24,
-  "carbs": 10,
-  "fat": 13,
-  "spice": 0,
-  "meat": "fish",
-  "veg": false,
-  "allergens": [
    "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Seared white fish",
-    "emoji": "🐟"
-   },
-   {
-    "name": "Silken tofu",
-    "emoji": "🧊"
-   },
-   {
-    "name": "White pepper",
-    "emoji": "✨"
-   }
-  ],
+  "ingredients": [],
   "sauce": null,
-  "pairings": [
-   "sichuan-chili",
-   "garlic-greens"
-  ],
+  "pairings": [],
   "best": false,
   "chef": false,
   "featured": false,
   "soldOut": false,
   "art": "soupBowl",
-  "skin": "#f0ebdb",
-  "accent": "#bfccb8",
-  "glow": "#57523d",
-  "img": null
+  "skin": "#e6b873",
+  "accent": "#d97340",
+  "glow": "#5c381a",
+  "img": null,
+  "meat": "beef",
+  "veg": false
  },
  {
-  "id": "silk-tofu-soup",
-  "name": "Silk Tofu & Seaweed Soup",
-  "cn": "紫菜豆腐汤",
-  "section": "Soups",
-  "price": 7.5,
+  "id": "lionhead-soup",
+  "name": "Lion's Head Meatball Soup",
+  "cn": "狮子头汤",
+  "section": "soup",
+  "price": 9.8,
   "pieces": null,
-  "flavor": "Light as air — kombu broth, silken tofu, a scatter of sesame.",
-  "story": "The palate cleanser of the menu. Order it between rounds of dumplings, like a comma.",
-  "kcal": 120,
-  "protein": 9,
-  "carbs": 8,
-  "fat": 5,
+  "flavor": "A giant tender pork meatball in clear broth.",
+  "story": "",
+  "kcal": 220,
+  "protein": 7,
+  "carbs": 27,
+  "fat": 7,
   "spice": 0,
-  "meat": "vegan",
-  "veg": true,
   "allergens": [
-   "Soy",
-   "Sesame"
+   "Gluten",
+   "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Kombu broth",
-    "emoji": "🌊"
-   },
-   {
-    "name": "Silken tofu",
-    "emoji": "🧊"
-   },
-   {
-    "name": "Nori",
-    "emoji": "🟩"
-   }
-  ],
+  "ingredients": [],
   "sauce": null,
-  "pairings": [
-   "mushroom-truffle",
-   "veggie-potsticker"
-  ],
+  "pairings": [],
   "best": false,
   "chef": false,
   "featured": false,
   "soldOut": false,
   "art": "soupBowl",
-  "skin": "#e0e6d6",
-  "accent": "#597361",
-  "glow": "#3d4c38",
-  "img": null
+  "skin": "#e6b873",
+  "accent": "#d97340",
+  "glow": "#5c381a",
+  "img": null,
+  "meat": "pork",
+  "veg": false
  },
  {
-  "id": "cucumber-smash",
-  "name": "Smashed Cucumber",
-  "cn": "拍黄瓜",
-  "section": "Side Dishes",
-  "price": 7.0,
+  "id": "mashed-potato-salad",
+  "name": "Mashed Potato Salad",
+  "cn": "土豆泥沙拉",
+  "section": "sides",
+  "price": 6.8,
   "pieces": null,
-  "flavor": "Cold, crackling, garlic-heavy — dressed in vinegar and a thread of chili oil.",
-  "story": "Smashed, never sliced. The rough edges drink the dressing.",
-  "kcal": 90,
-  "protein": 3,
-  "carbs": 10,
-  "fat": 5,
-  "spice": 1,
-  "meat": "vegan",
-  "veg": true,
+  "flavor": "Cool, creamy, comforting.",
+  "story": "",
+  "kcal": 320,
+  "protein": 11,
+  "carbs": 40,
+  "fat": 10,
+  "spice": 0,
   "allergens": [
-   "Soy",
-   "Sesame"
+   "Gluten"
   ],
-  "ingredients": [
-   {
-    "name": "Persian cucumber",
-    "emoji": "🥒"
-   },
-   {
-    "name": "Raw garlic",
-    "emoji": "🧄"
-   },
-   {
-    "name": "Chinkiang vinegar",
-    "emoji": "🍶"
-   }
-  ],
+  "ingredients": [],
   "sauce": null,
-  "pairings": [
-   "sichuan-chili",
-   "dan-dan"
-  ],
-  "best": true,
+  "pairings": [],
+  "best": false,
   "chef": false,
   "featured": false,
   "soldOut": false,
   "art": "sidePlate",
-  "skin": "#8cad66",
-  "accent": "#cc4c33",
-  "glow": "#3d5224",
-  "img": null
+  "skin": "#e6b873",
+  "accent": "#b84c2e",
+  "glow": "#57331a",
+  "img": null,
+  "meat": "vegetarian",
+  "veg": true
  },
  {
-  "id": "crispy-chicken-bites",
-  "name": "Five-Spice Crispy Chicken",
-  "cn": "五香脆鸡",
-  "section": "Side Dishes",
-  "price": 10.5,
+  "id": "sweetsour-pork-ribs",
+  "name": "Sweet & Sour Pork Ribs",
+  "cn": "糖醋排骨",
+  "section": "sides",
+  "price": 10.8,
   "pieces": null,
-  "flavor": "Lacquered, shattering bites dusted with five-spice salt and fried basil.",
-  "story": "Brined overnight in soy and rock sugar, fried twice, rested once, gone in minutes.",
-  "kcal": 440,
-  "protein": 28,
-  "carbs": 24,
-  "fat": 26,
-  "spice": 1,
-  "meat": "chicken",
-  "veg": false,
+  "flavor": "Glossy sweet-and-sour ribs.",
+  "story": "",
+  "kcal": 320,
+  "protein": 11,
+  "carbs": 40,
+  "fat": 10,
+  "spice": 0,
   "allergens": [
    "Gluten",
    "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Chicken thigh",
-    "emoji": "🍗"
-   },
-   {
-    "name": "Five-spice salt",
-    "emoji": "✨"
-   },
-   {
-    "name": "Fried basil",
-    "emoji": "🌿"
-   }
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e6b873",
+  "accent": "#b84c2e",
+  "glow": "#57331a",
+  "img": null,
+  "meat": "pork",
+  "veg": false
+ },
+ {
+  "id": "mouthwatering-chicken",
+  "name": "Mouthwatering Chicken",
+  "cn": "口水鸡",
+  "section": "sides",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Poached chicken drowned in chili oil.",
+  "story": "",
+  "kcal": 320,
+  "protein": 11,
+  "carbs": 40,
+  "fat": 10,
+  "spice": 3,
+  "allergens": [
+   "Gluten",
+   "Soy"
   ],
-  "sauce": "Plum dust mayo",
-  "pairings": [
-   "egg-fried-rice",
-   "cucumber-smash"
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e6b873",
+  "accent": "#b84c2e",
+  "glow": "#57331a",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
+ },
+ {
+  "id": "drunken-brine-shrimp",
+  "name": "Drunken Brined Shrimp",
+  "cn": "糟卤虾",
+  "section": "sides",
+  "price": 10.8,
+  "pieces": null,
+  "flavor": "Chilled shrimp in aromatic wine brine.",
+  "story": "",
+  "kcal": 320,
+  "protein": 11,
+  "carbs": 40,
+  "fat": 10,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Shellfish"
   ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e6b873",
+  "accent": "#b84c2e",
+  "glow": "#57331a",
+  "img": null,
+  "meat": "shrimp",
+  "veg": false
+ },
+ {
+  "id": "minced-pork-tofu",
+  "name": "Minced Pork Tofu",
+  "cn": "肉末豆腐",
+  "section": "sides",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "Silken tofu braised with minced pork.",
+  "story": "",
+  "kcal": 320,
+  "protein": 11,
+  "carbs": 40,
+  "fat": 10,
+  "spice": 1,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e6b873",
+  "accent": "#b84c2e",
+  "glow": "#57331a",
+  "img": null,
+  "meat": "pork",
+  "veg": false
+ },
+ {
+  "id": "big-plate-chicken",
+  "name": "Big Plate Chicken",
+  "cn": "大盘鸡",
+  "section": "sides",
+  "price": 13.8,
+  "pieces": null,
+  "flavor": "Chicken, potato and peppers in a big plate.",
+  "story": "",
+  "kcal": 320,
+  "protein": 11,
+  "carbs": 40,
+  "fat": 10,
+  "spice": 2,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e6b873",
+  "accent": "#b84c2e",
+  "glow": "#57331a",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
+ },
+ {
+  "id": "egg-luncheon-meat",
+  "name": "Egg & Luncheon Meat",
+  "cn": "鸡蛋午餐肉",
+  "section": "sides",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Fried egg and luncheon meat, comfort food.",
+  "story": "",
+  "kcal": 320,
+  "protein": 11,
+  "carbs": 40,
+  "fat": 10,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e6b873",
+  "accent": "#b84c2e",
+  "glow": "#57331a",
+  "img": null,
+  "meat": "pork",
+  "veg": false
+ },
+ {
+  "id": "braised-lionhead",
+  "name": "Braised Lion's Head",
+  "cn": "红烧狮子头",
+  "section": "sides",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Melt-in-mouth braised pork meatball.",
+  "story": "",
+  "kcal": 320,
+  "protein": 11,
+  "carbs": 40,
+  "fat": 10,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e6b873",
+  "accent": "#b84c2e",
+  "glow": "#57331a",
+  "img": null,
+  "meat": "pork",
+  "veg": false
+ },
+ {
+  "id": "yunnan-lava-tofu",
+  "name": "Yunnan Lava Tofu",
+  "cn": "云南包浆豆腐",
+  "section": "fried",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "Crisp shell, molten custard tofu inside.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
+  "spice": 1,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": false,
   "chef": false,
   "featured": false,
@@ -1310,556 +1485,460 @@ const MENU = [
   "skin": "#e0a857",
   "accent": "#8c5926",
   "glow": "#613d14",
-  "img": null
- },
- {
-  "id": "smacked-eggplant",
-  "name": "Smacked Eggplant",
-  "cn": "手撕茄子",
-  "section": "Side Dishes",
-  "price": 9.0,
-  "pieces": null,
-  "flavor": "Steamed, torn, and doused in garlic-soy dressing — velvet with a spine.",
-  "story": "Torn by hand so the flesh stays cloudlike. The dressing pools in every ridge.",
-  "kcal": 160,
-  "protein": 4,
-  "carbs": 18,
-  "fat": 9,
-  "spice": 1,
-  "meat": "vegan",
-  "veg": true,
-  "allergens": [
-   "Soy",
-   "Sesame"
-  ],
-  "ingredients": [
-   {
-    "name": "Chinese eggplant",
-    "emoji": "🍆"
-   },
-   {
-    "name": "Garlic-soy",
-    "emoji": "🧄"
-   },
-   {
-    "name": "Cilantro",
-    "emoji": "🌿"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "scallion-oil-noodles",
-   "egg-fried-rice"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "sidePlate",
-  "skin": "#734c7a",
-  "accent": "#99a866",
-  "glow": "#3d243d",
-  "img": null
- },
- {
-  "id": "crispy-tofu",
-  "name": "Golden Crispy Tofu",
-  "cn": "椒盐脆豆腐",
-  "section": "Side Dishes",
-  "price": 8.5,
-  "pieces": null,
-  "flavor": "Custard inside, crackling outside — dusted with chili salt and scallion, served on cold steel.",
-  "story": "Pressed for an hour, fried for ninety seconds. The contrast is the entire point.",
-  "kcal": 280,
-  "protein": 14,
-  "carbs": 18,
-  "fat": 17,
-  "spice": 1,
-  "meat": "vegan",
-  "veg": true,
-  "allergens": [
-   "Soy",
-   "Gluten"
-  ],
-  "ingredients": [
-   {
-    "name": "Silken tofu",
-    "emoji": "🧊"
-   },
-   {
-    "name": "Chili salt",
-    "emoji": "🌶️"
-   },
-   {
-    "name": "Scallion",
-    "emoji": "🌿"
-   }
-  ],
-  "sauce": "The chili salt on the side",
-  "pairings": [
-   "hot-oil-ribbons",
-   "chicken-broth"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "sidePlate",
-  "skin": "#ebd69e",
-  "accent": "#bf592e",
-  "glow": "#57381a",
-  "img": "crispy-tofu.png"
- },
- {
-  "id": "garlic-greens",
-  "name": "Wok-Kissed Garlic Greens",
-  "cn": "蒜蓉时蔬",
-  "section": "Vegetables",
-  "price": 9.5,
-  "pieces": null,
-  "flavor": "Whatever the market gave us this morning, flashed with garlic in a screaming wok.",
-  "story": "Thirty seconds of violence, then straight to the plate. Green things should still remember the field.",
-  "kcal": 110,
-  "protein": 5,
-  "carbs": 9,
-  "fat": 7,
-  "spice": 0,
-  "meat": "vegan",
-  "veg": true,
-  "allergens": [
-   "Soy"
-  ],
-  "ingredients": [
-   {
-    "name": "Market greens",
-    "emoji": "🥬"
-   },
-   {
-    "name": "Garlic",
-    "emoji": "🧄"
-   },
-   {
-    "name": "Wok breath",
-    "emoji": "💨"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "pork-xlb",
-   "shrimp-wonton"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "greens",
-  "skin": "#6b9457",
-  "accent": "#e6e0c7",
-  "glow": "#2e471f",
-  "img": null
- },
- {
-  "id": "blistered-beans",
-  "name": "Blistered Green Beans",
-  "cn": "干煸四季豆",
-  "section": "Vegetables",
-  "price": 10.0,
-  "pieces": null,
-  "flavor": "Wrinkled, smoky beans tossed with preserved vegetable and a little pork crumble.",
-  "story": "Dry-fried until the skins pucker like crepe paper. Ask for them vegetarian — the wok won't mind.",
-  "kcal": 220,
-  "protein": 8,
-  "carbs": 16,
-  "fat": 14,
-  "spice": 2,
-  "meat": "pork",
-  "veg": false,
-  "allergens": [
-   "Soy"
-  ],
-  "ingredients": [
-   {
-    "name": "Green beans",
-    "emoji": "🫛"
-   },
-   {
-    "name": "Ya cai",
-    "emoji": "🥬"
-   },
-   {
-    "name": "Pork crumble",
-    "emoji": "🥓"
-   },
-   {
-    "name": "Dried chili",
-    "emoji": "🌶️"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "egg-fried-rice",
-   "chicken-broth"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "greens",
-  "skin": "#618047",
-  "accent": "#b83d24",
-  "glow": "#293d1a",
-  "img": null
- },
- {
-  "id": "baby-bok-choy",
-  "name": "Baby Bok Choy, Golden Broth",
-  "cn": "上汤娃娃菜",
-  "section": "Vegetables",
-  "price": 10.5,
-  "pieces": null,
-  "flavor": "Tender hearts poached in superior stock with goji and garlic confit.",
-  "story": "The gentlest thing we make. The stock does the seasoning; the bok choy does the rest.",
-  "kcal": 130,
-  "protein": 6,
-  "carbs": 10,
-  "fat": 7,
-  "spice": 0,
-  "meat": "chicken",
-  "veg": false,
-  "allergens": [],
-  "ingredients": [
-   {
-    "name": "Baby bok choy",
-    "emoji": "🥬"
-   },
-   {
-    "name": "Superior stock",
-    "emoji": "🥣"
-   },
-   {
-    "name": "Garlic confit",
-    "emoji": "🧄"
-   },
-   {
-    "name": "Goji",
-    "emoji": "🔴"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "crab-pork-xlb",
-   "pork-xlb"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "greens",
-  "skin": "#8cad6b",
-  "accent": "#f2d98c",
-  "glow": "#3d4c1f",
-  "img": null
- },
- {
-  "id": "mango-sago",
-  "name": "Mango Sago Cloud",
-  "cn": "杨枝甘露",
-  "section": "Desserts",
-  "price": 8.5,
-  "pieces": null,
-  "flavor": "Chilled mango cream, pomelo pearls that pop, sago like tiny moons.",
-  "story": "Made with Ataulfo mangoes at peak ripeness — we freeze the season so December tastes like June.",
-  "kcal": 290,
-  "protein": 4,
-  "carbs": 52,
-  "fat": 8,
-  "spice": 0,
+  "img": null,
   "meat": "vegetarian",
-  "veg": true,
-  "allergens": [
-   "Dairy"
-  ],
-  "ingredients": [
-   {
-    "name": "Ataulfo mango",
-    "emoji": "🥭"
-   },
-   {
-    "name": "Pomelo",
-    "emoji": "🍊"
-   },
-   {
-    "name": "Sago pearls",
-    "emoji": "⚪"
-   },
-   {
-    "name": "Coconut cream",
-    "emoji": "🥥"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "sichuan-chili",
-   "dan-dan"
-  ],
-  "best": true,
-  "chef": false,
-  "featured": true,
-  "soldOut": false,
-  "art": "dessertCup",
-  "skin": "#facc5c",
-  "accent": "#fcebbf",
-  "glow": "#7a571a",
-  "img": null
+  "veg": true
  },
  {
-  "id": "jasmine-panna-cotta",
-  "name": "Jasmine Tea Panna Cotta",
-  "cn": "茉莉花茶奶冻",
-  "section": "Desserts",
-  "price": 9.0,
+  "id": "secret-pork-cutlet",
+  "name": "Secret Pork Cutlet",
+  "cn": "秘制猪排",
+  "section": "fried",
+  "price": 9.8,
   "pieces": null,
-  "flavor": "A trembling cream infused with jasmine pearls, under a whisper of osmanthus honey.",
-  "story": "Set so lightly it barely survives the walk from the kitchen. Eat it before it loses its nerve.",
-  "kcal": 310,
-  "protein": 5,
-  "carbs": 30,
-  "fat": 19,
-  "spice": 0,
-  "meat": "vegetarian",
-  "veg": true,
-  "allergens": [
-   "Dairy"
-  ],
-  "ingredients": [
-   {
-    "name": "Jasmine pearls",
-    "emoji": "🍵"
-   },
-   {
-    "name": "Cream",
-    "emoji": "🥛"
-   },
-   {
-    "name": "Osmanthus honey",
-    "emoji": "🍯"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "black-pork-panfried",
-   "pork-xlb"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "dessertCup",
-  "skin": "#f7f0db",
-  "accent": "#ebbf66",
-  "glow": "#665733",
-  "img": null
- },
- {
-  "id": "sesame-tang-yuan",
-  "name": "Black Sesame Tang Yuan",
-  "cn": "黑芝麻汤圆",
-  "section": "Desserts",
-  "price": 8.0,
-  "pieces": 4,
-  "flavor": "Chewy rice moons that burst with molten black sesame, in warm ginger syrup.",
-  "story": "The filling is ground in a stone mill until it flows like ink. Served warm, always.",
-  "kcal": 340,
-  "protein": 6,
-  "carbs": 56,
-  "fat": 11,
-  "spice": 0,
-  "meat": "vegan",
-  "veg": true,
-  "allergens": [
-   "Sesame"
-  ],
-  "ingredients": [
-   {
-    "name": "Black sesame",
-    "emoji": "⚫"
-   },
-   {
-    "name": "Glutinous rice",
-    "emoji": "🍡"
-   },
-   {
-    "name": "Ginger syrup",
-    "emoji": "🫚"
-   }
-  ],
-  "sauce": null,
-  "pairings": [
-   "sichuan-chili",
-   "hot-sour-soup"
-  ],
-  "best": false,
-  "chef": false,
-  "featured": false,
-  "soldOut": false,
-  "art": "dessertCup",
-  "skin": "#f0ebe0",
-  "accent": "#2e2926",
-  "glow": "#4c4233",
-  "img": null
- },
- {
-  "id": "beef-yolk-bowl",
-  "name": "Sukiyaki Beef & Golden Yolk Bowl",
-  "cn": "月见牛肉丼",
-  "section": "Chef Specials",
-  "price": 19.0,
-  "pieces": null,
-  "flavor": "Sweet soy-glazed beef ribbons circling one perfect yolk, over rice dressed in sesame nori.",
-  "story": "Break the yolk. Stir like you mean it. The chef calls this dish 'the moon over the field' — order it and you'll see.",
-  "kcal": 690,
-  "protein": 36,
-  "carbs": 62,
-  "fat": 31,
-  "spice": 0,
-  "meat": "beef",
-  "veg": false,
-  "allergens": [
-   "Soy",
-   "Egg",
-   "Sesame",
-   "Gluten"
-  ],
-  "ingredients": [
-   {
-    "name": "Sukiyaki beef",
-    "emoji": "🥩"
-   },
-   {
-    "name": "One perfect yolk",
-    "emoji": "🌕"
-   },
-   {
-    "name": "Sesame nori",
-    "emoji": "🟩"
-   },
-   {
-    "name": "Warm rice",
-    "emoji": "🍚"
-   }
-  ],
-  "sauce": "The yolk is the sauce",
-  "pairings": [
-   "silk-tofu-soup",
-   "cucumber-smash"
-  ],
-  "best": true,
-  "chef": true,
-  "featured": true,
-  "soldOut": false,
-  "art": "riceBowl",
-  "skin": "#d9b88c",
-  "accent": "#f59e1f",
-  "glow": "#6b4214",
-  "img": "beef-yolk-bowl.png"
- },
- {
-  "id": "lobster-dumpling",
-  "name": "Butter-Poached Lobster Dumplings",
-  "cn": "龙虾饺",
-  "section": "Chef Specials",
-  "price": 22.0,
-  "pieces": 4,
-  "flavor": "Maine lobster poached in scallion butter, wrapped in beet-blushed skin.",
-  "story": "This week only. The lobster arrives alive at seven; by noon it's the best thing on the menu.",
+  "flavor": "Shattering crisp house cutlet.",
+  "story": "",
   "kcal": 420,
-  "protein": 26,
-  "carbs": 36,
-  "fat": 19,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
   "spice": 0,
-  "meat": "shrimp",
-  "veg": false,
-  "allergens": [
-   "Gluten",
-   "Shellfish",
-   "Dairy"
-  ],
-  "ingredients": [
-   {
-    "name": "Maine lobster",
-    "emoji": "🦞"
-   },
-   {
-    "name": "Scallion butter",
-    "emoji": "🧈"
-   },
-   {
-    "name": "Beet wrapper",
-    "emoji": "🌸"
-   }
-  ],
-  "sauce": "Champagne vinegar pearl",
-  "pairings": [
-   "garlic-greens",
-   "jasmine-panna-cotta"
-  ],
-  "best": false,
-  "chef": true,
-  "featured": true,
-  "soldOut": false,
-  "art": "pleatedDumpling",
-  "skin": "#f0b8b2",
-  "accent": "#e66b52",
-  "glow": "#6b2e24",
-  "img": null
- },
- {
-  "id": "duck-dumpling",
-  "name": "Tea-Smoked Duck Dumplings",
-  "cn": "樟茶鸭饺",
-  "section": "Chef Specials",
-  "price": 18.0,
-  "pieces": 5,
-  "flavor": "Lapsang-smoked duck with hoisin and crisp skin crumble — Peking duck, folded.",
-  "story": "Chef Lin's love letter to Beijing. The duck smokes over jasmine tea leaves and applewood for six hours.",
-  "kcal": 510,
-  "protein": 27,
-  "carbs": 40,
-  "fat": 26,
-  "spice": 1,
-  "meat": "beef",
-  "veg": false,
   "allergens": [
    "Gluten",
    "Soy"
   ],
-  "ingredients": [
-   {
-    "name": "Tea-smoked duck",
-    "emoji": "🦆"
-   },
-   {
-    "name": "Hoisin",
-    "emoji": "🫙"
-   },
-   {
-    "name": "Crisp skin crumble",
-    "emoji": "✨"
-   }
-  ],
-  "sauce": "Mandarin hoisin",
-  "pairings": [
-   "baby-bok-choy",
-   "silk-tofu-soup"
-  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
   "best": false,
-  "chef": true,
+  "chef": false,
   "featured": false,
   "soldOut": false,
-  "art": "pleatedDumpling",
-  "skin": "#d19e70",
-  "accent": "#733d24",
-  "glow": "#522e14",
-  "img": null
+  "art": "sidePlate",
+  "skin": "#e0a857",
+  "accent": "#8c5926",
+  "glow": "#613d14",
+  "img": null,
+  "meat": "pork",
+  "veg": false
+ },
+ {
+  "id": "13spice-chicken-nuggets",
+  "name": "Thirteen-Spice Chicken Bites",
+  "cn": "十三味鸡块",
+  "section": "fried",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "Thirteen-spice fried chicken bites.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
+  "spice": 1,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e0a857",
+  "accent": "#8c5926",
+  "glow": "#613d14",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
+ },
+ {
+  "id": "13spice-chicken-wings",
+  "name": "Thirteen-Spice Wings",
+  "cn": "十三味特色鸡翅",
+  "section": "fried",
+  "price": 9.8,
+  "pieces": null,
+  "flavor": "Lacquered thirteen-spice wings.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
+  "spice": 1,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e0a857",
+  "accent": "#8c5926",
+  "glow": "#613d14",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
+ },
+ {
+  "id": "old-style-fried-drumstick",
+  "name": "Old-Style Fried Drumstick",
+  "cn": "老式炸鸡腿",
+  "section": "fried",
+  "price": 8.8,
+  "pieces": null,
+  "flavor": "Old-school crispy fried drumstick.",
+  "story": "",
+  "kcal": 420,
+  "protein": 14,
+  "carbs": 52,
+  "fat": 14,
+  "spice": 0,
+  "allergens": [
+   "Gluten",
+   "Soy"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "sidePlate",
+  "skin": "#e0a857",
+  "accent": "#8c5926",
+  "glow": "#613d14",
+  "img": null,
+  "meat": "chicken",
+  "veg": false
+ },
+ {
+  "id": "cold-veg-shreds",
+  "name": "Cold Vegetable Shreds",
+  "cn": "凉拌蔬菜丝",
+  "section": "veg",
+  "price": 6.8,
+  "pieces": null,
+  "flavor": "Cool, crunchy dressed vegetable shreds.",
+  "story": "",
+  "kcal": 120,
+  "protein": 6,
+  "carbs": 15,
+  "fat": 4,
+  "spice": 1,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "greens",
+  "skin": "#739959",
+  "accent": "#d9cc8c",
+  "glow": "#33471f",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "cold-eggplant-peashoot",
+  "name": "Cold Eggplant / Pea Shoots",
+  "cn": "凉拌茄子·清炒豆苗",
+  "section": "veg",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Silky cold eggplant, or wok pea shoots.",
+  "story": "",
+  "kcal": 120,
+  "protein": 6,
+  "carbs": 15,
+  "fat": 4,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "greens",
+  "skin": "#739959",
+  "accent": "#d9cc8c",
+  "glow": "#33471f",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "veg-with-dip",
+  "name": "Vegetables with Dip",
+  "cn": "蔬菜蘸酱",
+  "section": "veg",
+  "price": 6.8,
+  "pieces": null,
+  "flavor": "Crisp raw vegetables with house dip.",
+  "story": "",
+  "kcal": 120,
+  "protein": 6,
+  "carbs": 15,
+  "fat": 4,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "greens",
+  "skin": "#739959",
+  "accent": "#d9cc8c",
+  "glow": "#33471f",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "pickled-radish",
+  "name": "Pickled Radish",
+  "cn": "腌萝卜泡菜",
+  "section": "veg",
+  "price": 5.8,
+  "pieces": null,
+  "flavor": "Crunchy tangy pickled radish.",
+  "story": "",
+  "kcal": 120,
+  "protein": 6,
+  "carbs": 15,
+  "fat": 4,
+  "spice": 1,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "greens",
+  "skin": "#739959",
+  "accent": "#d9cc8c",
+  "glow": "#33471f",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "garlic-broccoli",
+  "name": "Garlic Broccoli",
+  "cn": "蒜蓉西兰花",
+  "section": "veg",
+  "price": 7.8,
+  "pieces": null,
+  "flavor": "Broccoli flashed with garlic.",
+  "story": "",
+  "kcal": 120,
+  "protein": 6,
+  "carbs": 15,
+  "fat": 4,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "greens",
+  "skin": "#739959",
+  "accent": "#d9cc8c",
+  "glow": "#33471f",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "oyster-lettuce",
+  "name": "Oyster Sauce Lettuce",
+  "cn": "蚝油生菜",
+  "section": "veg",
+  "price": 6.8,
+  "pieces": null,
+  "flavor": "Lettuce in glossy oyster sauce.",
+  "story": "",
+  "kcal": 120,
+  "protein": 6,
+  "carbs": 15,
+  "fat": 4,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "greens",
+  "skin": "#739959",
+  "accent": "#d9cc8c",
+  "glow": "#33471f",
+  "img": null,
+  "meat": "vegetarian",
+  "veg": true
+ },
+ {
+  "id": "sesame-spinach",
+  "name": "Sesame Spinach",
+  "cn": "麻酱菠菜",
+  "section": "veg",
+  "price": 6.8,
+  "pieces": null,
+  "flavor": "Chilled spinach in sesame dressing.",
+  "story": "",
+  "kcal": 120,
+  "protein": 6,
+  "carbs": 15,
+  "fat": 4,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "greens",
+  "skin": "#739959",
+  "accent": "#d9cc8c",
+  "glow": "#33471f",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "mango-ice",
+  "name": "Mango Ice Smoothie",
+  "cn": "芒果冰浆",
+  "section": "dessert",
+  "price": 6.8,
+  "pieces": null,
+  "flavor": "Blended mango ice, cold and sweet.",
+  "story": "",
+  "kcal": 210,
+  "protein": 7,
+  "carbs": 26,
+  "fat": 7,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": true,
+  "chef": false,
+  "featured": true,
+  "soldOut": false,
+  "art": "dessertCup",
+  "skin": "#f7cc8c",
+  "accent": "#fc8c73",
+  "glow": "#754c24",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "watermelon-ice",
+  "name": "Watermelon Ice Smoothie",
+  "cn": "西瓜冰浆",
+  "section": "dessert",
+  "price": 6.8,
+  "pieces": null,
+  "flavor": "Blended watermelon ice, pure summer.",
+  "story": "",
+  "kcal": 210,
+  "protein": 7,
+  "carbs": 26,
+  "fat": 7,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "dessertCup",
+  "skin": "#f7cc8c",
+  "accent": "#fc8c73",
+  "glow": "#754c24",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
+ },
+ {
+  "id": "cucumber-ice",
+  "name": "Cucumber Ice Smoothie",
+  "cn": "黄瓜冰浆",
+  "section": "dessert",
+  "price": 5.8,
+  "pieces": null,
+  "flavor": "Blended cucumber ice, cool and clean.",
+  "story": "",
+  "kcal": 210,
+  "protein": 7,
+  "carbs": 26,
+  "fat": 7,
+  "spice": 0,
+  "allergens": [
+   "Gluten"
+  ],
+  "ingredients": [],
+  "sauce": null,
+  "pairings": [],
+  "best": false,
+  "chef": false,
+  "featured": false,
+  "soldOut": false,
+  "art": "dessertCup",
+  "skin": "#f7cc8c",
+  "accent": "#fc8c73",
+  "glow": "#754c24",
+  "img": null,
+  "meat": "vegan",
+  "veg": true
  }
 ];

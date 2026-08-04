@@ -100,32 +100,32 @@ const I18N = {
   },
 
   sections: {
-    "Signature Dumplings": "招牌饺子",
-    "Pan Fried": "香煎锅贴",
-    "Wontons": "云吞",
-    "Soup Dumplings": "小笼包",
-    "Noodles": "面",
-    "Fried Rice": "炒饭",
-    "Soups": "汤",
-    "Side Dishes": "小食",
-    "Vegetables": "时蔬",
-    "Desserts": "甜品",
-    "Chef Specials": "主厨特选",
-  },
+    "signature": "招牌",
+    "diy": "自选",
+    "noodles": "面条",
+    "buns": "包子",
+    "tangzi": "无锡团子",
+    "rice": "米饭",
+    "soup": "汤",
+    "sides": "小食",
+    "fried": "炸物",
+    "veg": "蔬菜",
+    "dessert": "贵州冰浆"
+},
 
   taglines: {
-    "Signature Dumplings": "手工捏制，每只十八褶",
-    "Pan Fried": "金黄冰花，底脆心软",
-    "Wontons": "皮薄如绸，浸在暖汤里",
-    "Soup Dumplings": "勺子端稳——会流汤",
-    "Noodles": "今早现拉的",
-    "Fried Rice": "隔夜米，滚烫的锅",
-    "Soups": "小火慢煨，从不着急",
-    "Side Dishes": "小盘子，大主意",
-    "Vegetables": "市场直达，几乎不加修饰",
-    "Desserts": "一个温柔的收尾",
-    "Chef Specials": "本周厨房最得意的",
-  },
+    "signature": "镇店手作，先从这里点起",
+    "diy": "选馅料，选做法——水煮 · 煎 · 清汤 · 辣拌 · 混酱",
+    "noodles": "今早现拉，各地一碗",
+    "buns": "一口一个，小心汤",
+    "tangzi": "糯叽叽，咸甜都有",
+    "rice": "隔夜米，滚烫的锅",
+    "soup": "小火慢煨，从不着急",
+    "sides": "小盘子，大主意",
+    "fried": "金黄酥脆，趁热",
+    "veg": "清清爽爽，解腻",
+    "dessert": "冰冰凉凉的收尾"
+},
 
   allergens: {
     Gluten: "麸质", Soy: "大豆", Shellfish: "甲壳类", Egg: "鸡蛋",
@@ -199,149 +199,233 @@ const I18N = {
   },
 
   dishes: {
-    "black-pork-panfried": {
-      flavor: "黑豚肉手剁成馅，配炙烤卷心菜和一点白胡椒——脆到碎裂的金黄冰花底下，是深而甜的肉香。",
-      story: "林主厨为这个馅料花了两年。猪肉手剁不绞，每一口都有弹性；冰花是面浆在锅里炸成的玻璃。",
+    "beijing-pork-guotie": {
+        "flavor": "鲜嫩猪肉馅，底部煎得金黄酥脆。",
+        "story": ""
     },
-    "chicken-corn": {
-      flavor: "明亮、微甜、汁水惊人——夏天的玉米折进散养鸡肉里。",
-      story: "本来是员工餐的实验，结果再也没离开过菜单。玉米每天早上现切，用它自己的浆汁锁住馅料，一点淀粉都不用。",
+    "jp-chicken-gyoza": {
+        "flavor": "皮薄馅足的鸡肉煎饺，蒜香焦脆。",
+        "story": ""
     },
-    "sichuan-chili": {
-      flavor: "柔滑的猪肉抄手，心甘情愿地泡在红油、花椒和香醋里。",
-      story: "红油用桂皮八角浸三天。入口先是麻，然后是香，最后让你想叫一碗米饭。",
+    "hk-crab-roe-wonton": {
+        "flavor": "蟹籽云吞浸在金汤里，鲜到眉毛掉。",
+        "story": ""
     },
-    "mushroom-truffle": {
-      flavor: "五种野菌、焦化黄油、一缕黑松露，包在菠菜翠皮里。",
-      story: "我们的素食招牌。菌菇烤到交出所有水分，趁热包进皮里，让面皮也染上香气。",
+    "grandma-fried-wonton": {
+        "flavor": "家常馄饨煎到两面金黄。",
+        "story": ""
     },
-    "chicken-gyoza": {
-      flavor: "皮薄馅足、蒜香十足，一面煎得焦脆，一面蒸得柔软。",
-      story: "向我们大阪的姐妹居酒屋致敬。饺子皮擀到 0.8 毫米——薄到能隔着它读菜单。",
+    "nanjing-beef-guotie": {
+        "flavor": "牛肉锅贴，葱香十足，底脆。",
+        "story": ""
     },
-    "beef-scallion-panfried": {
-      flavor: "浓郁的牛小排肉馅，甜味来自明火燎过的大葱。",
-      story: "大葱在备长炭上烤到边缘微焦。那缕烟熏味，就是这道菜的全部。",
+    "sichuan-red-oil-chaoshou": {
+        "flavor": "柔滑猪肉抄手，红油飘香，麻辣上头。",
+        "story": ""
     },
-    "veggie-potsticker": {
-      flavor: "白菜、粉丝、香菇、鸡蛋——最经典的素馅，煎脆了。",
-      story: "魏奶奶的配方，从第一家店起从未改过。我们试过改良一次，然后道歉了。",
+    "diy-chicken-cabbage": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "shrimp-wonton": {
-      flavor: "整只虎虾裹在绸缎般的皮里，浮在琥珀色的清汤上。",
-      story: "汤从凌晨五点开始吊——鸡架、猪骨、大地鱼——像法式清汤一样打到透亮，能看见碗底。",
+    "diy-beef-curry-onion": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "pork-chive-wonton": {
-      flavor: "最抚慰人心的经典——多汁、翠绿、一碗接一碗。",
-      story: "每天下午四点在窗边现包。熟客拿它对表。",
+    "diy-pork-celery-shrimp": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "pork-xlb": {
-      flavor: "十八道褶收着一勺滚烫的猪肉清汤。先咬开，再吸汤，最后吃皮。",
-      story: "汤是冷的皮冻拌进馅里，蒸汽把它化回汤。六分钟，不是七分钟——计时器是神圣的。",
+    "diy-saltedegg-roe-shrimp": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "crab-pork-xlb": {
-      flavor: "蟹肉的甜和金黄蟹粉融进汤里——更浓、更圆、更难忘。",
-      story: "蟹每天早上手拆。哪天蟹不对，这道菜就不卖。",
+    "diy-pork-scallion": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "chicken-ramen": {
-      flavor: "白汤打到如丝般顺滑，手拉面配鸡叉烧，再加一颗六分钟溏心蛋。",
-      story: "十二个小时的文火把整只鸡熬成奶白。面现点现拉——在大堂能听见摔面的声音。",
+    "diy-chicken-corn-carrot": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "dan-dan": {
-      flavor: "麻酱、红油、脆臊子，弹牙的面条下藏着缓缓上头的花椒。",
-      story: "吃之前拌十二下——主厨会数，而且她真的在看。",
+    "diy-pork-chive": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "scallion-oil-noodles": {
-      flavor: "四样东西：熬成红木色的葱、甜酱油、细面、耐心。",
-      story: "上海最安静的杰作。葱用最小的火熬四十分钟。",
+    "diy-tomato-egg": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "hot-oil-ribbons": {
-      flavor: "手撕宽面上堆满辣子、蒜末和花生碎——上桌前一勺滚油泼下去。",
-      story: "油温精确到 190 度。刺啦一声，辣子的香气炸开，整个餐厅都会回头。",
+    "diy-four-veg": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "katsu-mazemen": {
-      flavor: "芝麻脆皮鸡排盖在弹牙的干拌面上，配两颗酱渍溏心蛋和脆海苔。",
-      story: "鸡排出锅静置整四分钟——久到还在咔哧作响，短到依然温热。",
+    "diy-veg-pork-wonton": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "corn-pork-mazemen": {
-      flavor: "甜玉米、姜香肉燥、两颗溏心蛋、海苔——一碗安静的面，消失得很快。",
-      story: "我们最温柔的一碗面。肉燥在自己的汤里慢炖，直到缴械投降、化作丝绒。",
+    "diy-chive-wonton": {
+        "flavor": "选好这个馅，再选做法。",
+        "story": ""
     },
-    "egg-fried-rice": {
-      flavor: "每一粒米都先裹上蛋黄再下锅。烟火气、粒粒分明、金光闪闪。",
-      story: "隔夜香米一粒粒拨散，裹上生蛋黄，让每粒米都穿着金衣下锅。",
+    "xian-hot-oil-noodles": {
+        "flavor": "宽面泼上滚油辣子，一声刺啦。",
+        "story": ""
     },
-    "shrimp-fried-rice": {
-      flavor: "甜虾仁、自制XO酱，还有能让眼镜起雾的锅气。",
-      story: "XO酱每月自制——瑶柱、火腿、辣椒，熬成一罐鲜味的碎金。",
+    "xinjiang-dapanji-noodles": {
+        "flavor": "大盘鸡拌手工宽面，一大盘的满足。",
+        "story": ""
     },
-    "hot-sour-soup": {
-      flavor: "香醋的酸、白胡椒的辣、嫩豆腐、木耳——一碗叫醒你的汤。",
-      story: "勾芡到恰好是天鹅绒的重量。胡椒离火才下，所以是刺激，不是灼烧。",
+    "shanghai-scallion-noodles": {
+        "flavor": "熬透的葱、甜酱油、细面，简单到极致。",
+        "story": ""
     },
-    "chicken-broth": {
-      flavor: "清、深、滋补。枸杞、红枣，和一整个下午的火候。",
-      story: "锅从不沸腾——只是微微发抖。四小时后，这碗汤喝起来像被人照顾的感觉。",
+    "beijing-zhajiang-noodles": {
+        "flavor": "筋道面条配酱香肉丁。",
+        "story": ""
     },
-    "fish-tofu-soup": {
-      flavor: "煎香的鱼冲入滚水，汤色瞬间奶白如玉。",
-      story: "秘诀在那一下煎——蛋白质和油脂乳化成著名的奶白色。没有奶，只有物理。",
+    "signature-chicken-ramen": {
+        "flavor": "十二小时鸡汤，手拉面，招牌一碗。",
+        "story": ""
     },
-    "silk-tofu-soup": {
-      flavor: "轻若无物——昆布高汤、内酯豆腐、一撮芝麻。",
-      story: "菜单上的逗号。在两轮饺子之间点它，清清口。",
+    "yangzhou-plain-noodles": {
+        "flavor": "最清爽的一碗，清汤细面。",
+        "story": ""
     },
-    "cucumber-smash": {
-      flavor: "冰凉、爽脆、蒜味十足——香醋和一线红油的凉拌。",
-      story: "拍，不切。粗糙的断面才喝得进料汁。",
+    "nanjing-soup-bun": {
+        "flavor": "十八道褶收着一口滚汤。",
+        "story": ""
     },
-    "crispy-chicken-bites": {
-      flavor: "亮如上漆、咬即碎裂，撒五香椒盐和炸罗勒。",
-      story: "酱油冰糖腌一夜，炸两次，静置一次，几分钟内被吃光。",
+    "traditional-pork-bun": {
+        "flavor": "松软大包，经典猪肉馅。",
+        "story": ""
     },
-    "smacked-eggplant": {
-      flavor: "蒸透、手撕，浇上蒜香豉油——柔软但有脊梁。",
-      story: "手撕是为了保住那云朵般的质地。料汁会淌进每一道纹理里。",
+    "wildrice-pork-tangzi": {
+        "flavor": "糯叽叽的团子，茭白肉末馅。",
+        "story": ""
     },
-    "crispy-tofu": {
-      flavor: "外壳咔哧作响，内里是蛋羹的嫩——撒辣椒盐和葱花，盛在冰凉的钢盘上。",
-      story: "压一个小时，炸九十秒。反差就是全部意义。",
+    "radish-pork-tangzi": {
+        "flavor": "糯团子，萝卜猪肉馅，鲜。",
+        "story": ""
     },
-    "garlic-greens": {
-      flavor: "今早市场给什么就是什么，猛火蒜蓉快炒。",
-      story: "三十秒的猛烈，然后直接上桌。绿叶菜应该还记得田野。",
+    "redbean-tangyuan": {
+        "flavor": "温热糯米团，豆沙流心。",
+        "story": ""
     },
-    "blistered-beans": {
-      flavor: "煸到起皱的豆角，配芽菜和一点肉末。",
-      story: "干煸到表皮皱起如绉纱。想吃素的话说一声——锅不会介意。",
+    "sesame-tangyuan": {
+        "flavor": "黑芝麻流心，软糯汤圆。",
+        "story": ""
     },
-    "baby-bok-choy": {
-      flavor: "娃娃菜心浸在上汤里，配枸杞和油封蒜。",
-      story: "我们做的最温柔的一道菜。上汤负责调味，娃娃菜负责其余。",
+    "shrimp-egg-fried-rice": {
+        "flavor": "虾仁蛋炒饭，粒粒裹金。",
+        "story": ""
     },
-    "mango-sago": {
-      flavor: "冰镇芒果奶露、爆汁的西柚粒、小月亮一样的西米。",
-      story: "用最熟的小台芒做——我们把季节冻起来，让十二月也尝得到六月。",
+    "spicy-chicken-fried-rice": {
+        "flavor": "锅气十足的辣鸡肉炒饭。",
+        "story": ""
     },
-    "jasmine-panna-cotta": {
-      flavor: "茉莉龙珠熏香的奶冻，颤巍巍的，淋一层桂花蜜。",
-      story: "凝固得刚刚好，勉强撑过从厨房到桌上的路。趁它还没回过神，快吃。",
+    "chaozhou-fishball-soup": {
+        "flavor": "手打鱼丸，弹牙，清汤见底。",
+        "story": ""
     },
-    "sesame-tang-yuan": {
-      flavor: "软糯的汤圆咬开是流动的黑芝麻，泡在温热的姜糖水里。",
-      story: "馅料用石磨磨到像墨一样流动。永远温着上。",
+    "tomato-beef-soup": {
+        "flavor": "番茄牛肉汤，酸甜开胃。",
+        "story": ""
     },
-    "beef-yolk-bowl": {
-      flavor: "甜酱油汁的牛肉薄片绕着一颗完美的蛋黄，铺在芝麻海苔饭上。",
-      story: "戳破蛋黄，用力拌。主厨管这道菜叫「田野上的月亮」——点一份你就懂了。",
+    "lionhead-soup": {
+        "flavor": "一颗超大狮子头，入口即化。",
+        "story": ""
     },
-    "lobster-dumpling": {
-      flavor: "缅因龙虾在葱香黄油里低温浸熟，包进甜菜染的粉色皮里。",
-      story: "仅此一周。龙虾早上七点活着到店；中午它就是菜单上最好的东西。",
+    "mashed-potato-salad": {
+        "flavor": "冰凉绵密的土豆泥沙拉。",
+        "story": ""
     },
-    "duck-dumpling": {
-      flavor: "樟茶鸭配海鲜酱和脆皮碎——北京烤鸭，折了起来。",
-      story: "林主厨写给北京的情书。鸭子在茉莉茶叶和苹果木上熏六个小时。",
+    "sweetsour-pork-ribs": {
+        "flavor": "油亮的糖醋排骨，酸甜下饭。",
+        "story": ""
     },
-  },
+    "mouthwatering-chicken": {
+        "flavor": "口水鸡，红油浇透，麻辣鲜香。",
+        "story": ""
+    },
+    "drunken-brine-shrimp": {
+        "flavor": "糟卤虾，酒香冰凉。",
+        "story": ""
+    },
+    "minced-pork-tofu": {
+        "flavor": "嫩豆腐配肉末，家常滋味。",
+        "story": ""
+    },
+    "big-plate-chicken": {
+        "flavor": "大盘鸡，土豆宽粉，够几个人分。",
+        "story": ""
+    },
+    "egg-luncheon-meat": {
+        "flavor": "鸡蛋午餐肉，简单快乐。",
+        "story": ""
+    },
+    "braised-lionhead": {
+        "flavor": "红烧狮子头，酥烂入味。",
+        "story": ""
+    },
+    "yunnan-lava-tofu": {
+        "flavor": "外脆内爆浆的包浆豆腐。",
+        "story": ""
+    },
+    "secret-pork-cutlet": {
+        "flavor": "秘制猪排，咬下咔哧作响。",
+        "story": ""
+    },
+    "13spice-chicken-nuggets": {
+        "flavor": "十三味炸鸡块，越吃越香。",
+        "story": ""
+    },
+    "13spice-chicken-wings": {
+        "flavor": "十三味鸡翅，入味到骨。",
+        "story": ""
+    },
+    "old-style-fried-drumstick": {
+        "flavor": "老式炸鸡腿，童年的味道。",
+        "story": ""
+    },
+    "cold-veg-shreds": {
+        "flavor": "凉拌蔬菜丝，爽脆解腻。",
+        "story": ""
+    },
+    "cold-eggplant-peashoot": {
+        "flavor": "凉拌茄子，或清炒豆苗。",
+        "story": ""
+    },
+    "veg-with-dip": {
+        "flavor": "新鲜蔬菜配蘸酱。",
+        "story": ""
+    },
+    "pickled-radish": {
+        "flavor": "爽脆酸甜的腌萝卜。",
+        "story": ""
+    },
+    "garlic-broccoli": {
+        "flavor": "蒜蓉快炒西兰花。",
+        "story": ""
+    },
+    "oyster-lettuce": {
+        "flavor": "蚝油生菜，清甜。",
+        "story": ""
+    },
+    "sesame-spinach": {
+        "flavor": "麻酱菠菜，凉拌爽口。",
+        "story": ""
+    },
+    "mango-ice": {
+        "flavor": "芒果冰浆，冰爽香甜。",
+        "story": ""
+    },
+    "watermelon-ice": {
+        "flavor": "西瓜冰浆，整个夏天。",
+        "story": ""
+    },
+    "cucumber-ice": {
+        "flavor": "黄瓜冰浆，清凉解渴。",
+        "story": ""
+    }
+},
 };

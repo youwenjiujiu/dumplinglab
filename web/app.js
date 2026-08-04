@@ -32,8 +32,8 @@ let lang = urlLang || norm(localStorage.getItem("dl-lang"))
   || norm(navigator.language) || "en";
 
 const L = () => I18N.ui[lang];
-const secName = s => lang === "zh" ? I18N.sections[s] : s;
-const secTagline = s => lang === "zh" ? I18N.taglines[s] : TAGLINES[s];
+const secName = s => lang === "zh" ? I18N.sections[s] : SECTION_LABELS[s];
+const secTagline = s => lang === "zh" ? (I18N.taglines[s]||"") : (TAGLINES[s]||"");
 const dishName = d => lang === "zh" ? d.cn : d.name;
 const dishSub = d => lang === "zh" ? d.name : d.cn;
 const dishFlavor = d => lang === "zh" ? ((I18N.dishes[d.id] || {}).flavor || d.flavor) : d.flavor;
@@ -476,7 +476,7 @@ function renderMenu() {
     ch.className = "chapter";
     ch.innerHTML = `
       <div class="num">${L().chapter(String(idx + 1).padStart(2, "0"))}</div>
-      <h2>${secName(sec)} <span class="sec-sub">${lang === "zh" ? sec : I18N.sections[sec]}</span></h2>
+      <h2>${secName(sec)} <span class="sec-sub">${lang === "zh" ? SECTION_LABELS[sec] : I18N.sections[sec]}</span></h2>
       <div class="tagline">${secTagline(sec)}</div>
       <div class="grid"></div>`;
     const grid = ch.querySelector(".grid");
@@ -711,17 +711,17 @@ function fillDetail(d) {
       <div class="overline">${L().theFlavor}</div>
       <div class="flavor-text">${dishFlavor(d)}</div>
     </section>
-    <section class="kitchen-card">
+    ${dishStory(d) ? `<section class="kitchen-card">
       <div class="overline">${L().fromKitchen}</div>
       <p>${dishStory(d)}</p>
       <div class="sig">${L().chefSig}</div>
-    </section>
-    <section>
+    </section>` : ""}
+    ${(d.ingredients && d.ingredients.length) ? `<section>
       <div class="overline">${L().whatsInside}</div>
       <div class="ingredients">${d.ingredients.map(i =>
         `<div class="ing"><div class="em">${i.emoji}</div><div class="nm">${ingName(i.name)}</div></div>`).join("")}
       </div>
-    </section>
+    </section>` : ""}
     <section>
       <div class="overline">${L().onTheScale}</div>
       <div class="nutrition">
