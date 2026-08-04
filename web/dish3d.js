@@ -42,7 +42,7 @@ const Dish3D = (() => {
       pts.push(new THREE.Vector2(r, (t - 0.5) * 1.1));
     }
     const bodyGeo = new THREE.LatheGeometry(pts, 40);
-    bodyGeo.scale(1, 0.62, 0.78);
+    bodyGeo.scale(1, 0.42, 0.62);
     const mat = new THREE.MeshStandardMaterial({
       color, roughness: 0.62, metalness: 0.02,
     });
