@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#211a15">
 <title>Dumpling Lab — Table Menu</title>
-<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 
@@ -85,6 +85,7 @@
     <canvas id="steamCanvas"></canvas>
     <button class="close" id="detailClose" aria-label="Close">&#x2304;</button>
     <div class="detail-art" id="detailArt"></div>
+    <div id="detail3dHint" hidden>拖动旋转 · 360°</div>
     <div class="detail-caption" id="detailCaption"></div>
   </div>
   <div class="detail-body" id="detailBody"></div>
@@ -129,8 +130,23 @@
   <button id="orderedDone">Back to the table · 返回</button>
 </div>
 
-<script src="menu-data.js?v=17"></script>
-<script src="i18n.js?v=17"></script>
-<script src="app.js?v=17"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js?v=19",
+    "three/loaders/GLTFLoader.js": "./vendor/GLTFLoader.js?v=19",
+    "three/utils/BufferGeometryUtils.js": "./vendor/BufferGeometryUtils.js?v=19"
+  }
+}
+</script>
+<script type="module">
+  import Dish3D from "./dish3d.js?v=19";
+  window.Dish3D = Dish3D;
+  window.dispatchEvent(new Event("dish3d-ready"));
+</script>
+<script src="menu-data.js?v=19"></script>
+<script src="i18n.js?v=19"></script>
+<script src="app.js?v=19"></script>
 </body>
 </html>

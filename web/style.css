@@ -661,3 +661,19 @@ body.zh .kitchen-card p {
   font-style: normal;
 }
 body.zh .chapter .tagline { letter-spacing: 0.06em; opacity: 0.9; }
+
+/* 3D dish stage in the detail hero */
+.detail-art .d3d-stage { border-radius: 20px; overflow: hidden; }
+#detail3dHint {
+  position: absolute; z-index: 3; left: 50%; transform: translateX(-50%);
+  bottom: 14px; padding: 6px 14px; border-radius: 999px;
+  background: rgba(33,26,21,0.6); border: 1px solid rgba(222,204,168,0.35);
+  color: var(--sesame); font-size: 11px; letter-spacing: 0.08em;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.tile .badge3d {
+  position: absolute; top: 9px; left: 9px; z-index: 3; transform: translateZ(40px);
+  font-size: 9px; font-weight: 800; letter-spacing: 0.06em;
+  color: var(--soy-dark); background: var(--sesame);
+  padding: 3px 7px; border-radius: 999px;
+}

@@ -724,7 +724,7 @@ function attachTilt(tile) {
 /* ============================== Detail (FLIP flight) ============================== */
 
 const detail = $("#detail");
-let currentDish = null, qty = 1, detailOrigin = null;
+let currentDish = null, qty = 1, detailOrigin = null, dish3dView = null;
 
 function fillDetail(d) {
   $("#detailGlow").style.setProperty("--glow-c", d.glow + "b8");
@@ -863,7 +863,21 @@ function openDetail(d, fromEl, alreadyOpen) {
       detail.querySelectorAll(".fill").forEach(f => f.style.width = f.dataset.w + "%");
     }, fromRect ? 480 : 120);
     startSteam($("#steamCanvas"));
+    mount3D(d);
   });
+}
+
+// Mount the rotatable 3D model on the hero when the dish has one.
+function mount3D(d) {
+  if (dish3dView) { dish3dView.dispose(); dish3dView = null; }
+  const art = $("#detailArt");
+  const badge = $("#detail3dHint");
+  if (badge) badge.hidden = !d.has3d;
+  if (!d.has3d || !window.Dish3D) return;
+  // Replace the flat art with a live 3D canvas stage.
+  art.innerHTML = '<div class="d3d-stage" style="width:100%;height:100%;"></div>';
+  const stage = art.querySelector(".d3d-stage");
+  dish3dView = window.Dish3D.mount(stage, { modelURL: `models/${d.id}.glb?v=18`, color: 0xecd9b0 });
 }
 
 function renderDetailBar() {
@@ -883,6 +897,7 @@ function renderDetailBar() {
 }
 
 function closeDetail() {
+  if (dish3dView) { dish3dView.dispose(); dish3dView = null; }
   // Reverse flight: the hero dissolves into splats that settle back
   // into the tile it came from, while the page fades in beneath.
   const d = currentDish, origin = detailOrigin;
