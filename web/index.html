@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#211a15">
 <title>Dumpling Lab — Table Menu</title>
-<link rel="stylesheet" href="style.css?v=15">
+<link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
 
@@ -30,6 +30,7 @@
         <span id="vHint">Scroll to be seated</span>
         <div class="v-chevron">⌄</div>
       </div>
+      <button id="voyageSkip">直接看菜单 →</button>
     </div>
 
     <div class="v-caption" id="vCaption"></div>
@@ -60,21 +61,19 @@
   <p id="colophonLine">Folded by hand, daily</p>
 </footer>
 
-<!-- Bottom dock -->
-<div id="dock">
-  <button class="dock-cart" id="dockCart">
+<!-- Bottom navigation bar -->
+<nav id="navbar">
+  <button class="nav-item" id="navHome"><span class="ni">⌂</span><span class="nl" id="navHomeL">首页</span></button>
+  <button class="nav-item" id="navMenu"><span class="ni">☰</span><span class="nl" id="navMenuL">菜单</span></button>
+  <button class="nav-item" id="navSearch"><span class="ni">⌕</span><span class="nl" id="navSearchL">搜索</span></button>
+  <button class="nav-item nav-cart" id="dockCart">
     <span class="steamer-icon">
-      <svg viewBox="0 0 36 22" width="30" height="19">
-        <ellipse cx="18" cy="6" rx="16" ry="5" fill="#c29e75"/>
-        <rect x="2" y="6" width="32" height="10" rx="3" fill="#946f4a"/>
-        <ellipse cx="18" cy="16" rx="16" ry="5" fill="#7a5a3a"/>
-      </svg>
+      <span class="ni">🧺</span>
       <span class="badge" id="cartBadge" hidden>0</span>
     </span>
-    <span class="dock-label" id="dockLabel">The Steamer · 蒸笼</span>
-    <span class="dock-total" id="dockTotal"></span>
+    <span class="nl"><span id="navCartL">蒸笼</span> <span class="dock-total" id="dockTotal"></span></span>
   </button>
-</div>
+</nav>
 
 <!-- Toast -->
 <div id="toast" hidden></div>
@@ -130,8 +129,8 @@
   <button id="orderedDone">Back to the table · 返回</button>
 </div>
 
-<script src="menu-data.js?v=15"></script>
-<script src="i18n.js?v=15"></script>
-<script src="app.js?v=15"></script>
+<script src="menu-data.js?v=16"></script>
+<script src="i18n.js?v=16"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>

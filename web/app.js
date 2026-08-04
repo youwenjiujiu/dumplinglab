@@ -322,7 +322,11 @@ function renderStatic() {
   $("#heroTagline").textContent = L().tagline;
   $("#langToggle").textContent = lang === "zh" ? "EN" : "中文";
   $("#bellBtn").title = L().waiter;
-  $("#dockLabel").textContent = lang === "zh" ? "蒸笼 · The Steamer" : "The Steamer · 蒸笼";
+  $("#navHomeL").textContent = lang === "zh" ? "首页" : "Home";
+  $("#navMenuL").textContent = lang === "zh" ? "菜单" : "Menu";
+  $("#navSearchL").textContent = lang === "zh" ? "搜索" : "Search";
+  $("#navCartL").textContent = lang === "zh" ? "蒸笼" : "Cart";
+  const vs = $("#voyageSkip"); if (vs) vs.textContent = lang === "zh" ? "直接看菜单 →" : "Skip to menu →";
   $("#colophonLine").textContent = L().colophon;
   $("#orderedTitle").textContent = lang === "zh" ? "开始蒸了 · It’s steaming" : "It’s steaming · 开始蒸了";
   $("#orderedDone").textContent = L().back;
@@ -350,7 +354,7 @@ function buildVoyage() {
     world.appendChild(el);
     return { el, d, lateral: (i % 2 ? 1 : -1) * lat, drift: (i % 3 - 1) * 30 };
   });
-  $("#voyage").style.height = ((featured.length + 1.9) * 100) + "vh";
+  $("#voyage").style.height = ((Math.min(featured.length, 6) + 0.8) * 78) + "vh";
   vBuilt = true;
   updateVoyage();
 }
@@ -606,6 +610,37 @@ $("#bellBtn").addEventListener("click", () => {
   haptic(true);
   toast(L().waiterToast);
 });
+
+/* ---------- Bottom nav + jump helpers ---------- */
+
+function scrollToMenu() {
+  const y = $("#menu").getBoundingClientRect().top + scrollY - ($("#rail").offsetHeight || 0) + 2;
+  scrollTo({ top: y, behavior: "smooth" });
+}
+$("#navHome").addEventListener("click", () => { haptic(); scrollTo({ top: 0, behavior: "smooth" }); });
+$("#navMenu").addEventListener("click", () => { haptic(); scrollToMenu(); });
+$("#navSearch").addEventListener("click", () => {
+  haptic();
+  const f = $("#finder");
+  scrollTo({ top: f.getBoundingClientRect().top + scrollY - 8, behavior: "smooth" });
+  setTimeout(() => $("#searchBox").focus(), 400);
+});
+const vs = $("#voyageSkip");
+if (vs) vs.addEventListener("click", () => { haptic(); scrollToMenu(); });
+
+// Floating back-to-top, shown once the menu is in view
+const toTop = document.createElement("button");
+toTop.id = "toTop"; toTop.textContent = "↑"; toTop.setAttribute("aria-label", "Back to top");
+document.body.appendChild(toTop);
+toTop.addEventListener("click", () => { haptic(); scrollTo({ top: 0, behavior: "smooth" }); });
+addEventListener("scroll", () => {
+  const past = $("#menu").getBoundingClientRect().top < innerHeight * 0.4;
+  toTop.classList.toggle("show", past);
+  // active state on nav
+  const inMenu = $("#menu").getBoundingClientRect().top < innerHeight * 0.5;
+  $("#navHome").classList.toggle("on", !inMenu);
+  $("#navMenu").classList.toggle("on", inMenu);
+}, { passive: true });
 
 // Rail follows scroll
 addEventListener("scroll", () => {
