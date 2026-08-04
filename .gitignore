@@ -5,3 +5,4 @@ xcuserdata/
 *.xcuserstate
 node_modules/
 selftest-out/
+web/models/*.glb
