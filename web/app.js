@@ -301,7 +301,9 @@ $("#note").addEventListener("input", e=>localStorage.setItem("dl-note", e.target
 $("#placeOrder").addEventListener("click", ()=>{
   const no = String(Math.floor(1000+Math.random()*9000));
   const order = { table:TABLE, no, items:[...cart.values()], note:($("#note").value||"").trim()||null, total:cartTotal(), at:new Date().toISOString() };
-  console.log("ORDER →", JSON.stringify(order));
+  // enrich items with names so the kitchen screen is readable
+  const payload = { ...order, items: order.items.map(v=>({ ...v, name: dishById(v.id)?.cn })) };
+  fetch("/api/order",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)}).catch(()=>{});
   const past=JSON.parse(localStorage.getItem("dl-orders")||"[]"); past.push(order); localStorage.setItem("dl-orders", JSON.stringify(past));
   cart.clear(); saveCart(); syncCartBar(); localStorage.removeItem("dl-note"); closeCart();
   $("#doneNote").textContent = L().orderNote(TABLE, no);
@@ -310,7 +312,10 @@ $("#placeOrder").addEventListener("click", ()=>{
 $("#doneBack").addEventListener("click", ()=>{ $("#done").hidden=true; document.body.style.overflow=""; });
 
 /* ---------------- Waiter + language + nav ---------------- */
-function callWaiter(){ console.log("WAITER →", TABLE); haptic(true); toast(L().waiterOntheway); }
+function callWaiter(){
+  haptic(true); toast(L().waiterOntheway);
+  fetch("/api/call",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({table:TABLE})}).catch(()=>{});
+}
 $("#bellBtn").addEventListener("click", callWaiter);
 $("#callWaiter").addEventListener("click", callWaiter);
 $("#langBtn").addEventListener("click", ()=>{ lang = lang==="zh"?"en":"zh"; localStorage.setItem("dl-lang", lang); haptic(); renderAll(); });
