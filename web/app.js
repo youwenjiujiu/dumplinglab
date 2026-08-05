@@ -216,7 +216,7 @@ function closeSheet() {
 function renderSheet() {
   const d=sheetDish;
   const badges = [
-    (d.best?`<span class="badge red">${L().best}</span>`:(d.chef?`<span class="badge red">${L().chef}</span>`:"")),
+    (d.best?`<span class="badge red">${L().bestSeller}</span>`:(d.chef?`<span class="badge red">${L().chefsChoice}</span>`:"")),
   ].filter(Boolean).join("");
   const meta = [];
   if (d.pieces) meta.push(`${d.pieces} ${L().pieces}`);
