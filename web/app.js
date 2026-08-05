@@ -1,4 +1,4 @@
-/* Dumpling Lab — table menu, rebuilt clean.
+/* Dumplings Lab — table menu, rebuilt clean.
    One clear flow: browse by category → tap dish → add → cart → order.
    Bilingual, dietary filters, 自选 cooking styles, table QR. No gimmicks.
    art.js provides artFor(dish) (photo or SVG illustration). */
@@ -60,7 +60,7 @@ function renderStatic() {
   $("#waiterLabel").textContent = L().waiter;
   $("#doneTitle").textContent = L().ordered;
   $("#doneBack").textContent = L().back;
-  $("#foot").querySelector("p").textContent = lang==="zh" ? "Dumpling Lab · 手工现包" : "Dumpling Lab · folded by hand";
+  $("#foot").querySelector("p").textContent = lang==="zh" ? "Dumplings Lab · 手工现包" : "Dumplings Lab · folded by hand";
 }
 
 let activeSection = SECTIONS[0];

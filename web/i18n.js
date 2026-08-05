@@ -1,4 +1,4 @@
-/* Dumpling Lab — bilingual copy. Chinese is written as restaurant copy,
+/* Dumplings Lab — bilingual copy. Chinese is written as restaurant copy,
    not translated word-for-word: same warmth, same editorial voice. */
 
 const I18N = {

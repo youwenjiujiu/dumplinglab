@@ -1,4 +1,4 @@
-/* Dumpling Lab — procedural dish illustrations (SVG fallback when no photo). */
+/* Dumplings Lab — procedural dish illustrations (SVG fallback when no photo). */
 
 function shade(hex, f) {
   const v = hex.match(/\w\w/g).map(h => parseInt(h, 16));
