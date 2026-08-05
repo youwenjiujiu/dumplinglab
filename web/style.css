@@ -23,6 +23,7 @@ button { font-family:inherit; cursor:pointer; border:none; background:none; }
 .hero-top button:active { transform:scale(.94); }
 #hero h1 { font-family:var(--serif); font-weight:500; font-size:32px; margin-top:10px; }
 #heroSub { color:var(--sesame); font-size:12px; letter-spacing:.22em; margin-top:6px; }
+#heroSub:empty { display:none; }
 #hero .table { display:inline-block; margin-top:12px; padding:4px 14px; border-radius:999px;
   border:1px solid rgba(222,204,168,.35); color:var(--sesame); font-size:11px; letter-spacing:.16em; text-transform:uppercase; }
 #hero .table:empty { display:none; }

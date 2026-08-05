@@ -4,7 +4,7 @@
 const I18N = {
   ui: {
     en: {
-      tagline: "A modern dumpling house",
+      tagline: "",
       table: n => `Table ${n} · ${n}号桌`,
       chapter: n => `CHAPTER ${n}`,
       steamer: "The Steamer",
@@ -59,7 +59,7 @@ const I18N = {
       voyageEndSub: "Eleven small chapters",
     },
     zh: {
-      tagline: "现代饺子研究所",
+      tagline: "",
       table: n => `${n}号桌 · Table ${n}`,
       chapter: n => `第 ${n} 章`,
       steamer: "蒸笼",
