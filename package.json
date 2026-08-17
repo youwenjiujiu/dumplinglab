@@ -4,12 +4,18 @@
   "description": "A scan-to-order web menu for the Dumpling Lab restaurant chain (Singapore). One static site, no dependencies, no build step — every table's QR code points at `https://<host>/?table=<n>`.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/selftest.mjs",
+    "generate:splat": "node scripts/gen-splat.mjs",
+    "generate:sam-splat": "node scripts/gen-sam-splat.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "playwright": "^1.61.1"
+  },
+  "dependencies": {
+    "@fal-ai/client": "^1.10.1",
+    "@mkkellogg/gaussian-splats-3d": "^0.4.7"
   }
 }

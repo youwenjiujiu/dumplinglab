@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dumpling Lab · 3D QA</title>
+  <style>
+    *{box-sizing:border-box} body{margin:0;padding:24px;background:#f6f6f3;color:#151514;font:14px system-ui,sans-serif}
+    h1{margin:0 0 18px;font-size:20px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+    article{min-width:0} .stage{height:min(38vw,360px);border:1px solid rgba(21,21,20,.12);background:#fff}
+    h2{margin:8px 0 0;font-size:13px;font-weight:600}@media(max-width:680px){.grid{grid-template-columns:1fr}.stage{height:76vw}}
+  </style>
+</head>
+<body>
+  <h1>Generated dish model QA</h1>
+  <div class="grid" id="grid"></div>
+  <script type="module">
+    import { mountGeneratedDish3D } from "./model3d.js";
+    const dishes = [
+      ["red-oil-wontons", "红油云吞"],
+      ["minced-pork-egg-noodles", "肉末煎蛋面"],
+      ["wonton-soup-noodles", "云吞汤面"],
+      ["dry-wonton-noodles", "干拌云吞面"],
+    ];
+    const params = new URLSearchParams(location.search);
+    const only = params.get("dish");
+    const model = params.get("model") || "trellis2";
+    const modelBase = model === "production" ? "models/production" : `models/candidates/${model}`;
+    for (const [id, name] of dishes.filter(([id]) => !only || id === only)) {
+      const article = document.createElement("article");
+      article.innerHTML = `<div class="stage" data-dish="${id}"></div><h2>${name} · ${id}</h2>`;
+      document.querySelector("#grid").append(article);
+      mountGeneratedDish3D(article.querySelector(".stage"), {
+        modelURL: `${modelBase}/${id}.glb`,
+        label: `${name} 3D candidate`,
+      });
+    }
+  </script>
+</body>
+</html>

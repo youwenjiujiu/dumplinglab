@@ -1,8 +1,15 @@
 .DS_Store
+node_modules/
 build/
 DerivedData/
 xcuserdata/
 *.xcuserstate
-node_modules/
 selftest-out/
-web/models/*.glb
+tmp/
+.vercel/
+
+# 3D R&D artefacts — only reviewed production GLBs are versioned
+web/models/candidates/
+web/models/rejected/
+web/splats/
+web/img/candidates/

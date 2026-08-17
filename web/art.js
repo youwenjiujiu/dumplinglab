@@ -1,4 +1,4 @@
-/* Dumplings Lab — procedural dish illustrations (SVG fallback when no photo). */
+/* Dumpling Lab — procedural dish illustrations (SVG fallback when no photo). */
 
 function shade(hex, f) {
   const v = hex.match(/\w\w/g).map(h => parseInt(h, 16));
@@ -6,8 +6,61 @@ function shade(hex, f) {
   return "#" + v.map(c => Math.round(c + (t - c) * a).toString(16).padStart(2, "0")).join("");
 }
 
+function artHash(value) {
+  let h = 2166136261;
+  for (const ch of String(value || "dish")) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+// Natural garnish colour is driven by what is actually in the dish. This
+// stops a long menu from looking like the same beige asset duplicated 57x,
+// while keeping wrappers, bowls and plates materially believable.
+function naturalAccent(d) {
+  if (/mango/i.test(d.id)) return "#e6a733";
+  if (/watermelon/i.test(d.id)) return "#d7665d";
+  if (/cucumber/i.test(d.id)) return "#78a36b";
+  if ((d.spice || 0) >= 2) return "#b94f30";
+  const choices = {
+    shrimp:["#df8064", "#d59b4a"],
+    beef:["#785141", "#809064"],
+    chicken:["#78915d", "#c78c4d"],
+    pork:["#68885e", "#a96b4c"],
+    vegan:["#56805a", "#8ca35b"],
+    vegetarian:["#638864", "#ac974e"],
+  };
+  const set = choices[d.meat] || ["#6f8c61", "#b47b50"];
+  return set[artHash(d.id) % set.length];
+}
+
+function garnishSVG(d, kind) {
+  const seed = artHash(d.id);
+  const accent = naturalAccent(d);
+  const dark = (d.spice || 0) >= 2 ? "#7f281d" : "#3f5c3e";
+  const area = {
+    dumpling:{ x0:25, span:70, y0:48, ySpan:25 },
+    bun:{ x0:34, span:52, y0:45, ySpan:22 },
+    bowl:{ x0:38, span:44, y0:43, ySpan:14 },
+    plate:{ x0:38, span:44, y0:42, ySpan:19 },
+    cup:{ x0:47, span:27, y0:23, ySpan:13 },
+  }[kind];
+  return `<g opacity="0.92">${Array.from({length:5},(_,i)=>{
+    const n = (seed >>> (i * 4)) & 15;
+    const x = area.x0 + ((n * 17 + i * 13) % area.span);
+    const y = area.y0 + ((n * 7 + i * 5) % area.ySpan);
+    if (d.veg || d.meat === "vegan" || d.meat === "vegetarian") {
+      return `<path d="M${x},${y-3} q5,3 0,7 q-5,-3 0,-7 Z" fill="${i%2?accent:dark}" transform="rotate(${n*11} ${x} ${y})"/>`;
+    }
+    if ((d.spice || 0) >= 2 || d.meat === "shrimp") {
+      return `<circle cx="${x}" cy="${y}" r="${1.2+(n%3)*.35}" fill="${i%2?accent:dark}"/>`;
+    }
+    return `<rect x="${x-1.4}" y="${y-3}" width="2.8" height="6" rx="1.4" fill="${i%2?accent:dark}" transform="rotate(${n*14} ${x} ${y})"/>`;
+  }).join("")}</g>`;
+}
+
 function dumplingSVG(d, crisped) {
-  const skin = d.skin, dark = shade(skin, -0.3), lite = shade(skin, 0.45);
+  const seed = artHash(d.id);
+  const ordinal = typeof MENU === "undefined" ? seed : Math.max(0, MENU.indexOf(d));
+  const skin = shade(d.skin, (((ordinal + seed) % 7) - 3) * .018), dark = shade(skin, -0.3), lite = shade(skin, 0.45);
   const one = (w, x, y, o) => {
     const crispGrad = crisped
       ? `<path d="M6,39 C11,64 29,66 47,66 C65,66 83,64 88,39 C76,4 18,4 6,39 Z"
@@ -26,6 +79,12 @@ function dumplingSVG(d, crisped) {
       }).join("")}
     </g>`;
   };
+  const arrangements = [
+    `${one(56, 6, 34, 0.92)}${one(54, 58, 36, 0.88)}${one(78, 21, 12, 1)}`,
+    `${one(62, 3, 31, 0.9)}${one(64, 55, 30, 0.9)}${one(76, 22, 13, 1)}`,
+    `${one(68, 1, 28, 0.94)}${one(82, 40, 14, 1)}`,
+    `${one(48, 1, 38, 0.82)}${one(54, 34, 27, 1)}${one(49, 72, 37, 0.88)}`,
+  ];
   return `<svg viewBox="0 0 120 100">
     <defs>
       <radialGradient id="skin${d.id}" cx="0.36" cy="0.28" r="0.9">
@@ -38,25 +97,33 @@ function dumplingSVG(d, crisped) {
       </linearGradient>
     </defs>
     <ellipse cx="60" cy="88" rx="42" ry="7" fill="rgba(0,0,0,0.30)"/>
-    ${one(56, 6, 34, 0.92)}${one(54, 58, 36, 0.88)}${one(78, 21, 12, 1)}
+    ${arrangements[ordinal % arrangements.length]}
   </svg>`;
 }
 
 function bunSVG(d) {
-  const skin = d.skin, lite = shade(skin, 0.5);
+  const seed = artHash(d.id);
+  const ordinal = typeof MENU === "undefined" ? seed : Math.max(0, MENU.indexOf(d));
+  const skin = shade(d.skin, (((ordinal + seed) % 5) - 2) * .022), lite = shade(skin, 0.5);
   const bun = (r, x, y) => `
     <circle cx="${x}" cy="${y}" r="${r}" fill="url(#bun${d.id})"/>
     <path d="M${x - r * 0.35},${y - r * 0.45} q${r * 0.35},-${r * 0.28} ${r * 0.7},0"
       fill="none" stroke="${shade(skin, -0.25)}" stroke-width="1.6" opacity="0.6" stroke-linecap="round"/>
     <ellipse cx="${x}" cy="${y + r * 0.55}" rx="${r * 0.72}" ry="${r * 0.3}" fill="${d.accent}" opacity="0.28"/>`;
+  const arrangements = [
+    `${bun(17, 32, 62)}${bun(17, 88, 62)}${bun(22, 60, 52)}`,
+    `${bun(15, 27, 64)}${bun(20, 61, 54)}${bun(16, 91, 63)}`,
+    `${bun(21, 41, 58)}${bun(21, 79, 58)}`,
+    `${bun(14, 24, 66)}${bun(17, 49, 59)}${bun(20, 75, 53)}${bun(14, 96, 66)}`,
+  ];
   return `<svg viewBox="0 0 120 100">
     <defs><radialGradient id="bun${d.id}" cx="0.36" cy="0.3" r="0.95">
       <stop offset="0" stop-color="${lite}"/><stop offset="1" stop-color="${shade(skin, -0.1)}"/>
     </radialGradient></defs>
     <ellipse cx="60" cy="88" rx="44" ry="7" fill="rgba(0,0,0,0.3)"/>
-    <path d="M14,74 a46,14 0 0 1 92,0 v6 a46,14 0 0 1 -92,0 Z" fill="#946f4a"/>
-    <ellipse cx="60" cy="74" rx="46" ry="13" fill="#c29e75"/>
-    ${bun(17, 32, 62)}${bun(17, 88, 62)}${bun(22, 60, 52)}
+    <path d="M14,74 a46,14 0 0 1 92,0 v6 a46,14 0 0 1 -92,0 Z" fill="${shade(d.accent,-.15)}"/>
+    <ellipse cx="60" cy="74" rx="46" ry="13" fill="${shade(d.accent,.18)}"/>
+    ${arrangements[ordinal % arrangements.length]}
   </svg>`;
 }
 
@@ -89,6 +156,7 @@ function bowlSVG(d, kind) {
       <rect x="0" y="0" width="2.6" height="9" rx="1.3" fill="#5f8766"/>
       <rect x="5" y="-1" width="2.6" height="9" rx="1.3" fill="#4c7253"/>
     </g>
+    ${garnishSVG(d, "bowl")}
   </svg>`;
 }
 
@@ -107,7 +175,8 @@ function plateSVG(d, leaves) {
     <ellipse cx="60" cy="58" rx="46" ry="16" fill="#f4f1ea"/>
     <ellipse cx="60" cy="56" rx="38" ry="12.5" fill="#fbfaf6"/>
     ${bits}
-    <circle cx="72" cy="42" r="2.2" fill="${d.accent}"/>
+    <circle cx="72" cy="42" r="2.2" fill="${naturalAccent(d)}"/>
+    ${garnishSVG(d, "plate")}
   </svg>`;
 }
 
@@ -119,9 +188,10 @@ function cupSVG(d) {
     <ellipse cx="60" cy="88" rx="30" ry="6" fill="rgba(0,0,0,0.26)"/>
     <path d="M36,30 C36,58 42,76 48,80 Q60,86 72,80 C78,76 84,58 84,30 Q60,24 36,30 Z" fill="url(#cup${d.id})"/>
     <path d="M36,30 C36,58 42,76 48,80 L50,80 C44,70 40,52 40,31 Z" fill="#ffffff" opacity="0.4"/>
-    <ellipse cx="60" cy="29" rx="24" ry="7" fill="${d.accent}"/>
+    <ellipse cx="60" cy="29" rx="24" ry="7" fill="${naturalAccent(d)}"/>
     ${[0, 1, 2, 3].map(i => `<circle cx="${48 + i * 8}" cy="${24 - (i % 2) * 3}" r="3.4" fill="#fffdf6" opacity="0.9"/>`).join("")}
     <rect x="72" y="12" width="3" height="10" rx="1.5" fill="#5f8766" transform="rotate(18 73 17)"/>
+    ${garnishSVG(d, "cup")}
   </svg>`;
 }
 
@@ -129,7 +199,8 @@ function cupSVG(d) {
 window.__artFallback = (img, id) => {
   const d = MENU.find(x => x.id === id);
   if (!d || !img.parentElement) return;
-  d.img = null;
+  if (d.cover) d.cover = null;
+  else d.img = null;
   img.parentElement.innerHTML = artFor(d);
 };
 
@@ -150,7 +221,8 @@ function svgArtFor(d) {
 }
 
 function artFor(d) {
-  if (d.img) return `<img src="img/${d.img}" alt="${d.cn||d.name||''}" loading="lazy" draggable="false"
+  const image = d.cover || d.img;
+  if (image) return `<img src="img/${image}" alt="${d.cn||d.name||''}" loading="lazy" draggable="false"
     onerror="__artFallback(this, '${d.id}')">`;
   return svgArtFor(d);
 }

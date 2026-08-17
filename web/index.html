@@ -3,38 +3,65 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#211a15">
-<title>Dumplings Lab · 点餐</title>
-<link rel="stylesheet" href="style.css?v=26">
+<meta name="theme-color" content="#e51b00">
+<title>Dumpling Lab · 点餐</title>
+<link rel="preload" href="fonts/scto-grotesk-a-regular.otf" as="font" type="font/otf" crossorigin>
+<link rel="preload" href="fonts/scto-grotesk-a-medium.otf" as="font" type="font/otf" crossorigin>
+<link rel="stylesheet" href="style.css?v=57">
 </head>
 <body>
 
 <header id="hero">
   <div class="hero-top">
-    <button id="bellBtn" aria-label="服务员">🔔</button>
-    <button id="langBtn">EN</button>
+    <a class="brand" href="#menu" aria-label="Dumpling Lab menu">
+      <img id="brandLogo" src="brand/dumpling-lab-primary.png" alt="Dumpling Lab">
+    </a>
+    <div class="hero-actions">
+      <button id="bellBtn" aria-label="服务员"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 17h11M8 17v-5a4 4 0 0 1 8 0v5M10 20h4M12 6V4"/></svg></button>
+      <button id="langBtn">EN</button>
+    </div>
   </div>
-  <h1>Dumplings Lab</h1>
-  <p id="heroSub">现代饺子研究所</p>
-  <p class="table" id="tableTag"></p>
+  <div class="hero-copy">
+    <p class="hero-eyebrow" id="heroEyebrow">MADE BY HAND · SERVED HOT</p>
+    <div class="hero-title-row">
+      <h1 id="heroTitle">MENU</h1>
+      <span class="hero-count" id="heroCount">61 DISHES</span>
+    </div>
+    <div class="hero-meta">
+      <p id="heroSub"></p>
+      <p class="table" id="tableTag"></p>
+    </div>
+  </div>
+  <div class="hero-register" aria-hidden="true"><span>ORDER SYSTEM</span><b>DL//01</b></div>
 </header>
 
 <nav id="tabs"><div class="tabs-inner" id="tabsInner"></div></nav>
 
 <div id="finder">
-  <input id="search" type="search" autocomplete="off" placeholder="搜索菜品…">
+  <div class="finder-line">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4 4"/></svg>
+      <input id="search" type="search" autocomplete="off" placeholder="搜索菜品…">
+    </div>
+    <button id="viewToggle" aria-label="切换菜单视图">
+      <svg class="grid-icon" viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="6" height="6" rx="1"/><rect x="11.5" y="2.5" width="6" height="6" rx="1"/><rect x="2.5" y="11.5" width="6" height="6" rx="1"/><rect x="11.5" y="11.5" width="6" height="6" rx="1"/></svg>
+      <svg class="list-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
+      <span>清单</span>
+    </button>
+  </div>
   <div class="filters" id="filters"></div>
 </div>
 
 <main id="menu"></main>
 <div id="empty" hidden></div>
 
-<footer id="foot"><p>Dumplings Lab · 手工现包</p></footer>
+<footer id="foot"><img src="brand/dumpling-lab-wordmark.png" alt="" aria-hidden="true"><p>Dumpling Lab · 手工现包</p></footer>
 
 <button id="cartBar" hidden>
-  <span class="cb-icon">🧺<span class="cb-count" id="cartCount">0</span></span>
-  <span class="cb-label" id="cartBarLabel">查看蒸笼</span>
+  <span class="cb-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 10h18l-1.5 12h-15L5 10Z"/><path d="M10 10c0-3 1.5-5 4-5s4 2 4 5"/></svg><span class="cb-count" id="cartCount">0</span></span>
+  <span class="cb-label" id="cartBarLabel">查看已选</span>
   <span class="cb-total" id="cartBarTotal"></span>
+  <svg class="cb-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6"/></svg>
 </button>
 
 <button id="toTop" aria-label="回顶部">↑</button>
@@ -43,34 +70,36 @@
 <div id="sheetScrim" hidden></div>
 <div id="sheet" hidden>
   <div class="sheet-grab"></div>
+  <button class="sheet-close" id="sheetClose" aria-label="关闭">×</button>
   <div id="sheetBody"></div>
 </div>
 
 <div id="cartScrim" hidden></div>
 <div id="cart" hidden>
   <div class="sheet-grab"></div>
-  <h2 id="cartTitle">蒸笼</h2>
+  <button class="sheet-close" id="cartClose" aria-label="关闭">×</button>
+  <h2 id="cartTitle">已选菜品</h2>
   <p class="muted" id="cartSub"></p>
   <div id="cartItems"></div>
   <div id="noteWrap">
-    <label id="noteLabel">给厨房留句话</label>
-    <textarea id="note" rows="2" placeholder="少辣、不要香菜…"></textarea>
+    <label id="noteLabel">特殊要求</label>
+    <textarea id="note" rows="2" placeholder="例如：不要香菜、酱料另放"></textarea>
   </div>
   <div id="cartTotals"></div>
-  <button id="placeOrder"><span id="orderLabel">下单</span><strong id="orderTotal"></strong></button>
+  <button id="placeOrder"><span id="orderLabel">确认下单</span><strong id="orderTotal"></strong></button>
   <button id="callWaiter">🔔 <span id="waiterLabel">呼叫服务员</span></button>
 </div>
 
 <div id="done" hidden>
-  <div class="done-mark">🧺</div>
-  <h2 id="doneTitle">已送厨房</h2>
+  <div class="done-mark"><svg viewBox="0 0 48 48"><path d="m13 25 7 7 15-17"/></svg></div>
+  <h2 id="doneTitle">已下单</h2>
   <p id="doneNote"></p>
   <button id="doneBack">返回菜单</button>
 </div>
 
-<script src="menu-data.js?v=26"></script>
-<script src="i18n.js?v=26"></script>
-<script src="art.js?v=26"></script>
-<script src="app.js?v=26"></script>
+<script src="menu-data.js?v=33"></script>
+<script src="i18n.js?v=32"></script>
+<script src="art.js?v=38"></script>
+<script src="app.js?v=61"></script>
 </body>
 </html>

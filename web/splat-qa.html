@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gaussian Splat QA</title>
+  <style>
+    html,body,#stage{width:100%;height:100%;margin:0;overflow:hidden;background:#faf7f0}
+    #stage{position:relative}
+    canvas{display:block;touch-action:none}
+  </style>
+</head>
+<body>
+  <main id="stage"></main>
+  <script type="module">
+    import * as GaussianSplats3D from './vendor/gaussian-splats-3d.module.js';
+    const stage=document.querySelector('#stage');
+    const viewer=new GaussianSplats3D.Viewer({
+      rootElement:stage,
+      cameraUp:[0,-1,0],
+      initialCameraPosition:[0,0.82,-1.35],
+      initialCameraLookAt:[0,0,0],
+      sharedMemoryForWorkers:false,
+      gpuAcceleratedSort:false,
+      integerBasedSort:false,
+      sceneRevealMode:GaussianSplats3D.SceneRevealMode.Instant,
+      renderMode:GaussianSplats3D.RenderMode.Always,
+      sphericalHarmonicsDegree:0,
+    });
+    await viewer.addSplatScene('./splats/candidates/triposplat/hk-crab-roe-wonton.ply',{
+      showLoadingUI:false,
+      splatAlphaRemovalThreshold:5,
+      progressiveLoad:false,
+    });
+    viewer.controls.enablePan=false;
+    viewer.controls.enableZoom=true;
+    viewer.controls.minDistance=0.9;
+    viewer.controls.maxDistance=2.4;
+    viewer.controls.minAzimuthAngle=-Math.PI/4;
+    viewer.controls.maxAzimuthAngle=Math.PI/4;
+    viewer.controls.minPolarAngle=Math.PI/2-Math.PI/5;
+    viewer.controls.maxPolarAngle=Math.PI/2+Math.PI/5;
+    viewer.start();
+    stage.dataset.ready='true';
+    window.qaViewer=viewer;
+  </script>
+</body>
+</html>

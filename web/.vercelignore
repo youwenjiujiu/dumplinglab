@@ -1,0 +1,11 @@
+# Research-only 3D candidates. Reviewed models/production assets are deployed.
+models/candidates/
+splats/
+img/candidates/
+splat-qa.html
+model-qa.html
+vendor/gaussian-splats-3d.module.js
+vendor/gaussian-splats-3d.umd.js
+vendor/three-r185.cjs
+vendor/three-r185.module.js
+vendor/three.core.js

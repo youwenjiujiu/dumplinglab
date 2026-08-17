@@ -1,55 +1,55 @@
-/* Dumplings Lab — bilingual copy. Chinese is written as restaurant copy,
+/* Dumpling Lab — bilingual copy. Chinese is written as restaurant copy,
    not translated word-for-word: same warmth, same editorial voice. */
 
 const I18N = {
   ui: {
     en: {
-      tagline: "",
-      table: n => `Table ${n} · ${n}号桌`,
+      tagline: "Dumplings, noodles and small plates, cooked to order.",
+      table: n => `Table ${n}`,
       chapter: n => `CHAPTER ${n}`,
-      steamer: "The Steamer",
-      steamerSub: (n, t) => `${n} pieces, ready for the kitchen${t ? ` · Table ${t}` : ""}`,
-      emptyCart: "The steamer is empty.<br>Go pick something good from the menu.",
-      kitchenTotal: "Kitchen total",
+      steamer: "Your order",
+      steamerSub: (n, t) => `${n} ${n===1?"item":"items"}${t ? ` · Table ${t}` : ""}`,
+      emptyCart: "Nothing here yet.<br>Add a dish to start your order.",
+      kitchenTotal: "Total",
       estCalories: "Estimated calories",
-      steamTime: "Steam time",
-      steamTimeVal: "about 12 min",
-      send: "Send to the kitchen",
-      addToSteamer: "Add to steamer",
-      theFlavor: "The Flavor",
-      fromKitchen: "From the Kitchen",
+      steamTime: "Estimated wait",
+      steamTimeVal: "12–15 min",
+      send: "Place order",
+      addToSteamer: "Add",
+      theFlavor: "About this dish",
+      fromKitchen: "Kitchen note",
       chefSig: "— Chef Lin",
-      whatsInside: "What's Inside",
-      onTheScale: "On the Scale",
+      whatsInside: "Ingredients",
+      onTheScale: "Nutrition",
       spice: "Spice",
       spiceLevels: ["Not spicy", "Mild", "Medium", "Hot", "Fiery"],
-      recSauce: "Recommended Sauce",
+      recSauce: "Best with",
       allergens: "Allergens",
-      lovelyWith: "Lovely With",
-      handmade: "Handmade Daily",
-      bestSeller: "Best Seller",
-      chefsChoice: "Chef’s Choice",
+      lovelyWith: "Goes well with",
+      handmade: "Made today",
+      bestSeller: "Popular",
+      chefsChoice: "Chef’s pick",
       pieces: "pc",
       kcal: "kcal",
-      noteLabel: "A note to the kitchen",
-      notePlaceholder: "Less spicy, no cilantro, birthday at the table…",
-      ordered: "It’s steaming",
-      orderedNote: (t, n) => `${t ? `Table ${t} · ` : ""}Order ${n} is with the kitchen.\nAbout twelve minutes of good things ahead.`,
-      back: "Back to the table",
-      colophon: "Folded by hand, daily",
+      noteLabel: "Special requests",
+      notePlaceholder: "e.g. No cilantro, sauce on the side",
+      ordered: "Order sent",
+      orderedNote: (t, n) => `${t ? `Table ${t} · ` : ""}Order ${n}\nThe kitchen has your order. Estimated wait: 12–15 minutes.`,
+      back: "Back to menu",
+      colophon: "Made by hand, every day",
       search: "Search the menu…",
-      viewCart: "View steamer",
+      viewCart: "View order",
       total: "Total", estCal: "Est. calories",
-      order: "Send to kitchen", pickStyle: "Cooking style",
-      added: n => `${n} — added`,
-      cartSub: (n,t) => `${n} items${t?` · Table ${t}`:""}`,
-      orderNote: (t,no) => `${t?`Table ${t} · `:""}Order ${no} is with the kitchen.\nSee you in about 12 minutes.`,
-      waiterOntheway: "A server is on the way 🙌",
+      order: "Place order", pickStyle: "Choose a style",
+      added: n => `Added: ${n}`,
+      cartSub: (n,t) => `${n} ${n===1?"item":"items"}${t?` · Table ${t}`:""}`,
+      orderNote: (t,no) => `${t?`Table ${t} · `:""}Order ${no}\nThe kitchen has your order. Estimated wait: 12–15 minutes.`,
+      waiterOntheway: "A staff member has been notified.",
 
       fAll: "All", fVeg: "Vegetarian", fSpicy: "Spicy", fNoPork: "No pork",
-      noResults: "Nothing matches — try clearing the filters.",
-      waiter: "Call a server",
-      waiterToast: "A server is on the way 🙌",
+      noResults: "No dishes found. Try another search or clear a filter.",
+      waiter: "Call staff",
+      waiterToast: "A staff member has been notified.",
       addedToast: n => `${n} — in the steamer`,
       historyTitle: "Ordered so far",
       historyOrder: (no, t) => `Order ${no} · ${t}`,
@@ -59,53 +59,53 @@ const I18N = {
       voyageEndSub: "Eleven small chapters",
     },
     zh: {
-      tagline: "",
-      table: n => `${n}号桌 · Table ${n}`,
+      tagline: "手工饺子、面条和小菜，现点现做。",
+      table: n => `${n}号桌`,
       chapter: n => `第 ${n} 章`,
-      steamer: "蒸笼",
-      steamerSub: (n, t) => `${n} 件好菜，只等开火${t ? ` · ${t}号桌` : ""}`,
-      emptyCart: "蒸笼还空着。<br>去菜单挑几样好的吧。",
+      steamer: "已选菜品",
+      steamerSub: (n, t) => `已选 ${n} 份${t ? ` · ${t}号桌` : ""}`,
+      emptyCart: "还没选菜。<br>回到菜单，挑一道喜欢的。",
       kitchenTotal: "合计",
       estCalories: "预估热量",
-      steamTime: "上桌时间",
-      steamTimeVal: "约 12 分钟",
-      send: "下单，送去厨房",
-      addToSteamer: "放进蒸笼",
-      theFlavor: "风味",
-      fromKitchen: "后厨的话",
+      steamTime: "预计上桌",
+      steamTimeVal: "12–15 分钟",
+      send: "确认下单",
+      addToSteamer: "加入",
+      theFlavor: "菜品介绍",
+      fromKitchen: "厨房说明",
       chefSig: "—— 林主厨",
-      whatsInside: "里面有什么",
-      onTheScale: "营养一览",
+      whatsInside: "主要食材",
+      onTheScale: "营养信息",
       spice: "辣度",
       spiceLevels: ["不辣", "微辣", "中辣", "偏辣", "重辣"],
-      recSauce: "推荐蘸料",
+      recSauce: "推荐搭配",
       allergens: "过敏原",
-      lovelyWith: "推荐搭配",
-      handmade: "每日手作",
-      bestSeller: "畅销",
+      lovelyWith: "适合搭配",
+      handmade: "今日现做",
+      bestSeller: "人气",
       chefsChoice: "主厨推荐",
       pieces: "只",
       kcal: "千卡",
-      noteLabel: "给厨房留句话",
-      notePlaceholder: "少辣、不要香菜、今天有人过生日…",
-      ordered: "开始蒸了",
-      orderedNote: (t, n) => `${t ? `${t}号桌 · ` : ""}单号 ${n} 已送达厨房。\n大约十二分钟后，好东西上桌。`,
-      back: "回到菜单",
-      colophon: "手工现包 · 每日新鲜",
+      noteLabel: "特殊要求",
+      notePlaceholder: "例如：不要香菜、酱料另放",
+      ordered: "已下单",
+      orderedNote: (t, n) => `${t ? `${t}号桌 · ` : ""}订单 ${n}\n厨房已接单，预计 12–15 分钟上桌。`,
+      back: "返回菜单",
+      colophon: "每日手工现做",
       search: "搜索菜品…",
-      viewCart: "查看蒸笼",
+      viewCart: "查看已选",
       total: "合计", estCal: "预估热量",
-      order: "下单，送去厨房", pickStyle: "选做法",
-      added: n => `${n} 已加入`,
-      cartSub: (n,t) => `共 ${n} 件${t?` · ${t}号桌`:""}`,
-      orderNote: (t,no) => `${t?`${t}号桌 · `:""}单号 ${no} 已送厨房。\n大约十二分钟后上桌。`,
-      waiterOntheway: "服务员马上就来 🙌",
+      order: "确认下单", pickStyle: "选择做法",
+      added: n => `已加入：${n}`,
+      cartSub: (n,t) => `已选 ${n} 份${t?` · ${t}号桌`:""}`,
+      orderNote: (t,no) => `${t?`${t}号桌 · `:""}订单 ${no}\n厨房已接单，预计 12–15 分钟上桌。`,
+      waiterOntheway: "已通知服务员。",
 
       fAll: "全部", fVeg: "素食", fSpicy: "香辣", fNoPork: "不含猪肉",
-      noResults: "没有符合的菜品——清除筛选试试。",
+      noResults: "没有找到菜品。试试其他关键词或清除筛选。",
       waiter: "呼叫服务员",
-      waiterToast: "服务员马上就来 🙌",
-      addedToast: n => `${n} 已放进蒸笼`,
+      waiterToast: "已通知服务员。",
+      addedToast: n => `已加入：${n}`,
       historyTitle: "本桌已点",
       historyOrder: (no, t) => `单号 ${no} · ${t}`,
       soldOut: "售罄",
@@ -130,17 +130,17 @@ const I18N = {
 },
 
   taglines: {
-    "signature": "镇店手作，先从这里点起",
-    "diy": "选馅料，选做法——水煮 · 煎 · 清汤 · 辣拌 · 混酱",
-    "noodles": "今早现拉，各地一碗",
-    "buns": "一口一个，小心汤",
-    "tangzi": "糯叽叽，咸甜都有",
-    "rice": "隔夜米，滚烫的锅",
-    "soup": "小火慢煨，从不着急",
-    "sides": "小盘子，大主意",
-    "fried": "金黄酥脆，趁热",
-    "veg": "清清爽爽，解腻",
-    "dessert": "冰冰凉凉的收尾"
+    "signature": "第一次来，可以从招牌菜开始",
+    "diy": "选馅料，再选水煮、煎、汤或拌",
+    "noodles": "现点现煮，每一碗都热腾腾",
+    "buns": "松软面皮，饱满热馅",
+    "tangzi": "软糯有嚼劲，咸甜都有",
+    "rice": "大火现炒，粒粒分明",
+    "soup": "每日慢炖，鲜香暖胃",
+    "sides": "清爽开胃，适合分享",
+    "fried": "现点现炸，酥脆上桌",
+    "veg": "当季蔬菜，大火快炒",
+    "dessert": "冰凉细腻，清甜收尾"
 },
 
   allergens: {
@@ -216,231 +216,247 @@ const I18N = {
 
   dishes: {
     "beijing-pork-guotie": {
-        "flavor": "鲜嫩猪肉馅，底部煎得金黄酥脆。",
+        "flavor": "猪肉与卷心菜调馅，底部煎至金黄。",
         "story": ""
     },
     "jp-chicken-gyoza": {
-        "flavor": "皮薄馅足的鸡肉煎饺，蒜香焦脆。",
+        "flavor": "鸡肉、韭菜与蒜香，薄皮煎制。",
         "story": ""
     },
     "hk-crab-roe-wonton": {
-        "flavor": "蟹籽云吞浸在金汤里，鲜到眉毛掉。",
+        "flavor": "蟹肉蟹籽馅云吞，配清鲜金汤。",
         "story": ""
     },
     "grandma-fried-wonton": {
-        "flavor": "家常馄饨煎到两面金黄。",
+        "flavor": "猪肉馄饨，两面煎至金黄。",
         "story": ""
     },
     "nanjing-beef-guotie": {
-        "flavor": "牛肉锅贴，葱香十足，底脆。",
+        "flavor": "牛肉大葱馅，底部煎脆。",
         "story": ""
     },
     "sichuan-red-oil-chaoshou": {
-        "flavor": "柔滑猪肉抄手，红油飘香，麻辣上头。",
+        "flavor": "猪肉抄手，配红油、花椒与花生碎。",
+        "story": ""
+    },
+    "red-oil-wontons": {
+        "flavor": "猪肉云吞，配香辣红油与葱花。",
         "story": ""
     },
     "diy-chicken-cabbage": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "鸡肉与卷心菜馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-beef-curry-onion": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "牛肉、咖喱与洋葱馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-pork-celery-shrimp": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "猪肉、芹菜与虾仁馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-saltedegg-roe-shrimp": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "咸蛋黄、虾仁与鱼籽馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-pork-scallion": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "猪肉大葱馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-chicken-corn-carrot": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "鸡肉、玉米与胡萝卜馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-pork-chive": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "猪肉韭菜馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-tomato-egg": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "番茄鸡蛋馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-four-veg": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "四种蔬菜调馅，可选水煮、煎、汤或拌。",
         "story": ""
     },
     "diy-veg-pork-wonton": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "青菜猪肉馄饨馅，可选汤或拌。",
         "story": ""
     },
     "diy-chive-wonton": {
-        "flavor": "选好这个馅，再选做法。",
+        "flavor": "韭菜馄饨馅，可选汤或拌。",
         "story": ""
     },
     "xian-hot-oil-noodles": {
-        "flavor": "宽面泼上滚油辣子，一声刺啦。",
+        "flavor": "手工宽面，配辣椒、蒜末与热油。",
         "story": ""
     },
     "xinjiang-dapanji-noodles": {
-        "flavor": "大盘鸡拌手工宽面，一大盘的满足。",
+        "flavor": "鸡肉、土豆与手工宽面，酱香微辣。",
         "story": ""
     },
     "shanghai-scallion-noodles": {
-        "flavor": "熬透的葱、甜酱油、细面，简单到极致。",
+        "flavor": "细面拌葱油与甜酱油。",
         "story": ""
     },
     "beijing-zhajiang-noodles": {
-        "flavor": "筋道面条配酱香肉丁。",
+        "flavor": "面条配猪肉炸酱与时蔬。",
         "story": ""
     },
     "signature-chicken-ramen": {
-        "flavor": "十二小时鸡汤，手拉面，招牌一碗。",
+        "flavor": "手拉面配十二小时鸡汤、鸡叉烧与溏心蛋。",
         "story": ""
     },
     "yangzhou-plain-noodles": {
-        "flavor": "最清爽的一碗，清汤细面。",
+        "flavor": "细面配清汤与时蔬。",
+        "story": ""
+    },
+    "minced-pork-egg-noodles": {
+        "flavor": "干拌面配肉末、煎蛋、香脆小鱼与葱花。",
+        "story": ""
+    },
+    "wonton-soup-noodles": {
+        "flavor": "细面配猪肉云吞，浸在清鲜汤底里。",
+        "story": ""
+    },
+    "dry-wonton-noodles": {
+        "flavor": "酱油干拌面配猪肉云吞与青菜。",
         "story": ""
     },
     "nanjing-soup-bun": {
-        "flavor": "十八道褶收着一口滚汤。",
+        "flavor": "薄皮猪肉汤包，汤汁充足。",
         "story": ""
     },
     "traditional-pork-bun": {
-        "flavor": "松软大包，经典猪肉馅。",
+        "flavor": "发面包子，猪肉大葱馅。",
         "story": ""
     },
     "wildrice-pork-tangzi": {
-        "flavor": "糯叽叽的团子，茭白肉末馅。",
+        "flavor": "糯米团子，茭白猪肉馅。",
         "story": ""
     },
     "radish-pork-tangzi": {
-        "flavor": "糯团子，萝卜猪肉馅，鲜。",
+        "flavor": "糯米团子，萝卜猪肉馅。",
         "story": ""
     },
     "redbean-tangyuan": {
-        "flavor": "温热糯米团，豆沙流心。",
+        "flavor": "糯米汤圆，红豆沙馅。",
         "story": ""
     },
     "sesame-tangyuan": {
-        "flavor": "黑芝麻流心，软糯汤圆。",
+        "flavor": "糯米汤圆，黑芝麻馅。",
         "story": ""
     },
     "shrimp-egg-fried-rice": {
-        "flavor": "虾仁蛋炒饭，粒粒裹金。",
+        "flavor": "虾仁、鸡蛋与米饭，大火快炒。",
         "story": ""
     },
     "spicy-chicken-fried-rice": {
-        "flavor": "锅气十足的辣鸡肉炒饭。",
+        "flavor": "鸡肉、辣椒与米饭，大火快炒。",
         "story": ""
     },
     "chaozhou-fishball-soup": {
-        "flavor": "手打鱼丸，弹牙，清汤见底。",
+        "flavor": "潮州鱼丸，配清汤与芹菜。",
         "story": ""
     },
     "tomato-beef-soup": {
-        "flavor": "番茄牛肉汤，酸甜开胃。",
+        "flavor": "番茄与牛肉慢煮，酸甜清爽。",
         "story": ""
     },
     "lionhead-soup": {
-        "flavor": "一颗超大狮子头，入口即化。",
+        "flavor": "手打猪肉丸，配清汤与青菜。",
         "story": ""
     },
     "mashed-potato-salad": {
-        "flavor": "冰凉绵密的土豆泥沙拉。",
+        "flavor": "冷拌土豆泥，口感细腻。",
         "story": ""
     },
     "sweetsour-pork-ribs": {
-        "flavor": "油亮的糖醋排骨，酸甜下饭。",
+        "flavor": "猪肋排收浓糖醋汁，酸甜口。",
         "story": ""
     },
     "mouthwatering-chicken": {
-        "flavor": "口水鸡，红油浇透，麻辣鲜香。",
+        "flavor": "冷切鸡肉，配红油、花椒与芝麻。",
         "story": ""
     },
     "drunken-brine-shrimp": {
-        "flavor": "糟卤虾，酒香冰凉。",
+        "flavor": "鲜虾浸糟卤，冷食。",
         "story": ""
     },
     "minced-pork-tofu": {
-        "flavor": "嫩豆腐配肉末，家常滋味。",
+        "flavor": "嫩豆腐烧肉末，咸鲜口。",
         "story": ""
     },
     "big-plate-chicken": {
-        "flavor": "大盘鸡，土豆宽粉，够几个人分。",
+        "flavor": "鸡肉、土豆与宽粉，酱香微辣。",
         "story": ""
     },
     "egg-luncheon-meat": {
-        "flavor": "鸡蛋午餐肉，简单快乐。",
+        "flavor": "煎蛋配午餐肉。",
         "story": ""
     },
     "braised-lionhead": {
-        "flavor": "红烧狮子头，酥烂入味。",
+        "flavor": "手打猪肉丸，红烧入味。",
         "story": ""
     },
     "yunnan-lava-tofu": {
-        "flavor": "外脆内爆浆的包浆豆腐。",
+        "flavor": "包浆豆腐，外层煎脆、内里柔软。",
         "story": ""
     },
     "secret-pork-cutlet": {
-        "flavor": "秘制猪排，咬下咔哧作响。",
+        "flavor": "腌制猪排，裹粉炸至酥脆。",
         "story": ""
     },
     "13spice-chicken-nuggets": {
-        "flavor": "十三味炸鸡块，越吃越香。",
+        "flavor": "鸡腿肉裹粉炸制，拌十三香料。",
         "story": ""
     },
     "13spice-chicken-wings": {
-        "flavor": "十三味鸡翅，入味到骨。",
+        "flavor": "鸡翅炸制，拌十三香料。",
         "story": ""
     },
     "old-style-fried-drumstick": {
-        "flavor": "老式炸鸡腿，童年的味道。",
+        "flavor": "带骨鸡腿腌制后裹粉炸制。",
         "story": ""
     },
     "cold-veg-shreds": {
-        "flavor": "凉拌蔬菜丝，爽脆解腻。",
+        "flavor": "时蔬切丝，酸香凉拌。",
         "story": ""
     },
     "cold-eggplant-peashoot": {
-        "flavor": "凉拌茄子，或清炒豆苗。",
+        "flavor": "可选蒜香凉拌茄子或清炒豆苗。",
         "story": ""
     },
     "veg-with-dip": {
-        "flavor": "新鲜蔬菜配蘸酱。",
+        "flavor": "当季生鲜蔬菜，配自制蘸酱。",
         "story": ""
     },
     "pickled-radish": {
-        "flavor": "爽脆酸甜的腌萝卜。",
+        "flavor": "白萝卜短时腌制，酸甜口。",
         "story": ""
     },
     "garlic-broccoli": {
-        "flavor": "蒜蓉快炒西兰花。",
+        "flavor": "西兰花加蒜蓉，大火快炒。",
         "story": ""
     },
     "oyster-lettuce": {
-        "flavor": "蚝油生菜，清甜。",
+        "flavor": "生菜快炒，淋蚝油汁。",
         "story": ""
     },
     "sesame-spinach": {
-        "flavor": "麻酱菠菜，凉拌爽口。",
+        "flavor": "菠菜焯水，配芝麻酱凉拌。",
         "story": ""
     },
     "mango-ice": {
-        "flavor": "芒果冰浆，冰爽香甜。",
+        "flavor": "鲜芒果与碎冰打制。",
         "story": ""
     },
     "watermelon-ice": {
-        "flavor": "西瓜冰浆，整个夏天。",
+        "flavor": "鲜西瓜与碎冰打制。",
         "story": ""
     },
     "cucumber-ice": {
-        "flavor": "黄瓜冰浆，清凉解渴。",
+        "flavor": "鲜黄瓜与碎冰打制，清甜口。",
         "story": ""
     }
 },
