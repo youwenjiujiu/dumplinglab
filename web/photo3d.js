@@ -48,6 +48,32 @@ function makeShadow() {
   return sprite;
 }
 
+function makeSheen() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.45, "rgba(255,255,255,.35)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(canvas),
+    transparent: true,
+    opacity: 0.05,
+    depthWrite: false,
+    depthTest: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+  }));
+  sprite.name = "photo-sheen";
+  sprite.position.set(0, 0.35, 0.3);
+  sprite.scale.set(1.9, 1.3, 1);
+  return sprite;
+}
+
 export function mountPhotoDepth3D(container, options = {}) {
   const scene = new THREE.Scene();
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 20);
@@ -72,15 +98,50 @@ export function mountPhotoDepth3D(container, options = {}) {
 
   let disposed = false;
   let dragging = false;
+  let touched = false;
   let lastX = 0;
   let lastY = 0;
   let texture = null;
   let dish = null;
   let shadow = null;
+  let sheen = null;
   let imageAspect = 1;
+  let frame = 0;
+
+  /* The photograph is the truth, so the card always returns to it: after a
+     drag the tilt springs back to rest, and the range is kept small enough
+     that no invented pixels are ever needed. */
+  const TILT_Y = 0.30;
+  const TILT_X = 0.16;
 
   const render = () => {
     if (!disposed) renderer.render(scene, camera);
+  };
+  const publish = () => {
+    container.dataset.rotationX = pivot.rotation.x.toFixed(4);
+    container.dataset.rotationY = pivot.rotation.y.toFixed(4);
+    // A soft highlight slides against the tilt, the way glaze catches light
+    // when you turn a plate in your hands.
+    if (sheen) {
+      sheen.position.x = -pivot.rotation.y * 2.2;
+      sheen.position.y = 0.35 + pivot.rotation.x * 2.4;
+      sheen.material.opacity = 0.05 + Math.min(0.11, Math.hypot(pivot.rotation.x, pivot.rotation.y) * 0.5);
+    }
+  };
+  const settle = () => {
+    if (disposed || dragging) return;
+    pivot.rotation.x *= 0.82;
+    pivot.rotation.y *= 0.82;
+    if (Math.abs(pivot.rotation.x) < 0.0006 && Math.abs(pivot.rotation.y) < 0.0006) {
+      pivot.rotation.set(0, 0, 0);
+      publish();
+      render();
+      frame = 0;
+      return;
+    }
+    publish();
+    render();
+    frame = requestAnimationFrame(settle);
   };
   const resize = () => {
     const width = Math.max(1, container.clientWidth || 360);
@@ -126,6 +187,9 @@ export function mountPhotoDepth3D(container, options = {}) {
     pivot.add(dish);
     shadow = makeShadow();
     pivot.add(shadow);
+    sheen = makeSheen();
+    pivot.add(sheen);
+    publish();
     render();
     container.classList.add("model-loaded");
     container.dataset.source = "original-photo";
@@ -139,17 +203,25 @@ export function mountPhotoDepth3D(container, options = {}) {
   image.src = options.imageURL;
 
   const down = event => {
+    if (!dish) return;
+    cancelAnimationFrame(frame);
+    frame = 0;
     dragging = true;
     lastX = event.clientX;
     lastY = event.clientY;
     renderer.domElement.setPointerCapture?.(event.pointerId);
     renderer.domElement.style.cursor = "grabbing";
+    if (!touched) {
+      touched = true;
+      container.dataset.touched = "1";
+      container.closest(".d-pic")?.classList.add("touched");
+      options.onFirstTouch?.();
+    }
   };
   const rotateBy = (dx, dy) => {
-    pivot.rotation.y = clamp(pivot.rotation.y + dx * 0.0032, -0.20, 0.20);
-    pivot.rotation.x = clamp(pivot.rotation.x + dy * 0.0025, -0.10, 0.10);
-    container.dataset.rotationX = pivot.rotation.x.toFixed(4);
-    container.dataset.rotationY = pivot.rotation.y.toFixed(4);
+    pivot.rotation.y = clamp(pivot.rotation.y + dx * 0.0042, -TILT_Y, TILT_Y);
+    pivot.rotation.x = clamp(pivot.rotation.x + dy * 0.0032, -TILT_X, TILT_X);
+    publish();
     render();
   };
   const move = event => {
@@ -164,6 +236,7 @@ export function mountPhotoDepth3D(container, options = {}) {
     dragging = false;
     renderer.domElement.releasePointerCapture?.(event.pointerId);
     renderer.domElement.style.cursor = "grab";
+    if (!frame) frame = requestAnimationFrame(settle);
   };
   renderer.domElement.addEventListener("pointerdown", down);
   renderer.domElement.addEventListener("pointermove", move);
@@ -174,6 +247,7 @@ export function mountPhotoDepth3D(container, options = {}) {
     dispose() {
       if (disposed) return;
       disposed = true;
+      cancelAnimationFrame(frame);
       observer.disconnect();
       renderer.domElement.removeEventListener("pointerdown", down);
       renderer.domElement.removeEventListener("pointermove", move);
@@ -183,6 +257,8 @@ export function mountPhotoDepth3D(container, options = {}) {
       dish?.material.dispose();
       shadow?.material.map?.dispose();
       shadow?.material.dispose();
+      sheen?.material.map?.dispose();
+      sheen?.material.dispose();
       texture?.dispose();
       renderer.dispose();
       renderer.domElement.remove();

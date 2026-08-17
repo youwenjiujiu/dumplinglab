@@ -88,7 +88,7 @@ for (const [name, options] of PROFILES) {
     if (!/wonton-soup\.png$/.test(await page.locator("#threeStage").getAttribute("data-image") || "")) {
       throw new Error("3D stage is not textured with the restaurant source photo");
     }
-    if (!/原图/.test(await page.locator(".three-badge").textContent() || "")) {
+    if (!/实拍|REAL PHOTO/.test(await page.locator(".drag-hint").textContent() || "")) {
       throw new Error("source-photo spatial preview is not labelled clearly");
     }
     if (/千卡|kcal/i.test(await page.locator("#sheetBody").innerText())) {
@@ -119,27 +119,36 @@ for (const [name, options] of PROFILES) {
     }
   });
 
-  await step("07-generated-models-are-real-3d", async () => {
+  await step("07-generated-models-rotate-behind-the-photo", async () => {
     for (const id of ["red-oil-wontons", "minced-pork-egg-noodles", "wonton-soup-noodles", "dry-wonton-noodles"]) {
       const coverSrc = await page.locator(`.card[data-id="${id}"] .art-object img`).getAttribute("src");
-      if (coverSrc !== `img/3d-covers/${id}.webp`) {
-        throw new Error(`${id} card is not rendered from its production GLB cover: ${coverSrc}`);
+      if (coverSrc !== `img/${id}-cutout.png`) {
+        throw new Error(`${id} card is not showing the restaurant's own photo: ${coverSrc}`);
       }
       await page.locator(`.card[data-id="${id}"] .cap`).click();
       const stage = page.locator("#threeStage[data-source='generated-glb']");
       await stage.locator("canvas").waitFor({state:"visible"});
+      // Cached GLBs load faster than the sheet slides in; drag only once the
+      // stage has arrived on screen, otherwise the gesture lands off-viewport.
+      await page.waitForFunction(() => {
+        const r = document.querySelector("#threeStage")?.getBoundingClientRect();
+        return r && r.top >= 0 && r.bottom <= innerHeight;
+      });
+      await page.waitForTimeout(350);   // let the slide-in ease fully settle
       const box = await stage.boundingBox();
       if (!box) throw new Error(`${id} model stage has no bounds`);
       await page.mouse.move(box.x + box.width * .65, box.y + box.height * .5);
       await page.mouse.down();
       await page.mouse.move(box.x + box.width * .35, box.y + box.height * .5, {steps:5});
-      await page.mouse.up();
-      await page.waitForTimeout(120);
       const rotation = Number(await stage.getAttribute("data-rotation-y"));
       if (!Number.isFinite(rotation) || Math.abs(rotation) < .1) throw new Error(`${id} did not rotate`);
-      if (!/真实 3D/.test(await page.locator(".three-badge").textContent() || "")) {
-        throw new Error(`${id} is not labelled as a true 3D asset`);
+      await page.mouse.up();
+      if (Number(await stage.getAttribute("data-rotation-x")) < 0) throw new Error(`${id} tilted below the rim`);
+      if (!/拖动旋转|DRAG TO ROTATE/.test(await page.locator(".drag-hint").textContent() || "")) {
+        throw new Error(`${id} is missing the drag-to-rotate hint`);
       }
+      if (!await page.locator(".d-pic.showing-3d").count()) throw new Error(`${id} 3D did not take over after touch`);
+      if (!await page.locator(".d-pic.touched").count()) throw new Error(`${id} hint did not retire after touch`);
       await page.locator("#sheetClose").click();
       await page.waitForTimeout(450);
     }

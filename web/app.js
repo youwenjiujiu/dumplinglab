@@ -254,9 +254,12 @@ function renderSheet() {
     <div class="d-pic">
       ${hasSpatial?`<div class="three-stage" id="threeStage"></div>`:""}
       <div class="d-art-object" id="dArt">${tileFor(d,{big:true})}</div>
-      ${hasSpatial?`<span class="three-badge">${d.model
-        ? (lang==="zh"?"触摸旋转 · 真实 3D":"DRAG TO ROTATE · 3D")
-        : (lang==="zh"?"轻触查看 · 原图":"DRAG · ORIGINAL PHOTO")}</span>`:""}
+      ${hasSpatial
+        ? `<span class="drag-hint"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="dh-dot" d="M3.4 8a6.8 6.8 0 0 1 13.2 0"/><path d="M2.6 10.6 3.4 8l2.6.9M17.4 10.6 16.6 8 14 8.9"/><path d="M6.5 13.4a4.6 4.6 0 0 0 7 0"/></svg>${
+            d.model
+              ? (lang==="zh"?"拖动旋转 · 双指缩放":"DRAG TO ROTATE · PINCH TO ZOOM")
+              : (lang==="zh"?"拖动查看 · 实拍":"DRAG TO TILT · REAL PHOTO")}</span>`
+        : ""}
     </div>
     ${badges?`<div class="d-badges">${badges}</div>`:""}
     <div class="d-name">${dName(d)}</div>
@@ -283,17 +286,50 @@ function renderSheet() {
 async function mountSheet3D() {
   const d=sheetDish;
   const stage=$("#threeStage");
-  const modelURL=d?.model ? `models/production/${d.model}` : null;
+  // A photograph is served as a photograph. Generated GLBs are single-image
+  // inferences and only stand in when there is no photo at all; a real
+  // capture (d.scan) is trusted to rotate freely.
   const imageURL=d?.img ? `img/${d.img}` : null;
+  const modelURL=d?.model ? `models/production/${d.model}` : null;
   if (!stage || (!modelURL && !imageURL) || dish3dView) return;
   const request=++sheet3dRequest;
   try {
     if (request!==sheet3dRequest || !stage.isConnected || sheetDish!==d) return;
+    const pic=stage.closest(".d-pic");
     const sharedOptions={
       label:lang==="zh"?`${d.cn}，可触摸旋转的 3D 菜品`:`${d.name}, touch-rotatable 3D dish`,
-      onReady:()=>{
+      // Generated models open on the restaurant's photograph — the same image
+      // as the card — and only take over once the guest actually turns the
+      // dish. Reconstructed geometry is a toy to play with, not the first
+      // impression.
+      idle:false,
+      onReady:(box)=>{
         if (request!==sheet3dRequest || !stage.isConnected) return;
-        stage.closest(".d-pic")?.classList.add("showing-3d");
+        // Fit the photograph over the model's on-screen box so the hand-off
+        // to 3D changes depth, not size or position.
+        const img=pic?.querySelector(".d-art-object img");
+        const fit=()=>{
+          if (!box || !img || !img.naturalWidth || !stage.isConnected) return;
+          // The <img> box is object-fit:contain; the drawn bitmap is what must
+          // match the model, so measure the painted area, not the element.
+          const stageRect=stage.getBoundingClientRect(), el=img.getBoundingClientRect(), picRect=pic.getBoundingClientRect();
+          const ratio=Math.min(el.width/img.naturalWidth, el.height/img.naturalHeight);
+          const drawnW=img.naturalWidth*ratio, drawnH=img.naturalHeight*ratio;
+          const scale=box.width/drawnW;
+          const targetCX=stageRect.left-picRect.left+box.left+box.width/2;
+          const targetCY=stageRect.top-picRect.top+box.top+box.height/2;
+          const curCX=el.left-picRect.left+el.width/2;
+          const curCY=el.top-picRect.top+el.height/2;
+          img.style.transformOrigin="50% 50%";
+          img.style.transform=`translate(${(targetCX-curCX).toFixed(1)}px,${(targetCY-curCY).toFixed(1)}px) scale(${scale.toFixed(3)})`;
+          img.dataset.fitScale=scale.toFixed(3);
+        };
+        if (modelURL && img) { if (img.complete && img.naturalWidth) fit(); else img.addEventListener("load", fit, { once:true }); }
+        pic?.classList.add(modelURL ? "ready-3d" : "showing-3d");
+      },
+      onFirstTouch:()=>{
+        if (request!==sheet3dRequest || !stage.isConnected) return;
+        pic?.classList.add("showing-3d");
       },
       onError:()=>{
         if (request!==sheet3dRequest || !stage.isConnected) return;
@@ -305,11 +341,11 @@ async function mountSheet3D() {
       },
     };
     if (modelURL) {
-      const { mountGeneratedDish3D } = await import("./model3d.js?v=2");
+      const { mountGeneratedDish3D } = await import("./model3d.js?v=11");
       if (request!==sheet3dRequest || !stage.isConnected || sheetDish!==d) return;
       dish3dView=mountGeneratedDish3D(stage,{...sharedOptions,modelURL});
     } else {
-      const { mountPhotoDepth3D } = await import("./photo3d.js?v=8");
+      const { mountPhotoDepth3D } = await import("./photo3d.js?v=9");
       if (request!==sheet3dRequest || !stage.isConnected || sheetDish!==d) return;
       dish3dView=mountPhotoDepth3D(stage,{...sharedOptions,imageURL,profile:d.art});
     }

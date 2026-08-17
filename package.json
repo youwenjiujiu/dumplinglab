@@ -16,6 +16,11 @@
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",
-    "@mkkellogg/gaussian-splats-3d": "^0.4.7"
+    "@gltf-transform/core": "^4.4.2",
+    "@gltf-transform/extensions": "^4.4.2",
+    "@gltf-transform/functions": "^4.4.2",
+    "@mkkellogg/gaussian-splats-3d": "^0.4.7",
+    "meshoptimizer": "^0.22.0",
+    "sharp": "^0.35.3"
   }
 }

@@ -9,3 +9,6 @@ vendor/gaussian-splats-3d.umd.js
 vendor/three-r185.cjs
 vendor/three-r185.module.js
 vendor/three.core.js
+# Generation intermediates (painted side views, 5MB source originals) — the menu references the cutouts only.
+img/*-view-*.png
+img/*.jpg

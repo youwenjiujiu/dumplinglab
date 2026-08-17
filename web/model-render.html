@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dumpling Lab · cover render</title>
+  <style>
+    html,body{margin:0;height:100%;background:transparent}
+    #stage{position:fixed;inset:0}
+  </style>
+</head>
+<body>
+  <!-- Off-screen renderer used by scripts/pipeline.mjs to capture a menu
+       cover from the exact production GLB at the viewer's opening camera,
+       so the card is the first frame of the detail view. -->
+  <div id="stage"></div>
+  <script type="module">
+    import { mountGeneratedDish3D } from "./model3d.js";
+    const q = new URLSearchParams(location.search);
+    const glb = q.get("glb");
+    if (glb) {
+      mountGeneratedDish3D(document.querySelector("#stage"), {
+        modelURL: glb,
+        label: "cover render",
+        idle: false,
+        rotationY: Number(q.get("ry") ?? 0),
+        rotationX: Number(q.get("rx") ?? 0),
+        zoom: Number(q.get("zoom") ?? 1),
+        preTilt: Number(q.get("tilt") ?? 0),
+        onReady: () => { document.body.dataset.ready = "1"; },
+        onError: () => { document.body.dataset.error = "1"; },
+      });
+    }
+  </script>
+</body>
+</html>

@@ -7,7 +7,7 @@
 <title>Dumpling Lab · 点餐</title>
 <link rel="preload" href="fonts/scto-grotesk-a-regular.otf" as="font" type="font/otf" crossorigin>
 <link rel="preload" href="fonts/scto-grotesk-a-medium.otf" as="font" type="font/otf" crossorigin>
-<link rel="stylesheet" href="style.css?v=57">
+<link rel="stylesheet" href="style.css?v=70">
 </head>
 <body>
 
@@ -58,7 +58,7 @@
 <footer id="foot"><img src="brand/dumpling-lab-wordmark.png" alt="" aria-hidden="true"><p>Dumpling Lab · 手工现包</p></footer>
 
 <button id="cartBar" hidden>
-  <span class="cb-icon"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 10h18l-1.5 12h-15L5 10Z"/><path d="M10 10c0-3 1.5-5 4-5s4 2 4 5"/></svg><span class="cb-count" id="cartCount">0</span></span>
+  <span class="cb-icon"><span class="seal-glyph" aria-hidden="true"></span><span class="cb-count" id="cartCount">0</span></span>
   <span class="cb-label" id="cartBarLabel">查看已选</span>
   <span class="cb-total" id="cartBarTotal"></span>
   <svg class="cb-chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6"/></svg>
@@ -78,8 +78,11 @@
 <div id="cart" hidden>
   <div class="sheet-grab"></div>
   <button class="sheet-close" id="cartClose" aria-label="关闭">×</button>
-  <h2 id="cartTitle">已选菜品</h2>
-  <p class="muted" id="cartSub"></p>
+  <div class="cart-head">
+    <span class="cart-reg" aria-hidden="true">DL//ORDER</span>
+    <h2 id="cartTitle">已选菜品</h2>
+    <p class="muted" id="cartSub"></p>
+  </div>
   <div id="cartItems"></div>
   <div id="noteWrap">
     <label id="noteLabel">特殊要求</label>
@@ -87,19 +90,23 @@
   </div>
   <div id="cartTotals"></div>
   <button id="placeOrder"><span id="orderLabel">确认下单</span><strong id="orderTotal"></strong></button>
-  <button id="callWaiter">🔔 <span id="waiterLabel">呼叫服务员</span></button>
+  <button id="callWaiter"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 17h11M8 17v-5a4 4 0 0 1 8 0v5M10 20h4M12 6V4"/></svg><span id="waiterLabel">呼叫服务员</span></button>
 </div>
 
 <div id="done" hidden>
-  <div class="done-mark"><svg viewBox="0 0 48 48"><path d="m13 25 7 7 15-17"/></svg></div>
-  <h2 id="doneTitle">已下单</h2>
-  <p id="doneNote"></p>
+  <div class="done-slip">
+    <div class="slip-reg" aria-hidden="true"><span>DUMPLING LAB</span><b>DL//ORDER</b></div>
+    <div class="done-mark"><span class="seal-glyph" aria-hidden="true"></span></div>
+    <h2 id="doneTitle">已下单</h2>
+    <p id="doneNote"></p>
+    <div class="slip-perf" aria-hidden="true"></div>
+  </div>
   <button id="doneBack">返回菜单</button>
 </div>
 
 <script src="menu-data.js?v=33"></script>
 <script src="i18n.js?v=32"></script>
-<script src="art.js?v=38"></script>
-<script src="app.js?v=61"></script>
+<script src="art.js?v=42"></script>
+<script src="app.js?v=67"></script>
 </body>
 </html>

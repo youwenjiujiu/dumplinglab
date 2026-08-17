@@ -192,10 +192,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible { outline:1.5px 
 .d-art-object { position:absolute; inset:1% 2% 8%; display:grid; place-items:center; }
 .d-art-object::after { content:""; position:absolute; right:25%; bottom:9%; left:25%; height:8%; border-radius:50%; background:rgba(49,31,20,.13); filter:blur(10px); }
 .d-art-object img,.d-art-object svg { position:relative; z-index:1; width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 16px 12px rgba(53,34,22,.14)); }
-.three-stage { position:absolute; inset:0 0 4%; z-index:2; opacity:0; }
-.three-stage.model-loaded { opacity:1; }
+.three-stage { position:absolute; inset:0 0 4%; z-index:2; opacity:0; transition:opacity .4s var(--ease); }
+.d-pic.showing-3d .three-stage.model-loaded { opacity:1; }
 .three-stage canvas { width:100%; height:100%; }
-.d-pic.showing-3d .d-art-object { visibility:hidden; opacity:0; }
+.d-art-object { transition:opacity .4s var(--ease); }
+.d-art-object img { transition:transform .5s var(--ease); }
+.d-pic.showing-3d .d-art-object { opacity:0; pointer-events:none; }
 .three-badge { position:absolute; right:5px; bottom:9px; z-index:4; padding:5px 8px; border:1px solid var(--rule); border-radius:100px; color:var(--ink-soft); background:rgba(250,247,240,.78); font-size:7px; font-weight:700; letter-spacing:.075em; pointer-events:none; backdrop-filter:blur(8px); }
 .d-badges { display:flex; gap:6px; margin-bottom:9px; }
 .badge { padding:4px 6px; border:1px solid var(--rule-strong); color:var(--ink-soft); font-size:6px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
@@ -993,4 +995,594 @@ body::before { content:none; }
 
 @media (hover:hover) and (pointer:fine) {
   .card .add:hover { color:#fffaf3; background:var(--brand); }
+}
+
+/* ============================================================
+   Logo-derived drawing system
+   The illustrations are hairline red on paper, like the wordmark. A stroked
+   drawing must not be given a photographic drop shadow or a blurred contact
+   blob — both were built for the photo tiles and turn line art muddy.
+   ============================================================ */
+.art-object > svg { --art-fill:var(--paper); filter:none; }
+.d-art-object svg { --art-fill:var(--paper-light); filter:none; }
+.art-object:has(> svg)::after,
+.d-art-object:has(svg)::after { content:none; }
+.card:active .art-object:has(> svg) { transform:perspective(700px) scale(.97); }
+
+/* ============================================================
+   3D stage
+   The dish turns inside the logo's circle: one hairline ring, four registration
+   ticks, and a hint that retires itself the moment the guest actually drags.
+   ============================================================ */
+.d-pic { overflow:visible; }
+.three-stage { touch-action:none; }
+/* The circle lies flat, like a turntable the dish is served on: a ring that
+   circumscribed the dish only fought the bowl, which is far wider than tall. */
+.three-stage::before {
+  content:"";
+  position:absolute;
+  bottom:9%; left:50%;
+  width:56%; height:13%;
+  border:1px solid rgba(229,27,0,.32);
+  border-radius:50%;
+  opacity:0;
+  transform:translateX(-50%) scale(.9);
+  transition:opacity .7s var(--ease),transform .7s var(--ease);
+  pointer-events:none;
+}
+.three-stage.model-loaded::before { opacity:1; transform:translateX(-50%) scale(1); }
+.three-stage canvas { position:relative; z-index:1; }
+.stage-ticks {
+  position:absolute;
+  bottom:8.2%; left:50%;
+  z-index:0;
+  width:62%; height:15.5%;
+  opacity:0;
+  transform:translateX(-50%);
+  transition:opacity .7s var(--ease) .1s;
+  pointer-events:none;
+}
+.three-stage.model-loaded .stage-ticks { opacity:1; }
+/* Two spans, each painting only its ends, give the four cardinal registration
+   ticks around the turntable at any stage size. */
+.stage-ticks span { position:absolute; background:none; }
+.stage-ticks .v {
+  top:0; left:50%;
+  width:1px; height:100%;
+  transform:translateX(-50%);
+  background:linear-gradient(to bottom,
+    rgba(229,27,0,.5) 0 5px, transparent 5px calc(100% - 5px), rgba(229,27,0,.5) calc(100% - 5px) 100%);
+}
+.stage-ticks .h {
+  top:50%; left:0;
+  width:100%; height:1px;
+  transform:translateY(-50%);
+  background:linear-gradient(to right,
+    rgba(229,27,0,.5) 0 6px, transparent 6px calc(100% - 6px), rgba(229,27,0,.5) calc(100% - 6px) 100%);
+}
+.d-pic .drag-hint {
+  position:absolute;
+  right:0; bottom:9px;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:5px 9px 5px 7px;
+  border:1px solid rgba(229,27,0,.28);
+  border-radius:100px;
+  color:var(--brand);
+  background:rgba(255,255,255,.9);
+  font-size:7px;
+  font-weight:700;
+  letter-spacing:.09em;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(4px);
+  transition:opacity .45s var(--ease),transform .45s var(--ease);
+  backdrop-filter:blur(8px);
+}
+.d-pic.ready-3d .drag-hint { opacity:1; transform:none; }
+.d-pic.touched .drag-hint { opacity:0; transform:translateY(4px); }
+.drag-hint svg { width:12px; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; }
+.drag-hint .dh-dot { animation:dragSwing 2.4s var(--ease) infinite; }
+@keyframes dragSwing { 0%,100% { transform:translateX(-1.6px); } 50% { transform:translateX(1.6px); } }
+
+@media (prefers-reduced-motion:reduce) {
+  .drag-hint .dh-dot { animation:none; }
+}
+
+/* Stroke weight is a brand constant, not a function of tile size: a drawing on
+   a 104px list thumbnail and the same drawing at full sheet width must read as
+   the same pen — the logo does. */
+.art-object svg *,.d-art-object svg * { vector-effect:non-scaling-stroke; }
+
+/* ============================================================
+   V62 — 印 · Seal & Specimen
+   The logo has exactly three atoms: a hairline red line, the // slash, and a
+   solid red 饺 sealed inside a true circle. This layer makes those three do
+   structural work instead of appearing as garnish.
+
+   · the circle becomes the flat turntable every dish is served on — the same
+     hairline ellipse under a card, under the detail photo, and under the 3D
+     model, so a photograph and a drawing are framed identically;
+   · the hairline rule + specimen number turns the grid into a set catalogue;
+   · the seal is spent sparingly and only where it means something: the order
+     rail, and the stamp that lands when the kitchen takes the order.
+   Type sizes come up across the board — 5–7px labels read as timid, not
+   refined, and half of them carry the guest's second language.
+   ============================================================ */
+:root {
+  --cjk:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --red-08:rgba(229,27,0,.08);
+  --red-16:rgba(229,27,0,.16);
+  --red-26:rgba(229,27,0,.26);
+  --red-45:rgba(229,27,0,.45);
+  --plate-w:60%;          /* turntable ellipse, shared by card / sheet / 3D */
+  --plate-h:8.4%;
+}
+
+/* The seal itself. The logo sets a solid 饺 inside a true circle; the circle is
+   the element's own border, the character is set in type rather than shipped as
+   another asset — dumpling-symbol.svg carries a viewBox that crops the mark. */
+.seal-glyph { display:grid; place-items:center; width:100%; height:100%; }
+.seal-glyph::before {
+  content:"饺";
+  font-family:var(--cjk);
+  font-size:.58em;
+  font-weight:900;
+  line-height:1;
+}
+
+/* ---------- Masthead: a letterhead, not a landing page ---------- */
+/* One letterhead, one focal point. The wordmark already carries the seal, so
+   the masthead adds exactly one bold thing — the headline — and everything
+   else is a hairline or a quiet label. No second seal, no kicker repeating the
+   restaurant's own name, and only one solid red mark on the page: the logo. */
+#hero {
+  position:relative;
+  min-height:0;
+  padding:max(22px,env(safe-area-inset-top)) 18px 0;
+  overflow:hidden;
+}
+/* The eyebrow only restated the wordmark; the register below says it in code. */
+.hero-eyebrow { display:none; }
+.hero-top { position:relative; z-index:1; align-items:flex-start; }
+.hero-actions { gap:4px; }
+.brand img { height:54px; }
+.hero-actions { align-self:flex-start; gap:2px; padding-top:2px; }
+.hero-actions button { min-width:40px; height:40px; border-radius:50%; font-size:11px; font-weight:600; }
+#bellBtn svg { width:19px; stroke-width:1.35; }
+#langBtn { margin-left:2px; }
+#langBtn::before { content:none; }
+
+.hero-copy { position:relative; z-index:1; margin-top:28px; padding-top:12px; border-top:1px solid var(--brand); }
+.hero-title-row {
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:14px; margin-top:0; padding-bottom:0; border-bottom:0;
+}
+#hero h1 {
+  position:relative;
+  font-size:clamp(50px,15vw,72px);
+  font-weight:300;
+  letter-spacing:-.055em;
+  line-height:.84;
+}
+.hero-count {
+  padding-bottom:6px;
+  color:#6d6d66;
+  font-size:8px; font-weight:600; letter-spacing:.16em;
+}
+.hero-meta { margin-top:12px; padding-top:0; border-top:0; }
+#heroSub { max-width:250px; font-size:11px; line-height:1.55; }
+#hero .table { padding:0; border:0; background:transparent; color:var(--brand); font-size:9px; font-weight:700; letter-spacing:.14em; }
+.hero-register {
+  position:static;
+  z-index:1;
+  justify-content:flex-end;
+  margin-top:16px;
+  padding-bottom:13px;
+  font-size:7.5px; letter-spacing:.18em;
+  opacity:1;
+}
+.hero-register b { font-size:8px; letter-spacing:.14em; }
+/* The masthead closes on the logo's own double rule. */
+#hero::after {
+  content:"";
+  position:absolute;
+  right:18px; bottom:0; left:18px;
+  height:4px;
+  border-top:1px solid var(--brand);
+  border-bottom:1px solid var(--red-26);
+}
+
+/* ---------- Category index ---------- */
+#tabs { background:rgba(246,246,243,.94); box-shadow:inset 0 -1px 0 var(--red-16); }
+.tabs-inner { gap:22px; padding:0 18px; }
+.tab { min-height:47px; color:#5d5d58; font-size:12.5px; transition:color .2s ease; }
+.tab.on { color:var(--brand); font-weight:600; }
+.tab.on::after {
+  content:"";
+  position:absolute;
+  right:0; bottom:0; left:0;
+  height:2px;
+  background:var(--brand);
+  transform:none;
+}
+
+/* ---------- Finder: one ruled line, red pen ---------- */
+#finder { padding:20px 16px 0; }
+.finder-line {
+  min-height:44px;
+  gap:0;
+  border:0; border-bottom:1px solid var(--red-26);
+  background:transparent;
+}
+.search-wrap { padding-left:0; }
+.search-wrap > svg { left:0; width:14px; stroke:var(--brand); stroke-width:1.5; }
+#search { height:44px; padding-left:23px; font-size:12px; }
+#viewToggle {
+  height:44px;
+  padding:0 0 0 14px;
+  border-left:0;
+  color:var(--brand);
+  font-size:8.5px; font-weight:600; letter-spacing:.12em;
+}
+#viewToggle svg { width:14px; stroke-width:1.3; }
+.filters { gap:16px; padding-top:6px; }
+.fchip {
+  display:inline-flex; align-items:center;
+  min-height:40px;
+  padding:0;
+  color:#77776f;
+  font-size:9.5px; font-weight:600; letter-spacing:.05em;
+}
+.fchip::after {
+  content:"";
+  position:absolute;
+  right:0; bottom:9px; left:0;
+  height:1px;
+  background:var(--brand);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .24s var(--ease);
+}
+.fchip.on { color:var(--brand); }
+.fchip.on::after { transform:scaleX(1); }
+
+/* ---------- Chapters as specimen sheets ---------- */
+.chapter { padding-top:50px; }
+.chapter-head {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 44px;
+  align-items:end;
+  gap:5px 14px;
+  padding:0 0 11px;
+  border-bottom:1px solid var(--brand);
+}
+.chapter-code { grid-area:1 / 1; font-size:7.5px; font-weight:700; letter-spacing:.2em; }
+.chapter-head h2 { grid-area:2 / 1; font-size:clamp(29px,8.5vw,36px); font-weight:500; letter-spacing:-.05em; line-height:1; }
+.chapter-head .sub {
+  display:block;
+  margin:7px 0 0;
+  color:#6d6d66;
+  font-size:9px; font-weight:600; letter-spacing:.14em;
+}
+.chapter-head .chapter-count {
+  grid-area:1 / 2 / 4 / 3;
+  align-self:center; justify-self:end;
+  display:grid; place-items:center;
+  width:44px; height:44px;
+  color:var(--brand);
+  border:1px solid var(--brand); border-radius:50%;
+  font-size:13px; font-weight:400; letter-spacing:.02em;
+}
+.chapter-head .tag { grid-area:3 / 1; margin-top:2px; color:var(--ink-soft); font-size:10px; line-height:1.5; }
+
+/* ---------- Cards: a numbered specimen on a hairline turntable ---------- */
+.grid { gap:34px 15px; padding-top:26px; }
+.card { position:relative; padding-top:26px; text-align:left; }
+/* The label line is printed matter, not a target: it must never swallow a tap
+   meant for the dish underneath it. */
+.card::before {
+  content:attr(data-ref);
+  top:9px; left:0;
+  color:var(--brand);
+  font-size:7.5px; font-weight:700; letter-spacing:.14em;
+  pointer-events:none;
+}
+.card::after {
+  content:"";
+  position:absolute;
+  top:0; right:0; left:0;
+  height:1px;
+  background:var(--red-26);
+  pointer-events:none;
+}
+/* The picture gives up its containing block: the number, the recommendation
+   and the + all belong to the card's label line, not to the food. */
+.card .pic { position:static; padding-top:0; border-top:0; }
+.art-object { aspect-ratio:1.1; }
+/* The turntable: the logo's circle laid flat, identical for a photograph and
+   for a drawing (art.js draws its own, at the same proportions). */
+.art-object::after {
+  content:"";
+  right:auto; bottom:6%; left:50%;
+  width:var(--plate-w); height:var(--plate-h);
+  border:1px solid var(--red-26); border-radius:50%;
+  background:none;
+  filter:none;
+  transform:translateX(-50%);
+  transition:width .34s var(--ease),border-color .34s var(--ease);
+}
+.art-object > img { filter:drop-shadow(0 9px 9px rgba(21,21,20,.11)); }
+.card .add,.card .qty-badge {
+  top:22px; right:0;
+  width:40px; height:40px;
+  color:var(--brand);
+  border:1px solid var(--brand); border-radius:50%;
+  background:var(--paper);
+  box-shadow:none;
+  font-size:17px; font-weight:300;
+  transition:transform .18s var(--ease),background .2s ease,color .2s ease;
+}
+.card .qty-badge { color:var(--paper-light); background:var(--brand); font-size:12px; font-weight:600; }
+.card .add:active,.card .qty-badge:active { transform:scale(.86); }
+/* The recommendation rides the specimen label line next to the number rather
+   than a coloured chip stuck on the food; solid red stays reserved for seals. */
+.card-flag {
+  top:7px; bottom:auto; left:54px;
+  padding:0;
+  color:var(--brand);
+  background:transparent;
+  font-size:8.5px; font-weight:700; letter-spacing:.06em;
+  white-space:nowrap;
+}
+/* Cards stretch to a common height, so the price rail can sit on one line
+   across the row without reserving dead space under every one-line name. */
+.card { display:flex; flex-direction:column; }
+.card .cap { display:flex; flex:1; flex-direction:column; margin-top:9px; padding:0; border-left:0; }
+.card .cap .nm { min-height:0; font-size:14.5px; font-weight:500; letter-spacing:-.01em; line-height:1.28; }
+.card .cap .en { margin-top:3px; color:#6d6d66; font-size:9px; font-weight:600; letter-spacing:.07em; }
+.card .cap .row { margin-top:auto; padding-top:9px; gap:7px; }
+.card .cap .price { font-size:12.5px; font-weight:600; }
+.card .cap .pc { color:var(--muted); font-size:9px; }
+.card .cap .spice { color:var(--brand); font-size:9px; }
+.card .sold-tag { top:39%; font-size:9px; letter-spacing:.1em; }
+
+/* List view keeps the same rules and numbers, just laid on their side. The
+   picture gives up its containing block so the + can sit clear of the food,
+   at the right edge of the row, instead of landing on top of the dish. */
+.menu-list .card { display:grid; padding-top:24px; border-bottom:0; }
+.menu-list .card::before { top:5px; left:0; }
+.menu-list .card::after { top:0; }
+.menu-list .card .sold-tag { top:50%; }
+.menu-list .card .cap { display:block; padding-right:48px; }
+.menu-list .card .cap .row { margin-top:8px; padding-top:0; }
+.menu-list .card .cap .desc { font-size:10.5px; font-style:normal; line-height:1.5; }
+.menu-list .card .add,.menu-list .card .qty-badge { top:calc(50% + 12px); right:0; transform:translateY(-50%); }
+.menu-list .card .add:active,.menu-list .card .qty-badge:active { transform:translateY(-50%) scale(.86); }
+.menu-list .card-flag { top:5px; bottom:auto; left:52px; }
+
+#empty { font-size:12px; font-style:normal; }
+#foot { gap:12px; padding-top:34px; border-top:1px solid var(--brand); font-size:9.5px; letter-spacing:.04em; }
+#foot img { height:20px; }
+
+/* ---------- Ordering rail ---------- */
+#cartBar {
+  right:0; bottom:0; left:0;
+  gap:12px;
+  min-height:calc(62px + env(safe-area-inset-bottom));
+  padding:9px 16px calc(9px + env(safe-area-inset-bottom)) 12px;
+  border:0; border-radius:0;
+  background:var(--brand);
+  box-shadow:0 -10px 30px rgba(229,27,0,.16);
+}
+.cb-icon { width:42px; height:42px; border-radius:50%; color:var(--brand); background:var(--paper-light); }
+.cb-icon .seal-glyph { font-size:42px; }
+.cb-count {
+  top:-5px; right:-5px;
+  min-width:20px; height:20px;
+  color:var(--paper-light);
+  border:2px solid var(--brand); background:#151514;
+  font-size:9px;
+}
+.cb-label { font-size:13.5px; font-weight:500; letter-spacing:.01em; }
+.cb-total { font-size:14px; font-weight:600; }
+.cb-chevron { opacity:.7; }
+
+#toTop {
+  right:16px; bottom:calc(86px + env(safe-area-inset-bottom));
+  width:40px; height:40px;
+  color:var(--brand);
+  border:1px solid var(--brand); border-radius:50%;
+  background:var(--paper);
+  box-shadow:0 4px 14px rgba(21,21,20,.10);
+  font-size:14px;
+  backdrop-filter:none;
+}
+#toast {
+  bottom:calc(88px + env(safe-area-inset-bottom));
+  padding:10px 14px;
+  border-left:3px solid var(--brand); border-radius:0;
+  font-size:11px;
+}
+
+/* ---------- Detail sheet ---------- */
+#sheet,#cart { border-top:2px solid var(--brand); border-radius:16px 16px 0 0; }
+.sheet-close { top:16px; right:16px; width:36px; height:36px; color:var(--brand); border-color:var(--red-26); font-size:18px; }
+.d-pic { aspect-ratio:1.16; margin-bottom:18px; }
+.d-art-object::after {
+  right:auto; bottom:8%; left:50%;
+  width:var(--plate-w); height:6.5%;
+  border:1px solid var(--red-26); border-radius:50%;
+  background:none;
+  filter:none;
+  transform:translateX(-50%);
+}
+.d-art-object img { filter:drop-shadow(0 14px 12px rgba(21,21,20,.12)); }
+.d-badges { gap:5px; margin-bottom:11px; }
+.badge,.badge.red {
+  padding:5px 8px 4px;
+  color:var(--brand);
+  border:1px solid var(--brand);
+  font-size:8px; font-weight:700; letter-spacing:.14em;
+}
+.d-name { font-size:clamp(27px,7.6vw,34px); font-weight:500; letter-spacing:-.05em; line-height:1.06; }
+.d-en { margin-top:6px; color:#6b6b64; font-size:9px; font-weight:600; letter-spacing:.14em; }
+.d-price {
+  margin-top:12px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--brand);
+  font-size:20px; font-weight:500;
+}
+.d-flavor { margin-top:15px; font-size:12.5px; font-style:normal; line-height:1.6; }
+.d-meta { gap:6px 16px; margin-top:16px; }
+.d-meta .m { color:#6b6b64; font-size:9px; font-weight:500; letter-spacing:.02em; }
+.d-section-label { margin:24px 0 10px; color:var(--brand); font-size:8.5px; font-weight:700; letter-spacing:.2em; }
+.styles { gap:8px; }
+.style-opt { min-height:46px; border-color:var(--red-26); font-size:11.5px; }
+.style-opt.on { border-color:var(--brand); background:var(--brand); }
+.d-bar { gap:10px; margin-top:26px; padding-bottom:4px; }
+.stepper { min-height:54px; gap:2px; padding:4px 6px; border-color:var(--red-26); }
+.stepper button {
+  width:36px; height:36px;
+  color:var(--brand);
+  border:1px solid var(--red-16); border-radius:50%;
+  font-size:17px; font-weight:300;
+  transition:background .18s ease,transform .18s var(--ease);
+}
+.stepper button:active { transform:scale(.88); background:var(--red-08); }
+.stepper b { min-width:22px; font-size:14px; font-weight:600; }
+.d-add,#placeOrder { min-height:54px; font-size:13px; font-weight:600; letter-spacing:.01em; }
+.d-add strong,#placeOrder strong { font-size:14px; font-weight:600; }
+
+/* Photo → 3D hand-off: the ring, the ticks and the hint all stay hairline. */
+.three-stage::before { width:var(--plate-w); height:11%; border-color:var(--red-45); }
+.d-pic .drag-hint {
+  right:0; bottom:2px;
+  padding:6px 11px 5px 9px;
+  border:1px solid var(--red-26); border-radius:100px;
+  background:rgba(255,255,255,.92);
+  font-size:8.5px; font-weight:700; letter-spacing:.1em;
+}
+.drag-hint svg { width:13px; }
+.three-badge { font-size:8px; letter-spacing:.12em; }
+
+/* ---------- Cart: an order slip ---------- */
+.cart-head { padding-bottom:14px; margin-bottom:2px; border-bottom:1px solid var(--brand); text-align:center; }
+.cart-reg { display:block; color:var(--brand); font-size:7.5px; font-weight:700; letter-spacing:.24em; }
+#cart h2 { margin-top:9px; font-size:26px; font-weight:500; letter-spacing:-.04em; }
+#cartSub { margin:6px 0 0; font-size:10px; letter-spacing:.02em; }
+.cart-line { gap:12px; padding:13px 0; border-color:var(--red-16); }
+.cart-line .th { width:56px; height:56px; }
+.cart-line .info .nm { font-size:13.5px; font-weight:500; }
+.cart-line .info .sub { margin-top:3px; color:#6b6b64; font-size:9px; letter-spacing:.02em; }
+.cart-line .stepper { min-height:40px; gap:0; padding:2px 4px; }
+.cart-line .stepper button { width:30px; height:30px; font-size:15px; }
+.cart-line .stepper b { min-width:18px; font-size:12px; }
+#noteWrap { margin-top:20px; }
+#noteWrap label { color:var(--brand); font-size:8.5px; font-weight:700; letter-spacing:.2em; }
+#note { border-color:var(--red-26); font-size:11.5px; }
+#cartTotals {
+  margin:18px 0 14px;
+  padding:12px 0;
+  border-top:1px dashed var(--red-26);
+  border-bottom:1px dashed var(--red-26);
+  font-size:11px;
+}
+#cartTotals .row { margin:0; }
+#cartTotals .row b { font-size:14px; font-weight:600; }
+#callWaiter {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px;
+  min-height:46px; margin-top:9px;
+  color:var(--brand);
+  border-color:var(--red-26);
+  font-size:11.5px;
+}
+#callWaiter svg { width:16px; fill:none; stroke:currentColor; stroke-width:1.35; stroke-linecap:round; }
+.cart-empty { font-size:12px; font-style:normal; line-height:1.8; }
+
+/* ---------- Order sent: the seal actually lands ---------- */
+#done { justify-content:center; padding:30px 24px; }
+.done-slip {
+  position:relative;
+  width:min(340px,88vw);
+  padding:20px 24px 34px;
+  border:1px solid var(--red-26); border-bottom:0;
+  background:var(--paper-light);
+  text-align:center;
+}
+.slip-reg {
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--red-16);
+  color:var(--muted);
+  font-size:7.5px; letter-spacing:.2em;
+}
+.slip-reg b { color:var(--brand); font-size:8px; font-weight:700; }
+.done-mark {
+  width:98px; height:98px;
+  margin:28px auto 0;
+  color:var(--brand);
+  border:1.5px solid var(--brand); border-radius:50%;
+  background:transparent;
+  box-shadow:none;
+  animation:sealPress .6s var(--ease) both;
+}
+.done-mark .seal-glyph { font-size:98px; }
+/* The stamp comes down, over-presses, and settles — a seal, not a checkmark. */
+@keyframes sealPress {
+  0%   { opacity:0; transform:scale(1.5); }
+  55%  { opacity:1; transform:scale(.93); }
+  100% { opacity:1; transform:scale(1); }
+}
+#done h2 { margin-top:24px; font-size:27px; font-weight:500; letter-spacing:-.03em; }
+#done p { margin-top:10px; color:var(--ink-soft); font-size:11.5px; line-height:1.75; }
+/* The slip tears off along a perforated edge. */
+.slip-perf {
+  position:absolute;
+  right:-1px; bottom:-6px; left:-1px;
+  height:12px;
+  background:radial-gradient(circle at 6px 0,var(--paper) 0 5px,transparent 5.4px) repeat-x 0 100%/12px 12px;
+}
+#doneBack {
+  margin-top:30px;
+  padding:13px 26px;
+  color:var(--brand);
+  border:1px solid var(--brand);
+  background:transparent;
+  font-size:11.5px; font-weight:600; letter-spacing:.06em;
+}
+
+@media (min-width:700px) {
+  .brand img { height:60px; }
+  .hero-copy { margin-top:34px; }
+  #heroSub { max-width:340px; font-size:12px; }
+  .grid { gap:44px 26px; }
+  #cartBar {
+    right:max(0px,calc(50% - 300px)); left:max(0px,calc(50% - 300px));
+    bottom:14px;
+    min-height:62px;
+    padding:9px 16px 9px 12px;
+    border-radius:2px;
+  }
+}
+
+@media (min-width:1040px) {
+  #hero::after { right:max(24px,calc(50% - 500px)); left:max(24px,calc(50% - 500px)); }
+}
+
+@media (hover:hover) and (pointer:fine) {
+  .card:hover .art-object::after { width:66%; border-color:var(--red-45); }
+  .card:hover .cap .nm { color:var(--brand); }
+  .card .add:hover { color:var(--paper-light); background:var(--brand); }
+  .card .qty-badge:hover { background:#c41800; }
+  .tab:hover { color:var(--ink); }
+  #toTop:hover { border-color:var(--brand); }
+  #doneBack:hover,#callWaiter:hover { background:var(--red-08); }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .done-mark { animation:none; }
 }
