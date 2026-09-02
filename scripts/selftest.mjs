@@ -124,8 +124,8 @@ for (const [name, options] of PROFILES) {
   await step("07-generated-models-rotate-behind-the-photo", async () => {
     for (const id of ["red-oil-wontons", "minced-pork-egg-noodles", "wonton-soup-noodles", "dry-wonton-noodles"]) {
       const coverSrc = await page.locator(`.card[data-id="${id}"] .art-object img`).getAttribute("src");
-      if (coverSrc !== `img/${id}-cutout.png`) {
-        throw new Error(`${id} card is not showing the restaurant's own photo: ${coverSrc}`);
+      if (coverSrc !== `img/print/${id}.png`) {
+        throw new Error(`${id} card is not showing its one-ink plate: ${coverSrc}`);
       }
       await page.locator(`.card[data-id="${id}"] .cap`).click();
       const stage = page.locator("#threeStage[data-source='generated-glb']");
@@ -146,8 +146,8 @@ for (const [name, options] of PROFILES) {
       if (!Number.isFinite(rotation) || Math.abs(rotation) < .1) throw new Error(`${id} did not rotate`);
       await page.mouse.up();
       if (Number(await stage.getAttribute("data-rotation-x")) < 0) throw new Error(`${id} tilted below the rim`);
-      if (!/拖动旋转|DRAG TO ROTATE/.test(await page.locator(".drag-hint").textContent() || "")) {
-        throw new Error(`${id} is missing the drag-to-rotate hint`);
+      if (!/活过来|COMES ALIVE/.test(await page.locator(".drag-hint").textContent() || "")) {
+        throw new Error(`${id} is missing the come-alive hint`);
       }
       if (!await page.locator(".d-pic.showing-3d").count()) throw new Error(`${id} 3D did not take over after touch`);
       if (!await page.locator(".d-pic.touched").count()) throw new Error(`${id} hint did not retire after touch`);

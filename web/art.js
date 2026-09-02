@@ -239,7 +239,16 @@ function svgArtFor(d) {
 // real, while a 3D cover is a single-image inference. The model still drives
 // the detail view, where the guest can turn it. Covers only fill in for
 // dishes that were generated without a photo of their own.
+// At rest every photographed dish is its one-ink halftone plate; the colour
+// photograph only appears when the guest touches it and the print comes alive.
+function printFor(d) {
+  return typeof PRINTS !== "undefined" && PRINTS.has(d.id) ? `img/print/${d.id}.png` : null;
+}
+
 function artFor(d) {
+  const print = printFor(d);
+  if (print) return `<img src="${print}" alt="${d.cn||d.name||''}" loading="lazy" draggable="false"
+    onerror="__artFallback(this, '${d.id}')">`;
   const image = d.img || d.cover;
   if (image) return `<img src="img/${image}" alt="${d.cn||d.name||''}" loading="lazy" draggable="false"
     onerror="__artFallback(this, '${d.id}')">`;

@@ -6,7 +6,7 @@
    Only one WebGL context ever exists here, so phones stay cool. */
 
 export function mountShowcase(host, options) {
-  const { dishes, stage, render, onChange } = options;
+  const { dishes, stage, render, onChange, onWake } = options;
   let index = 0;
   let view = null;          // the live 3D viewer, if any
   let timer = 0;
@@ -18,15 +18,31 @@ export function mountShowcase(host, options) {
     const el = document.createElement("div");
     el.className = "sc-slide";
     el.dataset.id = dish.id;
+    // The printed plate shows first. Underneath sits the thing that comes
+    // alive on touch: the 3D model, or the colour photograph.
+    const print = options.printFor?.(dish);
     if (dish.model) {
       const s = document.createElement("div");
       s.className = "three-stage";
       el.appendChild(s);
+    } else if (print && dish.img) {
+      const f = document.createElement("div");
+      f.className = "sc-flat";
+      f.innerHTML = `<img src="img/${dish.img}" alt="" draggable="false">`;
+      el.appendChild(f);
     } else {
       const f = document.createElement("div");
       f.className = "sc-flat";
       f.innerHTML = render(dish);
       el.appendChild(f);
+    }
+    if (print) {
+      const pr = document.createElement("div");
+      pr.className = "sc-print";
+      pr.innerHTML = `<img src="${print}" alt="" draggable="false">`;
+      el.appendChild(pr);
+    } else {
+      el.classList.add("alive");
     }
     stage.appendChild(el);
     slides.set(dish.id, el);
@@ -55,8 +71,8 @@ export function mountShowcase(host, options) {
       view = mountGeneratedDish3D(s, {
         modelURL: `models/production/${dish.model}`,
         label: dish.cn,
-        idle: !touched,
-        onFirstTouch: () => { touched = true; clearInterval(timer); },
+        idle: false,
+        onFirstTouch: () => { touched = true; clearInterval(timer); el.classList.add("alive"); stage.dataset.justWoke = "1"; onWake?.(dish); },
       });
     }
   };
@@ -78,6 +94,8 @@ export function mountShowcase(host, options) {
   }
   return {
     current: () => dishes[index],
+    alive: () => slides.get(dishes[index]?.id)?.classList.contains("alive") ?? true,
+    wake: () => { const el = slides.get(dishes[index]?.id); if (el) { el.classList.add("alive"); touched = true; clearInterval(timer); onWake?.(dishes[index]); } },
     go: (i) => { clearInterval(timer); show(i, 1); },
     dispose() { clearInterval(timer); view?.dispose(); },
   };

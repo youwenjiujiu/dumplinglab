@@ -135,7 +135,7 @@ function renderMenu() {
     const ch = document.createElement("section");
     ch.className = "chapter"; ch.dataset.sec = sec;
     ch.dataset.order = String(sectionIndex+1).padStart(2,"0");
-    ch.innerHTML = `<div class="chapter-head">
+    ch.innerHTML = `<div class="chapter-head" data-order="${String(sectionIndex+1).padStart(2,"0")}">
       <span class="chapter-code">DL//${String(sectionIndex+1).padStart(2,"0")}</span>
       <h2>${secName(sec)} <span class="sub">${secOther(sec)}</span></h2>
       <span class="chapter-count">${String(dishes.length).padStart(2,"0")}</span>
@@ -267,8 +267,8 @@ function renderSheet() {
       ${hasSpatial
         ? `<span class="drag-hint"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="dh-dot" d="M3.4 8a6.8 6.8 0 0 1 13.2 0"/><path d="M2.6 10.6 3.4 8l2.6.9M17.4 10.6 16.6 8 14 8.9"/><path d="M6.5 13.4a4.6 4.6 0 0 0 7 0"/></svg>${
             d.model
-              ? (lang==="zh"?"拖动旋转 · 双指缩放":"DRAG TO ROTATE · PINCH TO ZOOM")
-              : (lang==="zh"?"拖动查看 · 实拍":"DRAG TO TILT · REAL PHOTO")}</span>`
+              ? (lang==="zh"?"碰一下 · 它会活过来":"TOUCH · IT COMES ALIVE")
+              : (lang==="zh"?"碰一下 · 看实拍":"TOUCH · SEE THE PHOTO")}</span>`
         : ""}
     </div>
     ${badges?`<div class="d-badges">${badges}</div>`:""}
@@ -552,18 +552,25 @@ let showcase=null;
 async function mountShowcaseHero(){
   const featured=[...MENU.filter(d=>d.model), ...MENU.filter(d=>!d.model && d.featured && !d.soldOut)].slice(0,8);
   if (!featured.length) { $("#showcase").hidden=true; return; }
-  const { mountShowcase } = await import("./showcase.js?v=1");
+  const { mountShowcase } = await import("./showcase.js?v=3");
   const stage=$("#scStage");
   const inner=mountShowcase($("#showcase"),{
     dishes:featured, stage,
     render:d=>artFor(d),
+    printFor:d=>printFor(d),
+    onWake:()=>{ $("#scHint").textContent=L().scHintAlive; },
     onChange:(d,i)=>{
       $("#scName").textContent=dName(d); $("#scEn").textContent=dOther(d);
       $("#scPrice").textContent=fmt(d.price); $("#scIndex").textContent=L().dishOf(i+1, featured.length);
-      $("#scHint").textContent= d.model ? L().scHint : L().scHintFlat;
+      $("#scHint").textContent= printFor(d) ? L().scHint : L().scHintFlat;
       $("#scDots").innerHTML=featured.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("");
       $("#scAdd").onclick=()=>{ if (d.styles) { openDish(d); return; } flyToCart(stage.querySelector(".sc-slide.on canvas, .sc-slide.on img, .sc-slide.on svg")); addToCart(d.id,null,1); toast(L().added(dName(d))); pulseCart(); haptic(); };
-      stage.onclick=e=>{ if (e.target.closest(".sc-arrow")) return; if (stage.dataset.dragged) { delete stage.dataset.dragged; return; } openDish(d); };
+      stage.onclick=e=>{ if (e.target.closest(".sc-arrow")) return;
+        if (stage.dataset.dragged) { delete stage.dataset.dragged; return; }
+        // The tap that wakes the print must not also open the dish.
+        if (stage.dataset.justWoke) { delete stage.dataset.justWoke; haptic(); return; }
+        if (!inner.alive()) { inner.wake(); haptic(); return; }
+        openDish(d); };
     },
   });
   // a real drag on the 3D dish must not count as a tap
