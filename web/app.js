@@ -577,4 +577,5 @@ try {
   if (!sessionStorage.getItem("dl-seen") && !matchMedia("(prefers-reduced-motion: reduce)").matches) { $("#splash").hidden=false; sessionStorage.setItem("dl-seen","1"); }
 } catch {}
 renderAll();
-mountShowcaseHero();
+// The menu must be interactive first; the showcase's model parse can wait a beat.
+setTimeout(mountShowcaseHero, 350);

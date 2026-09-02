@@ -65,11 +65,13 @@ for (const [name, options] of PROFILES) {
 
   await step("02-search", async () => {
     await page.locator("#search").fill("云吞");
-    await page.waitForTimeout(220);
+    // The filter is debounced and the showcase model may be parsing on the
+    // main thread; wait for the result rather than a fixed delay.
+    await page.waitForFunction(() => [...document.querySelectorAll(".card")].filter(c => c.style.display !== "none").length <= 5, null, { timeout: 5000 });
     const visible = await page.locator(".card:visible").count();
     if (visible < 1 || visible > 5) throw new Error(`unexpected search result count ${visible}`);
     await page.locator("#search").fill("");
-    await page.waitForTimeout(220);
+    await page.waitForFunction(() => [...document.querySelectorAll(".card")].filter(c => c.style.display !== "none").length === 61, null, { timeout: 5000 });
   });
 
   await step("03-vegetarian-filter", async () => {
