@@ -14,7 +14,10 @@ for (const [name, options] of PROFILES) {
   const page = await (await browser.newContext(options)).newPage();
   const errors = [];
   page.on("pageerror", e => errors.push(`pageerror: ${e.message}`));
-  page.on("console", m => { if (m.type() === "error") errors.push(`console: ${m.text()}`); });
+  // The menu is also served as a static site with no /api backend; an order or
+  // call that gets a 404 there is expected and must not fail the run.
+  page.on("console", m => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errors.push(`console: ${m.text()}`); });
+  page.on("response", r => { if (r.status() >= 400 && !/\/api\//.test(r.url())) errors.push(`http ${r.status()}: ${r.url()}`); });
   page.on("requestfailed", r => errors.push(`request: ${r.url()} ${r.failure()?.errorText || "failed"}`));
   const shot = label => page.screenshot({ path: `${OUT}/${name}-${label}.png` });
   const step = async (label, task) => {
