@@ -67,7 +67,16 @@ function renderStatic() {
   $("#doneTitle").textContent = L().ordered;
   $("#doneBack").textContent = L().back;
   $("#foot").querySelector("p").textContent = `Dumpling Lab · ${L().colophon}`;
+  $("#scKicker").textContent = L().todays;
+  $("#scAddLabel").textContent = L().addToSteamer;
+  $("#themeBtn").setAttribute("aria-label", document.documentElement.dataset.theme==="dark" ? L().day : L().night);
+  $("#waiterTitle").textContent = L().waiterTitle;
+  $("#waiterSub").textContent = L().waiterSub(TABLE);
+  $("#waiterK").textContent = L().waiterK;
+  $("#waiterSend").textContent = L().waiterSend;
+  renderReasons();
   syncViewMode();
+  showcase?.refresh();
 }
 
 function syncViewMode() {
@@ -165,6 +174,7 @@ function card(d, index=0, sectionIndex=0) {
     el.querySelector(".add").onclick = e => {
       e.stopPropagation();
       if (d.styles) { openDish(d); return; }   // 自选 must pick a style
+      flyToCart(el.querySelector(".art-object > img, .art-object > svg"));
       addToCart(d.id, null, 1);
       toast(L().added(dName(d))); pulseCart();
     };
@@ -276,6 +286,7 @@ function renderSheet() {
   $("#qp").onclick=()=>{ sheetQty++; syncSheet(); haptic(); };
   $$(".style-opt", $("#sheetBody")).forEach(b=> b.onclick=()=>{ sheetStyle=b.dataset.s; renderSheet(); haptic(); });
   $("#dAdd").onclick=()=>{
+    flyToCart($("#sheetBody .d-art-object img, #sheetBody .d-art-object svg"));
     addToCart(d.id, sheetStyle, sheetQty);
     toast(L().added(dName(d) + (sheetStyle?` · ${styleLabel(sheetStyle)}`:"")));
     closeSheet(); pulseCart();
@@ -341,7 +352,7 @@ async function mountSheet3D() {
       },
     };
     if (modelURL) {
-      const { mountGeneratedDish3D } = await import("./model3d.js?v=11");
+      const { mountGeneratedDish3D } = await import("./model3d.js?v=12");
       if (request!==sheet3dRequest || !stage.isConnected || sheetDish!==d) return;
       dish3dView=mountGeneratedDish3D(stage,{...sharedOptions,modelURL});
     } else {
@@ -420,12 +431,48 @@ $("#placeOrder").addEventListener("click", ()=>{
 $("#doneBack").addEventListener("click", ()=>{ $("#done").hidden=true; document.body.style.overflow=""; });
 
 /* ---------------- Waiter + language + nav ---------------- */
-function callWaiter(){
-  haptic(true); toast(L().waiterOntheway);
-  fetch("/api/call",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({table:TABLE})}).catch(()=>{});
+let waiterReason=null;
+const REASON_ICONS={
+  water:'<svg viewBox="0 0 24 24"><path d="M7 4h10l-1.2 15a1.5 1.5 0 0 1-1.5 1.4H9.7A1.5 1.5 0 0 1 8.2 19L7 4Z"/><path d="M8 11h8"/></svg>',
+  cutlery:'<svg viewBox="0 0 24 24"><path d="M7 3v18M5 3v5a2 2 0 0 0 4 0V3M17 3c-2 0-3 3-3 6s1 3 3 3v9"/></svg>',
+  bill:'<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21V3Z"/><path d="M9 8h6M9 12h6"/></svg>',
+  help:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/></svg>',
+};
+function renderReasons(){
+  const box=$("#reasons"); if(!box) return;
+  box.innerHTML=Object.entries(L().reasons).map(([k,label])=>`<button class="reason${waiterReason===k?" on":""}" data-r="${k}">${REASON_ICONS[k]}<span>${label}</span></button>`).join("");
+  $$(".reason",box).forEach(b=>b.onclick=()=>{ waiterReason=b.dataset.r; haptic(); renderReasons(); $("#waiterSend").disabled=false; });
 }
-$("#bellBtn").addEventListener("click", callWaiter);
-$("#callWaiter").addEventListener("click", callWaiter);
+function openWaiter(){
+  waiterReason=null; renderReasons(); $("#waiterSend").disabled=true;
+  $("#waiterScrim").hidden=false; $("#waiterSheet").hidden=false; document.body.style.overflow="hidden";
+  requestAnimationFrame(()=>{ $("#waiterScrim").classList.add("open"); $("#waiterSheet").classList.add("open"); });
+}
+function closeWaiter(){
+  $("#waiterScrim").classList.remove("open"); $("#waiterSheet").classList.remove("open");
+  setTimeout(()=>{ $("#waiterScrim").hidden=true; $("#waiterSheet").hidden=true;
+    if ($("#sheet").hidden && $("#cart").hidden) document.body.style.overflow=""; }, 420);
+}
+function sendWaiter(){
+  const label=waiterReason ? L().reasons[waiterReason] : null;
+  haptic(true);
+  fetch("/api/call",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({table:TABLE, reason:label})}).catch(()=>{});
+  closeWaiter(); toast(L().waiterSent(label));
+}
+$("#bellBtn").addEventListener("click", ()=>{ haptic(); openWaiter(); });
+$("#callWaiter").addEventListener("click", ()=>{ haptic(); openWaiter(); });
+$("#waiterScrim").addEventListener("click", closeWaiter);
+$("#waiterClose").addEventListener("click", closeWaiter);
+$("#waiterSend").addEventListener("click", sendWaiter);
+
+$("#themeBtn").addEventListener("click", ()=>{
+  const dark = document.documentElement.dataset.theme!=="dark";
+  const swap=()=>{ if (dark) document.documentElement.dataset.theme="dark"; else delete document.documentElement.dataset.theme;
+    localStorage.setItem("dl-theme", dark?"dark":"light"); renderStatic(); };
+  haptic();
+  if (document.startViewTransition) document.startViewTransition(swap); else swap();
+});
+
 $("#langBtn").addEventListener("click", ()=>{ lang = lang==="zh"?"en":"zh"; localStorage.setItem("dl-lang", lang); haptic(); renderAll(); });
 $("#viewToggle").addEventListener("click", ()=>{
   haptic();
@@ -442,6 +489,8 @@ const toTop=$("#toTop");
 toTop.addEventListener("click", ()=>{ haptic(); window.scrollTo({top:0,behavior:"smooth"}); });
 addEventListener("scroll", ()=>{
   toTop.classList.toggle("show", scrollY>innerHeight*0.8);
+  const menu=$("#menu"); const top=menu.offsetTop-52, span=Math.max(1, menu.offsetHeight-innerHeight);
+  $("#progress").style.width = `${Math.min(100, Math.max(0, (scrollY-top)/span*100))}%`;
   // active tab follows scroll
   let cur=activeSection;
   $$(".chapter").forEach(ch=>{ if (ch.getBoundingClientRect().top < 90) cur=ch.dataset.sec; });
@@ -479,6 +528,53 @@ function initPointerDepth() {
   });
 }
 
+/* ---------------- Fly to cart ----------------
+   The dish itself travels into the order rail: a clone of the card art
+   shrinks along a slight arc into the seal. Pure WAAPI, no library. */
+function flyToCart(source){
+  const bar=$("#cartBar"); if(!source || !bar || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const from=source.getBoundingClientRect(); if(!from.width) return;
+  const ghost=source.cloneNode(true); ghost.classList.add("fly");
+  Object.assign(ghost.style,{left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`});
+  document.body.appendChild(ghost);
+  bar.hidden=false;
+  const to=bar.querySelector(".cb-icon").getBoundingClientRect();
+  const dx=to.left+to.width/2-(from.left+from.width/2), dy=to.top+to.height/2-(from.top+from.height/2);
+  ghost.animate([
+    { transform:"translate(0,0) scale(1)", opacity:1, offset:0 },
+    { transform:`translate(${dx*0.45}px,${dy*0.35-60}px) scale(.55)`, opacity:1, offset:.5 },
+    { transform:`translate(${dx}px,${dy}px) scale(.08)`, opacity:.2, offset:1 },
+  ],{ duration:620, easing:"cubic-bezier(.4,0,.2,1)", fill:"forwards" }).onfinish=()=>ghost.remove();
+}
+
+/* ---------------- Showcase ---------------- */
+let showcase=null;
+async function mountShowcaseHero(){
+  const featured=[...MENU.filter(d=>d.model), ...MENU.filter(d=>!d.model && d.featured && !d.soldOut)].slice(0,8);
+  if (!featured.length) { $("#showcase").hidden=true; return; }
+  const { mountShowcase } = await import("./showcase.js?v=1");
+  const stage=$("#scStage");
+  const inner=mountShowcase($("#showcase"),{
+    dishes:featured, stage,
+    render:d=>artFor(d),
+    onChange:(d,i)=>{
+      $("#scName").textContent=dName(d); $("#scEn").textContent=dOther(d);
+      $("#scPrice").textContent=fmt(d.price); $("#scIndex").textContent=L().dishOf(i+1, featured.length);
+      $("#scHint").textContent= d.model ? L().scHint : L().scHintFlat;
+      $("#scDots").innerHTML=featured.map((_,k)=>`<i class="${k===i?"on":""}"></i>`).join("");
+      $("#scAdd").onclick=()=>{ if (d.styles) { openDish(d); return; } flyToCart(stage.querySelector(".sc-slide.on canvas, .sc-slide.on img, .sc-slide.on svg")); addToCart(d.id,null,1); toast(L().added(dName(d))); pulseCart(); haptic(); };
+      stage.onclick=e=>{ if (e.target.closest(".sc-arrow")) return; if (stage.dataset.dragged) { delete stage.dataset.dragged; return; } openDish(d); };
+    },
+  });
+  // a real drag on the 3D dish must not count as a tap
+  let px=0,py=0; stage.addEventListener("pointerdown",e=>{px=e.clientX;py=e.clientY;}); stage.addEventListener("pointerup",e=>{ if(Math.hypot(e.clientX-px,e.clientY-py)>8) stage.dataset.dragged="1"; });
+  showcase={ refresh(){ const d=inner.current(); if(d) inner.go(featured.indexOf(d)); }, dispose:inner.dispose };
+}
+
 /* ---------------- Boot ---------------- */
 function renderAll(){ renderStatic(); renderTabs(); renderFilters(); renderMenu(); applyFilter(); syncCartBar(); }
+try {
+  if (!sessionStorage.getItem("dl-seen") && !matchMedia("(prefers-reduced-motion: reduce)").matches) { $("#splash").hidden=false; sessionStorage.setItem("dl-seen","1"); }
+} catch {}
 renderAll();
+mountShowcaseHero();

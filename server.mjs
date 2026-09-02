@@ -125,7 +125,7 @@ const server = createServer(async (req, res) => {
     /* --- customer --- */
     if (path === "/api/call" && req.method === "POST") {
       const body = JSON.parse((await readBody(req)).toString() || "{}");
-      broadcast({ type: "call", table: body.table });
+      broadcast({ type: "call", table: body.table, reason: typeof body.reason === "string" ? body.reason.slice(0, 40) : null });
       return json(200, { ok: true });
     }
     if (path === "/api/order" && req.method === "POST") {
