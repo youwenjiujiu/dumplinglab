@@ -241,8 +241,10 @@ function svgArtFor(d) {
 // dishes that were generated without a photo of their own.
 // At rest every photographed dish is its one-ink halftone plate; the colour
 // photograph only appears when the guest touches it and the print comes alive.
+// The print treatment belongs to the interface, not to the food: the
+// restaurant's photographs are shown untouched. Kept as a switch only.
 function printFor(d) {
-  return typeof PRINTS !== "undefined" && PRINTS.has(d.id) ? `img/print/${d.id}.png` : null;
+  return null;
 }
 
 function artFor(d) {

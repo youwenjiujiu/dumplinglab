@@ -267,8 +267,8 @@ function renderSheet() {
       ${hasSpatial
         ? `<span class="drag-hint"><svg viewBox="0 0 20 20" aria-hidden="true"><path class="dh-dot" d="M3.4 8a6.8 6.8 0 0 1 13.2 0"/><path d="M2.6 10.6 3.4 8l2.6.9M17.4 10.6 16.6 8 14 8.9"/><path d="M6.5 13.4a4.6 4.6 0 0 0 7 0"/></svg>${
             d.model
-              ? (lang==="zh"?"碰一下 · 它会活过来":"TOUCH · IT COMES ALIVE")
-              : (lang==="zh"?"碰一下 · 看实拍":"TOUCH · SEE THE PHOTO")}</span>`
+              ? (lang==="zh"?"拖动旋转 · 双指缩放":"DRAG TO ROTATE · PINCH TO ZOOM")
+              : (lang==="zh"?"拖动查看 · 实拍":"DRAG TO TILT · REAL PHOTO")}</span>`
         : ""}
     </div>
     ${badges?`<div class="d-badges">${badges}</div>`:""}
@@ -552,7 +552,7 @@ let showcase=null;
 async function mountShowcaseHero(){
   const featured=[...MENU.filter(d=>d.model), ...MENU.filter(d=>!d.model && d.featured && !d.soldOut)].slice(0,8);
   if (!featured.length) { $("#showcase").hidden=true; return; }
-  const { mountShowcase } = await import("./showcase.js?v=3");
+  const { mountShowcase } = await import("./showcase.js?v=4");
   const stage=$("#scStage");
   const inner=mountShowcase($("#showcase"),{
     dishes:featured, stage,

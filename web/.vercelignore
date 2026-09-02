@@ -12,3 +12,4 @@ vendor/three.core.js
 # Generation intermediates (painted side views, 5MB source originals) — the menu references the cutouts only.
 img/*-view-*.png
 img/*.jpg
+legacy/

@@ -71,8 +71,8 @@ export function mountShowcase(host, options) {
       view = mountGeneratedDish3D(s, {
         modelURL: `models/production/${dish.model}`,
         label: dish.cn,
-        idle: false,
-        onFirstTouch: () => { touched = true; clearInterval(timer); el.classList.add("alive"); stage.dataset.justWoke = "1"; onWake?.(dish); },
+        idle: !print && !touched,
+        onFirstTouch: () => { touched = true; clearInterval(timer); if (!el.classList.contains("alive")) { el.classList.add("alive"); stage.dataset.justWoke = "1"; onWake?.(dish); } },
       });
     }
   };
