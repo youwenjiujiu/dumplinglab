@@ -4,7 +4,7 @@ import { chromium, devices } from "playwright";
 import { mkdirSync } from "fs";
 const BASE = process.argv[2] || "http://localhost:8377/?table=12&lang=zh";
 const OUT = process.env.OUT || "selftest-out"; mkdirSync(OUT, { recursive: true });
-const PROFILES = [["iphone", devices["iPhone 13"]], ["desktop", { viewport: { width: 1440, height: 900 } }]];
+const PROFILES = [["iphone", devices["iPhone 13"]], ["desktop", { viewport: { width: 1280, height: 900 } }]];
 let failures = 0;
 for (const [name, options] of PROFILES) {
   const browser = await chromium.launch();
@@ -22,27 +22,27 @@ for (const [name, options] of PROFILES) {
   console.log(`\n=== ${name} ===`);
   await page.goto(`${BASE}&r=${Date.now()}`); await page.waitForTimeout(900);
 
-  await step("01-index", async () => {
+  await step("01-cover-then-shop", async () => {
+    if (await page.locator("#cover").isHidden()) throw new Error("cover not shown first");
+    if (!await page.locator('#brandLogo[src="brand/dumpling-lab-primary.png"]').isVisible()) throw new Error("logo missing");
+    await click("#enterBtn"); await page.waitForTimeout(600);
     const info = await page.evaluate(() => ({ dishes: document.querySelectorAll("#list .dish").length, overflow: document.documentElement.scrollWidth - innerWidth, kinds: document.querySelectorAll("#kinds button").length }));
     if (info.dishes !== 61) throw new Error(`expected 61 dishes, got ${info.dishes}`);
     if (info.overflow > 1) throw new Error(`document overflows ${info.overflow}px`);
-    if (info.kinds !== 12) throw new Error(`kinds list has ${info.kinds} entries`);
-    if (!await page.locator('#brandLogo[src="brand/dumpling-lab-primary.png"]').isVisible()) throw new Error("logo missing");
+    if (info.kinds !== 11) throw new Error(`kinds has ${info.kinds} entries`);
     if (/Dumplings Lab/.test(await page.locator("body").innerText())) throw new Error("obsolete plural brand name is visible");
   });
-  await step("02-kind-and-search", async () => {
-    await click('#kinds button[data-kind="noodles"]'); await page.waitForTimeout(200);
-    if (await visibleDishes() !== 9) throw new Error(`noodles kind shows ${await visibleDishes()} dishes`);
-    await click('#kinds button[data-kind="all"]');
+  await step("02-search-and-diet", async () => {
+    await click("#findBtn"); await page.waitForTimeout(200);
     await page.locator("#search").fill("云吞");
     await page.waitForFunction(() => document.querySelectorAll("#list .dish").length <= 6, null, { timeout: 5000 });
     if (await visibleDishes() < 1) throw new Error("search found nothing");
-    await click("#clearBtn"); await page.waitForTimeout(200);
-    if (await visibleDishes() !== 61) throw new Error("clear did not restore the index");
+    await page.locator("#search").fill(""); await page.waitForFunction(() => document.querySelectorAll("#list .dish").length === 61, null, { timeout: 5000 });
     await click('#diet button[data-d="veg"]'); await page.waitForTimeout(150);
     const bad = await page.evaluate(() => [...document.querySelectorAll("#list .dish")].filter(e => !MENU.find(d => d.id === e.dataset.id)?.veg).length);
-    if (bad) throw new Error(`${bad} non-vegetarian rows under the vegetarian diet`);
+    if (bad) throw new Error(`${bad} non-vegetarian tiles under the vegetarian diet`);
     await click('#diet button[data-d="all"]'); await page.waitForTimeout(150);
+    await click("#findBtn"); await page.waitForTimeout(150);
   });
   await step("03-photo-dish-opens-on-its-photo", async () => {
     await click('.dish[data-id="hk-crab-roe-wonton"]');
@@ -50,9 +50,10 @@ for (const [name, options] of PROFILES) {
     if (!/wonton-soup\.png$/.test(await page.locator("#threeStage").getAttribute("data-image") || "")) throw new Error("stage is not textured with the source photo");
   });
   await step("04-add-and-ticket", async () => {
-    await click("#dAdd"); await page.waitForTimeout(500);
+    await click("#dAdd"); await page.waitForTimeout(600);
     if (await page.locator("#cartCount").textContent() !== "1") throw new Error("ticket count is not 1");
-    await click("#cartBar"); await page.waitForTimeout(500);
+    if (!await page.locator("#rail").isVisible()) throw new Error("order rail hidden");
+    await click("#rail"); await page.waitForTimeout(500);
     if (!/S\$10\.80/.test(await page.locator("#cartTotals").innerText())) throw new Error("total missing");
     await click("#cartClose"); await page.waitForTimeout(500);
   });
@@ -76,7 +77,7 @@ for (const [name, options] of PROFILES) {
     }
   });
   await step("06-order", async () => {
-    await click("#cartBar"); await page.waitForTimeout(400); await click("#placeOrder"); await page.waitForTimeout(600);
+    await click("#rail"); await page.waitForTimeout(400); await click("#placeOrder"); await page.waitForTimeout(600);
     if (await page.locator("#done").isHidden()) throw new Error("done slip not shown");
     await click("#doneBack");
     if (await page.locator("#cartCount").textContent() !== "0") throw new Error("ticket not cleared");
@@ -85,6 +86,7 @@ for (const [name, options] of PROFILES) {
     await click("#langBtn"); await page.waitForTimeout(400);
     if (!/cooked to order/i.test(await page.locator("#heroSub").textContent() || "")) throw new Error("English tagline missing");
     if (await visibleDishes() !== 61) throw new Error("dishes lost on language switch");
+    if (!/Order/.test(await page.evaluate(() => document.querySelector("#enterBtn").textContent))) throw new Error("cover not translated");
   });
   if (errors.length) { failures += errors.length; console.log("  browser errors:"); errors.forEach(e => console.log("   !", e)); } else console.log("  no browser errors");
   await browser.close();
