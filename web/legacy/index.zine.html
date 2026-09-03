@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#F5F1E8">
+<title>Dumpling Lab · 菜单</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@600;900&display=swap">
+<link rel="stylesheet" href="zine.css?v=4">
+</head>
+<body>
+
+<!-- masthead: one thin strip, printed once -->
+<header id="mast">
+  <a class="brand" href="#p0" id="brandLink"><img id="brandLogo" src="brand/dumpling-lab-primary.png" alt="Dumpling Lab"></a>
+  <span class="tag" id="tableTag"></span>
+  <div class="tools">
+    <button id="findBtn" aria-label="搜索"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15.5 15.5 5 5"/></svg></button>
+    <button id="bellBtn" aria-label="服务员"><svg viewBox="0 0 24 24"><path d="M6.5 17h11M8 17v-5a4 4 0 0 1 8 0v5M10 20h4M12 6V4"/></svg></button>
+    <button id="langBtn">EN</button>
+    <button id="cartBar" class="ticket-btn" hidden><span class="seal-glyph" aria-hidden="true"></span><b id="cartCount">0</b></button>
+  </div>
+</header>
+
+<!-- the book: cover + one poster page per chapter, flipped sideways -->
+<main id="book"></main>
+
+<!-- spine: chapter numbers, always in reach -->
+<nav id="spine" aria-label="章节"></nav>
+
+<!-- find: search + dietary filters, over the book -->
+<div id="findScrim" hidden></div>
+<section id="find" hidden>
+  <div class="find-head">
+    <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15.5 15.5 5 5"/></svg>
+    <input id="search" type="search" autocomplete="off" placeholder="搜索菜品…">
+    <button id="findClose" aria-label="关闭">×</button>
+  </div>
+  <div class="filters" id="filters"></div>
+  <div id="findList"></div>
+  <div id="empty" hidden></div>
+</section>
+
+<!-- clipping: one dish, cut out of the page -->
+<div id="sheetScrim" hidden></div>
+<article id="sheet" hidden>
+  <button class="close" id="sheetClose" aria-label="关闭">×</button>
+  <div id="sheetBody"></div>
+</article>
+
+<!-- ticket: the order slip, pulled from the right edge -->
+<div id="cartScrim" hidden></div>
+<aside id="cart" hidden>
+  <button class="close" id="cartClose" aria-label="关闭">×</button>
+  <div class="t-head"><span class="k red">DL//ORDER</span><h2 id="cartTitle"></h2><p class="k" id="cartSub"></p></div>
+  <div id="cartItems"></div>
+  <div id="noteWrap"><label class="k red" id="noteLabel" for="note"></label><textarea id="note" rows="2"></textarea></div>
+  <div id="cartTotals"></div>
+  <button id="placeOrder"><span id="orderLabel"></span><strong id="orderTotal"></strong></button>
+  <button id="callWaiter"><span id="waiterLabel"></span></button>
+</aside>
+
+<div id="waiterScrim" hidden></div>
+<section id="waiterSheet" hidden>
+  <button class="close" id="waiterClose" aria-label="关闭">×</button>
+  <h2 id="waiterTitle"></h2><p class="k" id="waiterSub"></p>
+  <div class="k red" id="waiterK"></div>
+  <div class="reasons" id="reasons"></div>
+  <button id="waiterSend" disabled></button>
+</section>
+
+<div id="done" hidden>
+  <div class="slip">
+    <div class="slip-reg"><span>DUMPLING LAB</span><b>DL//ORDER</b></div>
+    <div class="done-mark"><span class="seal-glyph" aria-hidden="true"></span></div>
+    <h2 id="doneTitle"></h2><p id="doneNote"></p>
+  </div>
+  <button id="doneBack"></button>
+</div>
+
+<div id="toast" hidden></div>
+
+<script src="menu-data.js?v=34"></script>
+<script src="i18n.js?v=35"></script>
+<script src="art.js?v=45"></script>
+<script src="zine.js?v=3"></script>
+</body>
+</html>
