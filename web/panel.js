@@ -43,26 +43,25 @@ const matches = d => (kind === "all" || d.section === kind)
   && (!query || d.name.toLowerCase().includes(query.toLowerCase()) || d.cn.includes(query));
 const sorted = list => order === "price" ? [...list].sort((a, b) => a.price - b.price) : order === "az" ? [...list].sort((a, b) => dName(a).localeCompare(dName(b), lang === "zh" ? "zh" : "en")) : list;
 
-const mark = d => d.soldOut ? `<span class="m">${L().soldOut}</span>` : qtyForDish(d.id)
-  ? `<button class="qty" data-add="${d.id}">${qtyForDish(d.id)}</button>`
-  : `<button class="add" data-add="${d.id}" aria-label="${L().addToSteamer}">+</button>`;
 const rowHTML = d => `<div class="dish${d.soldOut ? " sold" : ""}" data-id="${d.id}" role="button" tabindex="0">
     <span class="no">${numberOf(d)}</span>
-    <span class="cap"><span class="nm">${dName(d)}${d.best ? `<span class="flag">${L().bestSeller}</span>` : d.chef ? `<span class="flag">${L().chefsChoice}</span>` : ""}${d.spice ? `<span class="sp">${"•".repeat(Math.min(d.spice, 3))}</span>` : ""}</span><span class="en">${dOther(d)}${d.pieces ? ` · ${d.pieces} ${L().pieces}` : ""}</span></span>
+    <span class="nm">${dName(d)}${d.spice >= 2 ? `<i class="dot" aria-label="spicy"></i>` : ""}</span>
     <span class="kind">${secName(d.section)}</span>
-    <span class="r"><span class="price">${fmt(d.price)}</span>${mark(d)}</span>
+    <span class="price">${d.soldOut ? L().soldOut : fmt(d.price)}</span>
+    ${qtyForDish(d.id) ? `<span class="inb">×${qtyForDish(d.id)}</span>` : ""}
   </div>`;
 
 function renderIndex() {
   const hits = sorted(MENU.filter(matches));
   const byKind = kind === "all" && order === "menu";
-  let html = `<div class="thead"><span class="m">No.</span><span class="m">${lang === "zh" ? "菜品" : "Dish"}</span><span class="m">${lang === "zh" ? "价格" : "Price"}</span></div>`;
+  let html = "";
   if (byKind) {
     for (const s of chapters) {
       const list = hits.filter(d => d.section === s); if (!list.length) continue;
-      html += `<div class="group"><div class="m"><span>${pad(chapters.indexOf(s) + 1)} — <b>${secName(s)}</b> ${secOther(s)}</span><span>${pad(list.length)}</span></div>${list.map(rowHTML).join("")}</div>`;
+      html += `<div class="group"><div class="t"><span>${pad(chapters.indexOf(s) + 1)} — <b>${secName(s)}</b> ${secOther(s)}</span><span>${pad(list.length)}</span></div>${list.map(rowHTML).join("")}</div>`;
     }
   } else html += hits.map(rowHTML).join("");
+  $("#sortName").classList.toggle("on", order === "az"); $("#sortPrice").classList.toggle("on", order === "price");
   $("#list").innerHTML = html;
   $("#empty").hidden = hits.length > 0; $("#empty").textContent = L().noResults;
   $("#showing").textContent = `${pad(hits.length)} / ${pad(MENU.length)}`;
@@ -73,62 +72,62 @@ function renderIndex() {
 function renderKinds() {
   $("#kinds").innerHTML = `<button data-kind="all" class="${kind === "all" ? "on" : ""}"><span>${lang === "zh" ? "全部" : "All"}</span><b>${pad(MENU.length)}</b></button>` +
     chapters.map(s => `<button data-kind="${s}" class="${kind === s ? "on" : ""}"><span>${secName(s)}</span><b>${pad(MENU.filter(d => d.section === s).length)}</b></button>`).join("");
-  $$("#kinds button").forEach(b => b.onclick = () => { kind = b.dataset.kind; haptic(); renderKinds(); renderIndex(); $("#main").scrollTo({ top: 0, behavior: "smooth" }); });
+  $$("#kinds button").forEach(b => b.onclick = () => { kind = b.dataset.kind; haptic(); renderKinds(); renderIndex(); $("#index").scrollTo({ top: 0, behavior: "smooth" }); });
   $("#diet").innerHTML = [["all", L().fAll], ["veg", L().fVeg], ["spicy", L().fSpicy], ["noPork", L().fNoPork]].map(([m, t]) => `<button data-d="${m}" class="${diet === m ? "on" : ""}">${t}</button>`).join("");
   $$("#diet button").forEach(b => b.onclick = () => { diet = b.dataset.d; haptic(); renderKinds(); renderIndex(); });
   $$("#orderBtns button").forEach(b => { b.classList.toggle("solid", b.dataset.o === order); b.onclick = () => { order = b.dataset.o; haptic(); renderKinds(); renderIndex(); }; });
 }
 function syncMarks() {
-  $$(".dish").forEach(el => { const d = dishById(el.dataset.id); const cur = el.querySelector("[data-add]"); if (!d || !cur) return;
-    const t = document.createElement("template"); t.innerHTML = mark(d); const next = t.content.firstElementChild;
-    if (next.className !== cur.className || next.textContent !== cur.textContent) cur.replaceWith(next); });
+  $$(".dish").forEach(el => { const q = qtyForDish(el.dataset.id); const cur = el.querySelector(".inb");
+    if (q && !cur) el.insertAdjacentHTML("beforeend", `<span class="inb">×${q}</span>`); else if (q && cur) cur.textContent = `×${q}`; else if (!q && cur) cur.remove(); });
+  $("#cartBar2").hidden = $("#cartBar").hidden; $("#cartCount2").textContent = $("#cartCount").textContent;
 }
-$("#list").addEventListener("click", e => {
-  const add = e.target.closest("[data-add]");
-  if (add) { e.stopPropagation(); const d = dishById(add.dataset.add); if (!d) return; if (d.styles) { openDish(d); return; } addToCart(d.id, null, 1); toast(L().added(dName(d))); pulse(); haptic(); return; }
-  const el = e.target.closest(".dish"); if (el) openDish(dishById(el.dataset.id));
-});
+$("#list").addEventListener("click", e => { const el = e.target.closest(".dish"); if (el) openDish(dishById(el.dataset.id)); });
+$("#sortName").addEventListener("click", () => { order = order === "az" ? "menu" : "az"; renderKinds(); renderIndex(); });
+$("#sortPrice").addEventListener("click", () => { order = order === "price" ? "menu" : "price"; renderKinds(); renderIndex(); });
 let searchT;
 $("#search").addEventListener("input", e => { clearTimeout(searchT); searchT = setTimeout(() => { query = e.target.value.trim(); renderIndex(); }, 120); });
 $("#clearBtn").addEventListener("click", () => { query = ""; kind = "all"; diet = "all"; $("#search").value = ""; renderKinds(); renderIndex(); });
 $("#randomBtn").addEventListener("click", () => { const pool = MENU.filter(d => !d.soldOut && matches(d)); openDish(pool[Math.floor(Math.random() * pool.length)]); haptic(); });
 
-/* ---------- viewport ---------- */
-let sheetDish = null, sheetQty = 1, sheetStyle = null, view = null, request = 0;
+/* ---------- dish page ---------- */
+let sheetDish = null, sheetQty = 1, sheetStyle = null, view = null, request = 0, scrollBack = 0;
 function openDish(d) {
-  if (!d) return; sheetDish = d; sheetQty = 1; sheetStyle = d.styles ? d.styles[0] : null; haptic();
-  renderSheet(); $("#sheetScrim").hidden = false; $("#sheet").hidden = false;
-  requestAnimationFrame(() => { $("#sheetScrim").classList.add("open"); $("#sheet").classList.add("open"); $("#sheet").scrollTop = 0; });
+  if (!d || d.soldOut) return; sheetDish = d; sheetQty = 1; sheetStyle = d.styles ? d.styles[0] : null; haptic();
+  scrollBack = $("#index").scrollTop;
+  renderSheet(); $("#index").hidden = true; $("#dish").hidden = false; $("#dish").scrollTop = 0;
+  if (location.hash !== `#${d.id}`) history.pushState({ dish: d.id }, "", `#${d.id}`);
 }
-function closeSheet() { request++; view?.dispose(); view = null; $("#sheetScrim").classList.remove("open"); $("#sheet").classList.remove("open"); setTimeout(() => { $("#sheetScrim").hidden = true; $("#sheet").hidden = true; }, 400); }
+function closeSheet() { request++; view?.dispose(); view = null; $("#dish").hidden = true; $("#index").hidden = false; $("#index").scrollTop = scrollBack; if (location.hash) history.pushState({}, "", location.pathname + location.search); }
+addEventListener("popstate", () => { const id = location.hash.slice(1); const d = id && dishById(id); if (d) { if ($("#dish").hidden) openDish(d); } else if (!$("#dish").hidden) { request++; view?.dispose(); view = null; $("#dish").hidden = true; $("#index").hidden = false; } });
 function renderSheet() {
   view?.dispose(); view = null; const d = sheetDish; const spatial = Boolean(d.model || d.img);
-  const kv = [[lang === "zh" ? "编号" : "No.", `DL//${numberOf(d)}`], [lang === "zh" ? "分类" : "Kind", secName(d.section)], [lang === "zh" ? "价格" : "Price", fmt(d.price)]];
-  if (d.pieces) kv.push([lang === "zh" ? "份量" : "Portion", `${d.pieces} ${L().pieces}`]);
-  if (d.spice) kv.push([L().spice, `${"•".repeat(Math.min(d.spice, 3))} ${L().spiceLevels[d.spice]}`]);
-  if (d.allergens?.length) kv.push([L().allergens, d.allergens.map(allergen).join(" · ")]);
-  $("#sheetBody").innerHTML = `
-    <div class="v-head"><span class="m">DL//${numberOf(d)} — <b>${secName(d.section)}</b></span><span class="m">${d.best ? L().bestSeller : d.chef ? L().chefsChoice : ""}</span></div>
-    <div class="v-grid">
-      <div class="d-pic marks"><i></i>
-        ${spatial ? `<div class="three-stage" id="threeStage"></div>` : ""}
-        <div class="d-art-object">${artFor(d)}</div>
-        ${spatial ? `<span class="drag-hint"><svg viewBox="0 0 20 20"><path d="M3.4 8a6.8 6.8 0 0 1 13.2 0"/><path d="M2.6 10.6 3.4 8l2.6.9M17.4 10.6 16.6 8 14 8.9"/></svg>${d.model ? (lang === "zh" ? "拖动旋转 · 双指缩放" : "Drag to rotate · pinch to zoom") : (lang === "zh" ? "拖动查看 · 实拍" : "Drag to tilt · real photo")}</span>` : ""}
-      </div>
-      <div class="v-meta">
-        <div><div class="d-name">${dName(d)}</div><div class="d-en">${dOther(d)}</div>${dFlavor(d) ? `<p class="d-flavor">${dFlavor(d)}</p>` : ""}</div>
-        <div class="kv">${kv.map(([k, v]) => `<span class="m">${k}</span><span class="m">${v}</span>`).join("")}</div>
-        ${d.styles ? `<div><div class="m">${L().pickStyle}</div><div class="styles">${d.styles.map(s => `<button class="style-opt${s === sheetStyle ? " on" : ""}" data-s="${s}">${styleLabel(s)}</button>`).join("")}</div></div>` : ""}
-        <div class="d-bar"><div class="stepper"><button id="qm">−</button><b id="qn">${sheetQty}</b><button id="qp">+</button></div><button class="d-add" id="dAdd"><span>${L().addToSteamer}</span><strong>${fmt(d.price * sheetQty)}</strong></button></div>
-      </div>
+  $("#dishCrumb").textContent = dName(d);
+  $("#dishKv").innerHTML = `<span class="t">${lang === "zh" ? "编号" : "Index"}</span><span class="t">${numberOf(d)} / ${pad(MENU.length)}</span><span class="t">${lang === "zh" ? "分类" : "Kind"}</span><span class="t">${secName(d.section)}</span>`;
+  $("#dishCtl").innerHTML = `<div class="pill"><span>${lang === "zh" ? "份数" : "Qty"}</span><span class="q"><button id="qm" aria-label="-">−</button><b id="qn">${sheetQty}</b><button id="qp" aria-label="+">+</button></span><button class="go" id="dAdd"><span>${L().addToSteamer}</span> · <strong id="dTotal">${fmt(d.price * sheetQty)}</strong></button></div>`;
+  $("#sheetBody").innerHTML = `<div class="d-pic"><div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      ${spatial ? `<div class="three-stage" id="threeStage"></div>` : ""}
+      <div class="d-art-object">${artFor(d)}</div>
+      ${spatial ? `<span class="drag-hint t">${d.model ? (lang === "zh" ? "拖动旋转 · 双指缩放" : "Drag to rotate · pinch to zoom") : (lang === "zh" ? "拖动查看 · 实拍" : "Drag to tilt · real photo")}</span>` : ""}
     </div>`;
+  const badge = d.best ? L().bestSeller : d.chef ? L().chefsChoice : "";
+  $("#dishSections").innerHTML = `
+    <div class="sec"><h4>${lang === "zh" ? "菜品" : "Dish"}<span>${badge}</span></h4><div class="body"><div class="d-name">${dName(d)}</div><div class="d-en t">${dOther(d)}</div>${dFlavor(d) ? `<p class="d-flavor">${dFlavor(d)}</p>` : ""}</div></div>
+    ${d.styles ? `<div class="sec"><h4>${L().pickStyle}</h4><div class="body opts">${d.styles.map(s => `<button class="style-opt${s === sheetStyle ? " on" : ""}" data-s="${s}">${styleLabel(s)}</button>`).join("")}</div></div>` : ""}`;
+  const kv = [[lang === "zh" ? "价格" : "Price", fmt(d.price)]];
+  if (d.pieces) kv.push([lang === "zh" ? "份量" : "Portion", `${d.pieces} ${L().pieces}`]);
+  kv.push([L().spice, d.spice ? `${"●".repeat(Math.min(d.spice, 3))} ${L().spiceLevels[d.spice]}` : L().spiceLevels[0]]);
+  if (d.allergens?.length) kv.push([L().allergens, d.allergens.map(allergen).join(" · ")]);
+  kv.push([lang === "zh" ? "呈现" : "View", d.model ? "3D" : d.img ? (lang === "zh" ? "实拍" : "Photo") : (lang === "zh" ? "线稿" : "Drawing")]);
+  $("#dishOut").innerHTML = kv.map(([k, v]) => `<span class="t">${k}</span><span class="t">${v}</span>`).join("");
+  $("#dishHints").textContent = lang === "zh" ? "ESC — 返回 · ← → — 上一道 / 下一道" : "ESC — BACK · ← → — PREV / NEXT";
   $("#qm").onclick = () => { if (sheetQty > 1) { sheetQty--; syncSheet(); haptic(); } };
   $("#qp").onclick = () => { sheetQty++; syncSheet(); haptic(); };
   $$(".style-opt").forEach(b => b.onclick = () => { sheetStyle = b.dataset.s; renderSheet(); haptic(); });
-  $("#dAdd").onclick = () => { addToCart(d.id, sheetStyle, sheetQty); toast(L().added(dName(d) + (sheetStyle ? ` · ${styleLabel(sheetStyle)}` : ""))); closeSheet(); pulse(); };
+  $("#dAdd").onclick = () => { addToCart(d.id, sheetStyle, sheetQty); toast(L().added(dName(d) + (sheetStyle ? ` · ${styleLabel(sheetStyle)}` : ""))); pulse(); sheetQty = 1; syncSheet(); };
   mountStage();
 }
-function syncSheet() { $("#qn").textContent = sheetQty; $("#dAdd strong").textContent = fmt(sheetDish.price * sheetQty); }
+function syncSheet() { $("#qn").textContent = sheetQty; $("#dTotal").textContent = fmt(sheetDish.price * sheetQty); }
 async function mountStage() {
   const d = sheetDish, stage = $("#threeStage"); if (!stage) return;
   const req = ++request, pic = stage.closest(".d-pic");
@@ -150,7 +149,9 @@ async function mountStage() {
     else if (imageURL) { const { mountPhotoDepth3D } = await import("./photo3d.js?v=9"); if (req !== request) return; view = mountPhotoDepth3D(stage, { ...opts, imageURL, profile: d.art }); }
   } catch { stage.remove(); }
 }
-$("#sheetScrim").addEventListener("click", closeSheet); $("#sheetClose").addEventListener("click", closeSheet);
+$("#sheetClose").addEventListener("click", closeSheet); $("#brandBack").addEventListener("click", e => { e.preventDefault(); closeSheet(); });
+$("#cartBar2").addEventListener("click", () => { haptic(); openTicket(); });
+function stepDish(dir) { if ($("#dish").hidden) return; const list = MENU.filter(d => !d.soldOut); const i = list.indexOf(sheetDish); openDish(list[(i + dir + list.length) % list.length]); }
 
 /* ---------- objet: one dish turning quietly in the margin ---------- */
 let objet = null;
@@ -208,8 +209,9 @@ function renderStatic() {
   $("#tableTop").textContent = TABLE ? (lang === "zh" ? `${TABLE}号桌` : `TABLE ${TABLE}`) : "";
   $("#dishesNow").textContent = pad(MENU.filter(d => !d.soldOut).length); $("#kindsNow").textContent = pad(chapters.length);
   $("#heroSub").textContent = L().tagline;
-  $("#langBtn").textContent = lang === "zh" ? "EN" : "中文"; $("#search").placeholder = L().search;
-  $("#filterLab").textContent = lang === "zh" ? "筛选" : "Filter"; $("#clearBtn").textContent = lang === "zh" ? "清除" : "Clear"; $("#randomBtn").textContent = lang === "zh" ? "随便来一道" : "Random";
+  $("#langBtn").textContent = lang === "zh" ? "EN" : "中文";
+  $("#filterLab").textContent = lang === "zh" ? "筛选" : "Filter"; $("#search").placeholder = lang === "zh" ? "全部菜品" : "All dishes"; $("#clearBtn").textContent = lang === "zh" ? "清除" : "Clear"; $("#randomBtn").textContent = lang === "zh" ? "随机" : "Random";
+  $("#hints").textContent = lang === "zh" ? "输入 — 筛选 · ENTER — 打开第一道 · ESC — 清除" : "TYPE — FILTER · ENTER — OPEN FIRST · ESC — CLEAR";
   $$("[data-t]").forEach(el => { const [zh, en] = el.dataset.t.split("|"); el.textContent = lang === "zh" ? zh : en; });
   $("#cartTitle").textContent = L().steamer; $("#noteLabel").textContent = L().noteLabel; $("#note").placeholder = L().notePlaceholder; $("#orderLabel").textContent = L().order; $("#waiterLabel").textContent = L().waiter;
   $("#doneTitle").textContent = L().ordered; $("#doneBack").textContent = L().back;
@@ -217,7 +219,14 @@ function renderStatic() {
 }
 let toastT; function toast(msg) { const el = $("#toast"); el.textContent = msg; el.hidden = false; requestAnimationFrame(() => el.classList.add("show")); clearTimeout(toastT); toastT = setTimeout(() => { el.classList.remove("show"); setTimeout(() => el.hidden = true, 300); }, 1800); }
 $("#langBtn").addEventListener("click", () => { lang = lang === "zh" ? "en" : "zh"; localStorage.setItem("dl-lang", lang); haptic(); renderAll(); });
-addEventListener("keydown", e => { if (e.key === "Escape") { closeSheet(); closeTicket(); closeWaiter(); } if ((e.key === "Enter" || e.key === " ") && e.target.classList?.contains("dish")) { e.preventDefault(); e.target.click(); } if (e.key === "/" && document.activeElement !== $("#search")) { e.preventDefault(); $("#search").focus(); } });
+addEventListener("keydown", e => {
+  if (e.key === "Escape") { if (!$("#cart").hidden) closeTicket(); else if (!$("#waiterSheet").hidden) closeWaiter(); else if (!$("#dish").hidden) closeSheet(); else { query = ""; $("#search").value = ""; renderIndex(); } return; }
+  if (e.target === $("#search")) { if (e.key === "Enter") { const first = $("#list .dish"); if (first) first.click(); } return; }
+  if ((e.key === "Enter" || e.key === " ") && e.target.classList?.contains("dish")) { e.preventDefault(); e.target.click(); return; }
+  if (e.key === "ArrowRight") stepDish(1); if (e.key === "ArrowLeft") stepDish(-1);
+  if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && $("#dish").hidden && document.activeElement !== $("#search") && !e.target.closest("textarea")) { $("#search").focus(); }
+});
+$("#brandHome").addEventListener("click", e => { e.preventDefault(); $("#index").scrollTo({ top: 0, behavior: "smooth" }); });
 function placeKinds() {
   const wide = matchMedia("(min-width:1000px)").matches;
   const kinds = $("#kinds"), diet = $("#diet");
@@ -225,5 +234,6 @@ function placeKinds() {
   else { $("#kindsMobile").append(kinds, diet); }
 }
 addEventListener("resize", placeKinds);
-function renderAll() { renderStatic(); renderKinds(); renderIndex(); syncTicket(); syncMarks(); placeKinds(); }
+function renderAll() { renderStatic(); renderKinds(); renderIndex(); syncTicket(); syncMarks(); placeKinds(); if (!$("#dish").hidden && sheetDish) renderSheet(); }
 renderAll(); setTimeout(mountObjet, 400);
+{ const d = dishById(location.hash.slice(1)); if (d) openDish(d); }

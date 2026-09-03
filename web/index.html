@@ -3,88 +3,105 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#F1F0EB">
+<meta name="theme-color" content="#EFEEE9">
 <title>Dumpling Lab · 菜单</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500&family=Noto+Serif+SC:wght@900&display=swap">
-<link rel="stylesheet" href="panel.css?v=3">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@900&display=swap">
+<link rel="stylesheet" href="panel.css?v=14">
 </head>
 <body>
-<div id="app">
-  <header id="top">
-    <a class="brand" href="#" onclick="return false"><img id="brandLogo" src="brand/dumpling-lab-primary.png" alt="Dumpling Lab"><span class="m">— <span data-t="菜单|Menu">菜单</span></span></a>
-    <div class="right">
-      <span class="m" id="tableTop"></span>
-      <button id="bellBtn" aria-label="服务员"><svg viewBox="0 0 24 24"><path d="M6.5 17h11M8 17v-5a4 4 0 0 1 8 0v5M10 20h4M12 6V4"/></svg></button>
-      <button id="langBtn">EN</button>
-      <button id="cartBar" class="ticket-btn" hidden><span class="seal-glyph" aria-hidden="true"></span><b id="cartCount">0</b></button>
-    </div>
-  </header>
+<div class="corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
-  <div id="body">
-    <aside id="side">
-      <div class="kv">
-        <span class="m" data-t="桌号|Table">桌号</span><span class="m" id="tableNow">—</span>
-        <span class="m" data-t="菜品|Dishes">菜品</span><span class="m" id="dishesNow">00</span>
-        <span class="m" data-t="分类|Kinds">分类</span><span class="m" id="kindsNow">00</span>
-        <span class="m" data-t="币种|Currency">币种</span><span class="m">SGD</span>
+<!-- INDEX -->
+<section class="view" id="index">
+  <header class="head">
+    <a class="brand" href="#" id="brandHome"><img id="brandLogo" src="brand/dumpling-lab-primary.png" alt="Dumpling Lab"><span class="t">— <span data-t="菜单|Index">菜单</span></span></a>
+    <div class="tools"><span class="t" id="tableTop"></span><button id="bellBtn" aria-label="服务员"><svg viewBox="0 0 24 24"><path d="M6.5 17h11M8 17v-5a4 4 0 0 1 8 0v5M10 20h4M12 6V4"/></svg></button><button id="langBtn">EN</button><button id="cartBar" class="ticket-btn" hidden><span class="seal-glyph" aria-hidden="true"></span><b id="cartCount">0</b></button></div>
+  </header>
+  <div class="grid">
+    <aside class="col">
+      <div class="kv stats">
+        <span class="t" data-t="桌号|Table">桌号</span><span class="t" id="tableNow">—</span>
+        <span class="t" data-t="菜品|Dishes">菜品</span><span class="t" id="dishesNow">00</span>
+        <span class="t" data-t="分类|Kinds">分类</span><span class="t" id="kindsNow">00</span>
+        <span class="t" data-t="币种|Currency">币种</span><span class="t">SGD</span>
       </div>
       <div><h4 data-t="分类|Kind">分类</h4><div id="kindsSlot"><div id="kinds"></div></div></div>
       <div><h4 data-t="饮食|Diet">饮食</h4><div id="dietSlot"><div class="diet" id="diet"></div></div></div>
       <div class="objet" id="objet"></div>
-      <p class="m" id="heroSub" style="line-height:1.8;text-transform:none;letter-spacing:.04em;"></p>
     </aside>
-
-    <main id="main">
-      <div class="filter"><span class="lab" id="filterLab">筛选</span><input id="search" type="search" autocomplete="off" placeholder="搜索菜品…"><button id="clearBtn">清除</button><button class="random" id="randomBtn">随便来一道</button></div>
+    <main>
+      <div class="filter"><span class="lab" id="filterLab">筛选</span><input id="search" type="search" autocomplete="off" placeholder="全部菜品"><button id="clearBtn">清除</button><button class="random" id="randomBtn">随机</button></div>
       <div id="kindsMobile"></div>
-      <div id="list"></div>
-      <div id="empty" hidden></div>
+      <div class="table"><div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="thead"><span class="t">No.</span><button class="t" id="sortName"><span data-t="菜品|Dish">菜品</span><svg viewBox="0 0 10 10"><path d="m2 4 3 3 3-3"/></svg></button><button class="t" id="sortPrice"><span data-t="价格|Price">价格</span><svg viewBox="0 0 10 10"><path d="m2 4 3 3 3-3"/></svg></button></div>
+        <div id="list"></div>
+        <div id="empty" hidden></div>
+      </div>
+      <p class="t hints" id="hints"></p>
     </main>
-
-    <aside id="aside">
+    <aside class="col">
       <div><h4 data-t="索引|Index">索引</h4><div class="kv">
-        <span class="m" data-t="显示|Showing">显示</span><span class="m" id="showing">00 / 00</span>
-        <span class="m" data-t="分类|Kind">分类</span><span class="m" id="kindNow">—</span>
-        <span class="m" data-t="排序|Order">排序</span><span class="m" id="orderNow">—</span>
-        <span class="m" data-t="匹配|Match">匹配</span><span class="m" id="matchNow">—</span>
+        <span class="t" data-t="显示|Showing">显示</span><span class="t" id="showing">00 / 00</span>
+        <span class="t" data-t="分类|Kind">分类</span><span class="t" id="kindNow">—</span>
+        <span class="t" data-t="排序|Order">排序</span><span class="t" id="orderNow">—</span>
+        <span class="t" data-t="匹配|Match">匹配</span><span class="t" id="matchNow">—</span>
       </div></div>
       <div><h4 data-t="排序|Order">排序</h4><div class="order" id="orderBtns"><button class="pill" data-o="menu" data-t="菜单序|Menu">菜单序</button><button class="pill" data-o="price" data-t="价格|Price">价格</button><button class="pill" data-o="az">A–Z</button></div></div>
       <div><h4 data-t="票据|Ticket">票据</h4><div class="kv">
-        <span class="m" data-t="已选|Items">已选</span><span class="m" id="tItems">00</span>
-        <span class="m" data-t="合计|Total">合计</span><span class="m" id="tTotal">S$0</span>
-      </div><button class="pill solid" id="ticketBtn" style="margin-top:14px" data-t="查看票据|View ticket">查看票据</button></div>
-      <p class="m" style="margin-top:auto;line-height:1.8;text-transform:none;letter-spacing:.04em;" data-t="现点现做。菜单上的每道菜都可以旋转查看。|Cooked to order. Every dish on this menu can be turned in your hands.">现点现做。菜单上的每道菜都可以旋转查看。</p>
+        <span class="t" data-t="已选|Items">已选</span><span class="t" id="tItems">00</span>
+        <span class="t" data-t="合计|Total">合计</span><span class="t" id="tTotal">S$0</span>
+      </div><button class="pill solid" id="ticketBtn" style="margin-top:16px" data-t="查看票据|View ticket">查看票据</button></div>
+      <p class="t" id="heroSub" style="margin-top:auto;line-height:1.9;text-transform:none;letter-spacing:.08em;"></p>
     </aside>
   </div>
-</div>
+</section>
 
-<div id="sheetScrim" hidden></div>
-<article id="sheet" hidden><button class="close" id="sheetClose" aria-label="关闭">×</button><div id="sheetBody"></div></article>
+<!-- DISH -->
+<section class="view" id="dish" hidden>
+  <header class="head">
+    <a class="brand" href="#" id="brandBack"><img src="brand/dumpling-lab-primary.png" alt="Dumpling Lab"><span class="t">— <span id="dishCrumb"></span></span></a>
+    <div class="tools"><button id="cartBar2" class="ticket-btn" hidden><span class="seal-glyph" aria-hidden="true"></span><b id="cartCount2">0</b></button></div>
+  </header>
+  <div class="grid">
+    <aside class="col">
+      <div class="kv" id="dishKv"></div>
+      <button class="pill back" id="sheetClose">← <span data-t="全部菜品|All dishes">全部菜品</span></button>
+    </aside>
+    <main>
+      <div class="ctl" id="dishCtl"></div>
+      <div class="work"><div class="dial" aria-hidden="true"></div><div id="sheetBody"></div></div>
+    </main>
+    <aside class="col">
+      <h4 class="t ink" style="letter-spacing:.28em;font-size:11px;border-bottom:1px solid var(--ink);padding-bottom:10px" data-t="规格|Output">规格</h4>
+      <div class="kv output" id="dishOut"></div>
+      <div class="sections" id="dishSections"></div>
+    </aside>
+  </div>
+  <div class="foot"><span class="t" id="dishHints"></span><span class="t" data-t="版本 V3|Version V3">版本 V3</span></div>
+</section>
 
 <div id="cartScrim" hidden></div>
 <aside id="cart" hidden>
   <button class="close" id="cartClose" aria-label="关闭">×</button>
-  <div class="t-head"><span class="m">DL//ORDER</span><h2 id="cartTitle"></h2><p class="m" id="cartSub" style="margin-top:6px"></p></div>
+  <div class="t-head"><span class="t">DL//ORDER</span><h2 id="cartTitle"></h2><p class="t" id="cartSub" style="margin-top:8px"></p></div>
   <div id="cartItems"></div>
-  <div id="noteWrap"><label class="m" id="noteLabel" for="note"></label><textarea id="note" rows="2"></textarea></div>
+  <div id="noteWrap"><label class="t" id="noteLabel" for="note"></label><textarea id="note" rows="2"></textarea></div>
   <div id="cartTotals"></div>
   <button id="placeOrder"><span id="orderLabel"></span><strong id="orderTotal"></strong></button>
   <button id="callWaiter"><span id="waiterLabel"></span></button>
 </aside>
-
 <div id="waiterScrim" hidden></div>
 <section id="waiterSheet" hidden>
   <button class="close" id="waiterClose" aria-label="关闭">×</button>
-  <h2 id="waiterTitle"></h2><p class="m" id="waiterSub" style="margin-top:6px"></p>
-  <div class="m" id="waiterK" style="margin-top:18px"></div>
+  <h2 id="waiterTitle"></h2><p class="t" id="waiterSub" style="margin-top:8px"></p>
+  <div class="t" id="waiterK" style="margin-top:20px"></div>
   <div class="reasons" id="reasons"></div>
   <button id="waiterSend" disabled></button>
 </section>
-
 <div id="done" hidden>
-  <div class="slip"><div class="slip-reg"><span class="m">Dumpling Lab</span><span class="m">DL//ORDER</span></div><div class="done-mark"><span class="seal-glyph" aria-hidden="true"></span></div><h2 id="doneTitle"></h2><p id="doneNote"></p></div>
+  <div class="slip"><div class="slip-reg"><span class="t">Dumpling Lab</span><span class="t">DL//ORDER</span></div><div class="done-mark"><span class="seal-glyph" aria-hidden="true"></span></div><h2 id="doneTitle"></h2><p class="t" id="doneNote" style="text-transform:none;letter-spacing:.08em"></p></div>
   <button id="doneBack" class="pill"></button>
 </div>
 <div id="toast" hidden></div>
@@ -92,6 +109,6 @@
 <script src="menu-data.js?v=34"></script>
 <script src="i18n.js?v=35"></script>
 <script src="art.js?v=45"></script>
-<script src="panel.js?v=2"></script>
+<script src="panel.js?v=11"></script>
 </body>
 </html>
