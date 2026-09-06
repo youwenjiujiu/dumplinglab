@@ -106,6 +106,34 @@ class TableCart extends EventTarget {
       .slice(0, 16);
     this.writeStorage("atelier-nickname", JSON.stringify(this.nickname));
   }
+  bindTable(value) {
+    if (this.table) throw new Error("已经选择桌号，请扫描新桌二维码切换。");
+    const table = String(value || "").trim().toUpperCase();
+    if (!/^[A-Z0-9-]{1,12}$/.test(table)) throw new Error("请填写桌牌上的桌号，例如 A1。");
+    const key = `atelier:${table}:${this.group}`;
+    let cached;
+    try { cached = JSON.parse(localStorage.getItem(key) || "{}"); }
+    catch { throw new Error("无法读取本桌选菜，请重试或扫描桌上二维码。"); }
+    if (cached.order) throw new Error("本桌有一笔订单待确认，请扫描桌上二维码查看；当前选菜已保留。");
+    const saved = Array.isArray(cached.pending) ? cached.pending : [];
+    const pending = [...saved.filter(op => op.kind !== "delta" || isLunchItem(op.dishId, op.style)),
+      ...this.pending.map(op => ({ ...op, table, group: this.group }))];
+    const state = {
+      remote: cached.remote || { items: [], orders: [], opIds: [] },
+      pending: [...new Map(pending.map(op => [op.opId, op])).values()],
+      retiredPending: [...(cached.retiredPending || []), ...saved.filter(op => op.kind === "delta" && !isLunchItem(op.dishId, op.style)), ...this.retiredPending],
+      order: null,
+      noteConflict: cached.noteConflict || null,
+      lastOrderRequestId: cached.lastOrderRequestId || null,
+    };
+    // Persist the same operation IDs before clearing the browsing draft. Retrying
+    // a interrupted handoff cannot add the same portions twice on the server.
+    if (!this.writeStorage(key, JSON.stringify(state)))
+      throw new Error("无法保存桌号，选菜仍在当前页面。请允许网站存储后重试。");
+    this.writeStorage(this.key, JSON.stringify({ pending: [], remote: { items: [], orders: [], opIds: [] } }));
+    Object.assign(this, state, { table, key, status: "connecting" });
+    this.generation++;
+  }
   peopleFor(id, style) {
     const people = [
       ...(this.remote.contributors?.[`${id}|${style || ""}`] || []),

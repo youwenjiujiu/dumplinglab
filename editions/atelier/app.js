@@ -3,7 +3,7 @@ const $ = (s) => document.querySelector(s),
   $$ = (s) => [...document.querySelectorAll(s)];
 const q = new URLSearchParams(location.search);
 const production = document.documentElement.dataset.environment === "production";
-const table = /^[a-z0-9-]{1,12}$/i.test(q.get("table") || "")
+let table = /^[a-z0-9-]{1,12}$/i.test(q.get("table") || "")
   ? q.get("table").toUpperCase()
   : null;
 const group = /^[a-z0-9-]{1,16}$/i.test(q.get("group") || "")
@@ -129,7 +129,7 @@ const total = (items) =>
   Math.round(items.reduce((s, i) => s + (i.price ?? itemPrice(dish(i.id), i.style) ?? 0) * i.qty, 0) * 100) / 100;
 const statusCopy = () =>
   !table
-    ? tr("浏览菜单 · 扫桌码后下单", "Browse menu · scan a table to order")
+    ? tr("已保留选菜 · 下单前确认桌号", "Picks saved · choose your table before ordering")
     : {
         synced: tr("同桌已同步", "Table synced"),
         syncing: store.storageAvailable
@@ -495,10 +495,6 @@ function renderTray() {
     }<div class="ticket-summary"><span>${tr("菜品小计", "Subtotal")}</span><strong>${money(total(items))}</strong></div><button class="primary" data-action="cart">${tr("查看本桌点单", "View our table")} ↗</button><p class="ticket-foot">${statusCopy()}</p>`;
 }
 function add(d, style = null, amount = 1) {
-  if (!table) {
-    showTable();
-    return false;
-  }
   if (d.soldOut) return false;
   if (qty(d.id) + amount > 20) {
     toast(tr("单道菜最多选择 20 份", "Up to 20 portions per dish"));
@@ -522,7 +518,7 @@ function add(d, style = null, amount = 1) {
       ) || $("#trayPictures");
     globalThis.TableMotion?.fly(photo(d), origin, target);
   });
-  toast(tr(`${name(d)} · 已加入本桌`, `${name(d)} · added to your table`));
+  toast(tr(`${name(d)} · 已加入${table ? "本桌" : "购物车"}`, `${name(d)} · added to ${table ? "your table" : "cart"}`));
   return true;
 }
 function openDish(d, selectedStyle = null) {
@@ -684,6 +680,14 @@ function renderCart() {
 }
 async function prepareReview() {
   if (submitting) return;
+  if (!table) {
+    clearTimeout(noteTimer);
+    const note = $("#cartNote");
+    if (note && note.value !== store.note) store.mutate({ kind: "note", note: note.value });
+    noteDraft = null;
+    showTable(true);
+    return;
+  }
   submitting = true;
   try {
     clearTimeout(noteTimer);
@@ -750,14 +754,45 @@ async function submit() {
     SharedTable.updateReview();
   }
 }
-function showTable() {
+function showTable(forReview = false) {
   openModal("table", "DUMPLING LAB / TOGETHER");
+  if (!table) {
+    $("#sheetBody").innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${tr("确认桌号", "Choose your table")}</h2><p class="sheet-intro">${tr("填写桌牌上的桌号，或扫描桌上的点餐二维码。", "Enter the number on your table, or scan its ordering QR code.")}</p><form id="tableEntryForm" class="nickname-form" data-review="${forReview}"><label for="tableEntry">${tr("桌号", "Table number")}</label><input id="tableEntry" name="table" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="${tr("例如 A1", "e.g. A1")}" aria-describedby="tableEntryError"><p id="tableEntryError" role="alert"></p><button class="primary" type="submit">${tr(forReview ? "确认桌号，继续核对订单" : "确认桌号", forReview ? "Continue to order review" : "Confirm table")}</button></form><p class="fineprint">${tr("选好的菜会保留。无需填写姓名。", "Your picks are kept. No name required.")}</p></div>`;
+    $("#tableEntry").focus({ preventScroll: true });
+    return;
+  }
   const url = new URL(location.href);
   url.hash = "menu";
   $("#sheetBody").innerHTML =
     `<div class="sheet-content"><h2 id="sheetTitle">${tr("同桌与拼桌", "Table & groups")}</h2><p class="sheet-intro">${table ? `${tr("桌号", "Table")} ${table} · ${tr("点餐组", "Group")} ${group}` : tr("请扫描桌上的二维码，获取你的桌号。", "Scan your table’s QR code to get started.")}</p><div class="drawer-note">${tr("同一链接的客人共享选菜和已下单记录。陌生人拼桌时，创建独立组；新组不会带走原组菜品。", "Guests using the same link share a cart and order history. Sharing a table with strangers? Create a separate group; the current group keeps its dishes.")}</div>${table ? `<div class="table-options"><button class="primary" data-action="share">${tr("邀请同桌一起点", "Invite your companions")} ↗</button><button class="secondary" data-action="separate">${tr("我们是拼桌，独立点餐", "Start a separate group")}</button></div><div class="group-link">${escapeHTML(url.href)}</div>` : ""}<p class="fineprint">${statusCopy()}</p>${store.status === "rejected" ? `<p class="drawer-note">${escapeHTML(store.lastError)}</p><button class="secondary" data-action="discard-rejected">${tr("撤回未同步操作，重新选菜", "Discard unsynced edits and retry")}</button>` : ""}</div>`;
-  $("#sheetBody").insertAdjacentHTML("beforeend", SharedTable.nameForm());
 }
+document.addEventListener("submit", async (event) => {
+  if (event.target.id !== "tableEntryForm") return;
+  event.preventDefault();
+  const form = event.target, input = $("#tableEntry"), error = $("#tableEntryError");
+  const value = input.value.trim().toUpperCase();
+  if (!/^[A-Z0-9-]{1,12}$/.test(value)) {
+    error.textContent = tr("请填写桌牌上的桌号，例如 A1。", "Enter your table number, e.g. A1.");
+    input.setAttribute("aria-invalid", "true");
+    input.focus();
+    return;
+  }
+  try {
+    store.bindTable(value);
+    table = store.table;
+    const url = new URL(location.href);
+    url.searchParams.set("table", table);
+    history.replaceState(history.state, "", url.href);
+    renderChrome();
+    store.emit();
+    showCart();
+    if (form.dataset.review === "true") await prepareReview();
+    else { await store.flush(); await store.poll(); }
+  } catch (e) {
+    if (error.isConnected) error.textContent = e.message;
+    else toast(e.message);
+  }
+});
 function buildSuggestions() {
   const eligible = MENU.filter(
     (d) =>
@@ -990,10 +1025,6 @@ document.addEventListener("click", async (e) => {
       else $("#searchButton").focus({ preventScroll: true });
       break;
     case "add-plan": {
-      if (!table) {
-        showTable();
-        break;
-      }
       if (store.order) {
         toast(
           tr("请先确认上一笔订单", "Please confirm your previous order first"),

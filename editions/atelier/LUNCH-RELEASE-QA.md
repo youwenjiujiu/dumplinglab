@@ -39,3 +39,19 @@ Published successfully: deployment dumplinglab-menu-71zxdprjp-youwenjiujius-proj
     node editions/atelier/assets-test.mjs
     node editions/atelier/lunch-build-test.mjs <fresh-release-directory>
     node editions/atelier/release-check.mjs <acceptance-only-deployment> <private-env-file>
+
+## Root URL ordering hotfix
+
+The original acceptance missed a critical entry path: the bare public URL has no table query. `add()` opened table help containing the optional nickname form; saving a name could never satisfy the missing table. Earlier passing checks used explicit QA table URLs and did not cover this case.
+
+The fix keeps no-table additions as a durable local draft, removes the name form from table selection, and requests an explicit table number before order review. It never assigns an arbitrary customer table or submits an order on table selection. Existing QR links remain supported. Table handoff preserves operation IDs, variations, notes, the selected group and existing table contents. A pending unconfirmed order blocks handoff without deleting the browsing draft.
+
+Additional checks passed locally:
+
+- `lunch-ui-test.mjs --browse`: bare URL, no name, complete add → table → review → submit/recovery flow.
+- `lunch-ui-test.mjs --browse --named`: same flow with a previously saved name.
+- `lunch-ui-test.mjs`: existing QR/table entry remains functional.
+- `table-entry-test.mjs`: invalid table, storage failure, existing table merge, pending order guard, reload and interrupted/repeated handoff.
+- Catalogue/variant, production-state, shared-cart, optional-name, ten-diner and asset suites re-run.
+
+These are DOM/API/unit checks, not real-browser or real-phone acceptance. The supported browser connection was retried and reported no available browser. Runtime server/authentication code is unchanged by this hotfix.

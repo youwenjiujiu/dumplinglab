@@ -7,8 +7,10 @@ import vm from "node:vm";
 const { parseHTML } = createRequire(import.meta.url)("linkedom");
 const origin = "http://127.0.0.1:7898",
   table = ("QD" + crypto.randomUUID().slice(0, 8)).toUpperCase();
+const browse = process.argv.includes("--browse"), named = process.argv.includes("--named");
+const source = process.env.UI_SOURCE_URL || origin;
 const { window, document } = parseHTML(
-  await readFile(new URL("./index.html", import.meta.url), "utf8"),
+  process.env.UI_SOURCE_URL ? await (await fetch(source)).text() : await readFile(new URL("./index.html", import.meta.url), "utf8"),
 );
 const timers = new Set(),
   frames = [],
@@ -22,6 +24,7 @@ const later = (fn, ms = 0) => {
   return id;
 };
 const storage = new Map();
+if (named) storage.set("atelier-nickname", JSON.stringify("已填名字"));
 const network = { loseOrderResponse: false };
 const globalListeners = new Map();
 const historyEntries = [{ external: "preserved" }];
@@ -108,9 +111,9 @@ const context = vm.createContext({
     setItem: (k, v) => storage.set(k, v),
   },
   location: {
-    search: `?table=${table}`,
-    hash: "#cart",
-    href: `${origin}/?table=${table}#cart`,
+    search: browse ? "" : `?table=${table}`,
+    hash: browse ? "" : "#cart",
+    href: browse ? `${origin}/` : `${origin}/?table=${table}#cart`,
     assign() {},
   },
   navigator: {},
@@ -164,14 +167,14 @@ const until = async (fn) => {
 };
 try {
   for (const script of document.querySelectorAll("script[src]")) {
-    const path = script.getAttribute("src"), response = await fetch(origin + path);
+    const path = script.getAttribute("src"), response = await fetch(new URL(path, source));
     assert.equal(response.status,200,path);
     vm.runInContext(await response.text(),context,{filename:path});
   }
   const store = run("store");
-  await until(()=>store.status==="synced");
+  if (!browse) await until(()=>store.status==="synced");
   assert.equal(run("MENU.length"),32);
-  click("#closeSheet");
+  if (!browse) click("#closeSheet");
   await until(()=>!browserHistory.state?.atelierSheet);
   assert.equal(document.querySelector("#section-dumplings .dish-grid").children.length,0,"No filling before choosing preparation");
   assert.equal(document.querySelectorAll("[data-lunch-prep]").length,4);
@@ -205,6 +208,39 @@ try {
   assert.equal(store.items[0].qty,2);
   assert.equal(run("total(store.items)"),24.6);
   await until(()=>!browserHistory.state?.atelierSheet);
+  if (browse) {
+    assert.equal(run("modal"),null,"Adding without a table must not open a name or table form");
+    assert.equal(store.table,null);
+    assert.equal(store.nickname,named ? "已填名字" : "");
+    assert.equal(run("new TableCart(null, group).items[0].qty"),2,"Browsing draft survives a reload");
+    const draftIds = store.pending.map(op=>op.opId);
+    click("#tray");
+    document.querySelector("#cartNote").value = "保留做法和备注";
+    click('[data-action="review"]');
+    assert.equal(run("modal"),"table");
+    assert.equal(document.querySelector("#nickname"),null,"Table entry cannot be confused with a name form");
+    const form = document.querySelector("#tableEntryForm");
+    for (const invalid of ["", "<A1>", "A 1"]) {
+      document.querySelector("#tableEntry").value = invalid;
+      form.dispatchEvent(new window.Event("submit",{bubbles:true,cancelable:true}));
+      assert.equal(store.table,null);
+      assert(document.querySelector("#tableEntryError").textContent.length);
+      assert.equal(store.items[0].qty,2);
+    }
+    document.querySelector("#tableEntry").value = ` ${table.toLowerCase()} `;
+    form.dispatchEvent(new window.Event("submit",{bubbles:true,cancelable:true}));
+    await until(()=>run("modal")==="review");
+    assert.equal(store.table,table);
+    assert.equal(store.items[0].qty,2,"Table handoff adds each portion exactly once");
+    assert.equal(store.note,"保留做法和备注");
+    assert(draftIds.every(id=>store.remote.opIds.includes(id)),"Handoff preserves operation IDs");
+    assert.equal(run("new TableCart(null, group).items.length"),0,"Transferred browsing draft cleared");
+    assert.equal(run(`new TableCart('${table}', group).items[0].qty`),2,"Confirmed table survives reload");
+    assert.equal(store.orders.length,0,"Selecting a table never submits an order");
+    assert(document.querySelector(".receipt-lines").textContent.includes("加芝麻酱"));
+    click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
+    console.log(`ROOT ENTRY PASS — ${named ? "saved name" : "no name"}, add without table, persisted draft, validation, handoff, note and no premature order.`);
+  }
   click('[data-lunch-prep="boiled"]');
   click('[data-dish="lunch-pork-chive"]');
   assert.equal(run("detail.variants[detailStyle].pieces"),5);
