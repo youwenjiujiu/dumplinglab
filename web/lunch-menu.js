@@ -6,10 +6,10 @@
   globalThis.MENU_SERVICE = "lunch";
   globalThis.MENU_VERSION = "lunch-2026-09-06";
   const preparations = [
-    { id: "soup", cn: "高汤", en: "Broth", extra: 0, img: "wonton-soup.png" },
-    { id: "tossed", cn: "干拌", en: "Tossed", extra: 0, img: "lunch-pork-wonton-generated-v1.png" },
-    { id: "boiled", cn: "水煮", en: "Boiled", extra: 0, img: "lunch-pork-celery-generated-v1.png" },
-    { id: "fried", cn: "煎", en: "Pan-fried", extra: 1, img: "beijing-pork-guotie-placeholder.png" },
+    { id: "soup", cn: "高汤", en: "Broth", extra: 0, img: "preparation-soup-reference-v2.jpg" },
+    { id: "tossed", cn: "干拌", en: "Tossed", extra: 0, img: "preparation-tossed-reference-v2.jpg" },
+    { id: "boiled", cn: "水煮", en: "Boiled", extra: 0, img: "preparation-boiled-reference-v1.jpg" },
+    { id: "fried", cn: "煎", en: "Pan-fried", extra: 1, img: "preparation-fried-reference-v1.jpg" },
   ];
   globalThis.LUNCH_PREPARATIONS = preparations;
   const imageFor = id => previous.find(d => d.id === id)?.img || null;
