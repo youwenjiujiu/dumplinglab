@@ -4,8 +4,9 @@
   const previous = globalThis.MENU || [];
   globalThis.LEGACY_MENU = [...(globalThis.LEGACY_MENU || previous), ...(globalThis.RETIRED_LUNCH_MENU || [])];
   globalThis.MENU_SERVICE = "lunch";
-  globalThis.MENU_VERSION = "lunch-2026-09-06-v2";
-  globalThis.LUNCH_PENDING = Object.freeze({ addNoodles: true, tossedOptions: true, boiledWontons: true });
+  globalThis.MENU_VERSION = "lunch-2026-09-06-v3";
+  globalThis.LUNCH_PENDING = Object.freeze({ addNoodles: false, tossedOptions: false, boiledWontons: false });
+  globalThis.LUNCH_NOODLE_EXTRA = 3;
   const preparations = [
     { id: "soup", cn: "高汤", en: "Broth", extra: 0, img: "preparation-soup-generated-v3.png" },
     { id: "tossed", cn: "干拌", en: "Tossed", extra: 0, img: "preparation-tossed-generated-v3.png" },
@@ -20,9 +21,23 @@
       portionPrices: { 5: five, 9: nine }, preparations: kind === "dumpling" ? ["tossed", "fried", "boiled"] : ["soup", "tossed"],
       kind, img, meat, flavor: "", allergens: [], variants: {}, styles: [] };
     for (const prep of preparations.filter(p => d.preparations.includes(p.id))) for (const pieces of [5, 9]) {
-      const key = `${prep.cn} · ${pieces}颗`;
-      d.styles.push(key);
-      d.variants[key] = { prep: prep.id, pieces, price: d.portionPrices[pieces], en: `${prep.en} · ${pieces} pieces` };
+      const base = `${prep.cn} · ${pieces}颗`;
+      for (const spicy of prep.id === "tossed" ? [false,true] : [false])
+        for (const sesame of prep.id === "tossed" ? [false,true] : [false])
+          for (const noodles of ["soup","tossed"].includes(prep.id) ? [false,true] : [false]) {
+            const cn = [base], en = [prep.en, `${pieces} pieces`];
+            if (prep.id === "tossed") { cn.push(spicy ? "辣" : "不辣", sesame ? "加芝麻酱" : "不加芝麻酱"); en.push(spicy ? "Spicy" : "Not spicy", sesame ? "Sesame sauce" : "No sesame sauce"); }
+            if (noodles) { cn.push("加面"); en.push("Add noodles"); }
+            const key=cn.join(" · ");
+            d.styles.push(key);
+            d.variants[key] = { prep: prep.id, pieces, spicy, sesame, noodles, price: Math.round((d.portionPrices[pieces] + (noodles ? LUNCH_NOODLE_EXTRA : 0))*100)/100, en: en.join(" · ") };
+          }
+      // Existing v2 plain-tossed carts/receipts keep their exact key and price.
+      // New selections always use the explicit spice/sesame form above.
+      if (prep.id === "tossed") {
+        d.styles.push(base);
+        d.variants[base] = { prep: prep.id, pieces, spicy:false, sesame:false, noodles:false, legacy:true, price:d.portionPrices[pieces], en:`${prep.en} · ${pieces} pieces` };
+      }
     }
     return d;
   };
@@ -71,7 +86,7 @@
     { id: "chicken-fried", cn: "鸡肉包菜煎饺", name: "Chicken & Cabbage Potstickers", dishId: "lunch-v2-chicken-cabbage", prep: "fried", img: "preparation-fried-generated-v3.png" },
     { id: "red-oil-chaoshou", cn: "红油抄手", name: "Chao Shou in Chilli Oil", pending: "Independent product, portion and price unconfirmed", img: imageFor("sichuan-red-oil-chaoshou") },
     { id: "pork-soup", cn: "清汤鲜肉云吞", name: "Pork Wontons in Clear Broth", dishId: "lunch-v2-pork-wonton", prep: "soup", img: imageFor("hk-crab-roe-wonton") },
-    { id: "roe-wonton-noodles", cn: "鲜虾蟹籽云吞面", name: "Prawn & Crab Roe Wonton Noodles", pending: "Noodle option and price unconfirmed", img: imageFor("wonton-soup-noodles") },
+    { id: "roe-wonton-noodles", cn: "鲜虾蟹籽云吞面", name: "Prawn & Crab Roe Wonton Noodles", dishId: "lunch-v2-prawn-roe-wonton", prep: "soup", noodles: true, img: imageFor("wonton-soup-noodles") },
     { id: "boiled-dumplings", cn: "白灼饺子", name: "Boiled Dumplings", chooseFilling: true, prep: "boiled", img: boiledPhoto },
   ];
   globalThis.SECTIONS = ["recommended", "dumplings", "noodles", "sides", "drinks"];

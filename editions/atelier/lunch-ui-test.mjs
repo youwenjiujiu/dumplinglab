@@ -186,7 +186,7 @@ try {
 
   assert.deepEqual(Array.from(document.querySelectorAll(".menu-section")).map(s=>s.dataset.section), ["recommended","dumplings","noodles","sides","drinks"]);
   assert.equal(document.querySelectorAll("#section-recommended .dish-card").length,6);
-  for (const id of ["red-oil-chaoshou","roe-wonton-noodles"]) {
+  for (const id of ["red-oil-chaoshou"]) {
     assert(document.querySelector(`[data-recommendation="${id}"]`).disabled);
   }
   for (const id of ["chive-fried","chicken-fried","pork-soup"]) {
@@ -206,6 +206,15 @@ try {
   assert.equal(document.querySelector(".detail-price").textContent,"S$5.80");
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   assert.equal(store.items.length,0,"Browsing recommendation choices never adds without confirmation");
+  assert(!document.querySelector('[data-recommendation="roe-wonton-noodles"]').disabled);
+  assert(document.querySelector('[data-recommendation="roe-wonton-noodles"] .dish-price').textContent.includes('S$10.20'));
+  click('[data-recommendation="roe-wonton-noodles"]');
+  assert.equal(run('detail.variants[detailStyle].noodles'),true);
+  assert.equal(document.querySelector('.detail-price').textContent,'S$10.20');
+  click('[data-lunch-option="pieces"][data-value="9"]');
+  assert.equal(document.querySelector('.detail-price').textContent,'S$14.50');
+  assert.equal(document.querySelector('[data-lunch-option="noodles"]'),null,'Named noodle recommendation always includes noodles');
+  click('#closeSheet'); await until(()=>!browserHistory.state?.atelierSheet);
   console.log("RECOMMENDATIONS PASS — section order, pending products blocked, direct presets, white-boiled filling chooser and portions.");
 
   assert.equal(document.querySelector("#section-dumplings .dish-grid").children.length,0,"No filling before choosing preparation");
@@ -241,23 +250,31 @@ try {
     for (const id of restricted) assert.equal(Boolean(document.querySelector(`#section-dumplings [data-dish="${id}"]`)), ['soup','tossed'].includes(prep));
   }
   assert(document.querySelector('[data-dish="lunch-v2-pork-chive-shrimp"] .dish-price').textContent.includes("S$6.80"));
-  choosePreparation("tossed");
+  choosePreparation("tossed",{spicy:true,sesame:true,noodles:true});
+  assert(document.querySelector('.lunch-chosen-flavor strong').textContent.includes('加面 +S$3'));
+  assert(document.querySelector('[data-dish="lunch-v2-pork-chive-shrimp"] .dish-price').textContent.includes('S$9.80'));
   click('[data-dish="lunch-v2-pork-chive-shrimp"]');
   assert.equal(run("detail.variants[detailStyle].prep"),"tossed");
+  assert(run('detail.variants[detailStyle].spicy && detail.variants[detailStyle].sesame && detail.variants[detailStyle].noodles'));
   click('[data-lunch-option="pieces"][data-value="9"]');
-  assert.equal(document.querySelector(".detail-price").textContent,"S$10.80");
+  assert.equal(document.querySelector(".detail-price").textContent,"S$13.80");
   click('[data-detail-delta="1"]');
-  assert.equal(document.querySelector('[data-action="add-detail"] strong').textContent,"S$21.60");
+  assert.equal(document.querySelector('[data-action="add-detail"] strong').textContent,"S$27.60");
   click('[data-lunch-option="prep"][data-value="fried"]');
   assert(document.querySelector('.detail-image img').getAttribute('src').includes('preparation-fried-generated-v3'));
   assert.equal(document.querySelector('[data-lunch-option="noodles"]'),null);
   assert.equal(document.querySelector('[data-lunch-option="spicy"]'),null);
   assert.equal(document.querySelector(".detail-price").textContent,"S$10.80");
+  assert(run('!detail.variants[detailStyle].spicy && !detail.variants[detailStyle].sesame && !detail.variants[detailStyle].noodles'));
   click('[data-lunch-option="prep"][data-value="tossed"]');
+  click('[data-lunch-option="spicy"][data-value="true"]');
+  click('[data-lunch-option="sesame"][data-value="true"]');
+  click('[data-lunch-option="noodles"][data-value="true"]');
+  assert.equal(document.querySelector('.detail-price').textContent,'S$13.80');
   click('[data-action="add-detail"]');
   await store.flush();
   assert.equal(store.items[0].qty,2);
-  assert.equal(run("total(store.items)"),21.6);
+  assert.equal(run("total(store.items)"),27.6);
   await until(()=>!browserHistory.state?.atelierSheet);
   if (browse) {
     assert.equal(run("modal"),null,"Adding without a table must not open a name or table form");
@@ -298,7 +315,7 @@ try {
   click('[data-action="add-detail"]'); await store.flush();
   await until(()=>!browserHistory.state?.atelierSheet);
   assert.equal(store.items.length,2,"Distinct preparations/portions do not merge");
-  assert.equal(run("total(store.items)"),28.4);
+  assert.equal(run("total(store.items)"),34.4);
   choosePreparation("soup");
   click('[data-dish="lunch-v2-prawn-roe-wonton"]');
   assert.equal(document.querySelectorAll('[data-lunch-option="prep"]').length,2);
@@ -315,11 +332,13 @@ try {
   click("[data-table-layout]"); click("[data-table-layout]");
   assert.equal(document.querySelector(".cart-photo img"),photo,"Same image retained between layouts");
   assert.equal(document.querySelectorAll(".shared-dish").length,2);
-  assert.equal(document.querySelector(".cart-unit-price").textContent,"S$10.80/ 份");
+  assert.equal(document.querySelector(".cart-unit-price").textContent,"S$13.80/ 份");
+  assert(document.querySelector('.cart-dish-copy small').textContent.includes('加芝麻酱'));
+  assert(document.querySelector('.cart-dish-copy small').textContent.includes('加面'));
   const minus = document.querySelector('[data-cart-delta="-1"]');
   click(minus); await store.flush();
   assert.equal(store.items[0].qty,1);
-  assert.equal(run("total(store.items)"),17.6);
+  assert.equal(run("total(store.items)"),20.6);
   assert(document.querySelector(".cart-dish-copy small").textContent.includes("9颗"));
   console.log("ROUND 5 PASS — tray click targets, paired cart variants, full kitchen options, quantities, totals and gallery/list continuity.");
 
@@ -329,7 +348,7 @@ try {
   choosePreparation("tossed");
   click('[data-dish="lunch-v2-chicken-cabbage"]');
   assert.equal(document.querySelector("#sheetTitle").textContent,"Chicken & Cabbage Dumplings");
-  assert.equal(document.querySelector('[data-lunch-option="noodles"]'),null);
+  assert.equal(document.querySelector('[data-lunch-option="noodles"][data-value="true"]').textContent,'Add noodles +S$3');
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   click("#languageButton");
   assert.equal(run("MENU.filter(d=>!dishNameParts.has(d.cn)).length"),0,"Reviewed Chinese word boundaries for all 34 names");
@@ -354,8 +373,9 @@ try {
   await store.poll();
   assert.equal(store.order,null,"Accepted order recovered by its request id after lost response");
   assert.equal(store.orders.length,1);
-  assert.equal(store.orders[0].total,17.6);
-  assert.equal(store.orders[0].items[0].price,10.8);
+  assert.equal(store.orders[0].total,20.6);
+  assert.equal(store.orders[0].items[0].price,13.8);
+  assert(store.orders[0].items[0].style.includes('辣 · 加芝麻酱 · 加面'));
   assert.equal(store.items.length,0);
   assert(document.querySelector(".receipt-lines").textContent.includes("9颗"));
   console.log("ROUND 8 PASS — bilingual controls, Chinese words, accessible buttons, reduced motion, receipt option persistence and lost-response recovery.");

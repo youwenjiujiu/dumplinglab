@@ -681,7 +681,7 @@ function showPaper() {
     `<div class="sheet-content paper-menu"><h2 id="sheetTitle">${tr("今日菜单", "The menu")}</h2><p class="sheet-intro">${table || "—"} · ${tr("手工现做", "Made to order")}</p>${categories
       .map(
         (c, i) =>
-          `<div class="paper-heading"><small>${String(i + 1).padStart(2, "0")}</small><h3>${categoryName(c)}</h3><em>${categoryOther(c)}</em></div>${c === "recommended" ? LUNCH_RECOMMENDATIONS.map(r=>`<button class="paper-row" data-recommendation="${r.id}" ${r.pending ? "disabled" : ""}><span>${name(r)}<small>${otherName(r)}</small></span><i></i><b>${r.pending ? tr("暂未开放", "Coming later") : r.chooseFilling ? tr("选馅儿 ↗", "Choose filling ↗") : money(dish(r.dishId).price) + tr(" 起", " from")}</b></button>`).join("") : MENU.filter(
+          `<div class="paper-heading"><small>${String(i + 1).padStart(2, "0")}</small><h3>${categoryName(c)}</h3><em>${categoryOther(c)}</em></div>${c === "recommended" ? LUNCH_RECOMMENDATIONS.map(r=>`<button class="paper-row" data-recommendation="${r.id}" ${r.pending ? "disabled" : ""}><span>${name(r)}<small>${otherName(r)}</small></span><i></i><b>${r.pending ? tr("暂未开放", "Coming later") : r.chooseFilling ? tr("选馅儿 ↗", "Choose filling ↗") : money(LunchMenu.recommendationPrice(r)) + tr(" 起", " from")}</b></button>`).join("") : MENU.filter(
             (d) => d.section === c,
           )
             .map(

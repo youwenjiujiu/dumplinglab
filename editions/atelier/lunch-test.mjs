@@ -29,12 +29,21 @@ for (const p of LUNCH_PREPARATIONS) {
 let checked=0;
 for (const d of fillings) for (const [style,v] of Object.entries(d.variants)) {
   assert(d.preparations.includes(v.prep)); assert([5,9].includes(v.pieces));
-  assert.equal(v.price,d.portionPrices[v.pieces]);
-  assert(!("noodles" in v) && !("sesame" in v) && !("spicy" in v),"Unconfirmed extras not guessed");
+  assert.equal(v.price,Math.round((d.portionPrices[v.pieces]+(v.noodles?3:0))*100)/100);
+  assert.equal(typeof v.noodles,"boolean");
+  if (v.prep!=="tossed") assert(!v.spicy && !v.sesame);
+  if (!["soup","tossed"].includes(v.prep)) assert(!v.noodles);
   assert.equal(d.styles.filter(s=>s===style).length,1); checked++;
 }
-assert.equal(checked,42);
-console.log("PASS 2: all 42 variants, five/nine pieces, correct filling restrictions and zero frying surcharge.");
+assert.equal(checked,176);
+assert.equal(fillings.flatMap(d=>Object.values(d.variants)).filter(v=>!v.legacy).length,160);
+assert.equal(LUNCH_NOODLE_EXTRA,3);
+assert(Object.values(LUNCH_PENDING).every(v=>v===false));
+for(const d of fillings) for(const p of d.preparations) for(const pieces of [5,9]) {
+  const prep=LUNCH_PREPARATIONS.find(v=>v.id===p);
+  assert.equal(d.variants[`${prep.cn} · ${pieces}颗`].price,d.portionPrices[pieces],"Saved v2 base keys/prices survive");
+}
+console.log("PASS 2: 160 explicit variants + 16 compatible v2 keys; exact +S$3 noodles; boiled excludes wontons; frying remains free.");
 
 const envelope=()=>({requestId:randomUUID(),table:"QLUNCH",group:"A",no:"6001"});
 for (const d of MENU) for (const [style,v] of d.variants?Object.entries(d.variants):[[null,{price:d.price}]]) for (const qty of [1,2,20]) {
@@ -48,7 +57,7 @@ for (const style of [null,"水煮","高汤 · 5颗","煎 · 10颗","干拌 · 5�
 for (const d of fillings.filter(d=>d.kind==="wonton")) for (const style of ["水煮 · 5颗","煎 · 9颗"]) {
   assert.throws(()=>cleanOrder({...envelope(),items:[{id:d.id,style,qty:1}]}));
 }
-console.log("PASS 3: authoritative checkout prices for all 68 configurations × 3 quantities; invalid options rejected.");
+console.log("PASS 3: authoritative checkout prices for all 202 configurations × 3 quantities; invalid options rejected.");
 
 assert.deepEqual(LUNCH_RECOMMENDATIONS.map(r=>r.cn),["韭菜虾仁猪肉煎饺","鸡肉包菜煎饺","红油抄手","清汤鲜肉云吞","鲜虾蟹籽云吞面","白灼饺子"]);
 for (const r of LUNCH_RECOMMENDATIONS) {
