@@ -55,3 +55,5 @@ Additional checks passed locally:
 - Catalogue/variant, production-state, shared-cart, optional-name, ten-diner and asset suites re-run.
 
 These are DOM/API/unit checks, not real-browser or real-phone acceptance. The supported browser connection was retried and reported no available browser. Runtime server/authentication code is unchanged by this hotfix.
+
+Published hotfix: source `5f488d0`, deployment `dumplinglab-menu-fxmd6yfsx-youwenjiujius-projects.vercel.app` (`dpl_AnG5aMTDRXtzeGXhE8dxdmzG23yd`). Isolated production cart checks passed on QA057357C0, then the test cart was emptied; no orders or calls were created. Promoted to the existing public alias successfully. Public app/cart source bytes match the validated build; preview notice absent and staff feed returns 401. The named root-entry DOM regression was also rerun using HTML/JS fetched from the actual public URL, with order API calls routed only to the local test server.
