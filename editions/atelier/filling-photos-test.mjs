@@ -38,6 +38,6 @@ for (const d of fillings) {
   }
 }
 assert.equal(files.size, 15);
-assert.equal(ctx.MENU.length, 34);
-assert.equal(ctx.MENU_VERSION, "lunch-2026-09-06-v3");
+assert.equal(ctx.MENU.length, 35);
+assert.equal(ctx.MENU_VERSION, "lunch-2026-09-06-v4");
 console.log("PASS: five fillings × three preparations, 15 distinct source images and 30 real-alpha WebPs; every variant resolves correctly; prices/catalogue unchanged.");

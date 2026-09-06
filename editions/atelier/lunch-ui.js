@@ -6,7 +6,7 @@ const LunchMenu = (() => {
   const prep = id => LUNCH_PREPARATIONS.find(p => p.id === id);
   const options = (d, style) => d.variants?.[style];
   const firstStyle = d => styleFor(d, preparation, 5, flavor) || d.styles?.[0] || null;
-  const readyFor = d => step === "filling" && d.preparations.includes(preparation);
+  const readyFor = d => Boolean(d.fixedPreparation) || step === "filling" && d.preparations.includes(preparation);
   const visible = d => d.section !== "dumplings" || readyFor(d);
   const styleFor = (d, id, pieces = 5, extras = {}) => d.styles?.find(key => {
     const v=d.variants[key];
@@ -27,6 +27,7 @@ const LunchMenu = (() => {
   function controls(d) {
     if (!d.variants) return "";
     const value = options(d, detailStyle);
+    if (d.fixedPreparation) return `<div id="lunchOptions">${group(tr("选份量", "Portion"), "pieces", Object.keys(d.portionPrices).map(Number).map(n => ({value:n,label:`${n} ${tr("颗","pieces")} · ${money(d.portionPrices[n])}`})), value.pieces)}</div>`;
     return `<div id="lunchOptions">${detailPreset ? `<p class="detail-portion">${tr("做法", "Preparation")} · ${tr(prep(value.prep).cn, prep(value.prep).en)}</p>` : group(tr("做法", "Preparation"), "prep", LUNCH_PREPARATIONS.filter(p => d.preparations.includes(p.id)).map(p => ({ value: p.id, label: tr(p.cn, p.en) })), value.prep)}${group(tr("选份量", "Portion"), "pieces", Object.keys(d.portionPrices).map(Number).map(n => ({ value: n, label: `${n} ${tr("颗", "pieces")} · ${money(d.portionPrices[n] + (value.noodles ? LUNCH_NOODLE_EXTRA : 0))}` })), value.pieces)}${extrasControls(value,"lunch-option",Boolean(detailPreset?.noodles))}</div>`;
   }
   function recommendationSection() {
@@ -43,7 +44,7 @@ return `<section class="menu-section" id="section-recommended" data-section="rec
       const r = LUNCH_RECOMMENDATIONS.find(r=>r.id===button.dataset.recommendation);
       if (!r || r.pending) return true;
       if (r.chooseFilling) openBoiledFillings();
-      else { const d = dish(r.dishId); openDish(d, styleFor(d, r.prep, 5, {noodles:r.noodles}), r.noodles ? {prep:r.prep,noodles:true} : r.prep); }
+      else { const d = dish(r.dishId); openDish(d, d.fixedPreparation ? d.styles[0] : styleFor(d, r.prep, 5, {noodles:r.noodles}), r.noodles ? {prep:r.prep,noodles:true} : r.prep); }
       return true;
     }
     if (button.dataset.boiledFilling) {
@@ -82,9 +83,10 @@ return `<section class="menu-section" id="section-recommended" data-section="rec
     }
     const field = button.dataset.lunchOption;
     if (!field || !detail?.variants) return false;
+    if (detail.fixedPreparation && field !== "pieces") return true;
     if (!["pieces","prep","spicy","sesame","noodles"].includes(field) || (detailPreset && field==="prep") || (detailPreset?.noodles && field==="noodles")) return true;
     const v = { ...options(detail, detailStyle), [field]: field === "pieces" ? Number(button.dataset.value) : field === "prep" ? button.dataset.value : button.dataset.value==="true" };
-    if (v.prep!=="tossed") { v.spicy=false; v.sesame=false; }
+    if (v.prep!=="tossed" && !detail.fixedPreparation) { v.spicy=false; v.sesame=false; }
     if (!["soup","tossed"].includes(v.prep)) v.noodles=false;
     const key = styleFor(detail, v.prep, v.pieces, v);
     if (!key) return true;

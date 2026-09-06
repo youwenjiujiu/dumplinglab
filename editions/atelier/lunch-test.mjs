@@ -11,16 +11,17 @@ const expected = [
   ["卤肉饭",5.8],["卤豆腐",5.2],["卤五花肉",6.2],["鱼丸汤",4.8],["秘制猪排",6.2],["秘制鸡翅",6.2],
   ["凉拌蔬菜丝",4.8],["酱油菜心",6.8],["口水鸡",6.8],["蚝油生菜",6.8],["皮蛋豆腐",4.8],["溏心卤蛋",1.9],["腌萝卜",1.5],["黄瓜",4.5],
   ["薏米水",3.5],["柠檬茶",4.2],["酸梅汁",4.2],["软饮",3],["水",1],["桂花乌龙茶",3],
+  ["红油抄手",5.8],
 ];
 assert.deepEqual(MENU.map(d => [d.cn,d.price]), expected);
 assert.deepEqual(SECTIONS, ["recommended","dumplings","noodles","sides","drinks"]);
 assert.equal(MENU_SERVICE, "lunch");
-assert.equal(new Set(MENU.map(d=>d.id)).size,34);
+assert.equal(new Set(MENU.map(d=>d.id)).size,35);
 assert.deepEqual(MENU.filter(d=>d.portion).map(d=>[d.cn,d.portion]), [["秘制猪排","1块"],["秘制鸡翅","3个"]]);
 assert.deepEqual(MENU.filter(d=>d.best).map(d=>d.cn), ["肉末辣椒拌面","销魂皮蛋面"]);
-console.log("PASS 1: 34 exact names/prices, five sections, two noodle recommendations, declared portions.");
+console.log("PASS 1: 35 exact names/prices, five sections, two noodle recommendations, declared portions.");
 
-const fillings = MENU.filter(d=>d.variants);
+const fillings = MENU.filter(d=>d.section==="dumplings");
 assert.deepEqual(fillings.map(d=>d.portionPrices[9]), [10.8,9.2,10.8,9.2,9.2,11.5,9.2,9.2]);
 for (const p of LUNCH_PREPARATIONS) {
   assert.equal(p.extra,0,"No surcharge, including fried");
@@ -57,7 +58,7 @@ for (const style of [null,"水煮","高汤 · 5颗","煎 · 10颗","干拌 · 5�
 for (const d of fillings.filter(d=>d.kind==="wonton")) for (const style of ["水煮 · 5颗","煎 · 9颗"]) {
   assert.throws(()=>cleanOrder({...envelope(),items:[{id:d.id,style,qty:1}]}));
 }
-console.log("PASS 3: authoritative checkout prices for all 202 configurations × 3 quantities; invalid options rejected.");
+console.log("PASS 3: authoritative checkout prices for all 204 configurations × 3 quantities; invalid options rejected.");
 
 assert.deepEqual(LUNCH_RECOMMENDATIONS.map(r=>r.cn),["韭菜虾仁猪肉煎饺","鸡肉包菜煎饺","红油抄手","清汤鲜肉云吞","鲜虾蟹籽云吞面","白灼饺子"]);
 for (const r of LUNCH_RECOMMENDATIONS) {
@@ -66,9 +67,19 @@ for (const r of LUNCH_RECOMMENDATIONS) {
   else assert(r.pending || r.chooseFilling);
 }
 const chaoshou=LUNCH_RECOMMENDATIONS.find(r=>r.id==="red-oil-chaoshou");
-assert(chaoshou.pending && !chaoshou.dishId && !("price" in chaoshou));
-assert(!MENU.some(d=>/抄手|西红柿鸡蛋|菜肉云吞/.test(d.cn)));
-console.log("PASS 4: independent chaoshou held without invented price; recommendations map only to confirmed products.");
+assert(!chaoshou.pending && chaoshou.dishId === "lunch-v4-red-oil-chaoshou");
+const product=MENU.find(d=>d.id===chaoshou.dishId);
+assert.equal(product.kind,"chaoshou");
+assert.equal(product.section,"recommended");
+assert.deepEqual(product.styles,["红油 · 5颗","红油 · 9颗"]);
+assert.deepEqual(product.portionPrices,{5:5.8,9:9.2});
+for (const style of [null,"高汤 · 5颗","干拌 · 5颗","水煮 · 5颗","红油 · 10颗"]) assert.throws(()=>cleanOrder({...envelope(),items:[{id:product.id,style,qty:1}]}));
+const pair=cleanOrder({...envelope(),items:[{id:product.id,style:product.styles[0],qty:1},{id:"lunch-v2-pork-wonton",style:"高汤 · 5颗",qty:1}]});
+assert.equal(pair.total,11.6);
+assert.notEqual(pair.items[0].id,pair.items[1].id);
+assert.equal(pair.items[0].name,"红油抄手");
+assert(!MENU.some(d=>/西红柿鸡蛋|菜肉云吞/.test(d.cn)));
+console.log("PASS 4: independent chaoshou enabled at S$5.80/9.20, fixed red-oil portions, no wonton alias, invalid methods rejected.");
 
 for (const old of RETIRED_LUNCH_MENU) {
   assert(!isLunchItem(old.id,old.styles?.[0]));

@@ -4,7 +4,7 @@
   const previous = globalThis.MENU || [];
   globalThis.LEGACY_MENU = [...(globalThis.LEGACY_MENU || previous), ...(globalThis.RETIRED_LUNCH_MENU || [])];
   globalThis.MENU_SERVICE = "lunch";
-  globalThis.MENU_VERSION = "lunch-2026-09-06-v3";
+  globalThis.MENU_VERSION = "lunch-2026-09-06-v4";
   globalThis.LUNCH_PENDING = Object.freeze({ addNoodles: false, tossedOptions: false, boiledWontons: false });
   globalThis.LUNCH_NOODLE_EXTRA = 3;
   const preparations = [
@@ -80,6 +80,20 @@
     simple("water", "水", "Water", "drinks", 1, generated("water")),
     simple("osmanthus-oolong", "桂花乌龙茶", "Osmanthus Oolong Tea", "drinks", 3, "lunch-v2-osmanthus-oolong-generated-v1.png"),
   ];
+  // A separate fixed-recipe product, not an alias for a wonton filling.
+  const chaoshou = {
+    id: "lunch-v4-red-oil-chaoshou", cn: "红油抄手", name: "Chao Shou in Chilli Oil",
+    section: "recommended", kind: "chaoshou", price: 5.8, portionPrices: { 5: 5.8, 9: 9.2 },
+    preparations: ["red-oil"], fixedPreparation: { id: "red-oil", cn: "红油", en: "Chilli oil" },
+    img: imageFor("sichuan-red-oil-chaoshou"), flavor: "", allergens: [], variants: {}, styles: [],
+  };
+  for (const pieces of [5, 9]) {
+    const style = `红油 · ${pieces}颗`;
+    chaoshou.styles.push(style);
+    chaoshou.variants[style] = { prep: "red-oil", pieces, spicy: true, sesame: false, noodles: false,
+      price: chaoshou.portionPrices[pieces], en: `Chilli oil · ${pieces} pieces` };
+  }
+  MENU.push(chaoshou);
   // Each filling has its own cutaway for each supported preparation.
   const friedPhotos = {
     "lunch-v2-pork-chive-shrimp": "potstickers-pork-shrimp-chive-cutaway-v1.png",
@@ -96,7 +110,7 @@
   globalThis.LUNCH_RECOMMENDATIONS = [
     { id: "chive-fried", cn: "韭菜虾仁猪肉煎饺", name: "Pork, Shrimp & Chive Potstickers", dishId: "lunch-v2-pork-chive-shrimp", prep: "fried", img: friedPhotos["lunch-v2-pork-chive-shrimp"] },
     { id: "chicken-fried", cn: "鸡肉包菜煎饺", name: "Chicken & Cabbage Potstickers", dishId: "lunch-v2-chicken-cabbage", prep: "fried", img: friedPhotos["lunch-v2-chicken-cabbage"] },
-    { id: "red-oil-chaoshou", cn: "红油抄手", name: "Chao Shou in Chilli Oil", pending: "Independent product, portion and price unconfirmed", img: imageFor("sichuan-red-oil-chaoshou") },
+    { id: "red-oil-chaoshou", cn: chaoshou.cn, name: chaoshou.name, dishId: chaoshou.id, prep: "red-oil", img: chaoshou.img },
     { id: "pork-soup", cn: "清汤鲜肉云吞", name: "Pork Wontons in Clear Broth", dishId: "lunch-v2-pork-wonton", prep: "soup", img: imageFor("hk-crab-roe-wonton") },
     { id: "roe-wonton-noodles", cn: "鲜虾蟹籽云吞面", name: "Prawn & Crab Roe Wonton Noodles", dishId: "lunch-v2-prawn-roe-wonton", prep: "soup", noodles: true, img: imageFor("wonton-soup-noodles") },
     { id: "boiled-dumplings", cn: "白灼饺子", name: "Boiled Dumplings", chooseFilling: true, prep: "boiled", img: boiledPhoto },

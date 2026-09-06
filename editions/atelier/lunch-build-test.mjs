@@ -14,7 +14,7 @@ assert(scripts.indexOf("/lunch-menu.js") > scripts.indexOf("/menu-data.js"));
 assert(scripts.indexOf("/lunch-menu.js") < scripts.indexOf("/cart-store.js"));
 const ctx = vm.createContext({});
 for (const file of ["menu-data.js","i18n.js","lunch-archive.js","lunch-menu.js"]) vm.runInContext(await readFile(resolve(release,file),"utf8"),ctx);
-assert.equal(ctx.MENU.length,34);
+assert.equal(ctx.MENU.length,35);
 assert.equal(vm.runInContext("I18N.sections.dumplings",ctx),"自选口味");
 for (const path of scripts) execFileSync(process.execPath,["--check",resolve(release,"."+path)]);
 for (const path of [...html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^"]*)?"/g)].map(m=>m[1])) {
@@ -33,4 +33,4 @@ const api = await readFile(resolve(release,"server/order-core.js"),"utf8");
 assert.match(api,/import "\.\.\/lunch-menu.js"/);
 const config = JSON.parse(await readFile(resolve(release,"vercel.json"),"utf8"));
 assert(config.headers[0].headers.some(h=>h.key==="Cache-Control"&&h.value==="no-store"));
-console.log("ROUND 9 PASS — exact production package, 34-item client/server agreement, assets, syntax, cache refresh, preview banner removal. Layout checks are structural, not browser screenshots.");
+console.log("ROUND 9 PASS — exact production package, 35-item client/server agreement, assets, syntax, cache refresh, preview banner removal. Layout checks are structural, not browser screenshots.");
