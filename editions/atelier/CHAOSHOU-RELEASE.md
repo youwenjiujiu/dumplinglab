@@ -16,4 +16,11 @@ The user confirmed that red-oil chaoshou uses the ordinary wonton prices. The re
 - Table entry, state races/idempotency, shared-table attribution, ten-diner HTTP walkthrough, image assets, filling cutaways, preparation photos and typography/profile structural checks pass.
 - No real-phone or browser-pixel verification is claimed.
 
-Production deployment verification is recorded below after promotion.
+## Production
+
+- Source commit: `aac5d2b`.
+- Deployment: `dpl_9N6YLkGDdV44DeK3haN4R6yTNJ9b`, Ready and promoted to `https://dumplinglab-menu.vercel.app/`.
+- Exact published `index.html`, `lunch-menu.js` and `lunch-ui.js` bytes match the tested release package.
+- Published catalogue resolves an enabled independent chaoshou recommendation with the two confirmed prices.
+- Read-only public cart API returns `cart.menuVersion: lunch-2026-09-06-v4`.
+- Public-source DOM regression passes, including named root entry and chaoshou checkout; all test mutations target the local backend, never the production kitchen.
