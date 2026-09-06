@@ -522,6 +522,13 @@ function add(d, style = null, amount = 1) {
   return true;
 }
 function openDish(d, selectedStyle = null) {
+  if (d.variants && !selectedStyle && !LunchMenu.readyFor(d)) {
+    LunchMenu.start();
+    renderMenu();
+    jump("dumplings");
+    toast(tr("请先选口味，再选饺子种类。", "Choose preparation before your filling."));
+    return;
+  }
   detail = d;
   detailQty = 1;
   detailStyle = d.styles?.includes(selectedStyle) ? selectedStyle : LunchMenu.firstStyle(d);

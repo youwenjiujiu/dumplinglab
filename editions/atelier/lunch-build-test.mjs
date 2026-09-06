@@ -20,7 +20,8 @@ for (const path of scripts) execFileSync(process.execPath,["--check",resolve(rel
 for (const path of [...html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^"]*)?"/g)].map(m=>m[1])) {
   assert((await stat(resolve(release,"."+path))).isFile(),path);
 }
-for (const dish of ctx.MENU.filter(d=>d.img)) for (const size of ["s","l"]) {
+assert.equal([...ctx.MENU,...ctx.LUNCH_PREPARATIONS].filter(d=>!d.img).length, 0, "Do not publish any current dish or preparation without its image");
+for (const dish of [...ctx.MENU,...ctx.LUNCH_PREPARATIONS]) for (const size of ["s","l"]) {
   assert((await stat(resolve(release,"img",size,dish.img.replace(/\.(png|jpe?g|webp)$/i,".webp")))).size>0);
 }
 const css = await readFile(resolve(release,"shared-table.css"),"utf8");

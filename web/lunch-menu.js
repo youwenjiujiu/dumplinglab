@@ -6,10 +6,10 @@
   globalThis.MENU_SERVICE = "lunch";
   globalThis.MENU_VERSION = "lunch-2026-09-06";
   const preparations = [
-    { id: "soup", cn: "高汤", en: "Broth", extra: 0 },
-    { id: "tossed", cn: "干拌", en: "Tossed", extra: 0 },
-    { id: "boiled", cn: "水煮", en: "Boiled", extra: 0 },
-    { id: "fried", cn: "煎", en: "Pan-fried", extra: 1 },
+    { id: "soup", cn: "高汤", en: "Broth", extra: 0, img: "wonton-soup.png" },
+    { id: "tossed", cn: "干拌", en: "Tossed", extra: 0, img: "lunch-pork-wonton-generated-v1.png" },
+    { id: "boiled", cn: "水煮", en: "Boiled", extra: 0, img: "lunch-pork-celery-generated-v1.png" },
+    { id: "fried", cn: "煎", en: "Pan-fried", extra: 1, img: "beijing-pork-guotie-placeholder.png" },
   ];
   globalThis.LUNCH_PREPARATIONS = preparations;
   const imageFor = id => previous.find(d => d.id === id)?.img || null;
@@ -81,13 +81,31 @@
     simple("water", "水", "Water", "drinks", 1),
   ];
   // Temporary generated assets; replace these mappings with restaurant photos.
-  const noodleImages = {
+  const temporaryImages = {
     "lunch-mince-scallion-noodles": "lunch-mince-scallion-noodles-generated-v1.png",
     "lunch-mince-chilli-noodles": "lunch-mince-chilli-noodles-generated-v1.png",
     "lunch-kampong-chicken-tossed": "lunch-kampong-chicken-tossed-generated-v1.png",
     "lunch-kampong-chicken-soup": "lunch-kampong-chicken-soup-generated-v1.png",
+    "lunch-pork-celery": "lunch-pork-celery-generated-v1.png",
+    "lunch-chicken-corn": "lunch-chicken-corn-generated-v1.png",
+    "lunch-zucchini-egg": "lunch-zucchini-egg-generated-v1.png",
+    "lunch-pork-wonton": "lunch-pork-wonton-generated-v1.png",
+    "lunch-mini-pork-rice": "lunch-mini-pork-rice-generated-v1.png",
+    "lunch-braised-tofu": "lunch-braised-tofu-generated-v1.png",
+    "lunch-braised-pork-belly": "lunch-braised-pork-belly-generated-v1.png",
+    "lunch-fried-wontons": "lunch-fried-wontons-generated-v1.png",
+    "lunch-chicken-wings": "lunch-chicken-wings-generated-v1.png",
+    "lunch-choy-sum": "lunch-choy-sum-generated-v1.png",
+    "lunch-century-egg-tofu": "lunch-century-egg-tofu-generated-v1.png",
+    "lunch-soft-egg": "lunch-soft-egg-generated-v1.png",
+    "lunch-cucumber": "lunch-cucumber-generated-v1.png",
+    "lunch-barley": "lunch-barley-generated-v1.png",
+    "lunch-lemon-tea": "lunch-lemon-tea-generated-v1.png",
+    "lunch-sour-plum": "lunch-sour-plum-generated-v1.png",
+    "lunch-soft-drink": "lunch-soft-drink-generated-v1.png",
+    "lunch-water": "lunch-water-generated-v1.png",
   };
-  for (const dish of globalThis.MENU) if (noodleImages[dish.id]) dish.img = noodleImages[dish.id];
+  for (const dish of globalThis.MENU) if (temporaryImages[dish.id]) dish.img = temporaryImages[dish.id];
   globalThis.SECTIONS = ["dumplings", "noodles", "sides", "drinks"];
   globalThis.SECTION_LABELS = { dumplings: "Dumplings & Wontons", noodles: "Noodles", sides: "Sides", drinks: "Drinks" };
   globalThis.lunchPrice = (d, style) => d?.variants ? d.variants[style]?.price : d?.price;

@@ -157,6 +157,13 @@ const click = (selector) => {
   node.dispatchEvent(new window.Event("click", { bubbles: true }));
   return node;
 };
+const choosePreparation = (id, extras = {}) => {
+  if (document.querySelector('[data-lunch-back]')) click('[data-lunch-back]');
+  click(`[data-lunch-prep="${id}"]`);
+  assert.equal(document.querySelectorAll('#section-dumplings .dish-card').length,0,"Selecting preparation alone must not reveal fillings before confirming flavor options");
+  for (const [field,value] of Object.entries(extras)) click(`[data-lunch-flavor="${field}"][data-value="${value}"]`);
+  click('[data-lunch-next]');
+};
 const until = async (fn) => {
   for (let i = 0; i < 200; i++) {
     if (fn()) return;
@@ -176,7 +183,12 @@ try {
   assert.equal(run("MENU.length"),32);
   if (!browse) click("#closeSheet");
   await until(()=>!browserHistory.state?.atelierSheet);
-  for (const dish of run('MENU.filter(d => d.section === "noodles")')) {
+  assert.equal(document.querySelector("#section-dumplings .dish-grid").children.length,0,"No filling before choosing preparation");
+  assert.equal(document.querySelectorAll('[data-lunch-prep] img').length,4,"All four flavor entries have photos");
+  run('openDish(dish("lunch-pork-chive"))');
+  assert.equal(run('modal'),null,"A direct dish entry cannot bypass preparation selection");
+  choosePreparation("soup");
+  for (const dish of run('MENU')) {
     const card = document.querySelector(`[data-dish="${dish.id}"]`);
     assert(card.querySelector(".dish-image img"), `${dish.cn} must have a menu photo`);
     assert(!card.closest(".dish-card").classList.contains("text-dish"));
@@ -184,19 +196,30 @@ try {
     assert.equal(document.querySelector(".detail-image img").getAttribute("src"), run(`photo(dish('${dish.id}'), 'l')`));
     click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   }
-  console.log("NOODLE PHOTOS PASS — all five noodle cards and detail views have corresponding images.");
-  assert.equal(document.querySelector("#section-dumplings .dish-grid").children.length,0,"No filling before choosing preparation");
+  // Render a full catalogue cart fixture without creating API cart/order writes.
+  const savedRemote = store.remote;
+  store.remote = { ...savedRemote, items: run('MENU.map(d => ({id:d.id, style:d.styles?.[0] || null, qty:1}))') };
+  run('showCart()');
+  assert.equal(document.querySelectorAll(".cart-photo img").length,32,"All cart dishes have images");
+  store.remote = savedRemote;
+  run('renderTray()');
+  click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
+  console.log("MENU PHOTOS PASS — all 32 menu cards, detail views and cart fixtures have corresponding images.");
+  click('[data-lunch-back]');
   assert.equal(document.querySelectorAll("[data-lunch-prep]").length,4);
   assert(document.querySelector(".lunch-service").textContent.includes("午餐"));
   for (const [prep,count] of [["soup",9],["tossed",9],["boiled",6],["fried",6]]) {
-    click('[data-lunch-prep="'+prep+'"]');
+    choosePreparation(prep);
     assert.equal(document.querySelectorAll("#section-dumplings .dish-card").length,count,prep);
-    assert.equal(document.querySelector('[data-lunch-prep="'+prep+'"]').getAttribute("aria-pressed"),"true");
+    assert(document.querySelector('.lunch-chosen-flavor strong').textContent.length);
+    const restricted = ['lunch-prawn-roe-wonton','lunch-pork-wonton','lunch-veg-pork-wonton'];
+    for (const id of restricted) assert.equal(Boolean(document.querySelector(`#section-dumplings [data-dish="${id}"]`)), ['soup','tossed'].includes(prep));
   }
   assert(document.querySelector('[data-dish="lunch-pork-chive"] .dish-price').textContent.includes("S$6.50"));
-  click('[data-lunch-prep="tossed"]');
+  choosePreparation("tossed", {spicy:true,sesame:true,noodles:true});
   click('[data-dish="lunch-pork-chive"]');
   assert.equal(run("detail.variants[detailStyle].prep"),"tossed");
+  assert(run("detail.variants[detailStyle].spicy && detail.variants[detailStyle].sesame && detail.variants[detailStyle].noodles"),"Flavor choices made before the filling carry into its detail");
   click('[data-lunch-option="pieces"][data-value="10"]');
   click('[data-lunch-option="spicy"][data-value="true"]');
   click('[data-lunch-option="sesame"][data-value="true"]');
@@ -250,14 +273,14 @@ try {
     click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
     console.log(`ROOT ENTRY PASS — ${named ? "saved name" : "no name"}, add without table, persisted draft, validation, handoff, note and no premature order.`);
   }
-  click('[data-lunch-prep="boiled"]');
+  choosePreparation("boiled");
   click('[data-dish="lunch-pork-chive"]');
   assert.equal(run("detail.variants[detailStyle].pieces"),5);
   click('[data-action="add-detail"]'); await store.flush();
   await until(()=>!browserHistory.state?.atelierSheet);
   assert.equal(store.items.length,2,"Distinct preparations/portions do not merge");
   assert.equal(run("total(store.items)"),30.1);
-  click('[data-lunch-prep="soup"]');
+  choosePreparation("soup");
   click('[data-dish="lunch-prawn-roe-wonton"]');
   assert.equal(document.querySelectorAll('[data-lunch-option="prep"]').length,2);
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
@@ -284,7 +307,7 @@ try {
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   click("#languageButton");
   assert.equal(document.querySelector(".lunch-service").textContent,"LUNCH MENU");
-  click('[data-lunch-prep="tossed"]');
+  choosePreparation("tossed");
   click('[data-dish="lunch-chicken-cabbage"]');
   assert.equal(document.querySelector("#sheetTitle").textContent,"Chicken & Cabbage Dumplings");
   assert.equal(document.querySelector('[data-lunch-option="noodles"][data-value="true"]').textContent,"Add noodles +S$2.50");
