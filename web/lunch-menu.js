@@ -80,12 +80,18 @@
     simple("water", "水", "Water", "drinks", 1, generated("water")),
     simple("osmanthus-oolong", "桂花乌龙茶", "Osmanthus Oolong Tea", "drinks", 3, "lunch-v2-osmanthus-oolong-generated-v1.png"),
   ];
-  // Filling-specific pan-fried photos also follow the same variant into detail/cart.
+  // Each filling has its own cutaway for each supported preparation.
   const friedPhotos = {
     "lunch-v2-pork-chive-shrimp": "potstickers-pork-shrimp-chive-cutaway-v1.png",
     "lunch-v2-chicken-cabbage": "potstickers-chicken-cabbage-cutaway-v1.png",
   };
-  for (const d of MENU) if (friedPhotos[d.id]) d.preparationImages = { fried: friedPhotos[d.id] };
+  for (const d of MENU) if (d.kind === "dumpling") {
+    const fillingId = d.id.replace("lunch-v2-", "");
+    d.preparationImages = Object.fromEntries(d.preparations.map(prep => [prep,
+      prep === "fried" && friedPhotos[d.id] ? friedPhotos[d.id] : `filling-${fillingId}-${prep}-cutaway-v1.png`,
+    ]));
+    d.img = d.preparationImages.boiled;
+  }
   // Shortcuts, not duplicate SKUs. Unknown-price combinations remain non-orderable.
   globalThis.LUNCH_RECOMMENDATIONS = [
     { id: "chive-fried", cn: "韭菜虾仁猪肉煎饺", name: "Pork, Shrimp & Chive Potstickers", dishId: "lunch-v2-pork-chive-shrimp", prep: "fried", img: friedPhotos["lunch-v2-pork-chive-shrimp"] },

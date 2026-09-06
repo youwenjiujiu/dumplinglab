@@ -22,11 +22,11 @@ for (const [id, filename] of Object.entries(expected)) {
   assert.equal(dish.preparationImages.fried, filename);
   for (const [style, variant] of Object.entries(dish.variants)) {
     for (const size of ["s", "l"]) {
-      const img = variant.prep === "fried" ? filename : ctx.LUNCH_PREPARATIONS.find(p => p.id === variant.prep).img;
+      const img = dish.preparationImages[variant.prep];
       assert.equal(ctx.testPhoto(dish, size, style), `/img/${size}/${img.replace(".png", ".webp")}`);
     }
   }
-  assert(!ctx.testPhoto(dish).includes("cutaway"), "Default boiled filling image stays boiled");
+  assert(ctx.testPhoto(dish).includes("boiled-cutaway"), "Default filling image uses its own boiled cutaway");
   for (const path of [filename, "s/" + filename.replace(".png", ".webp"), "l/" + filename.replace(".png", ".webp")]) {
     const bytes = await readFile(new URL("../../web/img/" + path, import.meta.url));
     const image = sharp(bytes), metadata = await image.metadata();
@@ -39,4 +39,4 @@ for (const [id, filename] of Object.entries(expected)) {
     assert(alpha(Math.floor(info.width / 2), Math.floor(info.height / 2)) > 240, "Plate remains opaque");
   }
 }
-console.log("PASS: two distinct filling cutaways, real transparent PNG/WebP assets, matching recommended/detail/cart photo resolver, unchanged boiled/tossed photos and fixed fried presets.");
+console.log("PASS: two distinct recommended filling cutaways, real transparent PNG/WebP assets, matching recommended/detail/cart photo resolver and fixed fried presets.");

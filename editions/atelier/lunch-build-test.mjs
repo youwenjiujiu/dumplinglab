@@ -21,8 +21,8 @@ for (const path of [...html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^"]*)?"/g)].
   assert((await stat(resolve(release,"."+path))).isFile(),path);
 }
 assert.equal([...ctx.MENU,...ctx.LUNCH_PREPARATIONS,...ctx.LUNCH_RECOMMENDATIONS].filter(d=>!d.img).length, 0, "Do not publish any current dish or preparation without its image");
-for (const dish of [...ctx.MENU,...ctx.LUNCH_PREPARATIONS,...ctx.LUNCH_RECOMMENDATIONS]) for (const size of ["s","l"]) {
-  assert((await stat(resolve(release,"img",size,dish.img.replace(/\.(png|jpe?g|webp)$/i,".webp")))).size>0);
+for (const dish of [...ctx.MENU,...ctx.LUNCH_PREPARATIONS,...ctx.LUNCH_RECOMMENDATIONS]) for (const img of [dish.img,...Object.values(dish.preparationImages || {})]) for (const size of ["s","l"]) {
+  assert((await stat(resolve(release,"img",size,img.replace(/\.(png|jpe?g|webp)$/i,".webp")))).size>0);
 }
 const css = await readFile(resolve(release,"shared-table.css"),"utf8");
 assert.match(css,/grid-template-rows: subgrid/);

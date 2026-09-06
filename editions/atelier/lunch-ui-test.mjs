@@ -241,7 +241,7 @@ try {
   run('showCart()');
   assert.equal(document.querySelectorAll(".cart-photo img").length,34,"All cart dishes have images");
   const cutawayCartImages = [...document.querySelectorAll('.cart-photo img')].map(img=>img.getAttribute('src')).filter(src=>src.includes('cutaway-v1'));
-  assert.equal(new Set(cutawayCartImages).size,2,"Both fried fillings keep their own cutaway photo in the cart");
+  assert.equal(new Set(cutawayCartImages).size,5,"All five fried fillings keep their own cutaway photo in the cart");
   store.remote = savedRemote;
   run('renderTray()');
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
@@ -252,6 +252,15 @@ try {
   for (const [prep,count] of [["soup",3],["tossed",8],["boiled",5],["fried",5]]) {
     choosePreparation(prep);
     assert.equal(document.querySelectorAll("#section-dumplings .dish-card").length,count,prep);
+    if (prep !== "soup") {
+      const dumplingImages = run('MENU.filter(d=>d.kind==="dumpling")').map(d=>{
+        const src=document.querySelector(`[data-dish="${d.id}"] .dish-image img`).getAttribute('src');
+        assert.equal(src,run(`photo(dish('${d.id}'),'s',LunchMenu.firstStyle(dish('${d.id}')))`));
+        assert(src.includes('cutaway-v1'));
+        return src;
+      });
+      assert.equal(new Set(dumplingImages).size,5,`${prep}: five different fillings must not reuse one image`);
+    }
     assert(document.querySelector('.lunch-chosen-flavor strong').textContent.length);
     const restricted = ['lunch-v2-prawn-roe-wonton','lunch-v2-pork-wonton','lunch-v2-chicken-corn-wonton'];
     for (const id of restricted) assert.equal(Boolean(document.querySelector(`#section-dumplings [data-dish="${id}"]`)), ['soup','tossed'].includes(prep));
