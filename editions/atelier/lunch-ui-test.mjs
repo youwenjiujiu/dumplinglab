@@ -176,6 +176,15 @@ try {
   assert.equal(run("MENU.length"),32);
   if (!browse) click("#closeSheet");
   await until(()=>!browserHistory.state?.atelierSheet);
+  for (const dish of run('MENU.filter(d => d.section === "noodles")')) {
+    const card = document.querySelector(`[data-dish="${dish.id}"]`);
+    assert(card.querySelector(".dish-image img"), `${dish.cn} must have a menu photo`);
+    assert(!card.closest(".dish-card").classList.contains("text-dish"));
+    click(card);
+    assert.equal(document.querySelector(".detail-image img").getAttribute("src"), run(`photo(dish('${dish.id}'), 'l')`));
+    click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
+  }
+  console.log("NOODLE PHOTOS PASS — all five noodle cards and detail views have corresponding images.");
   assert.equal(document.querySelector("#section-dumplings .dish-grid").children.length,0,"No filling before choosing preparation");
   assert.equal(document.querySelectorAll("[data-lunch-prep]").length,4);
   assert(document.querySelector(".lunch-service").textContent.includes("午餐"));

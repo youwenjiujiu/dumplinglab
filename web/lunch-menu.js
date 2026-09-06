@@ -80,6 +80,14 @@
     simple("soft-drink", "软饮", "Soft Drink", "drinks", 2.8),
     simple("water", "水", "Water", "drinks", 1),
   ];
+  // Temporary generated assets; replace these mappings with restaurant photos.
+  const noodleImages = {
+    "lunch-mince-scallion-noodles": "lunch-mince-scallion-noodles-generated-v1.png",
+    "lunch-mince-chilli-noodles": "lunch-mince-chilli-noodles-generated-v1.png",
+    "lunch-kampong-chicken-tossed": "lunch-kampong-chicken-tossed-generated-v1.png",
+    "lunch-kampong-chicken-soup": "lunch-kampong-chicken-soup-generated-v1.png",
+  };
+  for (const dish of globalThis.MENU) if (noodleImages[dish.id]) dish.img = noodleImages[dish.id];
   globalThis.SECTIONS = ["dumplings", "noodles", "sides", "drinks"];
   globalThis.SECTION_LABELS = { dumplings: "Dumplings & Wontons", noodles: "Noodles", sides: "Sides", drinks: "Drinks" };
   globalThis.lunchPrice = (d, style) => d?.variants ? d.variants[style]?.price : d?.price;
