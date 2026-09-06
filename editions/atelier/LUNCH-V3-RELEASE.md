@@ -18,3 +18,12 @@ Catalogue version: lunch-2026-09-06-v3. Existing v2 dish IDs and 16 plain-tossed
 - git diff --check: passed.
 
 These are automated DOM, HTTP, data and structural checks, not real-phone visual testing. Test orders use the local preview service; no test orders are sent to the production kitchen.
+
+## Live release
+
+- Runtime source commit: 7d50da7.
+- Production: https://dumplinglab-menu.vercel.app/
+- Deployment: https://dumplinglab-menu-orcdhq0es-youwenjiujius-projects.vercel.app
+- Deployment ID: dpl_9eLZjUJkFZnEPEEA23mNycqGysEb. Vercel Ready, then successfully promoted on 2026-09-06.
+- Public HTML, app.js, lunch-ui.js and lunch-menu.js match the checked release package byte for byte. Read-only production cart API reports lunch-2026-09-06-v3. Four preparation WebPs return valid image responses.
+- Public HTML/JavaScript also passed the saved-name root-browse DOM suite. Mutating test requests still target the local preview, never the production kitchen.
