@@ -18,6 +18,8 @@ Generated with the built-in imagegen tool (imagegen skill); these are temporary 
 
 Alpha preserved during WebP conversion. Each generated bowl was visually inspected for subject, framing and transparent background; actual mobile browser layout is not claimed verified.
 
+Published to https://dumplinglab-menu.vercel.app/ from runtime commit `a16b461`, deployment `dumplinglab-menu-koi3lfvdl-youwenjiujius-projects.vercel.app`. All five noodle menu/detail image pairs were fetched from the public alias and matched local WebP bytes. Production HTML/JS was also exercised by the DOM regression with local-only test order APIs; the no-table/name hotfix remains intact. No real kitchen order was submitted for this image release.
+
 ## Exact prompts
 
 ### mince-scallion-noodles
@@ -35,4 +37,3 @@ Use case: product-mockup. Asset type: temporary generated food cutout for an exi
 ### kampong-chicken-soup
 
 Use case: product-mockup. Asset type: temporary generated food cutout for an existing Chinese restaurant ordering website, NOT a UI screenshot. Produce one photorealistic bowl only, isolated on genuinely transparent RGBA background, no checkerboard painted in. Square 1024px composition, entire bowl fully visible centered with 8% clear padding. Camera 40 degrees above horizontal, natural three-quarter restaurant catalogue view. Plain warm ivory ceramic round bowl, no pattern. Soft natural light from upper left, realistic appetizing textures, restrained warm colors. No table, backdrop, utensils, hands, text, labels, logo, props, eggs, extra side dishes or decorative elements. No hard cast shadow beyond the bowl. Subject: 甘榜鸡汤拉面 — wheat ramen noodles in a visible clear light-golden chicken broth, topped with recognizable slices of tender poached kampong chicken with pale golden skin and a little chopped scallion. This is clearly a soup bowl with visible broth, not dry noodles.
-
