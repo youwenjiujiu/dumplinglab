@@ -113,3 +113,7 @@ Use case: product-mockup. A single natural photorealistic food product image for
 ## Publishing
 
 Use the user's existing Vercel target, not Sites: https://dumplinglab-menu.vercel.app/. A fresh allowlisted release excludes unrelated dirty root/web frontend files.
+
+Published runtime source: a81da42. Deployment: dpl_GA8eznyen4VfqDYbZ1sABX4TCusz, https://dumplinglab-menu-g3bsx9969-youwenjiujius-projects.vercel.app. Promoted successfully to the public target.
+
+Post-promotion read-only verification: six changed runtime code assets and all 68 current image response bodies matched local files byte-for-byte. Public catalogue has 34 SKUs, five sections, generated preparation images and no frying surcharge. Production cart GET reports lunch-2026-09-06-v2. No preview notice and no real kitchen test order submitted.
