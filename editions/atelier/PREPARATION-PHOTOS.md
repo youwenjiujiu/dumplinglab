@@ -19,3 +19,11 @@ The initially suggested Vision Times soup image was rejected after full-size ins
 - Local WebP versions under img/s and img/l avoid third-party hotlinks. Original JPEGs retained here for replacement and provenance.
 - Equal 1.25-ratio image areas, cover fit, 8px corners. Preparation labels remain below the image; selection and keyboard behavior are unchanged.
 - Source photos inspected individually. The Browser skill connection and troubleshooting found no available browser; DOM checks are not a substitute for a real phone screenshot test.
+
+## Release verification
+
+- Runtime source commit: 2e1d3bc.
+- Published to https://dumplinglab-menu.vercel.app/ via deployment dpl_BkV4ZkkkRdwdCVKZVd7p2L391jX6 (https://dumplinglab-menu-42z9yzwph-youwenjiujius-projects.vercel.app).
+- Local catalogue/price restrictions, all 72 current WebP endpoints, preparation asset assertions, three DOM entry scenarios, table binding, production state, shared state, walkthrough and packaged-build checks passed.
+- After promotion, public lunch-menu.js, shared-table.css and all eight new WebP response bodies matched local files byte-for-byte. Public HTML has no preview notice.
+- DOM regression using the public HTML/scripts passed with a saved nickname and no table. Order requests in this test still went to the local test server, not the real kitchen.
