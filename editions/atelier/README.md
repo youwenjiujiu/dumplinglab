@@ -17,7 +17,7 @@ No build step. Local API only, bound to loopback. Orders persist atomically to `
 
 - The shared table opens as a photo-first, unframed two-column spread. Switch to a compact list without replacing image nodes; opening a dish and returning preserves the table position. Open `/?table=A1#cart` directly.
 - Local `shared-motion.js` serves the customized `generated/table-view-motion/developer/web-component/table-layout.js`. It implements reference-guided layout motion, product-to-tray transfer and a morphing layout control; the generic generator baseline is retained but is not loaded. See `motion-plan.json` for timings and observations from the supplied video.
-- Menu chapters use a signature spread, filling selections, wide mains and small-plate arrangements. Each dish shows how many portions this group already selected.
+- Lunch uses 4 categories and 32 products. Dumplings require preparation first, then one of 6 or 9 permitted fillings, then 5/10 pieces and applicable extras. All 204 configurations are validated and priced on the server.
 - Optional, unverified nicknames identify actual additions. Activity and contributor counts are group-scoped and retry-safe; no online-presence count is invented. Order receipts retain prices, quantities, preparation, notes and contributor metadata.
 - The standalone 3D steamer prototype is archived in source and removed from the main UI. Its old `#table3d` entry now opens the actual shared table. No 3D engine is loaded during ordinary ordering.
 - Responsive paper menu, unframed dish photography, mobile category rail and full category picker.
@@ -42,19 +42,21 @@ node editions/atelier/scene-test.mjs
 node editions/atelier/shared-test.mjs
 node editions/atelier/assets-test.mjs
 node editions/atelier/walkthrough-test.mjs
+node editions/atelier/lunch-test.mjs
+node editions/atelier/production-test.mjs
 ```
 
 DOM-only interaction checks use the test-only `linkedom` package, without changing production dependencies:
 
 ```sh
 # Install linkedom in a temporary directory of your choice, then:
-NODE_PATH=/path/to/test-dependencies/node_modules node editions/atelier/ui-test.mjs
+NODE_PATH=/path/to/test-dependencies/node_modules node editions/atelier/lunch-ui-test.mjs
 ```
 
 The interaction checks exercise actual client scripts against isolated `QD…` tables: naming, selecting, gallery/list continuity, quantity focus, detail return, peer updates, notes, review, submission, receipt history and reduced motion. They are not pixel-level browser tests. `shared-test.mjs` uses `QC…` tables; A1 is never modified by these tests.
 
 Tests use isolated `QA…` / `QB…` table codes, never A1. They cover multi-device cart updates, group isolation, duplicate operations, concurrent checkout conflicts, additions during review, input validation, offline reload and lost-response recovery.
 
-The port 7898 preview stays local-only even when the production release is published. The production build uses server-side validation, private persistent storage and staff authentication. Catalogue prices and illustrative images are inherited from the existing menu. Neither edition processes payments or fabricates kitchen progress.
+The port 7898 preview stays local-only even when the production release is published. The production build uses server-side validation, private persistent storage and staff authentication. Lunch prices come from the supplied lunch menu; only corresponding existing photographs are retained. New dishes without supplied photos are not assigned unrelated food photos. Neither edition processes payments or fabricates kitchen progress. The old 61-dish UI fixtures in ui-test.mjs are historical; lunch-ui-test.mjs covers the current preparation-first UI.
 
 The previous editorial edition was running from `/tmp/dumplinglab-editorial.V1ylvB`; its files are preserved there. Browser visual validation was unavailable in this session; do not treat code and API checks as pixel-level approval.

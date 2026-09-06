@@ -1,0 +1,13 @@
+{
+  "scope": "control",
+  "meaning": "cart/add and quantity updates",
+  "primaryVerb": "receive",
+  "supportingVerb": "settle",
+  "parts": ["existing add button", "small product transfer", "selected thumbnail", "exact quantity and total text"],
+  "states": ["rest", "pressed", "cart updated immediately", "thumbnail received", "rest"],
+  "timingMs": { "press": 120, "value": 150, "transfer": 280, "receive": 150, "paperEntry": 240 },
+  "easing": "cubic-bezier(0.23,1,0.32,1)",
+  "rules": ["No delayed data mutation or interpolated monetary values", "Repeated taps cancel the previous visual", "No motion on unchanged polling values", "Transfer uses a small duplicate, never the full plate", "One flight at a time; pointer and focus pass through", "Parent buttons and price rows keep their layout", "No automatic drift or category-switch animation"],
+  "reducedMotion": "Immediate final state; cancel existing motion",
+  "integration": "Plain JS custom element in existing numeric/text slots; generated generic source is packaging baseline only"
+}

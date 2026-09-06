@@ -10,6 +10,7 @@ import {
   cleanCartOpIds,
   cleanTable,
   reduceCartOperations,
+  currentOperation,
 } from "../../web/server/cart-core.js";
 import {
   cleanOrder,
@@ -38,7 +39,7 @@ const getCart = (table, group, version) => {
     (e) => e.type === "order" && e.table === table && e.group === group,
   );
   const v =
-    "shared-v2:" +
+    "shared-v2:" + globalThis.MENU_VERSION + ":" +
     ([...operations.map((o) => o.id), ...orders.map((o) => o.id)].join(",") ||
       "empty");
   return v === version
@@ -182,7 +183,7 @@ createServer(async (req, res) => {
             const selected = reduceCartOperations(
               ops.filter((op) => ids.includes(op.id)),
             );
-            if (ops.some((op) => !ids.includes(op.id) && (op.kind === "note" || (op.kind === "delta" && op.delta < 0))))
+            if (ops.some((op) => currentOperation(op) && !ids.includes(op.id) && (op.kind === "note" || (op.kind === "delta" && op.delta < 0))))
               throw new RequestError("同桌修改了菜品或备注，请重新确认订单。", 409);
             const canon = (items) =>
               JSON.stringify(
@@ -230,19 +231,23 @@ createServer(async (req, res) => {
       "/index.html",
       "/atelier.css",
       "/app.js",
+      "/lunch-ui.js",
       "/cart-store.js",
       "/table-scene.js",
       "/shared-table.css",
       "/shared-motion.js",
+      "/micro-motion.js",
       "/shared-table.js",
     ]);
     const allowedAsset =
       /^\/(img|brand|fonts)\//.test(path) ||
-      ["/menu-data.js", "/i18n.js", "/vendor/three.module.js"].includes(path);
+      ["/menu-data.js", "/lunch-menu.js", "/i18n.js", "/vendor/three.module.js"].includes(path);
     if (!localFiles.has(path) && !allowedAsset)
       return json(404, { error: "Not found" });
     const data = await readFile(
-      path === "/shared-motion.js"
+      path === "/micro-motion.js"
+        ? resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js")
+        : path === "/shared-motion.js"
         ? resolve(
             here,
             "generated/table-view-motion/developer/web-component/table-layout.js",

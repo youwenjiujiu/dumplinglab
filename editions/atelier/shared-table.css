@@ -85,23 +85,25 @@
 body.viewing-table .table-tray {
   visibility: hidden;
 }
-/* Full selection strip, separate from the order-opening button. */
+/* The entire tray is tappable; the photo strip also retains native scrolling. */
 .table-tray {
   flex-direction: column;
   align-items: stretch;
   gap: 0;
   padding-block: 6px;
+  cursor: pointer;
 }
 .table-tray .tray-pictures {
   display: flex;
   width: 100%;
   min-width: 0;
-  gap: 3px;
+  gap: 0;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   padding: 0 0 2px;
   scrollbar-width: thin;
   scrollbar-color: #f5efe355 transparent;
+  touch-action: pan-x;
 }
 .table-tray .tray-pictures[hidden] {
   display: none;
@@ -113,6 +115,12 @@ body.viewing-table .table-tray {
   height: 44px;
   margin: 0;
   transform: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.table-tray .tray-pictures > img + img {
+  position: relative;
+  margin-inline-start: -14px;
 }
 .table-tray .tray-pictures > span {
   display: grid;
@@ -197,9 +205,8 @@ body.viewing-table .table-tray {
   margin-bottom: 22px;
 }
 #sheet[data-mode="dish"] .detail-facts div { flex: initial; }
-.spice-marks { display: inline-flex; gap: 3px; margin-right: 9px; }
-.spice-marks i { width: 4px; height: 10px; border-radius: 4px; background: #88796825; transform: rotate(22deg); }
-.spice-marks i.active { background: var(--red); }
+.spice-value { position: relative; width: fit-content; padding-bottom: 10px; }
+.spice-brush { position: absolute; left: -2px; bottom: -1px; color: var(--red); overflow: visible; }
 #sheet[data-mode="dish"] .dish-action {
   align-items: center;
   border-top: 0;
@@ -263,30 +270,31 @@ body.viewing-table .table-tray {
   justify-content: space-between;
   align-items: flex-end;
   gap: 15px;
-  padding: 8px 0 18px;
+  padding: 0 0 14px;
 }
 .our-table-head .eyebrow {
   font-size: 8px;
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   line-height: 1.7;
 }
 .our-table-head h2 {
   margin: 0;
   font: 400 36px/1.15 var(--serif);
 }
-.table-subtotal {
+.table-number {
   text-align: right;
   flex: none;
   padding-bottom: 2px;
 }
-.table-subtotal small {
+.table-number small {
   display: block;
   color: var(--muted);
   font-size: 9px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
-.table-subtotal strong {
-  font-size: 23px;
+.table-number strong {
+  color: var(--red);
+  font-size: 32px;
   font-weight: 400;
   letter-spacing: -0.03em;
 }
@@ -309,7 +317,7 @@ body.viewing-table .table-tray {
   gap: 12px;
   align-items: center;
   justify-content: space-between;
-  margin: 12px 0 20px;
+  margin: 4px 0 14px;
 }
 .cart-viewbar .receipt-tabs {
   border: 0;
@@ -341,7 +349,14 @@ body.viewing-table .table-tray {
 }
 .cart-dishes[data-layout="table"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 32px 28px;
+  gap: 28px 24px;
+  align-items: stretch;
+}
+.cart-dishes[data-layout="table"] .shared-dish {
+  grid-template-rows: subgrid;
+  grid-row: span 4;
+  row-gap: 0;
+  align-items: start;
 }
 .shared-dish {
   position: relative;
@@ -363,7 +378,7 @@ body.viewing-table .table-tray {
   place-items: center;
   aspect-ratio: 1.08;
   width: 100%;
-  margin: 0 0 12px;
+  margin: 0 0 6px;
 }
 .cart-photo img {
   position: absolute;
@@ -392,8 +407,10 @@ body.viewing-table .table-tray {
   grid-column: 1/-1;
   color: var(--muted);
   font-size: 10px;
-  margin: 8px 0 4px;
-  min-height: 14px;
+  margin: 4px 0 0;
+}
+.cart-author:empty {
+  margin: 0;
 }
 .cart-unit-price {
   font-size: 14px;
@@ -406,21 +423,28 @@ body.viewing-table .table-tray {
 }
 .cart-dishes[data-layout="table"] .cart-unit-price {
   grid-column: 1/-1;
+  grid-row: 3;
   margin-top: 8px;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
 }
 .cart-dishes[data-layout="table"] .cart-quantity {
   grid-column: 1/-1;
+  grid-row: 4;
   justify-self: start;
-  margin-top: 12px;
-  border: 1px solid #80684d24;
-  border-radius: 8px;
-  background: #80684d06;
+  margin: 4px 0 0 -10px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--red);
 }
 .cart-dishes[data-layout="table"] .cart-quantity button {
   width: 40px;
 }
 .cart-dishes[data-layout="table"] .cart-quantity b {
   min-width: 26px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 .cart-quantity {
   border: 0;
@@ -523,6 +547,7 @@ body.viewing-table .table-tray {
   flex: 1;
   min-width: 0;
   font-size: 13px;
+  border-radius: 3px;
 }
 .table-empty {
   text-align: center;
@@ -738,6 +763,74 @@ body.viewing-table .table-tray {
   line-height: 1.8;
   margin: 10px 0 22px;
 }
+.lunch-service {
+  margin: 8px 0 22px;
+  color: var(--red);
+  font-size: 11px;
+  letter-spacing: .12em;
+}
+.lunch-step-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.lunch-step-title > span {
+  color: var(--red);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.lunch-step-title h3 {
+  margin: 0;
+  font: 400 21px/1.5 var(--serif);
+}
+.lunch-step-title small {
+  margin-left: auto;
+  color: var(--red);
+}
+.lunch-preparations {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0 24px;
+}
+.lunch-preparations button {
+  min-width: 0;
+  min-height: 72px;
+  padding: 9px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.lunch-preparations strong {
+  display: block;
+  font: 400 24px/1.4 var(--serif);
+}
+.lunch-preparations small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.lunch-preparations [aria-pressed="true"] {
+  color: var(--red);
+  border-bottom: 2px solid var(--red);
+}
+.lunch-fillings-title { margin-bottom: 12px; }
+.lunch-options { border: 0; padding: 0; margin: 24px 0; min-width: 0; }
+.lunch-options legend { margin-bottom: 10px; color: var(--muted); font-size: 12px; }
+.lunch-options > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.lunch-options button { min-height: 44px; white-space: normal; }
+.lunch-options .chip.active { background: var(--red); border-color: var(--red); color: var(--paper); }
+.detail-portion { margin-top: 20px; color: var(--muted); }
+.menu-change-notice { margin: 8px 12px; font-size: 12px; line-height: 1.7; color: var(--paper); }
+.menu-change-notice[hidden] { display: none; }
+.dish-placeholder .icon { width: 44px; height: 44px; color: var(--muted); opacity: .4; }
+/* Menu entries without supplied photos stay compact; no unrelated food photo. */
+.chapter-mains .text-dish .dish-open { grid-template-columns: 1fr; }
+.chapter-mains .text-dish .dish-image { display: none; }
+.chapter-mains .text-dish .dish-info { padding-left: 0; padding-bottom: 42px; }
+.menu-section[data-section="drinks"] .text-dish .dish-image { display: none; }
+.menu-section[data-section="drinks"] .dish-card { margin-top: 16px; }
 .menu-section[data-section="diy"] .dish-name {
   letter-spacing: 0.05em;
 }
@@ -801,6 +894,94 @@ body.viewing-table .table-tray {
 .chapter-small .dish-name {
   font-size: 17px;
 }
+/* Keep image intrinsic dimensions out of card height calculations. */
+.menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-image {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+.menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-image img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+/* Neighbouring cards share actual content rows, including wrapped translations.
+   Do not use per-dish offsets or fixed title heights to disguise misalignment. */
+@supports (grid-template-rows: subgrid) {
+  .menu-section:not(.chapter-mains) .dish-grid {
+    row-gap: 0;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: subgrid;
+    grid-row: span 7;
+    padding-bottom: 0;
+    margin-bottom: 24px;
+    row-gap: 0;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-open {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: subgrid;
+    grid-column: 1;
+    grid-row: 1 / span 6;
+    align-items: start;
+    row-gap: 0;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-image {
+    grid-row: 1;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-info {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: subgrid;
+    grid-row: 2 / span 5;
+    row-gap: 0;
+    padding: 0;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-number {
+    grid-row: 1;
+    line-height: 1.5;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-name {
+    grid-row: 2;
+    align-self: start;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-english {
+    grid-row: 3;
+    align-self: start;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-price {
+    grid-row: 4;
+    align-self: stretch;
+    align-content: center;
+    min-height: 44px;
+    margin-top: 6px;
+    padding-right: 48px;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-table-count {
+    grid-row: 5;
+    margin-top: 0;
+  }
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-add {
+    position: relative;
+    grid-column: 1;
+    grid-row: 5;
+    align-self: center;
+    justify-self: end;
+    inset: auto;
+    margin-top: 6px;
+  }
+  .menu-section.chapter-small .dish-card:not(.featured) .dish-price {
+    padding-right: 0;
+  }
+  .menu-section.chapter-small .dish-card:not(.featured) .dish-add {
+    grid-row: 7;
+    justify-self: center;
+    margin-top: 4px;
+  }
+}
 @keyframes receipt-ink {
   from {
     opacity: 0;
@@ -824,11 +1005,11 @@ body.viewing-table .table-tray {
   .our-table-head h2 {
     font-size: 31px;
   }
-  .table-subtotal strong {
-    font-size: 20px;
+  .table-number strong {
+    font-size: 30px;
   }
   .cart-dishes[data-layout="table"] {
-    gap: 30px 24px;
+    gap: 24px 20px;
   }
   .cart-dish-copy strong {
     font-size: 18px;
@@ -872,8 +1053,8 @@ body.viewing-table .table-tray {
   .cart-scroll {
     padding-inline: 17px;
   }
-  .table-subtotal strong {
-    font-size: 17px;
+  .table-number strong {
+    font-size: 26px;
   }
   .cart-dishes[data-layout="list"] .cart-dish-open {
     grid-template-columns: 48px minmax(0, 1fr);

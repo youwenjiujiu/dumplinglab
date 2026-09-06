@@ -5,6 +5,7 @@ const origin = process.env.ATELIER_TEST_URL || "http://127.0.0.1:7898";
 assert.match(origin, /^http:\/\/(127\.0\.0\.1|localhost):\d+$/);
 const context = vm.createContext({});
 vm.runInContext(await (await fetch(`${origin}/menu-data.js`)).text(), context);
+vm.runInContext(await (await fetch(`${origin}/lunch-menu.js`)).text(), context);
 let totalBytes = 0, files = 0, conditionalBytes = 0;
 const media = context.MENU.filter((d) => d.img).flatMap((d) => ["s", "l"].map((size) => `/img/${size}/${d.img.replace(/\.(png|jpe?g|webp)$/i, ".webp")}`));
 for (let i = 0; i < media.length; i += 8) {

@@ -169,6 +169,9 @@ try {
     vm.runInContext(await response.text(), context, { filename: path });
   }
   const store = run("store");
+  assert.equal(run("'spark' in icons"), false, "Recommendation does not use a generic AI sparkle");
+  assert.equal(document.querySelector("#planButton svg").getAttribute("aria-hidden"), "true");
+  assert.equal(document.querySelector("#planButton").textContent, "推荐搭配");
   await until(() => store.status === "synced");
   assert.equal(run("modal"), "cart");
   assert(document.querySelector(".table-empty"));
@@ -194,8 +197,37 @@ try {
       .textContent,
     "本桌已有 1 份",
   );
+  for (const target of [".table-tray", "#trayPictures img", "#trayTotal", "#trayActionLabel"]) {
+    click(target);
+    assert.equal(run("modal"), "cart", `The full tray opens from ${target}`);
+    click("#closeSheet");
+    await until(() => !browserHistory.state?.atelierSheet);
+  }
+  const rack = document.querySelector("#trayPictures");
+  const trayPointer = (type, x) => {
+    const event = new window.Event(type, { bubbles: true });
+    Object.assign(event, { pointerId: 7, clientX: x, clientY: 10 });
+    rack.dispatchEvent(event);
+  };
+  trayPointer("pointerdown", 10);
+  trayPointer("pointermove", 45);
+  trayPointer("pointerup", 45);
+  click("#trayPictures img");
+  assert.equal(run("modal"), null, "Swiping the photo strip does not open the cart");
+  const enterTray = new window.Event("keydown", { bubbles: true, cancelable: true });
+  enterTray.key = "Enter";
+  rack.dispatchEvent(enterTray);
+  assert.equal(run("modal"), "cart", "Photo strip is keyboard operable");
+  click("#closeSheet");
+  await until(() => !browserHistory.state?.atelierSheet);
   click("#tray");
   assert.equal(document.querySelectorAll(".shared-dish").length, 3);
+  assert.equal(document.querySelector("#sheetTitle").textContent, "本桌点单");
+  assert.equal(document.querySelector(".table-number strong").textContent, table);
+  assert([...document.querySelectorAll(".cart-author")].every((node) => !node.textContent), "Do not repeat self-attribution on every dish");
+  document.querySelector(".cart-scroll").scrollTop = 120;
+  run("SharedTable.open()");
+  assert.equal(document.querySelector(".cart-scroll").scrollTop, 0, "Fresh cart entry starts at its heading");
   click('[data-cart-delta="-1"][data-id="jp-chicken-gyoza"]');
   await store.flush();
   assert.equal(store.items.some((i) => i.id === "jp-chicken-gyoza"), false);
@@ -462,6 +494,12 @@ try {
   await store.poll();
   assert.equal(document.querySelector('[data-action="submit"]').disabled, true, "Removing after review requires a new confirmation");
   assert.match(document.querySelector("#reviewUpdate").textContent, /重新确认/);
+  assert.equal(run("MENU.every(d => { const text = I18N.dishes[d.id]?.flavor || d.flavor; return chineseCopyUnits(text).join('') === text; })"), true, "Wrapping preserves every ingredient description");
+  assert.equal(run("chineseCopyUnits('鸡肉、土豆与手工宽面，酱香微辣。').includes('手工宽面') || chineseCopyUnits('鸡肉、土豆与手工宽面，酱香微辣。').includes('与手工宽面，')"), true);
+  assert.equal(document.querySelector("#menuList").textContent.includes("示意图"), false);
+  document.querySelector("#previewNotice")?.remove();
+  run("renderChrome()");
+  assert.equal(document.querySelector("#previewNotice"), null, "Production HTML can omit the preview banner");
   for (const animation of animations)
     assert(
       !JSON.stringify(animation).includes("NaN"),

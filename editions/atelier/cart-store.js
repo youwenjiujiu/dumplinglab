@@ -19,7 +19,9 @@ class TableCart extends EventTarget {
     };
     const cached = read(this.key) || {};
     this.remote = cached.remote || { items: [], orders: [], opIds: [] };
-    this.pending = Array.isArray(cached.pending) ? cached.pending : [];
+    const savedPending = Array.isArray(cached.pending) ? cached.pending : [];
+    this.retiredPending = [...(cached.retiredPending || []), ...savedPending.filter(op => op.kind === "delta" && !isLunchItem(op.dishId, op.style))];
+    this.pending = savedPending.filter(op => op.kind !== "delta" || isLunchItem(op.dishId, op.style));
     this.order = cached.order || null;
     this.noteConflict = cached.noteConflict || null;
     this.lastOrderRequestId = cached.lastOrderRequestId || this.order?.requestId || null;
@@ -52,6 +54,7 @@ class TableCart extends EventTarget {
       JSON.stringify({
         remote: this.remote,
         pending: this.pending,
+        retiredPending: this.retiredPending,
         order: this.order,
         noteConflict: this.noteConflict,
         lastOrderRequestId: this.lastOrderRequestId,
@@ -84,7 +87,7 @@ class TableCart extends EventTarget {
       item.qty = Math.max(0, item.qty + op.delta);
       items.set(key, item);
     }
-    return [...items.values()].filter((i) => i.qty > 0);
+    return [...items.values()].filter((i) => i.qty > 0 && isLunchItem(i.id, i.style));
   }
   get note() {
     return (

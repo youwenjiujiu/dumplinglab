@@ -10,9 +10,10 @@ async function copy(source, target) {
   await mkdir(dirname(resolve(output, target)), { recursive: true });
   await copyFile(source, resolve(output, target));
 }
-for (const file of ["atelier.css", "shared-table.css", "app.js", "cart-store.js", "shared-table.js"]) await copy(resolve(here, file), file);
+for (const file of ["atelier.css", "shared-table.css", "app.js", "cart-store.js", "shared-table.js", "lunch-ui.js"]) await copy(resolve(here, file), file);
 await copy(resolve(here, "generated/table-view-motion/developer/web-component/table-layout.js"), "shared-motion.js");
-for (const file of ["menu-data.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
+await copy(resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js"), "micro-motion.js");
+for (const file of ["menu-data.js", "lunch-menu.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
 for (const dir of ["api", "server", "img/s", "img/l"]) {
   for (const file of await readdir(resolve(web, dir))) {
     if (/\.(js|webp)$/.test(file)) await copy(resolve(web, dir, file), `${dir}/${file}`);
@@ -22,7 +23,7 @@ for (const file of ["scto-grotesk-a-regular.woff2", "scto-grotesk-a-medium.woff2
 await copy(resolve(web, "brand/dumpling-lab-primary.png"), "brand/dumpling-lab-primary.png");
 let html = (await readFile(resolve(here, "index.html"), "utf8"))
   .replace('<html lang="zh-CN">', '<html lang="zh-CN" data-environment="production">')
-  .replace('class="preview-notice" id="previewNotice"', 'class="preview-notice" id="previewNotice" hidden');
+  .replace(/<div class="preview-notice" id="previewNotice">[\s\S]*?<\/div>/, "");
 for (const match of [...html.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))(?:\?[^" ]*)?"/g)]) {
   const hash = createHash("sha256").update(await readFile(resolve(output, `.${match[1]}`))).digest("hex").slice(0, 12);
   html = html.replace(match[0], match[0].replace(/"[^\"]+"$/, `"${match[1]}?v=${hash}"`));

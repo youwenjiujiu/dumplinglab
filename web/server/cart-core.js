@@ -2,6 +2,7 @@ import "../menu-data.js";
 import { cleanGroup, RequestError } from "./order-core.js";
 
 const CATALOG = new Map(globalThis.MENU.map(dish => [dish.id, dish]));
+export const currentOperation = op => op.kind === "note" || globalThis.isLunchItem(op.dishId, op.style);
 const TABLE_RE = /^[a-z0-9-]{1,12}$/i;
 const ID_RE = /^[a-f0-9-]{16,64}$/i;
 
@@ -34,6 +35,7 @@ export function cleanCartOperation(input) {
   if (!Number.isInteger(delta) || !delta || Math.abs(delta) > 20) throw new RequestError("菜品数量变化无效");
   const style = dish.styles ? (typeof input.style === "string" && dish.styles.includes(input.style) ? input.style : null) : null;
   if (dish.styles && !style) throw new RequestError("菜品做法无效");
+  if (!dish.styles && input.style) throw new RequestError("该菜品不提供自选做法");
   return { ...base, kind: "delta", dishId: dish.id, style, delta };
 }
 
@@ -54,7 +56,10 @@ export function reduceCartOperations(operations) {
     if (current.qty) items.set(key, current); else items.delete(key);
   }
   return {
-    items: [...items.values()], note: note || null, opIds: sorted.map(operation => operation.id),
+    items: [...items.values()].filter(i => globalThis.isLunchItem(i.id, i.style)),
+    unavailableItems: [...items.values()].filter(i => !globalThis.isLunchItem(i.id, i.style)),
+    menuVersion: globalThis.MENU_VERSION,
+    note: note || null, opIds: sorted.filter(currentOperation).map(operation => operation.id),
     revision: sorted.reduce((latest, operation) => Math.max(latest, operation.storedAt || Date.parse(operation.at) || 0), 0),
   };
 }

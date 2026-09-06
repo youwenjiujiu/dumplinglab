@@ -4,7 +4,7 @@ const origin = "http://127.0.0.1:7898",
   table = "QC" + crypto.randomUUID().slice(0, 8);
 const a = crypto.randomUUID(),
   b = crypto.randomUUID(),
-  id = "beijing-pork-guotie";
+  id = "lunch-mini-pork-rice";
 const api = async (path, body) => {
   const r = await fetch(origin + path, {
     method: body ? "POST" : "GET",
@@ -63,8 +63,8 @@ assert.equal(out.status, 200);
 assert.deepEqual(out.cart.contributors, {});
 assert.equal(out.order.contributors[id + "|"][0].name, "小陈");
 assert.equal(out.order.actorName, "小陈");
-assert.equal(out.cart.orders[0].items[0].price, 9.8);
-assert.equal(out.cart.orders[0].total, 9.8, "Receipt reflects server price");
+assert.equal(out.cart.orders[0].items[0].price, 5.5);
+assert.equal(out.cart.orders[0].total, 5.5, "Receipt reflects server price");
 assert.deepEqual(contributorsFor([]), {});
 console.log(
   "PASS: optional nicknames, server sanitization, truthful contribution counts, no retry duplicates, group-isolated activity, persistent receipt attribution and prices.",

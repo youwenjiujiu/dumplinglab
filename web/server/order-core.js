@@ -1,4 +1,5 @@
 import "../menu-data.js";
+import "../lunch-menu.js";
 
 const CATALOG = new Map(globalThis.MENU.map(dish => [dish.id, dish]));
 const TABLE_RE = /^[a-z0-9-]{1,12}$/i;
@@ -45,9 +46,12 @@ export function cleanOrder(input) {
     if (dish.soldOut) throw new RequestError(`「${dish.cn}」已售罄，请返回菜单修改`);
     const qty = Number(item.qty);
     if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new RequestError(`「${dish.cn}」的数量无效`);
-    const style = dish.styles ? requiredText(item.style, /^.{1,20}$/u, `请选择「${dish.cn}」的做法`) : null;
+    const style = dish.styles ? requiredText(item.style, /^.{1,100}$/u, `请选择「${dish.cn}」的做法和份量`) : null;
     if (style && !dish.styles.includes(style)) throw new RequestError(`「${dish.cn}」的做法无效`);
-    return { id: dish.id, name: dish.cn, style, qty, price: dish.price };
+    if (!dish.styles && item.style) throw new RequestError("该菜品不提供自选做法");
+    const price = globalThis.lunchPrice(dish, style);
+    if (!Number.isFinite(price)) throw new RequestError("菜品规格价格无效");
+    return { id: dish.id, name: dish.cn, englishName: dish.name, style, qty, price, service: "lunch" };
   });
   const total = Math.round(items.reduce((sum, item) => sum + item.price * item.qty, 0) * 100) / 100;
   const note = typeof input.note === "string" ? input.note.trim().slice(0, 240) : "";

@@ -1,7 +1,7 @@
 // One atomic document per dining group: cart, receipts and staff queue commit together.
 // Storage is injected so concurrency and failure paths can be tested without live orders.
 import { randomUUID } from "node:crypto";
-import { cleanCartOperation, cleanCartOpIds, cleanTable, reduceCartOperations } from "./cart-core.js";
+import { cleanCartOperation, cleanCartOpIds, cleanTable, reduceCartOperations, currentOperation } from "./cart-core.js";
 import { cleanOrder, cleanCall, cleanGroup, RequestError } from "./order-core.js";
 import { cleanNickname, contributorsFor } from "./cart-meta.js";
 
@@ -16,7 +16,7 @@ export function createTableStore(storage, legacy) {
     orders: state.events.filter(e => e.type === "order"),
     contributors: contributorsFor(state.operations),
     activity: state.activity.slice(-40),
-    version: `v2:${state.revision}`,
+    version: `v2:${globalThis.MENU_VERSION}:${state.revision}`,
   });
   async function read(table, group) {
     const stored = await storage.read(pathFor(table, group));
@@ -85,7 +85,7 @@ export function createTableStore(storage, legacy) {
         const selectedOps = state.operations.filter(op => selectedIds.has(op.id));
         const selected = reduceCartOperations(selectedOps);
         if (canonical(selected.items) !== canonical(order.items)) throw new RequestError("购物车已更新，请重新确认。", 409);
-        if (state.operations.some(op => !selectedIds.has(op.id) && (op.kind === "note" || op.delta < 0))) throw new RequestError("同桌修改了菜品或备注，请重新确认订单。", 409);
+        if (state.operations.some(op => currentOperation(op) && !selectedIds.has(op.id) && (op.kind === "note" || op.delta < 0))) throw new RequestError("同桌修改了菜品或备注，请重新确认订单。", 409);
         order.cartOpIds = ids;
         order.contributors = contributorsFor(selectedOps);
         order.actorName = cleanNickname(input.actorName);

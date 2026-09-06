@@ -27,6 +27,11 @@ const name = (d) => tr(d.cn, d.name),
   otherName = (d) => tr(d.name, d.cn);
 // Explicit word boundaries keep ingredients intact at narrow widths.
 const dishNameParts = new Map([
+  "韭菜 猪肉", "芹菜 猪肉", "鸡肉 玉米", "西葫芦 鸡蛋", "西红柿 鸡蛋",
+  "鲜虾 蟹籽 云吞", "鲜肉 抄手", "肉末 葱油面", "肉末 辣椒面",
+  "甘榜 鸡肉 拌面", "甘榜 鸡汤 拉面", "干拌 葱油面", "卤豆腐", "卤 五花肉",
+  "炸云吞", "秘制 鸡翅", "酱油 菜心", "皮蛋 豆腐", "溏心 卤蛋", "腌萝卜", "黄瓜",
+  "薏米水", "柠檬茶", "酸梅汁", "软饮", "水",
   "北京 猪肉 锅贴", "日式 鸡肉 煎饺", "港式 蟹籽 汤云吞", "外婆 煎馄饨",
   "南京 牛肉 锅贴", "四川 红油 抄手", "红油 云吞", "鸡肉 包菜",
   "牛肉 咖喱 洋葱", "猪肉 芹菜 虾仁", "咸蛋 鱼子 虾仁", "猪肉 大葱",
@@ -42,6 +47,7 @@ const dishNameParts = new Map([
   "凉拌 蔬菜丝", "凉拌 茄子· 清炒 豆苗", "蔬菜 蘸酱", "腌萝卜 泡菜",
   "蒜蓉 西兰花", "蚝油 生菜", "麻酱 菠菜", "芒果 冰浆", "西瓜 冰浆", "黄瓜 冰浆",
 ].map((s) => [s.replaceAll(" ", ""), s.split(" ")]));
+dishNameParts.set("Mini 卤肉饭", ["Mini ", "卤肉饭"]);
 function dishNameHTML(d) {
   if (language !== "zh") return escapeHTML(name(d));
   const parts = dishNameParts.get(d.cn);
@@ -49,11 +55,36 @@ function dishNameHTML(d) {
 }
 const categoryName = (id) => tr(I18N.sections[id], SECTION_LABELS[id]);
 const categoryOther = (id) => tr(SECTION_LABELS[id], I18N.sections[id]);
-const dish = (id) => MENU.find((d) => d.id === id);
+const dish = (id) => MENU.find((d) => d.id === id) || (globalThis.LEGACY_MENU || []).find(d => d.id === id) || { id, cn: "原菜单菜品", name: "Previous menu item", section: "sides", price: 0 };
+const itemPrice = (d, style) => lunchPrice(d, style) ?? d.price;
 const photo = (d, size = "s") =>
   d.img ? `/img/${size}/${d.img.replace(/\.(png|jpe?g|webp)$/i, ".webp")}` : "";
 const description = (d) => tr(I18N.dishes[d.id]?.flavor || d.flavor, d.flavor);
-const styleName = (s) => tr(s, STYLE_LABELS[s] || s);
+const culinaryPhrases = ["手工宽面", "酱香微辣", "配辣椒", "蒜末", "与热油", "细面", "拌葱油", "与甜酱油", "底部", "煎至金黄", "卷心菜", "猪肉", "鸡肉", "牛肉", "土豆", "番茄", "鸡汤", "拉面", "葱油", "芝麻", "黑芝麻", "糯米汤圆", "薄皮煎制", "鲜虾", "韭菜", "香菇", "咸蛋黄"].sort((a, b) => b.length - a.length);
+const culinaryPattern = new RegExp(`(${culinaryPhrases.join("|")})`, "u");
+const copySegmenter = typeof Intl.Segmenter === "function" ? new Intl.Segmenter("zh", { granularity: "word" }) : null;
+function chineseCopyUnits(text) {
+  const tokens = String(text).split(culinaryPattern).filter(Boolean).flatMap(part => culinaryPhrases.includes(part) ? [part] : copySegmenter ? [...copySegmenter.segment(part)].map(s => s.segment) : part.split(/(?<=[，、。；])/u));
+  const units = []; let prefix = "";
+  for (const token of tokens) {
+    if (/^[，。、；：！？,.!?;）]+$/u.test(token) && units.length) {
+      units[units.length - 1] += prefix + token;
+      prefix = "";
+    }
+    else if (/^(与|和|及|配|的|拌|加|（)$/u.test(token)) prefix += token;
+    else { units.push(prefix + token); prefix = ""; }
+  }
+  if (prefix) { if (units.length) units[units.length - 1] += prefix; else units.push(prefix); }
+  return units;
+}
+const descriptionHTML = d => language === "zh" ? chineseCopyUnits(description(d)).map(word => `<span class="copy-word">${escapeHTML(word)}</span>`).join("<wbr>") : escapeHTML(description(d));
+const spiceMarkup = d => `<span class="spice-value">${I18N.ui[language].spiceLevels[d.spice || 0]}<svg class="spice-brush" width="${34 + Math.min(3, d.spice || 0) * 12}" height="9" viewBox="0 0 104 12" preserveAspectRatio="none" aria-hidden="true" style="opacity:${d.spice ? .76 : .3}"><path d="M2 7C14 3 22 6 34 4S58 7 70 4S91 5 102 3L100 7C85 10 77 7 65 9S42 7 31 9S12 11 3 9Z" fill="currentColor"/></svg></span>`;
+const updateText = (node, value) => {
+  if (!node) return;
+  if (globalThis.OrderFeedback) globalThis.OrderFeedback.text(node, value);
+  else node.textContent = value;
+};
+const styleName = (s) => tr(s, MENU.find(d => d.variants?.[s])?.variants[s].en || STYLE_LABELS[s] || s);
 const categories = SECTIONS.filter((id) => MENU.some((d) => d.section === id));
 const icons = {
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
@@ -61,8 +92,8 @@ const icons = {
   bell: '<path d="M5 17h14M7 17v-6a5 5 0 0 1 10 0v6M10 21h4M12 3v3"/>',
   plate:
     '<ellipse cx="12" cy="13" rx="9" ry="6"/><ellipse cx="12" cy="12" rx="5" ry="3"/>',
-  spark:
-    '<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/>',
+  dumpling:
+    '<path d="M2.8 14.5C4.1 9.2 7.6 6.3 12 6.3s7.9 2.9 9.2 8.2C17 19 7 19 2.8 14.5Z"/><path d="m6.1 9.5 1.6 2.6M9.8 6.7l.6 3.5m3.8-3.5-.6 3.5m4.3-.7-1.6 2.6"/>',
 };
 const icon = (key) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${icons[key]}</svg>`;
@@ -95,7 +126,7 @@ const qty = (id) =>
   store.items.filter((i) => i.id === id).reduce((s, i) => s + i.qty, 0);
 const count = () => store.items.reduce((s, i) => s + i.qty, 0);
 const total = (items) =>
-  items.reduce((s, i) => s + (dish(i.id)?.price || 0) * i.qty, 0);
+  Math.round(items.reduce((s, i) => s + (i.price ?? itemPrice(dish(i.id), i.style) ?? 0) * i.qty, 0) * 100) / 100;
 const statusCopy = () =>
   !table
     ? tr("浏览菜单 · 扫桌码后下单", "Browse menu · scan a table to order")
@@ -279,8 +310,6 @@ function renderFilters() {
   $("#filters").innerHTML = [
     ["all", tr("全部", "All")],
     ["veg", tr("素食", "Vegetarian")],
-    ["mild", tr("不辣", "Not spicy")],
-    ["noPork", tr("不含猪肉", "No pork")],
   ]
     .map(
       ([id, label]) =>
@@ -307,12 +336,13 @@ function renderMenu() {
   $("#menuList").innerHTML =
     categories
       .map((c, ci) => {
-        const items = MENU.filter((d) => d.section === c && matches(d));
-        if (!items.length) return "";
-        return `<section class="menu-section ${["noodles", "rice", "soup"].includes(c) ? "chapter-mains" : ["sides", "fried", "veg", "tangzi", "dessert"].includes(c) ? "chapter-small" : ""}" id="section-${c}" data-section="${c}"><div class="section-heading"><h2>${categoryName(c)}</h2><span class="translation">${categoryOther(c)}</span><span class="section-count">${tr(`${items.length} 道菜`, `${items.length} dishes`)}</span></div>${c === "diy" ? `<p class="chapter-note">${tr("选馅料，再选做法。", "Choose a filling and preparation.")}</p>` : ""}<div class="dish-grid">${items
+        const candidates = MENU.filter((d) => d.section === c && matches(d));
+        const items = candidates.filter(LunchMenu.visible);
+        if (!candidates.length) return "";
+        return `<section class="menu-section ${["noodles", "rice", "soup"].includes(c) ? "chapter-mains" : ["sides", "fried", "veg", "tangzi", "dessert"].includes(c) ? "chapter-small" : ""}" id="section-${c}" data-section="${c}"><div class="section-heading"><h2>${categoryName(c)}</h2><span class="translation">${categoryOther(c)}</span><span class="section-count">${tr(`${candidates.length} 道菜`, `${candidates.length} dishes`)}</span></div>${c === "dumplings" ? LunchMenu.section() : ""}<div class="dish-grid">${items
           .map((d, i) => {
             const feature = browsing && c === "signature" && i === 0;
-            return `<article class="dish-card ${feature ? "featured" : ""} ${d.img ? "" : "text-dish"} ${d.soldOut ? "sold" : ""}"><button class="dish-open" data-dish="${d.id}" aria-label="${escapeHTML(name(d))}"><div class="dish-image">${d.img ? `<img src="${photo(d)}" alt="" ${feature ? 'fetchpriority="high"' : 'loading="lazy"'}>` : `<span>${categoryName(c)}</span>`}</div><div class="dish-info"><span class="dish-number">${feature ? tr("招牌", "Signature") : String(i + 1).padStart(2, "0")}${d.placeholder ? " · " + tr("示意图", "ILLUSTRATION") : ""}</span><h3 class="dish-name">${dishNameHTML(d)}</h3><span class="dish-english">${otherName(d)}</span>${feature || ["noodles", "rice", "soup"].includes(c) ? `<p class="dish-flavor">${description(d)}</p>` : ""}<span class="dish-price">${money(d.price)}</span><span class="dish-table-count" data-table-count="${d.id}" ${qty(d.id) ? "" : "hidden"}>${tr(`本桌已有 ${qty(d.id)} 份`, `${qty(d.id)} already selected`)}</span></div></button><button class="dish-add ${qty(d.id) ? "selected" : ""}" data-add="${d.id}" aria-label="${escapeHTML(tr("加一份", "Add") + " " + name(d))}" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? tr("售罄", "Sold") : qty(d.id) || "+"}</button></article>`;
+            return `<article class="dish-card ${feature ? "featured" : ""} ${d.img ? "" : "text-dish"} ${d.soldOut ? "sold" : ""}"><button class="dish-open" data-dish="${d.id}" aria-label="${escapeHTML(name(d))}"><div class="dish-image">${d.img ? `<img src="${photo(d)}" alt="" ${feature ? 'fetchpriority="high"' : 'loading="lazy"'}>` : `<span class="dish-placeholder">${icon(c === "dumplings" ? "dumpling" : "plate")}</span>`}</div><div class="dish-info"><span class="dish-number">${feature ? tr("招牌", "Signature") : String(i + 1).padStart(2, "0")}</span><h3 class="dish-name">${dishNameHTML(d)}</h3><span class="dish-english">${otherName(d)}</span>${description(d) && (feature || ["noodles", "rice", "soup"].includes(c)) ? `<p class="dish-flavor">${descriptionHTML(d)}</p>` : ""}<span class="dish-price">${LunchMenu.menuPrice(d)}</span><span class="dish-table-count" data-table-count="${d.id}" ${qty(d.id) ? "" : "hidden"}>${tr(`本桌已有 ${qty(d.id)} 份`, `${qty(d.id)} already selected`)}</span></div></button><button class="dish-add ${qty(d.id) ? "selected" : ""}" data-add="${d.id}" aria-label="${escapeHTML(tr("加一份", "Add") + " " + name(d))}" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? tr("售罄", "Sold") : qty(d.id) || "+"}</button></article>`;
           })
           .join("")}</div></section>`;
       })
@@ -341,8 +371,9 @@ function renderMenu() {
 }
 function renderChrome() {
   document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
-  $("#previewNotice").hidden = production;
-  $("#previewNotice").textContent = tr(
+  const previewNotice = $("#previewNotice");
+  if (production) previewNotice?.remove();
+  else if (previewNotice) previewNotice.textContent = tr(
     "本地体验版 · 下单与呼叫不会发送到真实厨房",
     "LOCAL PREVIEW · Orders and staff calls do not reach a real kitchen",
   );
@@ -360,7 +391,7 @@ function renderChrome() {
   $("#connectionButton").innerHTML =
     `<span class="status-dot ${store.status}"></span>${statusCopy()}${table && group !== "A" ? " · " + group : ""}`;
   $("#planButton").innerHTML =
-    `${icon("spark")}${tr("推荐搭配", "Suggestions")}`;
+    `${icon("dumpling")}${tr("推荐搭配", "Suggestions")}`;
   $("#serviceButton").innerHTML = icon("bell");
   $("#serviceButton").ariaLabel = tr("呼叫服务员", "Call staff");
   $("#categoryButton").innerHTML = icon("grid");
@@ -386,6 +417,12 @@ function renderChrome() {
   renderFilters();
 }
 function renderTray() {
+  const removedCount = (store.remote.unavailableItems || []).length + (store.retiredPending || []).length;
+  const notice = $("#menuChangeNotice");
+  if (notice) {
+    notice.hidden = !removedCount;
+    notice.textContent = tr("已切换午餐菜单，原选菜品中有已下架项目，请重新选菜。已下单记录保留。", "Lunch menu updated. Some previous selections are unavailable; please choose again. Placed orders are preserved.");
+  }
   const items = store.items,
     n = count();
   const pictures = [...new Set(items.map((i) => i.id))];
@@ -418,16 +455,16 @@ function renderTray() {
     }
     rack.replaceChildren(next);
     rack.hidden = !pictures.length;
-    rack.setAttribute("aria-label", tr("已选菜品，可横向滚动", "Selected dishes, scroll horizontally"));
+    rack.setAttribute("aria-label", tr("已选菜品，可横向滚动，按回车查看本桌", "Selected dishes. Scroll horizontally or press Enter to view table"));
     rack.dataset.signature = signature;
   }
-  $("#trayLabel").textContent = n
+  updateText($("#trayLabel"), n
     ? tr(`已选 ${n} 份`, `${n} portions`)
     : store.orders.length
       ? tr("本桌已下单", "Order placed")
-      : tr("尚未选菜", "No dishes selected");
+      : tr("尚未选菜", "No dishes selected"));
   $("#trayCaption").textContent = statusCopy();
-  $("#trayTotal").textContent = n ? money(total(items)) : "";
+  updateText($("#trayTotal"), n ? money(total(items)) : "");
   $("#trayTotal").hidden = !n;
   $("#trayActionLabel").textContent = tr("查看本桌", "View table");
   $("#tray").ariaLabel =
@@ -437,7 +474,7 @@ function renderTray() {
   $$("[data-add]").forEach((b) => {
     const d = dish(b.dataset.add);
     if (!d?.soldOut) {
-      b.textContent = qty(d.id) || "+";
+      updateText(b, qty(d.id) || "+");
       b.classList.toggle("selected", qty(d.id) > 0);
     }
   });
@@ -448,7 +485,7 @@ function renderTray() {
             .slice(0, 5)
             .map(
               (i) =>
-                `<div class="ticket-line"><span>${name(dish(i.id))} × ${i.qty}</span><span>${money(dish(i.id).price * i.qty)}</span></div>`,
+                `<div class="ticket-line"><span>${name(dish(i.id))}${i.style ? " · " + styleName(i.style) : ""} × ${i.qty}</span><span>${money(itemPrice(dish(i.id), i.style) * i.qty)}</span></div>`,
             )
             .join("") +
           (items.length > 5
@@ -491,23 +528,24 @@ function add(d, style = null, amount = 1) {
 function openDish(d, selectedStyle = null) {
   detail = d;
   detailQty = 1;
-  detailStyle = d.styles?.includes(selectedStyle) ? selectedStyle : d.styles?.[0] || null;
+  detailStyle = d.styles?.includes(selectedStyle) ? selectedStyle : LunchMenu.firstStyle(d);
   openModal("dish", `${categoryName(d.section)} / ${categoryOther(d.section)}`);
   renderDetail();
 }
 function renderDetail() {
   const d = detail;
   $("#sheetBody").innerHTML =
-    `${d.img ? `<div class="detail-image" role="slider" tabindex="0" aria-label="${tr("旋转菜品图片", "Rotate dish photo")}" aria-valuemin="-22" aria-valuemax="22" aria-valuenow="0" aria-orientation="horizontal"><img src="${photo(d, "l")}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><p class="eyebrow">${d.placeholder ? tr("菜品示意图", "SERVING ILLUSTRATION") : tr("现点现做", "MADE TO ORDER")}${d.best ? " · " + tr("人气", "POPULAR") : ""}</p><div class="detail-top"><div><h1 id="sheetTitle">${dishNameHTML(d)}</h1><div class="detail-other">${otherName(d)}</div></div><span class="detail-price">${money(d.price)}</span></div><p class="detail-description">${description(d)}</p><div class="detail-facts"><div class="spice-fact"><small>${tr("辣度", "SPICE")}</small><span><i class="spice-marks" aria-hidden="true">${[1, 2, 3].map((level) => `<i class="${level <= (d.spice || 0) ? "active" : ""}"></i>`).join("")}</i>${I18N.ui[language].spiceLevels[d.spice || 0]}</span></div><div><small>${tr("过敏原", "ALLERGENS")}</small><span>${d.allergens?.length ? d.allergens.map((a) => tr(I18N.allergens[a] || a, a)).join(" · ") : tr("未提供，请向店员确认", "Ask staff for details")}</span></div>${d.pieces ? `<div><small>${tr("份量", "PORTION")}</small><span>${d.pieces} ${tr("只", "pieces")}</span></div>` : ""}</div>${d.styles ? `<p class="eyebrow">${tr("选择做法", "CHOOSE A STYLE")}</p><div class="styles">${d.styles.map((s) => `<button class="chip ${s === detailStyle ? "active" : ""}" data-style="${s}" aria-pressed="${s === detailStyle}">${styleName(s)}</button>`).join("")}</div>` : ""}<p class="fineprint">${tr("如有严重过敏，请先向店员确认食材与共用厨具情况。", "For serious allergies, check ingredients and shared preparation areas with staff.")}</p></div><div class="dish-action"><div class="quantity"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? tr("暂时售罄", "Sold out") : tr("加入本桌", "Add to our table")}<strong>${money(d.price * detailQty)}</strong></button></div>`;
+    `${d.img ? `<div class="detail-image" role="slider" tabindex="0" aria-label="${tr("旋转菜品图片", "Rotate dish photo")}" aria-valuemin="-22" aria-valuemax="22" aria-valuenow="0" aria-orientation="horizontal"><img src="${photo(d, "l")}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><div class="detail-top"><div><h1 id="sheetTitle">${dishNameHTML(d)}</h1><div class="detail-other">${otherName(d)}</div></div><span class="detail-price">${money(itemPrice(d, detailStyle))}</span></div>${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${tr("每份", "Per portion")} · ${escapeHTML(d.portion)}</p>` : ""}<p class="fineprint">${tr("如有食物过敏，请先向店员确认食材与共用厨具情况。", "For food allergies, check ingredients and shared preparation areas with staff.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? tr("暂时售罄", "Sold out") : tr("加入本桌", "Add to our table")}<strong>${money(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
   globalThis.TableMotion?.attachPlate($(".detail-image"));
 }
 function updateDetailSelection() {
   const quantity = $(".dish-action .quantity");
   if (!quantity) return;
-  quantity.querySelector("b").textContent = detailQty;
+  updateText(quantity.querySelector("b"), detailQty);
   quantity.querySelector('[data-detail-delta="-1"]').disabled = detailQty <= 1;
   quantity.querySelector('[data-detail-delta="1"]').disabled = detailQty >= 20;
-  $('[data-action="add-detail"] strong')?.replaceChildren(document.createTextNode(money(detail.price * detailQty)));
+  updateText($('[data-action="add-detail"] strong'), money(itemPrice(detail, detailStyle) * detailQty));
+  updateText($(".detail-price"), money(itemPrice(detail, detailStyle)));
   $$(".styles [data-style]").forEach((button) => {
     const selected = button.dataset.style === detailStyle;
     button.classList.toggle("active", selected);
@@ -631,7 +669,7 @@ function showPaper() {
           )
             .map(
               (d) =>
-                `<button class="paper-row" data-dish="${d.id}"><span>${name(d)}<small>${otherName(d)}</small></span><i></i><b>${d.soldOut ? tr("售罄", "Sold") : money(d.price)}</b></button>`,
+                `<button class="paper-row" data-dish="${d.id}"><span>${name(d)}<small>${otherName(d)}</small></span><i></i><b>${d.soldOut ? tr("售罄", "Sold") : money(d.price) + (d.variants ? tr(" 起", " from") : "")}</b></button>`,
             )
             .join("")}`,
       )
@@ -763,7 +801,6 @@ function renderPlanner() {
   $("#sheetBody").innerHTML =
     `<div class="sheet-content"><h2 id="sheetTitle">${tr("推荐搭配", "Suggested dishes")}</h2><div class="planner-controls"><p>${tr("用餐人数", "Guests")}</p><div class="quantity"><button data-people="-1" aria-label="${tr("减少人数", "Fewer guests")}" ${people === 1 ? "disabled" : ""}>−</button><b>${people}</b><button data-people="1" aria-label="${tr("增加人数", "More guests")}" ${people === 10 ? "disabled" : ""}>+</button></div></div><div class="filters">${[
       ["all", tr("不限", "Any")],
-      ["mild", tr("清淡不辣", "Not spicy")],
       ["veg", tr("素食为主", "Vegetarian")],
     ]
       .map(
@@ -795,6 +832,7 @@ function showService() {
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b || b.disabled) return;
+  if (LunchMenu.handle(b)) return;
   if (b.hasAttribute("data-image-retry")) {
     const host = b.closest(".detail-image"), img = host?.querySelector("img");
     if (!img) return;
@@ -1095,8 +1133,35 @@ document.addEventListener("change", (e) => {
 });
 $("#categoryButton").onclick = showCategories;
 $("#tableExperience").onclick = showTableScene;
-$("#tray").onclick = () =>
-  showCart(count() ? "pending" : store.orders.length ? "ordered" : "pending");
+// The entire visible tray opens the order, including the photo strip and padding.
+// A horizontal swipe is still a scroll, never an accidental order opening.
+const traySurface = $(".table-tray");
+let trayGesture = null;
+const openTray = () => showCart(count() ? "pending" : store.orders.length ? "ordered" : "pending");
+traySurface.addEventListener("pointerdown", (event) => {
+  trayGesture = { id: event.pointerId, x: event.clientX, y: event.clientY, scroll: $("#trayPictures").scrollLeft, moved: false };
+}, { passive: true });
+const trackTrayGesture = (event) => {
+  if (!trayGesture || event.pointerId !== trayGesture.id) return;
+  if (Math.hypot(event.clientX - trayGesture.x, event.clientY - trayGesture.y) > 8) trayGesture.moved = true;
+};
+traySurface.addEventListener("pointermove", trackTrayGesture, { passive: true });
+traySurface.addEventListener("pointerup", trackTrayGesture, { passive: true });
+traySurface.addEventListener("pointercancel", () => {
+  if (trayGesture) trayGesture.moved = true;
+}, { passive: true });
+traySurface.addEventListener("click", (event) => {
+  const dragged = trayGesture && (trayGesture.moved || Math.abs($("#trayPictures").scrollLeft - trayGesture.scroll) > 8);
+  trayGesture = null;
+  if (dragged && event.detail !== 0) return;
+  openTray();
+});
+$("#trayPictures").addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  trayGesture = null;
+  openTray();
+});
 $("#tableButton").onclick = showTable;
 $("#connectionButton").onclick = showTable;
 $("#planButton").onclick = showPlanner;

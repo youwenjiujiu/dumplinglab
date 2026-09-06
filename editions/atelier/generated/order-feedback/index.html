@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cinematic Icon Motion</title>
+  <style>
+    :root {
+      --stage-size: 1080px;
+      --duration: 5000ms;
+      --motion-delay: 0ms;
+      --motion-state: running;
+      --motion-iterations: infinite;
+      --background: #F0EEE8;
+      --bar: #090909;
+      --foreground: #E4E1D9;
+      --muted: #706D66;
+      --accent: #983f32;
+      --light: #f5efe3;
+      --shadow: rgba(38,34,27,.42);
+      --ease: cubic-bezier(.22,.72,.18,1);
+      --ease-soft: cubic-bezier(.33,.05,.18,1);
+      --ease-off: cubic-bezier(.55,.02,.82,.32);
+      --ease-fold: cubic-bezier(.42,0,.58,1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      background: #181818;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      overflow: auto;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .stage {
+      position: relative;
+      width: var(--stage-size);
+      height: var(--stage-size);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 48% 44%, rgba(255,255,255,.72), transparent 45%),
+        var(--background);
+      isolation: isolate;
+    }
+
+    .ambient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.20), transparent 42%);
+      pointer-events: none;
+    }
+
+    .anim {
+      animation-duration: var(--duration);
+      animation-iteration-count: var(--motion-iterations);
+      animation-fill-mode: both;
+      animation-delay: var(--motion-delay);
+      animation-play-state: var(--motion-state);
+    }
+
+    .nav-camera {
+      position: absolute;
+      left: 30%;
+      top: 33%;
+      width: 100%;
+      height: 34%;
+      animation-name: camera;
+      transform-origin: 21.5% 50%;
+      will-change: transform;
+    }
+
+    .nav {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(3, calc(var(--stage-size) * .237));
+      justify-content: start;
+      align-items: center;
+      padding: 2.4% 2.5% 2.4% calc(var(--stage-size) * .096);
+      border-radius: calc(var(--stage-size) * .102);
+      background: var(--bar);
+      box-shadow:
+        0 calc(var(--stage-size) * .038) calc(var(--stage-size) * .065) var(--shadow),
+        inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    .nav-item {
+      min-width: 0;
+      height: 82%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: calc(var(--stage-size) * .008);
+      color: var(--muted);
+    }
+
+    .nav-item.inactive {
+      animation-name: defocus;
+      will-change: filter, opacity;
+    }
+
+    .nav-item.inactive .icon-shell {
+      width: calc(var(--stage-size) * .112);
+      height: calc(var(--stage-size) * .112);
+    }
+
+    .icon-shell {
+      position: relative;
+      width: calc(var(--stage-size) * .128);
+      height: calc(var(--stage-size) * .128);
+      display: grid;
+      place-items: center;
+    }
+
+    .icon-shell > svg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .mode-house .nav-item.active .icon-shell > svg,
+    .mode-generic .nav-item.active .icon-shell > svg {
+      width: 210%;
+      height: 210%;
+    }
+
+    .mode-semantic .nav-camera {
+      left: 35.9722%;
+      top: 45.6944%;
+      width: 28.0556%;
+      height: 8.6111%;
+      animation-name: semantic-production-camera;
+      transform-origin: center;
+    }
+
+    .mode-semantic .nav {
+      display: block;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .mode-semantic .nav-item.active {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+
+    .mode-semantic .nav-item.inactive,
+    .mode-semantic .nav-item.active > .label {
+      display: none;
+    }
+
+    .mode-semantic .icon-shell {
+      position: absolute;
+      inset: 0;
+      width: auto;
+      height: auto;
+    }
+
+    .mode-semantic .nav-item.active .icon-shell > svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .mode-semantic-delete .nav-camera {
+      left: 35.9722%;
+      top: 45.6944%;
+      width: 28.0556%;
+      height: 8.6111%;
+    }
+
+    .mode-semantic-search .nav-camera {
+      left: 32.6389%;
+      top: 45.6944%;
+      width: 34.7222%;
+      height: 8.6111%;
+    }
+
+    @keyframes semantic-production-camera {
+      0%, 100% {
+        transform: translate3d(0,0,0) scale(1) rotate(0) skew(0);
+      }
+    }
+
+    .label {
+      color: currentColor;
+      font-size: calc(var(--stage-size) * .0365);
+      font-weight: 440;
+      line-height: 1;
+      letter-spacing: -.02em;
+      white-space: nowrap;
+    }
+
+    .nav-item.active .label {
+      animation-name: active-label;
+      color: #858179;
+    }
+
+    .icon-shell > svg.history-icon {
+      width: 100%;
+      height: 100%;
+      color: var(--muted);
+    }
+
+    .icon-shell > svg.check-icon {
+      width: 70%;
+      height: 70%;
+      color: var(--accent);
+    }
+
+    @keyframes camera {
+      0%, 8% { transform: translate3d(0,0,0) scale(1); }
+      8% { animation-timing-function: var(--ease); }
+      23%, 76% { transform: translate3d(0,0,0) scale(1.8); }
+      76% { animation-timing-function: var(--ease); }
+      90%, 100% { transform: translate3d(0,0,0) scale(1); }
+    }
+
+    @keyframes defocus {
+      0%, 9%, 89%, 100% { filter: blur(0); opacity: 1; }
+      9% { animation-timing-function: var(--ease-soft); }
+      23%, 76% { filter: blur(calc(var(--stage-size) * .0038)); opacity: .58; }
+      76% { animation-timing-function: var(--ease-soft); }
+    }
+
+    @keyframes active-label {
+      0%, 20%, 80%, 100% { color: #77736c; }
+      35%, 65% { color: #a09c93; }
+    }
+
+    /* House template */
+    .flat-house {
+      fill: #706c64;
+      transform-box: fill-box;
+      transform-origin: center;
+      animation-name: flat-house;
+    }
+
+    .house-assembly,
+    .house-lighting {
+      transform: translate(-15px,0);
+      transform-box: fill-box;
+    }
+
+    .house-front {
+      fill: #c9c6bf;
+      animation-name: house-front;
+      transform-box: fill-box;
+      transform-origin: center bottom;
+    }
+
+    .house-side {
+      fill: #211f1d;
+      animation-name: house-side;
+      transform-box: fill-box;
+      transform-origin: right center;
+      will-change: transform;
+    }
+
+    .house-roof {
+      fill: #efede8;
+      animation-name: house-roof;
+      transform-box: fill-box;
+      will-change: clip-path;
+    }
+
+    .roof-line {
+      fill: none;
+      stroke: #faf9f5;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 54;
+      animation-name: roof-line;
+      will-change: stroke-dashoffset, opacity;
+    }
+
+    .door {
+      fill: var(--bar);
+      animation-name: doorway;
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      will-change: transform;
+    }
+
+    .porthole {
+      fill: var(--bar);
+      animation-name: porthole;
+      transform-box: fill-box;
+      transform-origin: center;
+      will-change: transform;
+    }
+
+    .porthole-light {
+      fill: var(--light);
+      animation-name: porthole-light;
+      transform-box: fill-box;
+      transform-origin: center;
+      will-change: transform, opacity;
+    }
+
+    .side-window {
+      fill: #0e0e0d;
+      animation-name: side-window;
+      transform-box: fill-box;
+      transform-origin: right center;
+      will-change: transform;
+    }
+
+    .light-beam {
+      fill: url(#beamGradient);
+      animation-name: light-beam;
+      transform-box: fill-box;
+      transform-origin: right center;
+      mix-blend-mode: normal;
+      will-change: transform, opacity;
+    }
+
+    .light-underfold {
+      fill: url(#beamGradient);
+      animation-name: light-underfold;
+      transform-box: fill-box;
+      transform-origin: right center;
+      mix-blend-mode: screen;
+      will-change: transform, opacity;
+    }
+
+    .beam-hot {
+      stop-color: color-mix(in srgb, var(--light), #8a290b 55%);
+    }
+
+    .beam-mid {
+      stop-color: color-mix(in srgb, var(--light), #541700 70%);
+    }
+
+    .beam-tail {
+      stop-color: color-mix(in srgb, var(--light), #271100 82%);
+    }
+
+    .generic-beam-hot {
+      stop-color: color-mix(in srgb, var(--light), #8f6500 32%);
+    }
+
+    .generic-beam-mid {
+      stop-color: color-mix(in srgb, var(--light), #000 52%);
+    }
+
+    .generic-beam-tail {
+      stop-color: color-mix(in srgb, var(--light), #000 72%);
+    }
+
+    .light-cube {
+      animation-name: light-cube;
+      transform-box: fill-box;
+      transform-origin: right center;
+      will-change: transform;
+    }
+
+    .light-cube-side {
+      fill: var(--light);
+    }
+
+    @keyframes flat-house {
+      0%, 20% {
+        opacity: 1;
+        fill: #706c64;
+        transform: translate(0,0) scale(1);
+      }
+      20% { animation-timing-function: var(--ease); }
+      25.5% {
+        opacity: 1;
+        fill: #aaa79f;
+        transform: translate(11px,2px) scale(1.05);
+      }
+      28% {
+        opacity: 1;
+        fill: #c9c6bf;
+        transform: translate(11px,2px) scale(1.05);
+      }
+      28.01%, 74.99% {
+        opacity: 0;
+        fill: #c9c6bf;
+        transform: translate(11px,2px) scale(1.05);
+      }
+      75% {
+        opacity: 1;
+        fill: #c9c6bf;
+        transform: translate(11px,2px) scale(1.05);
+      }
+      77% {
+        opacity: 1;
+        fill: #c9c6bf;
+        transform: translate(11px,2px) scale(1.05);
+        animation-timing-function: var(--ease);
+      }
+      84%, 100% {
+        opacity: 1;
+        fill: #706c64;
+        transform: translate(0,0) scale(1);
+      }
+    }
+
+    @keyframes house-front {
+      0%, 27.99% { opacity: 0; }
+      28%, 74.99% { opacity: 1; }
+      75%, 100% { opacity: 0; }
+    }
+
+    @keyframes house-side {
+      0%, 25% { opacity: 1; transform: scaleX(0); }
+      25% { animation-timing-function: var(--ease); }
+      31%, 69% { opacity: 1; transform: scaleX(1); }
+      69% { animation-timing-function: var(--ease-fold); }
+      76%, 100% { opacity: 1; transform: scaleX(0); }
+    }
+
+    @keyframes house-roof {
+      0%, 23.5% {
+        opacity: 1;
+        clip-path: polygon(50% 100%,100% 46%,100% 46%,50% 100%);
+      }
+      23.5% {
+        animation-timing-function: var(--ease);
+      }
+      28.5%, 69% {
+        opacity: 1;
+        clip-path: polygon(0 54%,49% 0,100% 46%,50% 100%);
+      }
+      69% { animation-timing-function: var(--ease-fold); }
+      76%, 100% {
+        opacity: 1;
+        clip-path: polygon(50% 100%,100% 46%,100% 46%,50% 100%);
+      }
+    }
+
+    @keyframes roof-line {
+      0%, 21.5% { opacity: 0; stroke-dashoffset: 54; }
+      21.5% { animation-timing-function: var(--ease); }
+      24.5%, 27% { opacity: 1; stroke-dashoffset: 0; }
+      29%, 72.5% { opacity: 0; stroke-dashoffset: 0; }
+      72.5% { animation-timing-function: var(--ease); }
+      74.5%, 75.5% { opacity: 1; stroke-dashoffset: 0; }
+      77%, 100% { opacity: 0; stroke-dashoffset: 54; }
+    }
+
+    @keyframes doorway {
+      0%, 25.5% { transform: scaleY(0); opacity: 1; }
+      25.5% { animation-timing-function: var(--ease); }
+      31%, 69.5% { transform: scaleY(1); opacity: 1; }
+      69.5% { animation-timing-function: var(--ease-fold); }
+      75%, 100% { transform: scaleY(0); opacity: 1; }
+    }
+
+    @keyframes porthole {
+      0%, 24.5% { transform: scale(0); opacity: 1; }
+      24.5% { animation-timing-function: var(--ease); }
+      29.5%, 68% { transform: scale(1); opacity: 1; }
+      68% { animation-timing-function: var(--ease-fold); }
+      74.5%, 100% { transform: scale(0); opacity: 1; }
+    }
+
+    @keyframes porthole-light {
+      0%, 28% { transform: translateX(-5px) scale(.1); opacity: 0; }
+      28% { animation-timing-function: var(--ease); }
+      33.5%, 64% { transform: translateX(0) scale(1); opacity: 1; }
+      64% { animation-timing-function: var(--ease-fold); }
+      70%, 100% { transform: translateX(-5px) scale(.1); opacity: 0; }
+    }
+
+    @keyframes side-window {
+      0%, 27% { opacity: 1; transform: scaleX(0); }
+      27% { animation-timing-function: var(--ease); }
+      31%, 70% { opacity: 1; transform: scaleX(1); }
+      70% { animation-timing-function: var(--ease-fold); }
+      75%, 100% { opacity: 1; transform: scaleX(0); }
+    }
+
+    @keyframes light-beam {
+      0%, 32.5% { opacity: 0; transform: scaleX(0); }
+      32.5% { animation-timing-function: var(--ease-soft); }
+      38%, 62% { opacity: .82; transform: scaleX(1); }
+      62% { animation-timing-function: var(--ease-soft); }
+      66.5%, 100% { opacity: 0; transform: scaleX(0); }
+    }
+
+    @keyframes light-underfold {
+      0%, 33% { opacity: 0; transform: scaleX(0); }
+      33% { animation-timing-function: var(--ease-soft); }
+      39%, 60% { opacity: .28; transform: scaleX(1); }
+      60% { animation-timing-function: var(--ease-soft); }
+      66%, 100% { opacity: 0; transform: scaleX(0); }
+    }
+
+    @keyframes light-cube {
+      0%, 32% { opacity: 1; transform: scaleX(0); }
+      32% { animation-timing-function: var(--ease-soft); }
+      36%, 62% { opacity: 1; transform: scaleX(1); }
+      62% { animation-timing-function: var(--ease-soft); }
+      67%, 100% { opacity: 1; transform: scaleX(0); }
+    }
+
+    /* Generic icon recipe */
+    .generic-flat,
+    .generic-front,
+    .generic-depth-1,
+    .generic-depth-2,
+    .generic-highlight,
+    .generic-spark {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    .generic-flat {
+      color: #77736c;
+      animation-name: generic-flat;
+    }
+
+    .generic-front {
+      color: #e7e4dc;
+      animation-name: generic-front;
+    }
+
+    .generic-depth-1 {
+      color: #353531;
+      animation-name: generic-depth-1;
+    }
+
+    .generic-depth-2 {
+      color: #6f6b63;
+      animation-name: generic-depth-2;
+    }
+
+    .generic-highlight {
+      color: var(--accent);
+      clip-path: polygon(58% 0,100% 0,100% 62%,78% 76%);
+      animation-name: generic-highlight;
+    }
+
+    .generic-beam {
+      fill: url(#genericBeamGradient);
+      animation-name: generic-beam;
+      transform-box: fill-box;
+      transform-origin: right center;
+      mix-blend-mode: screen;
+    }
+
+    .generic-spark {
+      fill: var(--accent);
+      animation-name: generic-spark;
+    }
+
+    .source-raster .generic-front {
+      filter: grayscale(1) brightness(1.55);
+    }
+
+    .source-raster .generic-depth-1 {
+      filter: grayscale(1) brightness(.28);
+    }
+
+    .source-raster .generic-depth-2 {
+      filter: grayscale(1) brightness(.72);
+    }
+
+    .source-raster .generic-highlight {
+      filter: sepia(1) saturate(9) hue-rotate(18deg) brightness(1.35);
+    }
+
+    @keyframes generic-flat {
+      0%, 21% { opacity: 1; transform: scale(.64); }
+      21% { animation-timing-function: var(--ease); }
+      30%, 70% { opacity: 0; transform: scale(.72); }
+      70% { animation-timing-function: var(--ease); }
+      79%, 100% { opacity: 1; transform: scale(.64); }
+    }
+
+    @keyframes generic-front {
+      0%, 22% { opacity: 0; transform: translate(8px,-8px) scale(.58); }
+      22% { animation-timing-function: var(--ease); }
+      34%, 66% { opacity: 1; transform: translate(8px,-8px) scale(.78); }
+      66% { animation-timing-function: var(--ease); }
+      78%, 100% { opacity: 0; transform: translate(8px,-8px) scale(.58); }
+    }
+
+    @keyframes generic-depth-1 {
+      0%, 24% { opacity: 0; transform: translate(7px,-7px) scale(.66); }
+      24% { animation-timing-function: var(--ease); }
+      34%, 66% { opacity: 1; transform: translate(-4px,5px) scale(.78); }
+      66% { animation-timing-function: var(--ease); }
+      76%, 100% { opacity: 0; transform: translate(7px,-7px) scale(.66); }
+    }
+
+    @keyframes generic-depth-2 {
+      0%, 26% { opacity: 0; transform: translate(5px,-6px) scale(.69); }
+      26% { animation-timing-function: var(--ease); }
+      35%, 65% { opacity: 1; transform: translate(2px,-1px) scale(.78); }
+      65% { animation-timing-function: var(--ease); }
+      74%, 100% { opacity: 0; transform: translate(5px,-6px) scale(.69); }
+    }
+
+    @keyframes generic-highlight {
+      0%, 29% { opacity: 0; transform: translate(8px,-8px) scale(.74); }
+      29% { animation-timing-function: var(--ease); }
+      37%, 63% { opacity: 1; transform: translate(8px,-8px) scale(.78); }
+      63% { animation-timing-function: var(--ease); }
+      71%, 100% { opacity: 0; transform: translate(8px,-8px) scale(.74); }
+    }
+
+    @keyframes generic-beam {
+      0%, 32% { opacity: 0; transform: scaleX(.02); }
+      32% { animation-timing-function: var(--ease); }
+      39%, 61% { opacity: .75; transform: scaleX(1); }
+      61% { animation-timing-function: var(--ease); }
+      68%, 100% { opacity: 0; transform: scaleX(.02); }
+    }
+
+    @keyframes generic-spark {
+      0%, 31% { opacity: 0; transform: translate(5px,-5px) scale(0) rotate(-20deg); }
+      31% { animation-timing-function: var(--ease); }
+      39%, 61% { opacity: 1; transform: translate(0,0) scale(1) rotate(0); }
+      61% { animation-timing-function: var(--ease); }
+      69%, 100% { opacity: 0; transform: translate(5px,-5px) scale(0) rotate(20deg); }
+    }
+
+    /* Semantic control recipes */
+    .semantic-motion {
+      overflow: visible;
+      color: var(--accent);
+    }
+
+    .semantic-surface {
+      fill: color-mix(in srgb, var(--accent), white 90%);
+      stroke: color-mix(in srgb, var(--accent), white 76%);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .delete-bin,
+    .delete-lid,
+    .delete-label,
+    .delete-result,
+    .delete-fragments,
+    .delete-sweep,
+    .search-surface,
+    .search-ring,
+    .search-lens-left,
+    .search-lens-right,
+    .search-bridge,
+    .search-handle,
+    .search-label {
+      transform-box: fill-box;
+      will-change: transform, opacity;
+    }
+
+    .delete-bin-body,
+    .delete-lid path,
+    .delete-fragments path {
+      fill: var(--accent);
+    }
+
+    .delete-bin-lines {
+      fill: none;
+      stroke: color-mix(in srgb, var(--accent), white 92%);
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    .delete-label,
+    .delete-result {
+      fill: var(--accent);
+      font: italic 520 24px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -.03em;
+      transform-origin: left center;
+    }
+
+    .delete-result {
+      font-style: italic;
+      animation-name: semantic-delete-result;
+    }
+
+    .delete-label {
+      animation-name: semantic-delete-label;
+    }
+
+    .delete-bin {
+      transform-origin: center bottom;
+      animation-name: semantic-delete-bin;
+    }
+
+    .delete-lid {
+      transform-origin: 56px 44px;
+      animation-name: semantic-delete-lid;
+    }
+
+    .delete-fragments {
+      fill: var(--accent);
+      transform-origin: left center;
+      animation-name: semantic-delete-fragments;
+    }
+
+    .delete-sweep {
+      transform-origin: 262px 58px;
+      animation-name: semantic-delete-sweep;
+    }
+
+    .delete-sweep-arm {
+      fill: none;
+      stroke: color-mix(in srgb, var(--accent), white 61%);
+      stroke-width: 5.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .delete-sweep-foot {
+      fill: color-mix(in srgb, var(--accent), white 58%);
+    }
+
+    .delete-surface {
+      animation-name: semantic-delete-surface;
+      transform-box: fill-box;
+      transform-origin: center;
+      filter: drop-shadow(0 7px 13px rgba(51,48,48,.06));
+    }
+
+    @keyframes semantic-delete-surface {
+      0%, 11% {
+        fill: color-mix(in srgb, var(--accent), white 98%);
+        stroke: rgba(20,20,20,.08);
+        transform: scale(1);
+      }
+      11% { animation-timing-function: var(--ease); }
+      22%, 100% {
+        fill: color-mix(in srgb, var(--accent), white 91%);
+        stroke: color-mix(in srgb, var(--accent), white 80%);
+        transform: scale(1);
+      }
+    }
+
+    @keyframes semantic-delete-bin {
+      0%, 14% { transform: translateY(0) scale(1); }
+      14% { animation-timing-function: var(--ease); }
+      22%, 72% { transform: translateY(5px) scale(1.02); }
+      72% { animation-timing-function: var(--ease); }
+      82%, 100% { transform: translateY(0) scale(1); }
+    }
+
+    @keyframes semantic-delete-lid {
+      0%, 14% {
+        opacity: 1;
+        transform: translate(0,0) rotate(0);
+      }
+      14% { animation-timing-function: var(--ease); }
+      22%, 72% {
+        opacity: 1;
+        transform: translate(9px,-20px) rotate(-9deg);
+      }
+      72% { animation-timing-function: var(--ease); }
+      82%, 100% {
+        opacity: 1;
+        transform: translate(0,0) rotate(0);
+      }
+    }
+
+    @keyframes semantic-delete-label {
+      0%, 43% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+        transform: translateX(0) scaleX(1);
+      }
+      43% { animation-timing-function: cubic-bezier(.44,.04,.68,.28); }
+      49% {
+        opacity: 1;
+        clip-path: inset(0 20% 0 0);
+        transform: translateX(-18px) scaleX(.78);
+      }
+      55% {
+        opacity: 1;
+        clip-path: inset(0 70% 0 0);
+        transform: translateX(-43px) scaleX(.34);
+      }
+      59%, 100% {
+        opacity: 0;
+        clip-path: inset(0 92% 0 0);
+        transform: translateX(-50px) scaleX(.10);
+      }
+    }
+
+    @keyframes semantic-delete-fragments {
+      0%, 48% {
+        opacity: 0;
+        transform: translateX(30px) scaleX(1);
+      }
+      50% {
+        opacity: .9;
+        transform: translateX(-17px) scaleX(.72);
+      }
+      50% { animation-timing-function: var(--ease-off); }
+      59%, 100% {
+        opacity: 0;
+        transform: translateX(-48px) scaleX(.08);
+      }
+    }
+
+    @keyframes semantic-delete-sweep {
+      0%, 20% {
+        opacity: 0;
+        transform: translate(64px,-10px);
+      }
+      22% { opacity: .35; }
+      22% { animation-timing-function: var(--ease); }
+      25%, 34% {
+        opacity: 1;
+        transform: translate(0,0);
+      }
+      34% { animation-timing-function: cubic-bezier(.36,.04,.18,1); }
+      43% {
+        opacity: 1;
+        transform: translate(-73px,0);
+        animation-timing-function: cubic-bezier(.44,.04,.20,1);
+      }
+      57%, 59% {
+        opacity: 1;
+        transform: translate(-164px,0);
+      }
+      59% { animation-timing-function: var(--ease-fold); }
+      72% {
+        opacity: 1;
+        transform: translate(0,0);
+      }
+      76%, 100% {
+        opacity: 0;
+        transform: translate(47px,-6px);
+      }
+    }
+
+    @keyframes semantic-delete-result {
+      0%, 62% {
+        opacity: 0;
+        clip-path: inset(0 100% 0 0);
+        transform: translateX(0);
+      }
+      62% { animation-timing-function: var(--ease); }
+      72%, 100% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+        transform: translateX(0);
+      }
+    }
+
+    .search-surface {
+      fill: #f3f3f3;
+      stroke: none;
+      transform-origin: left center;
+      animation-name: semantic-search-surface;
+    }
+
+    .search-ring {
+      fill: none;
+      stroke: url(#searchRingGradient);
+      stroke-width: 2;
+      transform-origin: center;
+      animation-name: semantic-search-ring;
+    }
+
+    .search-disc {
+      fill: #fff;
+      filter: drop-shadow(0 4px 7px rgba(32,32,32,.10));
+    }
+
+    .search-lens-left,
+    .search-lens-right {
+      fill: #111;
+      transform-origin: center;
+    }
+
+    .search-lens-left {
+      animation-name: semantic-search-left;
+    }
+
+    .search-lens-right {
+      animation-name: semantic-search-right;
+    }
+
+    .search-bridge,
+    .search-handle {
+      fill: none;
+      stroke: #111;
+      stroke-width: 3;
+      stroke-linecap: round;
+      transform-origin: center;
+    }
+
+    .search-bridge {
+      animation-name: semantic-search-bridge;
+    }
+
+    .search-handle {
+      animation-name: semantic-search-handle;
+    }
+
+    .search-label {
+      fill: #c4c4c4;
+      font: 500 21px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -.025em;
+      transform-origin: left center;
+      animation-name: semantic-search-label;
+    }
+
+    @keyframes semantic-search-surface {
+      0%, 8% { transform: scaleX(.19); }
+      8% { animation-timing-function: var(--ease); }
+      18%, 82% { transform: scaleX(1); }
+      82% { animation-timing-function: var(--ease); }
+      92%, 100% { transform: scaleX(.19); }
+    }
+
+    @keyframes semantic-search-ring {
+      0%, 8% { opacity: .18; transform: rotate(-40deg) scale(.96); }
+      8% { animation-timing-function: var(--ease); }
+      20%, 80% { opacity: 1; transform: rotate(0) scale(1); }
+      80% { animation-timing-function: var(--ease); }
+      92%, 100% { opacity: .18; transform: rotate(40deg) scale(.96); }
+    }
+
+    @keyframes semantic-search-left {
+      0%, 8% { fill: #c9c9c9; transform: translate(4px,0) scale(1); }
+      8% { animation-timing-function: var(--ease); }
+      20%, 80% { fill: #111; transform: translate(-3px,0) scale(1); }
+      80% { animation-timing-function: var(--ease); }
+      92%, 100% { fill: #c9c9c9; transform: translate(4px,0) scale(1); }
+    }
+
+    @keyframes semantic-search-right {
+      0%, 10% { opacity: 0; transform: translate(-11px,0) scale(.08); }
+      10% { animation-timing-function: var(--ease); }
+      21%, 79% { opacity: 1; transform: translate(0,0) scale(1); }
+      79% { animation-timing-function: var(--ease); }
+      90%, 100% { opacity: 0; transform: translate(-11px,0) scale(.08); }
+    }
+
+    @keyframes semantic-search-bridge {
+      0%, 11% { opacity: 0; transform: scaleX(0); }
+      11% { animation-timing-function: var(--ease); }
+      20%, 80% { opacity: 1; transform: scaleX(1); }
+      80% { animation-timing-function: var(--ease); }
+      90%, 100% { opacity: 0; transform: scaleX(0); }
+    }
+
+    @keyframes semantic-search-handle {
+      0%, 8% { opacity: 1; transform: translate(0,0) scale(1); }
+      8% { animation-timing-function: var(--ease); }
+      17%, 83% { opacity: 0; transform: translate(-5px,-5px) scale(.08); }
+      83% { animation-timing-function: var(--ease); }
+      92%, 100% { opacity: 1; transform: translate(0,0) scale(1); }
+    }
+
+    @keyframes semantic-search-label {
+      0%, 12% { opacity: 0; transform: translateX(-38px); }
+      12% { animation-timing-function: var(--ease); }
+      24%, 76% { opacity: 1; transform: translateX(0); }
+      76% { animation-timing-function: var(--ease); }
+      89%, 100% { opacity: 0; transform: translateX(-38px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .anim { animation-play-state: paused; animation-delay: 0ms; }
+    }
+  </style>
+  <script>
+    if (new URLSearchParams(location.search).has("render")) {
+      document.documentElement.style.setProperty("--motion-state", "paused");
+    }
+  </script>
+</head>
+<body>
+  <main class="stage mode-generic source-vector" aria-label="Cinematic Icon Motion">
+    <div class="ambient"></div>
+    <div class="nav-camera anim">
+      <section class="nav">
+        <div class="nav-item active">
+          <div class="icon-shell"><svg class="generic-motion" viewBox="-35 -25 170 150" aria-hidden="true">
+  <defs>
+    <symbol id="userIcon" viewBox="0 0 100 100"><path d="M50 23v54M23 50h54" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" /></symbol>
+    <linearGradient id="genericBeamGradient" x1="1" y1=".5" x2="0" y2=".5">
+      <stop class="generic-beam-hot" offset="0" stop-opacity=".64"/>
+      <stop class="generic-beam-mid" offset=".5" stop-opacity=".25"/>
+      <stop class="generic-beam-tail" offset="1" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path class="generic-beam anim" d="M25 40-34 22-34 82 25 63Z"/>
+  <use class="generic-flat anim" href="#userIcon" x="0" y="0" width="100" height="100"/>
+  <use class="generic-depth-1 anim" href="#userIcon" x="0" y="0" width="100" height="100"/>
+  <use class="generic-depth-2 anim" href="#userIcon" x="0" y="0" width="100" height="100"/>
+  <use class="generic-front anim" href="#userIcon" x="0" y="0" width="100" height="100"/>
+  <use class="generic-highlight anim" href="#userIcon" x="0" y="0" width="100" height="100"/>
+  <path class="generic-spark anim" d="m87 2 4 10 10 4-10 4-4 10-4-10-10-4 10-4Z"/>
+</svg></div>
+          <div class="label" data-motion-label="active">加入</div>
+        </div>
+        <div class="nav-item inactive anim">
+          <div class="icon-shell">
+            <svg class="history-icon" viewBox="0 0 100 100" aria-hidden="true">
+              <path fill="currentColor" d="M24 28h52l-5 52c-.5 5-4 8-9 8H38c-5 0-8.5-3-9-8Z"/>
+              <ellipse cx="50" cy="28" rx="26" ry="10" fill="currentColor"/>
+              <ellipse cx="50" cy="29" rx="18" ry="4.5" fill="var(--bar)"/>
+            </svg>
+          </div>
+          <div class="label" data-motion-label="secondary">History</div>
+        </div>
+        <div class="nav-item inactive anim">
+          <div class="icon-shell">
+            <svg class="check-icon" viewBox="0 0 100 100" aria-hidden="true">
+              <circle cx="50" cy="50" r="39" fill="currentColor"/>
+              <path d="M50 29v42M29 50h42" fill="none" stroke="#0c0c0b" stroke-width="9" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="label" data-motion-label="tertiary">Check</div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <script>
+    window.MOTION_CONFIG = {"mode": "generic", "recipe": null, "scope": "icon", "target": "web-component", "title": "Cinematic Icon Motion", "elementName": "dl-order-feedback-baseline", "durationMs": 5000, "fps": 60, "size": 1080, "hostWidth": 24, "hostHeight": 24, "inlineStart": 0.2, "label": "加入", "resultLabel": null, "secondaryLabel": "History", "tertiaryLabel": "Check", "meaning": null, "referenceVideo": null, "sourceIcon": "/Users/youwen/dumplinglab/editions/atelier/micro-motion-source.svg", "colors": {"accent": "#983f32", "light": "#f5efe3", "background": "#F0EEE8", "bar": "#090909", "foreground": "#E4E1D9", "muted": "#706D66", "shadow": "rgba(38,34,27,.42)"}};
+    window.setMotionTime = async function setMotionTime(milliseconds) {
+      const root = document.documentElement;
+      const duration = window.MOTION_CONFIG.durationMs;
+      const time = Math.max(0, Math.min(Number(milliseconds) || 0, duration - .001));
+      root.style.setProperty("--motion-state", "paused");
+      root.style.setProperty("--motion-delay", `-${time}ms`);
+      void document.body.offsetWidth;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return time;
+    };
+    document.addEventListener("click", () => {
+      const root = document.documentElement;
+      const paused = root.style.getPropertyValue("--motion-state") === "paused";
+      root.style.setProperty("--motion-delay", "0ms");
+      root.style.setProperty("--motion-state", paused ? "running" : "paused");
+    });
+  </script>
+</body>
+</html>

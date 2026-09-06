@@ -6,6 +6,7 @@ const origin = process.env.ATELIER_TEST_URL || "http://127.0.0.1:7898";
 assert.match(origin, /^http:\/\/(127\.0\.0\.1|localhost):\d+$/);
 const ctx = vm.createContext({});
 vm.runInContext(await (await fetch(origin + "/menu-data.js")).text(), ctx);
+vm.runInContext(await (await fetch(origin + "/lunch-menu.js")).text(), ctx);
 const table = "QW" + crypto.randomUUID().slice(0, 8).toUpperCase();
 const api = async (path, body) => {
   const response = await fetch(origin + path, { method: body ? "POST" : "GET", headers: body ? { "content-type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined });
@@ -36,7 +37,7 @@ assert.equal(accepted.cart.items.reduce((n, i) => n + i.qty, 0), 1, "Tenth diner
 assert.equal(accepted.cart.items[0].id, diners[9].dishId);
 assert.equal(accepted.cart.items[0].style, diners[9].style);
 assert.equal(accepted.cart.orders.length, 1);
-const expected = snapshot.items.reduce((n, i) => n + ctx.MENU.find((d) => d.id === i.id).price * i.qty, 0);
+const expected = snapshot.items.reduce((n, i) => n + ctx.lunchPrice(ctx.MENU.find((d) => d.id === i.id), i.style) * i.qty, 0);
 assert(Math.abs(accepted.order.total - expected) < 0.001);
 await api("/api/order", { ...order, requestId: accepted.order.id });
 const finalA = (await api(`/api/cart?table=${table}&group=A`)).cart;

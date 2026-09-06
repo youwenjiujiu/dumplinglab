@@ -2,11 +2,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
+import "../../web/server/order-core.js";
 const origin = process.env.ATELIER_TEST_URL || "http://127.0.0.1:7898";
 assert.match(origin, /^http:\/\/(127\.0\.0\.1|localhost):\d+$/);
 const table = "QA" + crypto.randomUUID().slice(0, 8),
-  dish = "beijing-pork-guotie",
-  second = "jp-chicken-gyoza";
+  dish = "lunch-mini-pork-rice",
+  second = "lunch-cold-veg-shreds";
 const api = async (path, body) => {
   const r = await fetch(origin + path, {
     method: body ? "POST" : "GET",
@@ -113,6 +114,7 @@ const source = await readFile(
 function client(t, g = "A", memory = new Map(), blockedStorage = false) {
   const state = { offline: false, dropOrderResponse: false, blockedStorage };
   const ctx = vm.createContext({
+    isLunchItem: globalThis.isLunchItem,
     EventTarget,
     Event,
     crypto,
