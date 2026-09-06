@@ -180,65 +180,84 @@ try {
   }
   const store = run("store");
   if (!browse) await until(()=>store.status==="synced");
-  assert.equal(run("MENU.length"),32);
+  assert.equal(run("MENU.length"),34);
   if (!browse) click("#closeSheet");
   await until(()=>!browserHistory.state?.atelierSheet);
+
+  assert.deepEqual(Array.from(document.querySelectorAll(".menu-section")).map(s=>s.dataset.section), ["recommended","dumplings","noodles","sides","drinks"]);
+  assert.equal(document.querySelectorAll("#section-recommended .dish-card").length,6);
+  for (const id of ["red-oil-chaoshou","roe-wonton-noodles"]) {
+    assert(document.querySelector(`[data-recommendation="${id}"]`).disabled);
+  }
+  for (const id of ["chive-fried","chicken-fried","pork-soup"]) {
+    click(`[data-recommendation="${id}"]`);
+    assert.equal(run("modal"),"dish");
+    assert.equal(document.querySelector('[data-lunch-option="prep"]'),null,"Recommended preparation stays locked");
+    click('[data-lunch-option="pieces"][data-value="9"]');
+    assert.equal(run("detail.variants[detailStyle].pieces"),9);
+    click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
+  }
+  click('[data-recommendation="boiled-dumplings"]');
+  assert.equal(run("modal"),"filling");
+  assert.equal(document.querySelectorAll("[data-boiled-filling]").length,5);
+  click('[data-boiled-filling="lunch-v2-pork-cabbage"]');
+  assert.equal(run("detail.id"),"lunch-v2-pork-cabbage");
+  assert.equal(run("detail.variants[detailStyle].prep"),"boiled");
+  assert.equal(document.querySelector(".detail-price").textContent,"S$5.80");
+  click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
+  assert.equal(store.items.length,0,"Browsing recommendation choices never adds without confirmation");
+  console.log("RECOMMENDATIONS PASS — section order, pending products blocked, direct presets, white-boiled filling chooser and portions.");
+
   assert.equal(document.querySelector("#section-dumplings .dish-grid").children.length,0,"No filling before choosing preparation");
   assert.equal(document.querySelectorAll('[data-lunch-prep] img').length,4,"All four flavor entries have photos");
-  run('openDish(dish("lunch-pork-chive"))');
+  run('openDish(dish("lunch-v2-pork-chive-shrimp"))');
   assert.equal(run('modal'),null,"A direct dish entry cannot bypass preparation selection");
-  choosePreparation("soup");
+  choosePreparation("tossed");
   for (const dish of run('MENU')) {
     const card = document.querySelector(`[data-dish="${dish.id}"]`);
     assert(card.querySelector(".dish-image img"), `${dish.cn} must have a menu photo`);
     assert(!card.closest(".dish-card").classList.contains("text-dish"));
     click(card);
-    assert.equal(document.querySelector(".detail-image img").getAttribute("src"), run(`photo(dish('${dish.id}'), 'l')`));
+    assert.equal(document.querySelector(".detail-image img").getAttribute("src"), run(`photo(dish('${dish.id}'), 'l', detailStyle)`));
     click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   }
   // Render a full catalogue cart fixture without creating API cart/order writes.
   const savedRemote = store.remote;
   store.remote = { ...savedRemote, items: run('MENU.map(d => ({id:d.id, style:d.styles?.[0] || null, qty:1}))') };
   run('showCart()');
-  assert.equal(document.querySelectorAll(".cart-photo img").length,32,"All cart dishes have images");
+  assert.equal(document.querySelectorAll(".cart-photo img").length,34,"All cart dishes have images");
   store.remote = savedRemote;
   run('renderTray()');
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
-  console.log("MENU PHOTOS PASS — all 32 menu cards, detail views and cart fixtures have corresponding images.");
+  console.log("MENU PHOTOS PASS — all 34 menu cards, detail views and cart fixtures have corresponding images.");
   click('[data-lunch-back]');
   assert.equal(document.querySelectorAll("[data-lunch-prep]").length,4);
   assert(document.querySelector(".lunch-service").textContent.includes("午餐"));
-  for (const [prep,count] of [["soup",9],["tossed",9],["boiled",6],["fried",6]]) {
+  for (const [prep,count] of [["soup",3],["tossed",8],["boiled",5],["fried",5]]) {
     choosePreparation(prep);
     assert.equal(document.querySelectorAll("#section-dumplings .dish-card").length,count,prep);
     assert(document.querySelector('.lunch-chosen-flavor strong').textContent.length);
-    const restricted = ['lunch-prawn-roe-wonton','lunch-pork-wonton','lunch-veg-pork-wonton'];
+    const restricted = ['lunch-v2-prawn-roe-wonton','lunch-v2-pork-wonton','lunch-v2-chicken-corn-wonton'];
     for (const id of restricted) assert.equal(Boolean(document.querySelector(`#section-dumplings [data-dish="${id}"]`)), ['soup','tossed'].includes(prep));
   }
-  assert(document.querySelector('[data-dish="lunch-pork-chive"] .dish-price').textContent.includes("S$6.50"));
-  choosePreparation("tossed", {spicy:true,sesame:true,noodles:true});
-  click('[data-dish="lunch-pork-chive"]');
+  assert(document.querySelector('[data-dish="lunch-v2-pork-chive-shrimp"] .dish-price').textContent.includes("S$6.80"));
+  choosePreparation("tossed");
+  click('[data-dish="lunch-v2-pork-chive-shrimp"]');
   assert.equal(run("detail.variants[detailStyle].prep"),"tossed");
-  assert(run("detail.variants[detailStyle].spicy && detail.variants[detailStyle].sesame && detail.variants[detailStyle].noodles"),"Flavor choices made before the filling carry into its detail");
-  click('[data-lunch-option="pieces"][data-value="10"]');
-  click('[data-lunch-option="spicy"][data-value="true"]');
-  click('[data-lunch-option="sesame"][data-value="true"]');
-  click('[data-lunch-option="noodles"][data-value="true"]');
-  assert.equal(document.querySelector(".detail-price").textContent,"S$12.30");
+  click('[data-lunch-option="pieces"][data-value="9"]');
+  assert.equal(document.querySelector(".detail-price").textContent,"S$10.80");
   click('[data-detail-delta="1"]');
-  assert.equal(document.querySelector('[data-action="add-detail"] strong').textContent,"S$24.60");
+  assert.equal(document.querySelector('[data-action="add-detail"] strong').textContent,"S$21.60");
   click('[data-lunch-option="prep"][data-value="fried"]');
+  assert(document.querySelector('.detail-image img').getAttribute('src').includes('preparation-fried-generated-v3'));
   assert.equal(document.querySelector('[data-lunch-option="noodles"]'),null);
   assert.equal(document.querySelector('[data-lunch-option="spicy"]'),null);
   assert.equal(document.querySelector(".detail-price").textContent,"S$10.80");
   click('[data-lunch-option="prep"][data-value="tossed"]');
-  click('[data-lunch-option="spicy"][data-value="true"]');
-  click('[data-lunch-option="sesame"][data-value="true"]');
-  click('[data-lunch-option="noodles"][data-value="true"]');
   click('[data-action="add-detail"]');
   await store.flush();
   assert.equal(store.items[0].qty,2);
-  assert.equal(run("total(store.items)"),24.6);
+  assert.equal(run("total(store.items)"),21.6);
   await until(()=>!browserHistory.state?.atelierSheet);
   if (browse) {
     assert.equal(run("modal"),null,"Adding without a table must not open a name or table form");
@@ -269,19 +288,19 @@ try {
     assert.equal(run("new TableCart(null, group).items.length"),0,"Transferred browsing draft cleared");
     assert.equal(run(`new TableCart('${table}', group).items[0].qty`),2,"Confirmed table survives reload");
     assert.equal(store.orders.length,0,"Selecting a table never submits an order");
-    assert(document.querySelector(".receipt-lines").textContent.includes("加芝麻酱"));
+    assert(document.querySelector(".receipt-lines").textContent.includes("9颗"));
     click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
     console.log(`ROOT ENTRY PASS — ${named ? "saved name" : "no name"}, add without table, persisted draft, validation, handoff, note and no premature order.`);
   }
   choosePreparation("boiled");
-  click('[data-dish="lunch-pork-chive"]');
+  click('[data-dish="lunch-v2-pork-chive-shrimp"]');
   assert.equal(run("detail.variants[detailStyle].pieces"),5);
   click('[data-action="add-detail"]'); await store.flush();
   await until(()=>!browserHistory.state?.atelierSheet);
   assert.equal(store.items.length,2,"Distinct preparations/portions do not merge");
-  assert.equal(run("total(store.items)"),30.1);
+  assert.equal(run("total(store.items)"),28.4);
   choosePreparation("soup");
-  click('[data-dish="lunch-prawn-roe-wonton"]');
+  click('[data-dish="lunch-v2-prawn-roe-wonton"]');
   assert.equal(document.querySelectorAll('[data-lunch-option="prep"]').length,2);
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   console.log("ROUND 4 PASS — preparation-first flow, conditional options, portions, live prices and restricted wontons.");
@@ -296,40 +315,48 @@ try {
   click("[data-table-layout]"); click("[data-table-layout]");
   assert.equal(document.querySelector(".cart-photo img"),photo,"Same image retained between layouts");
   assert.equal(document.querySelectorAll(".shared-dish").length,2);
-  assert.equal(document.querySelector(".cart-unit-price").textContent,"S$12.30/ 份");
+  assert.equal(document.querySelector(".cart-unit-price").textContent,"S$10.80/ 份");
   const minus = document.querySelector('[data-cart-delta="-1"]');
   click(minus); await store.flush();
   assert.equal(store.items[0].qty,1);
-  assert.equal(run("total(store.items)"),17.8);
-  assert(document.querySelector(".cart-dish-copy small").textContent.includes("10颗"));
+  assert.equal(run("total(store.items)"),17.6);
+  assert(document.querySelector(".cart-dish-copy small").textContent.includes("9颗"));
   console.log("ROUND 5 PASS — tray click targets, paired cart variants, full kitchen options, quantities, totals and gallery/list continuity.");
 
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   click("#languageButton");
   assert.equal(document.querySelector(".lunch-service").textContent,"LUNCH MENU");
   choosePreparation("tossed");
-  click('[data-dish="lunch-chicken-cabbage"]');
+  click('[data-dish="lunch-v2-chicken-cabbage"]');
   assert.equal(document.querySelector("#sheetTitle").textContent,"Chicken & Cabbage Dumplings");
-  assert.equal(document.querySelector('[data-lunch-option="noodles"][data-value="true"]').textContent,"Add noodles +S$2.50");
+  assert.equal(document.querySelector('[data-lunch-option="noodles"]'),null);
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   click("#languageButton");
-  assert.equal(run("MENU.filter(d=>!dishNameParts.has(d.cn)).length"),0,"Reviewed Chinese word boundaries for all 32 names");
+  assert.equal(run("MENU.filter(d=>!dishNameParts.has(d.cn)).length"),0,"Reviewed Chinese word boundaries for all 34 names");
+  run('showPaper()');
+  assert.equal(document.querySelectorAll('.paper-row[data-recommendation]').length,6);
+  click('[data-recommendation="boiled-dumplings"]');
+  assert.equal(document.querySelectorAll('[data-boiled-filling]').length,5);
+  click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
+  browserHistory.forward(); await until(()=>run('modal')==='filling');
+  assert.equal(document.querySelectorAll('[data-boiled-filling]').length,5,"Forward restores the correct filling chooser");
+  click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
   assert(!document.querySelector("#menuList").textContent.includes("示意图"));
   assert.equal(animations.length,0,"Reduced motion avoids JS movement");
   assert.equal(run("'spark' in icons"),false);
   click("#tray");
   document.querySelector("#cartNote").value = "测试订单，不制作";
   click('[data-action="review"]'); await until(()=>run("modal")==="review");
-  assert(document.querySelector(".receipt-lines").textContent.includes("加芝麻酱"));
+  assert(document.querySelector(".receipt-lines").textContent.includes("9颗"));
   network.loseOrderResponse = true;
   click('[data-action="submit"]');
   await until(()=>!run("submitting"));
   await store.poll();
   assert.equal(store.order,null,"Accepted order recovered by its request id after lost response");
   assert.equal(store.orders.length,1);
-  assert.equal(store.orders[0].total,17.8);
-  assert.equal(store.orders[0].items[0].price,12.3);
+  assert.equal(store.orders[0].total,17.6);
+  assert.equal(store.orders[0].items[0].price,10.8);
   assert.equal(store.items.length,0);
-  assert(document.querySelector(".receipt-lines").textContent.includes("10颗"));
+  assert(document.querySelector(".receipt-lines").textContent.includes("9颗"));
   console.log("ROUND 8 PASS — bilingual controls, Chinese words, accessible buttons, reduced motion, receipt option persistence and lost-response recovery.");
 } finally { timers.forEach(id=>clearTimeout(id)); }

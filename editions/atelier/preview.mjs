@@ -241,7 +241,7 @@ createServer(async (req, res) => {
     ]);
     const allowedAsset =
       /^\/(img|brand|fonts)\//.test(path) ||
-      ["/menu-data.js", "/lunch-menu.js", "/i18n.js", "/vendor/three.module.js"].includes(path);
+      ["/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/i18n.js", "/vendor/three.module.js"].includes(path);
     if (!localFiles.has(path) && !allowedAsset)
       return json(404, { error: "Not found" });
     const data = await readFile(

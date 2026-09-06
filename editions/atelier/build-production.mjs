@@ -13,7 +13,7 @@ async function copy(source, target) {
 for (const file of ["atelier.css", "shared-table.css", "app.js", "cart-store.js", "shared-table.js", "lunch-ui.js"]) await copy(resolve(here, file), file);
 await copy(resolve(here, "generated/table-view-motion/developer/web-component/table-layout.js"), "shared-motion.js");
 await copy(resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js"), "micro-motion.js");
-for (const file of ["menu-data.js", "lunch-menu.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
+for (const file of ["menu-data.js", "lunch-archive.js", "lunch-menu.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
 for (const dir of ["api", "server", "img/s", "img/l"]) {
   for (const file of await readdir(resolve(web, dir))) {
     if (/\.(js|webp)$/.test(file)) await copy(resolve(web, dir, file), `${dir}/${file}`);

@@ -7,7 +7,7 @@ const context = vm.createContext({});
 vm.runInContext(await (await fetch(`${origin}/menu-data.js`)).text(), context);
 vm.runInContext(await (await fetch(`${origin}/lunch-menu.js`)).text(), context);
 let totalBytes = 0, files = 0, conditionalBytes = 0;
-const illustrated = [...context.MENU, ...context.LUNCH_PREPARATIONS];
+const illustrated = [...context.MENU, ...context.LUNCH_PREPARATIONS, ...context.LUNCH_RECOMMENDATIONS];
 assert.equal(illustrated.filter(d => !d.img).length, 0, "Every menu item and preparation must have an image; do not silently skip missing images");
 const media = [...new Set(illustrated.flatMap((d) => ["s", "l"].map((size) => `/img/${size}/${d.img.replace(/\.(png|jpe?g|webp)$/i, ".webp")}`)))];
 for (let i = 0; i < media.length; i += 8) {

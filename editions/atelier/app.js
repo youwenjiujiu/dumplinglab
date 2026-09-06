@@ -27,6 +27,9 @@ const name = (d) => tr(d.cn, d.name),
   otherName = (d) => tr(d.name, d.cn);
 // Explicit word boundaries keep ingredients intact at narrow widths.
 const dishNameParts = new Map([
+  "韭菜 虾仁 猪肉", "芹菜 虾仁 猪肉", "白菜 猪肉", "鸡肉 玉米 云吞", "鲜肉 云吞",
+  "肉末 辣椒 拌面", "陕西 油泼面", "销魂 皮蛋面", "肉末 红油 燃面", "卤肉饭", "鱼丸汤", "桂花 乌龙茶",
+  "韭菜 虾仁 猪肉 煎饺", "鸡肉 包菜 煎饺", "红油 抄手", "清汤 鲜肉 云吞", "鲜虾 蟹籽 云吞面", "白灼 饺子",
   "韭菜 猪肉", "芹菜 猪肉", "鸡肉 玉米", "西葫芦 鸡蛋", "西红柿 鸡蛋",
   "鲜虾 蟹籽 云吞", "鲜肉 抄手", "肉末 葱油面", "肉末 辣椒面",
   "甘榜 鸡肉 拌面", "甘榜 鸡汤 拉面", "干拌 葱油面", "卤豆腐", "卤 五花肉",
@@ -54,11 +57,13 @@ function dishNameHTML(d) {
   return parts ? parts.map((part) => `<span class="dish-word">${escapeHTML(part)}</span>`).join("<wbr>") : escapeHTML(d.cn);
 }
 const categoryName = (id) => tr(I18N.sections[id], SECTION_LABELS[id]);
-const categoryOther = (id) => tr(SECTION_LABELS[id], I18N.sections[id]);
+const categoryOther = (id) => I18N.sections[id] === SECTION_LABELS[id] ? "" : tr(SECTION_LABELS[id], I18N.sections[id]);
 const dish = (id) => MENU.find((d) => d.id === id) || (globalThis.LEGACY_MENU || []).find(d => d.id === id) || { id, cn: "原菜单菜品", name: "Previous menu item", section: "sides", price: 0 };
 const itemPrice = (d, style) => lunchPrice(d, style) ?? d.price;
-const photo = (d, size = "s") =>
-  d.img ? `/img/${size}/${d.img.replace(/\.(png|jpe?g|webp)$/i, ".webp")}` : "";
+const photo = (d, size = "s", style = null) => {
+  const img = d.kind === "dumpling" && style ? LUNCH_PREPARATIONS.find(p=>p.id===d.variants?.[style]?.prep)?.img || d.img : d.img;
+  return img ? `/img/${size}/${img.replace(/\.(png|jpe?g|webp)$/i, ".webp")}` : "";
+};
 const description = (d) => tr(I18N.dishes[d.id]?.flavor || d.flavor, d.flavor);
 const culinaryPhrases = ["手工宽面", "酱香微辣", "配辣椒", "蒜末", "与热油", "细面", "拌葱油", "与甜酱油", "底部", "煎至金黄", "卷心菜", "猪肉", "鸡肉", "牛肉", "土豆", "番茄", "鸡汤", "拉面", "葱油", "芝麻", "黑芝麻", "糯米汤圆", "薄皮煎制", "鲜虾", "韭菜", "香菇", "咸蛋黄"].sort((a, b) => b.length - a.length);
 const culinaryPattern = new RegExp(`(${culinaryPhrases.join("|")})`, "u");
@@ -84,8 +89,8 @@ const updateText = (node, value) => {
   if (globalThis.OrderFeedback) globalThis.OrderFeedback.text(node, value);
   else node.textContent = value;
 };
-const styleName = (s) => tr(s, MENU.find(d => d.variants?.[s])?.variants[s].en || STYLE_LABELS[s] || s);
-const categories = SECTIONS.filter((id) => MENU.some((d) => d.section === id));
+const styleName = (s) => tr(s, [...MENU, ...(globalThis.LEGACY_MENU || [])].find(d => d.variants?.[s])?.variants[s].en || STYLE_LABELS[s] || s);
+const categories = SECTIONS.filter((id) => id === "recommended" || MENU.some((d) => d.section === id));
 const icons = {
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
   grid: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
@@ -109,6 +114,7 @@ let activeCategory = categories[0],
   detail = null,
   detailQty = 1,
   detailStyle = null;
+let detailPreset = null;
 let cartTab = "pending",
   submitting = false,
   review = null,
@@ -168,7 +174,7 @@ const sheetNavigation = (() => {
   let restoring = false, waitingForClose = false, lastPanel = null;
   const ownsEntry = () => history?.state?.atelierSheet === token;
   function remember(type) {
-    lastPanel = { type, dishId: detail?.id, tab: cartTab };
+    lastPanel = { type, dishId: detail?.id, style: detailStyle, preset: detailPreset, tab: cartTab };
     if (!history?.pushState || restoring || waitingForClose) return;
     const state = { ...history.state, atelierSheet: token };
     if (ownsEntry()) history.replaceState(state, "");
@@ -193,7 +199,8 @@ const sheetNavigation = (() => {
     restoring = true;
     try {
       switch (lastPanel.type) {
-        case "dish": if (dish(lastPanel.dishId)) openDish(dish(lastPanel.dishId)); break;
+        case "dish": if (dish(lastPanel.dishId)) openDish(dish(lastPanel.dishId), lastPanel.style, lastPanel.preset); break;
+        case "filling": LunchMenu.openBoiledFillings(); break;
         case "categories": showCategories(); break;
         case "paper": showPaper(); break;
         case "planner": showPlanner(); break;
@@ -336,13 +343,14 @@ function renderMenu() {
   $("#menuList").innerHTML =
     categories
       .map((c, ci) => {
+        if (c === "recommended") return LunchMenu.recommendationSection();
         const candidates = MENU.filter((d) => d.section === c && matches(d));
         const items = candidates.filter(LunchMenu.visible);
         if (!candidates.length) return "";
         return `<section class="menu-section ${["noodles", "rice", "soup"].includes(c) ? "chapter-mains" : ["sides", "fried", "veg", "tangzi", "dessert"].includes(c) ? "chapter-small" : ""}" id="section-${c}" data-section="${c}"><div class="section-heading"><h2>${categoryName(c)}</h2><span class="translation">${categoryOther(c)}</span><span class="section-count">${tr(`${candidates.length} 道菜`, `${candidates.length} dishes`)}</span></div>${c === "dumplings" ? LunchMenu.section() : ""}<div class="dish-grid">${items
           .map((d, i) => {
             const feature = browsing && c === "signature" && i === 0;
-            return `<article class="dish-card ${feature ? "featured" : ""} ${d.img ? "" : "text-dish"} ${d.soldOut ? "sold" : ""}"><button class="dish-open" data-dish="${d.id}" aria-label="${escapeHTML(name(d))}"><div class="dish-image">${d.img ? `<img src="${photo(d)}" alt="" ${feature ? 'fetchpriority="high"' : 'loading="lazy"'}>` : `<span class="dish-placeholder">${icon(c === "dumplings" ? "dumpling" : "plate")}</span>`}</div><div class="dish-info"><span class="dish-number">${feature ? tr("招牌", "Signature") : String(i + 1).padStart(2, "0")}</span><h3 class="dish-name">${dishNameHTML(d)}</h3><span class="dish-english">${otherName(d)}</span>${description(d) && (feature || ["noodles", "rice", "soup"].includes(c)) ? `<p class="dish-flavor">${descriptionHTML(d)}</p>` : ""}<span class="dish-price">${LunchMenu.menuPrice(d)}</span><span class="dish-table-count" data-table-count="${d.id}" ${qty(d.id) ? "" : "hidden"}>${tr(`本桌已有 ${qty(d.id)} 份`, `${qty(d.id)} already selected`)}</span></div></button><button class="dish-add ${qty(d.id) ? "selected" : ""}" data-add="${d.id}" aria-label="${escapeHTML(tr("加一份", "Add") + " " + name(d))}" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? tr("售罄", "Sold") : qty(d.id) || "+"}</button></article>`;
+            return `<article class="dish-card ${feature ? "featured" : ""} ${d.img ? "" : "text-dish"} ${d.soldOut ? "sold" : ""}"><button class="dish-open" data-dish="${d.id}" aria-label="${escapeHTML(name(d))}"><div class="dish-image">${d.img ? `<img src="${photo(d, "s", LunchMenu.firstStyle(d))}" alt="" ${feature ? 'fetchpriority="high"' : 'loading="lazy"'}>` : `<span class="dish-placeholder">${icon(c === "dumplings" ? "dumpling" : "plate")}</span>`}</div><div class="dish-info"><span class="dish-number">${feature ? tr("招牌", "Signature") : String(i + 1).padStart(2, "0")}</span><h3 class="dish-name">${dishNameHTML(d)}</h3><span class="dish-english">${otherName(d)}</span>${description(d) && (feature || ["noodles", "rice", "soup"].includes(c)) ? `<p class="dish-flavor">${descriptionHTML(d)}</p>` : ""}<span class="dish-price">${LunchMenu.menuPrice(d)}</span><span class="dish-table-count" data-table-count="${d.id}" ${qty(d.id) ? "" : "hidden"}>${tr(`本桌已有 ${qty(d.id)} 份`, `${qty(d.id)} already selected`)}</span></div></button><button class="dish-add ${qty(d.id) ? "selected" : ""}" data-add="${d.id}" aria-label="${escapeHTML(tr("加一份", "Add") + " " + name(d))}" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? tr("售罄", "Sold") : qty(d.id) || "+"}</button></article>`;
           })
           .join("")}</div></section>`;
       })
@@ -365,7 +373,7 @@ function renderMenu() {
     all: "", veg: tr("素食", "Vegetarian"), mild: tr("不辣", "Not spicy"), noPork: tr("不含猪肉", "No pork"),
   }[filter];
   const conditions = [search ? `“${search}”` : "", filterLabel].filter(Boolean).join(" · ");
-  const found = MENU.filter(matches).length;
+  const found = MENU.filter(matches).length + LUNCH_RECOMMENDATIONS.filter(matches).length;
   $("#searchSummaryText").textContent = browsing ? "" : `${conditions} · ${tr(`${found} 道菜`, `${found} dishes`)}`;
   $("#clearSearch").disabled = !$("#searchInput").value;
 }
@@ -417,7 +425,8 @@ function renderChrome() {
   renderFilters();
 }
 function renderTray() {
-  const removedCount = (store.remote.unavailableItems || []).length + (store.retiredPending || []).length;
+  const removedCount = (store.remote.unavailableItems || []).length + (store.retiredPending || []).length
+    + store.remote.items.filter(i => !isLunchItem(i.id, i.style)).length;
   const notice = $("#menuChangeNotice");
   if (notice) {
     notice.hidden = !removedCount;
@@ -428,7 +437,7 @@ function renderTray() {
   const pictures = [...new Set(items.map((i) => i.id))];
   const visible = pictures;
   const rack = $("#trayPictures");
-  const signature = JSON.stringify([visible, language]);
+  const signature = JSON.stringify([visible, items.map(i=>i.style), language]);
   if (rack.dataset.signature !== signature) {
     const existing = new Map(
       [...rack.querySelectorAll("[data-id]")].map((img) => [img.dataset.id, img]),
@@ -437,7 +446,7 @@ function renderTray() {
     for (const id of visible) {
       const img = existing.get(id) || document.createElement(dish(id)?.img ? "img" : "span");
       if (!existing.has(id)) {
-        if (dish(id)?.img) img.src = photo(dish(id));
+        if (dish(id)?.img) img.src = photo(dish(id), "s", items.find(i=>i.id===id)?.style);
         else img.textContent = name(dish(id));
         img.dataset.id = id;
         img.className = "just-added";
@@ -447,6 +456,7 @@ function renderTray() {
           { once: true },
         );
       }
+      if (dish(id)?.img) img.src = photo(dish(id), "s", items.find(i=>i.id===id)?.style);
       img.setAttribute("role", "listitem");
       img.setAttribute("aria-label", name(dish(id)));
       img.title = name(dish(id));
@@ -516,20 +526,21 @@ function add(d, style = null, amount = 1) {
       [...document.querySelectorAll("#trayPictures img")].find(
         (img) => img.dataset.id === d.id,
       ) || $("#trayPictures");
-    globalThis.TableMotion?.fly(photo(d), origin, target);
+    globalThis.TableMotion?.fly(photo(d, "s", style), origin, target);
   });
   toast(tr(`${name(d)} · 已加入${table ? "本桌" : "购物车"}`, `${name(d)} · added to ${table ? "your table" : "cart"}`));
   return true;
 }
-function openDish(d, selectedStyle = null) {
+function openDish(d, selectedStyle = null, lockedPrep = null) {
   if (d.variants && !selectedStyle && !LunchMenu.readyFor(d)) {
     LunchMenu.start();
     renderMenu();
     jump("dumplings");
-    toast(tr("请先选口味，再选饺子种类。", "Choose preparation before your filling."));
+    toast(tr("请先选做法，再选馅儿。", "Choose preparation before your filling."));
     return;
   }
   detail = d;
+  detailPreset = lockedPrep;
   detailQty = 1;
   detailStyle = d.styles?.includes(selectedStyle) ? selectedStyle : LunchMenu.firstStyle(d);
   openModal("dish", `${categoryName(d.section)} / ${categoryOther(d.section)}`);
@@ -538,10 +549,13 @@ function openDish(d, selectedStyle = null) {
 function renderDetail() {
   const d = detail;
   $("#sheetBody").innerHTML =
-    `${d.img ? `<div class="detail-image" role="slider" tabindex="0" aria-label="${tr("旋转菜品图片", "Rotate dish photo")}" aria-valuemin="-22" aria-valuemax="22" aria-valuenow="0" aria-orientation="horizontal"><img src="${photo(d, "l")}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><div class="detail-top"><div><h1 id="sheetTitle">${dishNameHTML(d)}</h1><div class="detail-other">${otherName(d)}</div></div><span class="detail-price">${money(itemPrice(d, detailStyle))}</span></div>${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${tr("每份", "Per portion")} · ${escapeHTML(d.portion)}</p>` : ""}<p class="fineprint">${tr("如有食物过敏，请先向店员确认食材与共用厨具情况。", "For food allergies, check ingredients and shared preparation areas with staff.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? tr("暂时售罄", "Sold out") : tr("加入本桌", "Add to our table")}<strong>${money(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
+    `${d.img ? `<div class="detail-image" role="slider" tabindex="0" aria-label="${tr("旋转菜品图片", "Rotate dish photo")}" aria-valuemin="-22" aria-valuemax="22" aria-valuenow="0" aria-orientation="horizontal"><img src="${photo(d, "l", detailStyle)}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><div class="detail-top"><div><h1 id="sheetTitle">${dishNameHTML(d)}</h1><div class="detail-other">${otherName(d)}</div></div><span class="detail-price">${money(itemPrice(d, detailStyle))}</span></div>${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${tr("每份", "Per portion")} · ${escapeHTML(d.portion)}</p>` : ""}<p class="fineprint">${tr("如有食物过敏，请先向店员确认食材与共用厨具情况。", "For food allergies, check ingredients and shared preparation areas with staff.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? tr("暂时售罄", "Sold out") : tr("加入本桌", "Add to our table")}<strong>${money(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
   globalThis.TableMotion?.attachPlate($(".detail-image"));
 }
 function updateDetailSelection() {
+  const image = $(".detail-image img");
+  if (image && detail?.img) image.src = photo(detail, "l", detailStyle);
+  sheetNavigation.remember("dish");
   const quantity = $(".dish-action .quantity");
   if (!quantity) return;
   updateText(quantity.querySelector("b"), detailQty);
@@ -558,7 +572,7 @@ function updateDetailSelection() {
 function showCategories() {
   openModal("categories", "");
   $("#sheetBody").innerHTML =
-    `<div class="sheet-content"><h2 id="sheetTitle">${tr("菜品分类", "Categories")}</h2><div class="category-grid">${categories.map((c, i) => `<button data-category="${c}" class="category-choice ${c === activeCategory ? "active" : ""}"><small>${String(i + 1).padStart(2, "0")} / ${MENU.filter((d) => d.section === c).length}</small><strong>${categoryName(c)}</strong><span class="translation">${categoryOther(c)}</span></button>`).join("")}</div><button class="secondary" style="margin-top:22px" data-action="paper">${tr("全部菜单", "Full menu")} ↗</button></div>`;
+    `<div class="sheet-content"><h2 id="sheetTitle">${tr("菜品分类", "Categories")}</h2><div class="category-grid">${categories.map((c, i) => `<button data-category="${c}" class="category-choice ${c === activeCategory ? "active" : ""}"><small>${String(i + 1).padStart(2, "0")} / ${c === "recommended" ? LUNCH_RECOMMENDATIONS.length : MENU.filter((d) => d.section === c).length}</small><strong>${categoryName(c)}</strong><span class="translation">${categoryOther(c)}</span></button>`).join("")}</div><button class="secondary" style="margin-top:22px" data-action="paper">${tr("全部菜单", "Full menu")} ↗</button></div>`;
 }
 function disposeTableScene() {
   sceneSession = null;
@@ -667,7 +681,7 @@ function showPaper() {
     `<div class="sheet-content paper-menu"><h2 id="sheetTitle">${tr("今日菜单", "The menu")}</h2><p class="sheet-intro">${table || "—"} · ${tr("手工现做", "Made to order")}</p>${categories
       .map(
         (c, i) =>
-          `<div class="paper-heading"><small>${String(i + 1).padStart(2, "0")}</small><h3>${categoryName(c)}</h3><em>${categoryOther(c)}</em></div>${MENU.filter(
+          `<div class="paper-heading"><small>${String(i + 1).padStart(2, "0")}</small><h3>${categoryName(c)}</h3><em>${categoryOther(c)}</em></div>${c === "recommended" ? LUNCH_RECOMMENDATIONS.map(r=>`<button class="paper-row" data-recommendation="${r.id}" ${r.pending ? "disabled" : ""}><span>${name(r)}<small>${otherName(r)}</small></span><i></i><b>${r.pending ? tr("暂未开放", "Coming later") : r.chooseFilling ? tr("选馅儿 ↗", "Choose filling ↗") : money(dish(r.dishId).price) + tr(" 起", " from")}</b></button>`).join("") : MENU.filter(
             (d) => d.section === c,
           )
             .map(

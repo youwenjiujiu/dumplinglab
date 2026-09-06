@@ -16,7 +16,7 @@ for (const file of ["../../web/menu-data.js", "../../web/lunch-menu.js", "cart-s
   vm.runInContext(await readFile(new URL(file, import.meta.url), "utf8"), context);
 const make = () => vm.runInContext('new TableCart(null, "B")', context);
 let draft = make();
-draft.mutate({ kind: "delta", dishId: "lunch-mini-pork-rice", style: null, delta: 2 });
+draft.mutate({ kind: "delta", dishId: "lunch-v2-pork-rice", style: null, delta: 2 });
 const original = storage.get("atelier:browse:B");
 assert.throws(() => draft.bindTable(""));
 assert.throws(() => draft.bindTable("A 1"));
@@ -30,8 +30,8 @@ storage.set("atelier:QAENTRY:B", JSON.stringify({ order: { requestId: "unconfirm
 assert.throws(() => draft.bindTable("QAENTRY"), /待确认/);
 assert.equal(draft.table, null);
 storage.set("atelier:QAENTRY:B", JSON.stringify({
-  remote: { items: [{ id: "lunch-cucumber", qty: 1 }], orders: [], opIds: [] },
-  pending: [{ opId: "peer", kind: "delta", dishId: "lunch-water", delta: 1, table: "QAENTRY", group: "B" }],
+  remote: { items: [{ id: "lunch-v2-cucumber", qty: 1 }], orders: [], opIds: [] },
+  pending: [{ opId: "peer", kind: "delta", dishId: "lunch-v2-water", delta: 1, table: "QAENTRY", group: "B" }],
 }));
 draft.bindTable(" qaentry ");
 assert.equal(draft.table, "QAENTRY");
@@ -45,6 +45,19 @@ assert.throws(() => draft.bindTable("OTHER"), /已经选择桌号/);
 storage.set("atelier:browse:B", original);
 const retry = make();
 retry.bindTable("QAENTRY");
-assert.equal(retry.items.find(i => i.id === "lunch-mini-pork-rice").qty, 2);
+assert.equal(retry.items.find(i => i.id === "lunch-v2-pork-rice").qty, 2);
 assert.equal(retry.pending.length, 2, "Stable operation IDs prevent duplicate handoff");
 console.log("PASS: table validation, storage failure, pending order guard, existing table/cart merge, group isolation, reload, interrupted handoff and duplicate prevention.");
+
+// Reload an old saved lunch draft: old names/prices are never silently reused.
+storage.set("atelier:browse:B", JSON.stringify({
+  remote: {items:[{id:"lunch-mini-pork-rice",qty:1}],orders:[{id:"historic",total:5.5,items:[{id:"lunch-mini-pork-rice",name:"Mini 卤肉饭",price:5.5,qty:1}]}],opIds:[]},
+  pending:[{opId:"old",kind:"delta",dishId:"lunch-pork-chive",style:"煎 · 5颗",delta:1}],
+}));
+const retired=make();
+assert.equal(retired.items.length,0);
+assert.equal(retired.pending.length,0);
+assert.equal(retired.retiredPending.length,1);
+assert.equal(retired.orders[0].items[0].name,"Mini 卤肉饭");
+assert.equal(retired.orders[0].total,5.5);
+console.log("PASS: old lunch cache is quarantined; historic receipt names and totals survive the menu revision.");

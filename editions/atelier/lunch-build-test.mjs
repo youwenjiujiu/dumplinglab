@@ -13,15 +13,15 @@ const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map(m=>m[1].split("
 assert(scripts.indexOf("/lunch-menu.js") > scripts.indexOf("/menu-data.js"));
 assert(scripts.indexOf("/lunch-menu.js") < scripts.indexOf("/cart-store.js"));
 const ctx = vm.createContext({});
-for (const file of ["menu-data.js","i18n.js","lunch-menu.js"]) vm.runInContext(await readFile(resolve(release,file),"utf8"),ctx);
-assert.equal(ctx.MENU.length,32);
-assert.equal(vm.runInContext("I18N.sections.dumplings",ctx),"水饺·云吞");
+for (const file of ["menu-data.js","i18n.js","lunch-archive.js","lunch-menu.js"]) vm.runInContext(await readFile(resolve(release,file),"utf8"),ctx);
+assert.equal(ctx.MENU.length,34);
+assert.equal(vm.runInContext("I18N.sections.dumplings",ctx),"自选口味");
 for (const path of scripts) execFileSync(process.execPath,["--check",resolve(release,"."+path)]);
 for (const path of [...html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^"]*)?"/g)].map(m=>m[1])) {
   assert((await stat(resolve(release,"."+path))).isFile(),path);
 }
-assert.equal([...ctx.MENU,...ctx.LUNCH_PREPARATIONS].filter(d=>!d.img).length, 0, "Do not publish any current dish or preparation without its image");
-for (const dish of [...ctx.MENU,...ctx.LUNCH_PREPARATIONS]) for (const size of ["s","l"]) {
+assert.equal([...ctx.MENU,...ctx.LUNCH_PREPARATIONS,...ctx.LUNCH_RECOMMENDATIONS].filter(d=>!d.img).length, 0, "Do not publish any current dish or preparation without its image");
+for (const dish of [...ctx.MENU,...ctx.LUNCH_PREPARATIONS,...ctx.LUNCH_RECOMMENDATIONS]) for (const size of ["s","l"]) {
   assert((await stat(resolve(release,"img",size,dish.img.replace(/\.(png|jpe?g|webp)$/i,".webp")))).size>0);
 }
 const css = await readFile(resolve(release,"shared-table.css"),"utf8");
@@ -33,4 +33,4 @@ const api = await readFile(resolve(release,"server/order-core.js"),"utf8");
 assert.match(api,/import "\.\.\/lunch-menu.js"/);
 const config = JSON.parse(await readFile(resolve(release,"vercel.json"),"utf8"));
 assert(config.headers[0].headers.some(h=>h.key==="Cache-Control"&&h.value==="no-store"));
-console.log("ROUND 9 PASS — exact production package, 32-item client/server agreement, assets, syntax, cache refresh, preview banner removal. Layout checks are structural, not browser screenshots.");
+console.log("ROUND 9 PASS — exact production package, 34-item client/server agreement, assets, syntax, cache refresh, preview banner removal. Layout checks are structural, not browser screenshots.");

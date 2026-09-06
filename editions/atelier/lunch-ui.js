@@ -1,71 +1,69 @@
-// Preparation first, then filling, then portion and relevant extras.
+// Preparation -> filling -> portion. Unconfirmed extras are deliberately not offered.
 const LunchMenu = (() => {
   let preparation = null;
   let step = "preparation";
-  let flavor = { spicy: false, sesame: false, noodles: false };
   const prep = id => LUNCH_PREPARATIONS.find(p => p.id === id);
   const options = (d, style) => d.variants?.[style];
-  const selectedKey = (d, values) => d.styles.find(key => {
-    const v = d.variants[key];
-    return ["prep", "pieces", "spicy", "sesame", "noodles"].every(k => v[k] === values[k]);
-  });
-  const firstStyle = d => d.styles?.find(key => {
-    const v = d.variants[key];
-    return v.prep === preparation && v.pieces === 5 && ["spicy", "sesame", "noodles"].every(k => v[k] === flavor[k]);
-  }) || d.styles?.[0] || null;
+  const firstStyle = d => d.styles?.find(key => d.variants[key].prep === preparation && d.variants[key].pieces === 5) || d.styles?.[0] || null;
   const readyFor = d => step === "filling" && d.preparations.includes(preparation);
   const visible = d => d.section !== "dumplings" || readyFor(d);
-  const flavorSummary = () => [tr(prep(preparation)?.cn, prep(preparation)?.en),
-    ...(preparation === "tossed" ? [tr(flavor.spicy ? "辣" : "不辣", flavor.spicy ? "Spicy" : "Not spicy"), tr(flavor.sesame ? "加芝麻酱" : "不加芝麻酱", flavor.sesame ? "Sesame sauce" : "No sesame sauce")] : []),
-    ...(["soup", "tossed"].includes(preparation) ? [tr(flavor.noodles ? "加面 +S$2.50" : "不加面", flavor.noodles ? "Noodles +S$2.50" : "No noodles")] : []),
-    ...(preparation === "fried" ? ["+S$1"] : [])].filter(Boolean).join(" · ");
+  const styleFor = (d, id, pieces = 5) => d.styles?.find(key => d.variants[key].prep === id && d.variants[key].pieces === pieces);
   function section() {
-    if (step === "filling") return `<div class="lunch-steps"><p class="lunch-service">${tr("午餐供应", "LUNCH MENU")}</p><div class="lunch-chosen-flavor"><div><small>${tr("已选口味", "PREPARATION")}</small><strong>${flavorSummary()}</strong></div><button data-lunch-back>${tr("换口味", "Change")} ↗</button></div><div class="lunch-step-title lunch-fillings-title" tabindex="-1" id="fillingStepTitle"><span>02</span><h3>${tr("选饺子种类", "Choose your filling")}</h3></div></div>`;
-    const choice = (label, field, yes, no) => `<fieldset class="lunch-options"><legend>${label}</legend><div>${[false,true].map(value=>`<button class="chip ${flavor[field]===value ? "active" : ""}" data-lunch-flavor="${field}" data-value="${value}" aria-pressed="${flavor[field]===value}">${value ? yes : no}</button>`).join("")}</div></fieldset>`;
-    return `<div class="lunch-steps"><p class="lunch-service">${tr("午餐供应", "LUNCH MENU")}</p><div class="lunch-step-title"><span>01</span><h3>${tr("先选口味", "Choose preparation first")}</h3></div><div class="lunch-preparations" role="group" aria-label="${tr("先选口味", "Choose preparation first")}">${LUNCH_PREPARATIONS.map(p => `<button data-lunch-prep="${p.id}" aria-pressed="${preparation === p.id}"><span class="preparation-photo"><img src="${photo(p)}" alt="" loading="lazy"></span><span class="preparation-label"><strong>${tr(p.cn, p.en)}</strong><small>${p.extra ? tr("+S$1 / 份", "+S$1 / portion") : tr(p.en, p.cn)}</small><span aria-hidden="true">${preparation === p.id ? "✓" : "↗"}</span></span></button>`).join("")}</div>${preparation ? `<div class="lunch-flavor-options">${preparation === "tossed" ? choice(tr("辣度", "Spice"),"spicy",tr("辣", "Spicy"),tr("不辣", "Not spicy"))+choice(tr("芝麻酱", "Sesame sauce"),"sesame",tr("加芝麻酱", "Add sesame sauce"),tr("不加", "No sauce")) : ""}${["soup","tossed"].includes(preparation) ? choice(tr("加面", "Noodles"),"noodles",tr("加面 +S$2.50", "Add noodles +S$2.50"),tr("不加面", "No noodles")) : ""}</div><button class="primary lunch-next" data-lunch-next>${tr("选饺子种类", "Choose filling")} <span aria-hidden="true">→</span></button>` : ""}</div>`;
+    if (step === "filling") return `<div class="lunch-steps"><p class="lunch-service">${tr("午餐供应", "LUNCH MENU")}</p><div class="lunch-chosen-flavor"><div><small>${tr("已选做法", "PREPARATION")}</small><strong>${tr(prep(preparation).cn, prep(preparation).en)}</strong></div><button data-lunch-back>${tr("换做法", "Change")} ↗</button></div><div class="lunch-step-title lunch-fillings-title" tabindex="-1" id="fillingStepTitle"><span>02</span><h3>${tr("选馅儿", "Choose your filling")}</h3></div></div>`;
+    return `<div class="lunch-steps"><p class="lunch-service">${tr("午餐供应", "LUNCH MENU")}</p><div class="lunch-step-title"><span>01</span><h3>${tr("先选做法", "Choose preparation first")}</h3></div><div class="lunch-preparations" role="group" aria-label="${tr("先选做法", "Choose preparation first")}">${LUNCH_PREPARATIONS.map(p => `<button data-lunch-prep="${p.id}" aria-pressed="${preparation === p.id}"><span class="preparation-photo"><img src="${photo(p)}" alt="" loading="lazy"></span><span class="preparation-label"><strong>${tr(p.cn, p.en)}</strong><small>${tr(p.en, p.cn)}</small><span aria-hidden="true">${preparation === p.id ? "✓" : "↗"}</span></span></button>`).join("")}</div>${preparation ? `<button class="primary lunch-next" data-lunch-next>${tr("选馅儿", "Choose filling")} <span aria-hidden="true">→</span></button>` : ""}</div>`;
   }
   const group = (label, key, values, selected) => `<fieldset class="lunch-options"><legend>${label}</legend><div>${values.map(v => `<button class="chip ${String(selected) === String(v.value) ? "active" : ""}" data-lunch-option="${key}" data-value="${v.value}" aria-pressed="${String(selected) === String(v.value)}">${v.label}</button>`).join("")}</div></fieldset>`;
   function controls(d) {
     if (!d.variants) return "";
     const value = options(d, detailStyle);
-    return `<div id="lunchOptions">${group(tr("做法", "Preparation"), "prep", LUNCH_PREPARATIONS.filter(p => d.preparations.includes(p.id)).map(p => ({ value: p.id, label: tr(p.cn, p.en) + (p.extra ? " +S$1" : "") })), value.prep)}${group(tr("03 · 选份量", "03 · Portion"), "pieces", [5, 10].map(n => ({ value: n, label: `${n} ${tr("颗", "pieces")} · ${money(d.portionPrices[n] + prep(value.prep).extra)}` })), value.pieces)}${value.prep === "tossed" ? group(tr("辣度", "Spice"), "spicy", [{ value: false, label: tr("不辣", "Not spicy") }, { value: true, label: tr("辣", "Spicy") }], value.spicy) + group(tr("芝麻酱", "Sesame sauce"), "sesame", [{ value: false, label: tr("不加", "No sauce") }, { value: true, label: tr("加芝麻酱", "Add sesame sauce") }], value.sesame) : ""}${["soup", "tossed"].includes(value.prep) ? group(tr("加面", "Noodles"), "noodles", [{ value: false, label: tr("不加面", "No noodles") }, { value: true, label: tr("加面 +S$2.50", "Add noodles +S$2.50") }], value.noodles) : ""}</div>`;
+    return `<div id="lunchOptions">${detailPreset ? `<p class="detail-portion">${tr("做法", "Preparation")} · ${tr(prep(value.prep).cn, prep(value.prep).en)}</p>` : group(tr("做法", "Preparation"), "prep", LUNCH_PREPARATIONS.filter(p => d.preparations.includes(p.id)).map(p => ({ value: p.id, label: tr(p.cn, p.en) })), value.prep)}${group(tr("选份量", "Portion"), "pieces", Object.keys(d.portionPrices).map(Number).map(n => ({ value: n, label: `${n} ${tr("颗", "pieces")} · ${money(d.portionPrices[n])}` })), value.pieces)}</div>`;
+  }
+  function recommendationSection() {
+    const entries = LUNCH_RECOMMENDATIONS.filter(matches);
+    if (!entries.length) return "";
+    return `<section class="menu-section" id="section-recommended" data-section="recommended"><div class="section-heading"><h2>${categoryName("recommended")}</h2><span class="translation">${categoryOther("recommended")}</span></div><div class="dish-grid recommendation-grid">${entries.map((r,i) => `<article class="dish-card recommendation-card"><button class="dish-open" data-recommendation="${r.id}" ${r.pending ? "disabled" : ""} aria-label="${escapeHTML(name(r))}"><div class="dish-image"><img src="${photo(r)}" alt="" ${i===0 ? 'fetchpriority="high"' : 'loading="lazy"'}></div><div class="dish-info"><span class="dish-number">${String(i+1).padStart(2,"0")}</span><h3 class="dish-name">${dishNameHTML(r)}</h3><span class="dish-english">${otherName(r)}</span><span class="dish-price">${r.pending ? tr("暂未开放", "Coming later") : `${money(r.chooseFilling ? Math.min(...MENU.filter(d=>d.kind==="dumpling").map(d=>d.price)) : dish(r.dishId).price)} ${tr("起", "from")}`}</span></div></button><button class="dish-add" data-recommendation="${r.id}" aria-label="${escapeHTML(tr("选择", "Choose") + " " + name(r))}" ${r.pending ? "disabled" : ""}>${r.pending ? "—" : "↗"}</button></article>`).join("")}</div></section>`;
+  }
+  function openBoiledFillings() {
+    openModal("filling", "");
+    $("#sheetBody").innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${tr("白灼饺子", "Boiled Dumplings")}</h2><p class="detail-other">${tr("选馅儿", "Choose your filling")}</p><div class="filling-picker">${MENU.filter(d=>d.kind==="dumpling" && d.preparations.includes("boiled")).map(d=>`<button data-boiled-filling="${d.id}"><img src="${photo(d)}" alt=""><span><strong>${dishNameHTML(d)}</strong><small>${otherName(d)}</small></span><span>${money(d.price)}<small>${tr("起", "from")}</small></span><span aria-hidden="true">↗</span></button>`).join("")}</div></div>`;
   }
   function handle(button) {
+    if (button.dataset.recommendation) {
+      const r = LUNCH_RECOMMENDATIONS.find(r=>r.id===button.dataset.recommendation);
+      if (!r || r.pending) return true;
+      if (r.chooseFilling) openBoiledFillings();
+      else { const d = dish(r.dishId); openDish(d, styleFor(d, r.prep), r.prep); }
+      return true;
+    }
+    if (button.dataset.boiledFilling) {
+      const d = MENU.find(d=>d.id===button.dataset.boiledFilling && d.kind==="dumpling");
+      if (d) openDish(d, styleFor(d,"boiled"), "boiled");
+      return true;
+    }
     if (button.dataset.lunchPrep) {
+      if (!prep(button.dataset.lunchPrep)) return true;
       preparation = button.dataset.lunchPrep;
-      if (preparation !== "tossed") { flavor.spicy = false; flavor.sesame = false; }
-      if (!["soup", "tossed"].includes(preparation)) flavor.noodles = false;
       renderMenu();
       document.querySelector(`[data-lunch-prep="${preparation}"]`)?.focus({ preventScroll: true });
       return true;
     }
     if (button.hasAttribute("data-lunch-back")) {
-      step = "preparation";
-      renderMenu();
+      step = "preparation"; renderMenu();
       document.querySelector(`[data-lunch-prep="${preparation}"]`)?.focus({preventScroll:true});
       return true;
     }
     if (button.hasAttribute("data-lunch-next")) {
       if (!preparation) return true;
-      step = "filling";
-      renderMenu();
+      step = "filling"; renderMenu();
       document.querySelector("#fillingStepTitle")?.focus({preventScroll:true});
       document.querySelector("#section-dumplings")?.scrollIntoView({behavior:"instant",block:"start"});
       return true;
     }
-    if (button.dataset.lunchFlavor) {
-      flavor[button.dataset.lunchFlavor] = button.dataset.value === "true";
-      renderMenu();
-      document.querySelector(`[data-lunch-flavor="${button.dataset.lunchFlavor}"][data-value="${button.dataset.value}"]`)?.focus({preventScroll:true});
-      return true;
-    }
     const field = button.dataset.lunchOption;
     if (!field || !detail?.variants) return false;
-    const v = { ...options(detail, detailStyle) };
-    v[field] = field === "pieces" ? Number(button.dataset.value) : field === "prep" ? button.dataset.value : button.dataset.value === "true";
-    if (v.prep !== "tossed") { v.spicy = false; v.sesame = false; }
-    if (!["soup", "tossed"].includes(v.prep)) v.noodles = false;
-    const key = selectedKey(detail, v);
+    if (!["pieces","prep"].includes(field) || (detailPreset && field==="prep")) return true;
+    const v = { ...options(detail, detailStyle), [field]: field === "pieces" ? Number(button.dataset.value) : button.dataset.value };
+    const key = styleFor(detail, v.prep, v.pieces);
     if (!key) return true;
     detailStyle = key;
     document.querySelector("#lunchOptions").outerHTML = controls(detail);
@@ -73,11 +71,7 @@ const LunchMenu = (() => {
     document.querySelector(`[data-lunch-option="${field}"][data-value="${button.dataset.value}"]`)?.focus({ preventScroll: true });
     return true;
   }
-  const menuPrice = d => {
-    if (!d.variants) return money(d.price);
-    const extra = (prep(preparation)?.extra || 0) + (flavor.noodles ? 2.5 : 0);
-    return `${money(d.price + extra)} ${tr("起", "from")}`;
-  };
+  const menuPrice = d => `${money(d.price)}${d.variants ? " " + tr("起", "from") : ""}`;
   const start = () => { step = "preparation"; };
-  return { section, controls, handle, visible, firstStyle, menuPrice, options, readyFor, start };
+  return { openBoiledFillings, section, recommendationSection, controls, handle, visible, firstStyle, menuPrice, options, readyFor, start };
 })();

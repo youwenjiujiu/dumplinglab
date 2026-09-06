@@ -24,14 +24,14 @@ const SharedTable = (() => {
   function itemHTML(i) {
     const d = dish(i.id),
       k = escapeHTML(key(i));
-    return `<article class="shared-dish" data-cart-key="${k}"><button class="cart-dish-open" data-cart-dish="${d.id}" data-cart-key="${k}" aria-label="${escapeHTML(name(d))}"><span class="cart-photo" data-motion-key="photo:${k}">${d.img ? `<img src="${photo(d)}" alt="" decoding="async">` : `<span>${categoryName(d.section)}</span>`}</span><span class="cart-dish-copy" data-motion-key="name:${k}"><strong>${dishNameHTML(d)}</strong><small>${i.style ? styleName(i.style) + " · " : ""}${otherName(d)}</small></span></button><span class="cart-author" data-motion-key="author:${k}">${escapeHTML(attribution(i))}</span><span class="cart-unit-price" data-motion-key="price:${k}">${money(itemPrice(d, i.style))}<small>${tr("/ 份", "/ each")}</small></span>${smallQuantity(i)}</article>`;
+    return `<article class="shared-dish" data-cart-key="${k}"><button class="cart-dish-open" data-cart-dish="${d.id}" data-cart-key="${k}" aria-label="${escapeHTML(name(d))}"><span class="cart-photo" data-motion-key="photo:${k}">${d.img ? `<img src="${photo(d, "s", i.style)}" alt="" decoding="async">` : `<span>${categoryName(d.section)}</span>`}</span><span class="cart-dish-copy" data-motion-key="name:${k}"><strong>${dishNameHTML(d)}</strong><small>${i.style ? styleName(i.style) + " · " : ""}${otherName(d)}</small></span></button><span class="cart-author" data-motion-key="author:${k}">${escapeHTML(attribution(i))}</span><span class="cart-unit-price" data-motion-key="price:${k}">${money(itemPrice(d, i.style))}<small>${tr("/ 份", "/ each")}</small></span>${smallQuantity(i)}</article>`;
   }
   function receipt(order, confirmed = false) {
     const subtotal = order.total ?? total(order.items);
     return `<article class="paper-receipt ${confirmed ? "is-submitted" : "is-review"}"><header class="receipt-masthead"><span>DUMPLING Lab / 饺</span><span>${escapeHTML(order.table || table || "—")} · ${escapeHTML(order.group || group)}</span></header><div class="receipt-heading"><div><h2 ${confirmed ? "" : 'id="sheetTitle"'}>${confirmed ? tr("已下单", "Order placed") : tr("确认订单", "Review order")}</h2></div>${confirmed ? `<span class="receipt-stamp">${tr("已提交", "SENT")}</span>` : ""}</div>${confirmed ? `<div class="receipt-meta"><span>#${escapeHTML(order.no)}</span><time>${new Date(order.at).toLocaleString(language === "zh" ? "zh-CN" : "en-SG", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>` : ""}<div class="receipt-dish-strip" aria-hidden="true">${order.items
       .slice(0, 5)
       .map((i) =>
-        dish(i.id)?.img ? `<img src="${photo(dish(i.id))}" alt="">` : "",
+        dish(i.id)?.img ? `<img src="${photo(dish(i.id), "s", i.style)}" alt="">` : "",
       )
       .join(
         "",
