@@ -1,0 +1,14 @@
+{
+  "mode": "semantic-custom",
+  "scope": "cooking scene inside existing preparation button",
+  "elementName": "dl-preparation-motion",
+  "parts": ["stationary cookware", "food/liquid", "utensil", "steam"],
+  "soup": "Ladle scoops broth; a small drip returns to the pot; steam rises.",
+  "tossed": "Paired chopsticks lift one dumpling and return it to the bowl; nearby dumplings turn gently; steam rises.",
+  "boiled": "Dumplings bob in a pot; water bubbles; steam rises.",
+  "fried": "Dumplings stay in a frying pan with golden undersides; small oil bubbles appear; steam rises.",
+  "durationMs": {"steam":3200,"soup":4600,"tossed":4200,"boiled":2800,"fried":2000},
+  "loop": "Only while visible and document is active",
+  "reducedMotion": "Static cookware, food and visible steam strokes; no movement",
+  "invariants": ["Existing buttons still choose preparation", "No action waits for animation", "Scene bounds never move", "No order-state mutations", "Illustrative food, not a recipe or live kitchen feed"]
+}

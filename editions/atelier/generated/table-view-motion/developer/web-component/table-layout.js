@@ -98,6 +98,36 @@
     if (!img || host.dataset.rotatable) return;
     host.dataset.rotatable = "true";
     let angle = 0, gesture = null;
+    let intro = null, introStarted = false;
+    const preference = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
+    const stopIntro = () => {
+      if (intro) {
+        const matrix = globalThis.DOMMatrixReadOnly ? new DOMMatrixReadOnly(getComputedStyle(img).transform) : null;
+        const yaw = matrix ? Math.atan2(matrix.m31, matrix.m11) * 180 / Math.PI : 0;
+        host.style.setProperty('--plate-auto-angle', `${yaw}deg`);
+        intro.cancel(); intro = null;
+      }
+      host.dataset.plateMotion = 'idle';
+    };
+    const autoTurn = () => {
+      if (introStarted || !host.isConnected || !host.closest('dialog')?.open) return;
+      introStarted = true;
+      if (reduce() || !img.naturalWidth || !img.animate) return;
+      host.dataset.plateMotion = 'turning';
+      intro = img.animate([
+        {transform:'perspective(900px) rotateY(0deg)'},
+        {transform:'perspective(900px) rotateY(18deg)'},
+        {transform:'perspective(900px) rotateY(-18deg)'},
+        {transform:'perspective(900px) rotateY(0deg)'},
+      ],{duration:10000,easing:'ease-in-out',iterations:Infinity});
+    };
+    const onPreference = () => { if(preference.matches){stopIntro();host.style.removeProperty('--plate-auto-angle');} };
+    host.stopPlateMotion = () => {
+      introStarted = true; stopIntro(); img.removeEventListener('load',autoTurn);
+      preference?.removeEventListener?.('change',onPreference);
+    };
+    preference?.addEventListener?.('change',onPreference);
+    if(img.complete)autoTurn();else img.addEventListener('load',autoTurn,{once:true});
     img.draggable = false;
     const paint = (value) => {
       angle = Math.max(-22, Math.min(22, value));
@@ -107,6 +137,7 @@
     host.addEventListener("pointerdown", (e) => {
       if (host.classList.contains("image-unavailable")) return;
       if (e.isPrimary === false || (e.button !== undefined && e.button !== 0)) return;
+      introStarted = true; stopIntro();
       gesture = { id: e.pointerId, x: e.clientX, y: e.clientY, start: angle, dragging: false };
     });
     host.addEventListener("pointermove", (e) => {
@@ -127,7 +158,9 @@
     host.addEventListener("keydown", (e) => {
       if (host.classList.contains("image-unavailable")) return;
       if (!["ArrowLeft", "ArrowRight", "Home"].includes(e.key)) return;
+      introStarted = true; stopIntro();
       e.preventDefault();
+      if(e.key === "Home")host.style.removeProperty('--plate-auto-angle');
       paint(e.key === "Home" ? 0 : angle + (e.key === "ArrowLeft" ? -3 : 3));
     });
     paint(0);

@@ -1,0 +1,30 @@
+{
+  "mode": "generic",
+  "recipe": null,
+  "scope": "icon",
+  "target": "web-component",
+  "title": "Cinematic Icon Motion",
+  "elementName": "dl-sharing-baseline",
+  "durationMs": 5000,
+  "fps": 60,
+  "size": 1080,
+  "hostWidth": 24,
+  "hostHeight": 24,
+  "inlineStart": 0.2,
+  "label": "同桌",
+  "resultLabel": null,
+  "secondaryLabel": "History",
+  "tertiaryLabel": "Check",
+  "meaning": null,
+  "referenceVideo": null,
+  "sourceIcon": "/Users/youwen/dumplinglab/editions/atelier/sharing-motion-source.svg",
+  "colors": {
+    "accent": "#983f32",
+    "light": "#faf9f6",
+    "background": "#F0EEE8",
+    "bar": "#090909",
+    "foreground": "#E4E1D9",
+    "muted": "#706D66",
+    "shadow": "rgba(38,34,27,.42)"
+  }
+}

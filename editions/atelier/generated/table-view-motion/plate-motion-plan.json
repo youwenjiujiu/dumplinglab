@@ -1,0 +1,12 @@
+{
+  "meaning": "Upright horizontal yaw preview of a single dish photograph",
+  "scope": "detail photograph only; not a 3D reconstruction",
+  "verb": "rotate",
+  "parts": ["stationary image allocation", "dish photograph"],
+  "states": ["loading", "turning", "manual", "closed"],
+  "timing": {"durationMs": 10000, "iterations": "infinite", "easing": "ease-in-out", "yawDegrees": [0,18,-18,0]},
+  "trigger": "Detail is open and image has loaded",
+  "stop": "Pointer or keyboard interaction, reduced-motion preference, detail replacement or close",
+  "reducedMotion": "No automatic rotation",
+  "invariants": ["Never rotate the photograph in-plane or upside down", "Not a real 360-degree model", "No change to order data", "No layout shift", "Reopen starts a new turn", "Keep current orientation when handing over to drag"]
+}

@@ -68,7 +68,7 @@
     simple("cold-veg-shreds", "凉拌蔬菜丝", "Shredded Vegetable Salad", "sides", 4.8, imageFor("cold-veg-shreds")),
     simple("choy-sum", "酱油菜心", "Choy Sum with Soy Sauce", "sides", 6.8, generated("choy-sum")),
     simple("mouthwatering-chicken", "口水鸡", "Chicken in Chilli Sauce", "sides", 6.8, imageFor("mouthwatering-chicken"), "", "chicken"),
-    simple("oyster-lettuce", "蚝油生菜", "Lettuce with Oyster Sauce", "sides", 6.8, imageFor("oyster-lettuce")),
+    simple("oyster-lettuce", "蚝油生菜", "Lettuce with Oyster Sauce", "sides", 6.8, "oyster-lettuce-clean-v2.png"),
     simple("century-egg-tofu", "皮蛋豆腐", "Century Egg & Tofu", "sides", 4.8, generated("century-egg-tofu")),
     simple("soft-egg", "溏心卤蛋", "Soft-centred Braised Egg", "sides", 1.9, generated("soft-egg")),
     simple("pickled-radish", "腌萝卜", "Pickled Radish", "sides", 1.5, imageFor("pickled-radish")),
@@ -123,7 +123,7 @@
     return Boolean(d && !d.soldOut && (!d.styles ? !style : d.styles.includes(style)));
   };
   if (typeof I18N !== "undefined") {
-    Object.assign(I18N.sections, { recommended: "推荐", dumplings: "自选口味", noodles: "面条", sides: "Sides", drinks: "饮品" });
+    Object.assign(I18N.sections, { recommended: "推荐", dumplings: "自选口味", noodles: "面条", sides: "配菜", drinks: "饮品" });
     for (const d of MENU) I18N.dishes[d.id] = { flavor: "" };
   }
 })();

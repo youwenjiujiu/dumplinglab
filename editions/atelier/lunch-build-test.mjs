@@ -7,7 +7,7 @@ const release = process.argv[2];
 assert.match(release || "", /\/dumplinglab-release-[A-Za-z0-9]+$/);
 const html = await readFile(resolve(release,"index.html"),"utf8");
 assert.match(html,/data-environment="production"/);
-assert.match(html,/<title>Dumpling Lab · 午餐菜单<\/title>/);
+assert.match(html,/<title>Dumpling Lab · 午晚餐菜单<\/title>/);
 assert.doesNotMatch(html,/id="previewNotice"|本地体验版/);
 const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map(m=>m[1].split("?")[0]);
 assert(scripts.indexOf("/lunch-menu.js") > scripts.indexOf("/menu-data.js"));

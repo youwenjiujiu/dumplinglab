@@ -85,7 +85,7 @@ function ding(times=1){
 }
 function flash(){ const f=document.getElementById("flash"); f.classList.add("on"); setTimeout(()=>f.classList.remove("on"),150); }
 
-function money(n){ return "S$"+(Number.isInteger(n)?n:n.toFixed(2)); }
+function money(n){ return "$"+(Number.isInteger(n)?n:n.toFixed(2)); }
 function esc(value){ const el=document.createElement("span"); el.textContent=String(value??""); return el.innerHTML; }
 function ensureEmpty(){
   let el=document.getElementById("empty");

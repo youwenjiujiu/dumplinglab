@@ -1,0 +1,59 @@
+{
+  "project": "/Users/youwen/dumplinglab/editions/atelier",
+  "framework": "vanilla",
+  "adapter": "web-component",
+  "packageManager": "npm",
+  "sourceRoots": [
+    "."
+  ],
+  "reactServerComponents": false,
+  "verificationCommands": [],
+  "homeCandidates": [
+    {
+      "file": "generated/table-view-motion/developer/web-component/table-layout.js",
+      "line": 129,
+      "score": 4,
+      "preview": "if (![\"ArrowLeft\", \"ArrowRight\", \"Home\"].includes(e.key)) return;"
+    },
+    {
+      "file": "generated/table-view-motion/developer/web-component/table-layout.js",
+      "line": 131,
+      "score": 4,
+      "preview": "paint(e.key === \"Home\" ? 0 : angle + (e.key === \"ArrowLeft\" ? -3 : 3));"
+    },
+    {
+      "file": "app.js",
+      "line": 601,
+      "score": 1,
+      "preview": "\"Make yourself at home. Pick a few favourites.\","
+    }
+  ],
+  "recommendedGeneratedDir": "generated/sharing-motion",
+  "mode": "generic",
+  "meaning": null,
+  "label": "同桌",
+  "elementName": "dl-sharing-baseline",
+  "resultLabel": null,
+  "accent": "#983f32",
+  "light": "#faf9f6",
+  "presentation": "inline",
+  "generatedDir": "generated/table-sharing",
+  "generatedOutput": {
+    "output": "/Users/youwen/dumplinglab/editions/atelier/generated/table-sharing",
+    "html": "/Users/youwen/dumplinglab/editions/atelier/generated/table-sharing/index.html",
+    "developer": "/Users/youwen/dumplinglab/editions/atelier/generated/table-sharing/developer",
+    "plan": null,
+    "exports": []
+  },
+  "imports": {
+    "webComponent": "generated/table-sharing/developer/web-component/icon-motion.js"
+  },
+  "integrationPattern": "inline-nav-icon",
+  "nextSteps": [
+    "Patch the existing Home interaction; do not replace the application.",
+    "Preserve the original Home route or state update.",
+    "Use the generated framework wrapper when present, otherwise the Web Component.",
+    "Keep presentation=inline unless an enlarged cinematic treatment is explicitly requested.",
+    "Run the project's existing verification commands after integration."
+  ]
+}

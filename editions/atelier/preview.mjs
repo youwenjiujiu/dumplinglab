@@ -237,6 +237,10 @@ createServer(async (req, res) => {
       "/shared-table.css",
       "/shared-motion.js",
       "/micro-motion.js",
+      "/receipt-motion.js",
+      "/sharing-motion.js",
+      "/cooking-motion.js",
+      "/bilingual-fit.js",
       "/shared-table.js",
     ]);
     const allowedAsset =
@@ -245,7 +249,13 @@ createServer(async (req, res) => {
     if (!localFiles.has(path) && !allowedAsset)
       return json(404, { error: "Not found" });
     const data = await readFile(
-      path === "/micro-motion.js"
+      path === "/cooking-motion.js"
+        ? resolve(here, "generated/preparation-cooking/cooking.js")
+        : path === "/sharing-motion.js"
+        ? resolve(here, "generated/table-sharing/developer/web-component/table-sharing.js")
+        : path === "/receipt-motion.js"
+        ? resolve(here, "generated/receipt-print/developer/web-component/receipt-print.js")
+        : path === "/micro-motion.js"
         ? resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js")
         : path === "/shared-motion.js"
         ? resolve(

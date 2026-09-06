@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#954b3d" />
-    <title>Dumpling Lab · 午餐菜单</title>
+    <title>Dumpling Lab · 午晚餐菜单</title>
     <link
       rel="preload"
       href="/fonts/scto-grotesk-a-regular.woff2"
@@ -25,8 +25,12 @@
     <script src="/cart-store.js" defer></script>
     <script src="/shared-motion.js" defer></script>
     <script src="/micro-motion.js" defer></script>
+    <script src="/receipt-motion.js" defer></script>
+    <script src="/sharing-motion.js" defer></script>
+    <script src="/cooking-motion.js" defer></script>
     <script src="/shared-table.js" defer></script>
     <script src="/app.js" defer></script>
+    <script src="/bilingual-fit.js" defer></script>
   </head>
   <body>
     <div class="preview-notice" id="previewNotice">
@@ -38,12 +42,7 @@
       /></a>
       <div class="header-actions">
         <button id="tableButton" class="table-button"></button
-        ><button
-          id="languageButton"
-          class="icon-button"
-          aria-label="Switch language"
-        >
-          EN</button
+        ><button id="languageButton" class="language-button" aria-label="Switch to English">EN</button
         ><button
           id="serviceButton"
           class="icon-button"
@@ -60,7 +59,7 @@
         </div>
       </aside>
       <main id="main" tabindex="-1">
-        <section class="table-line">
+        <section class="table-line" hidden>
           <button id="connectionButton" class="connection"></button
           ><button id="planButton" class="plan-button"></button>
         </section>

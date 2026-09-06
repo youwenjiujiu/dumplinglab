@@ -10,12 +10,16 @@ async function copy(source, target) {
   await mkdir(dirname(resolve(output, target)), { recursive: true });
   await copyFile(source, resolve(output, target));
 }
-for (const file of ["atelier.css", "shared-table.css", "app.js", "cart-store.js", "shared-table.js", "lunch-ui.js"]) await copy(resolve(here, file), file);
+for (const file of ["atelier.css", "shared-table.css", "app.js", "cart-store.js", "shared-table.js", "lunch-ui.js", "bilingual-fit.js"]) await copy(resolve(here, file), file);
 await copy(resolve(here, "generated/table-view-motion/developer/web-component/table-layout.js"), "shared-motion.js");
 await copy(resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js"), "micro-motion.js");
+await copy(resolve(here, "generated/receipt-print/developer/web-component/receipt-print.js"), "receipt-motion.js");
+await copy(resolve(here, "generated/table-sharing/developer/web-component/table-sharing.js"), "sharing-motion.js");
+await copy(resolve(here, "generated/preparation-cooking/cooking.js"), "cooking-motion.js");
 for (const file of ["menu-data.js", "lunch-archive.js", "lunch-menu.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
 for (const dir of ["api", "server", "img/s", "img/l"]) {
   for (const file of await readdir(resolve(web, dir))) {
+    if (/^dining-(together|separate)-v[23]\.webp$/.test(file)) continue;
     if (/\.(js|webp)$/.test(file)) await copy(resolve(web, dir, file), `${dir}/${file}`);
   }
 }

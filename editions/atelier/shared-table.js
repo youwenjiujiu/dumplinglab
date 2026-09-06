@@ -7,6 +7,7 @@ const SharedTable = (() => {
   let seenActivity = null,
     seenOrders = null,
     activityTimer;
+  const printedOrderIds = new Set();
   const key = (i) => `${i.id}|${i.style || ""}`;
   const motion = () => globalThis.TableMotion;
   const author = (p) =>
@@ -24,18 +25,22 @@ const SharedTable = (() => {
   function itemHTML(i) {
     const d = dish(i.id),
       k = escapeHTML(key(i));
-    return `<article class="shared-dish" data-cart-key="${k}"><button class="cart-dish-open" data-cart-dish="${d.id}" data-cart-key="${k}" aria-label="${escapeHTML(name(d))}"><span class="cart-photo" data-motion-key="photo:${k}">${d.img ? `<img src="${photo(d, "s", i.style)}" alt="" decoding="async">` : `<span>${categoryName(d.section)}</span>`}</span><span class="cart-dish-copy" data-motion-key="name:${k}"><strong>${dishNameHTML(d)}</strong><small>${i.style ? styleName(i.style) + " · " : ""}${otherName(d)}</small></span></button><span class="cart-author" data-motion-key="author:${k}">${escapeHTML(attribution(i))}</span><span class="cart-unit-price" data-motion-key="price:${k}">${money(itemPrice(d, i.style))}<small>${tr("/ 份", "/ each")}</small></span>${smallQuantity(i)}</article>`;
+    return `<article class="shared-dish" data-cart-key="${k}"><button class="cart-dish-open" data-cart-dish="${d.id}" data-cart-key="${k}" aria-label="${escapeHTML(name(d))}"><span class="cart-photo" data-motion-key="photo:${k}">${d.img ? `<img src="${photo(d, "s", i.style)}" alt="" decoding="async">` : `<span>${categoryName(d.section)}</span>`}</span><span class="cart-dish-copy" data-motion-key="name:${k}"><strong>${dishNameHTML(d)}</strong>${i.style ? `<small>${styleHTML(i.style)}</small>` : ""}</span></button><span class="cart-author" data-motion-key="author:${k}">${escapeHTML(attribution(i))}</span><span class="cart-unit-price" data-motion-key="price:${k}">${money(itemPrice(d, i.style))}<small>${bi("/ 份", "/ each")}</small></span>${smallQuantity(i)}</article>`;
   }
   function receipt(order, confirmed = false) {
     const subtotal = order.total ?? total(order.items);
-    return `<article class="paper-receipt ${confirmed ? "is-submitted" : "is-review"}"><header class="receipt-masthead"><span>DUMPLING Lab / 饺</span><span>${escapeHTML(order.table || table || "—")} · ${escapeHTML(order.group || group)}</span></header><div class="receipt-heading"><div><h2 ${confirmed ? "" : 'id="sheetTitle"'}>${confirmed ? tr("已下单", "Order placed") : tr("确认订单", "Review order")}</h2></div>${confirmed ? `<span class="receipt-stamp">${tr("已提交", "SENT")}</span>` : ""}</div>${confirmed ? `<div class="receipt-meta"><span>#${escapeHTML(order.no)}</span><time>${new Date(order.at).toLocaleString(language === "zh" ? "zh-CN" : "en-SG", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>` : ""}<div class="receipt-dish-strip" aria-hidden="true">${order.items
+    // Read the order snapshot, never today's nickname: old receipts keep their author.
+    const submitter = confirmed && order.actorName
+      ? `<p class="receipt-submitter">${bi("提交人", "Submitted by")} <strong>${escapeHTML(order.actorName)}</strong></p>`
+      : "";
+    return `<article class="paper-receipt ${confirmed ? "is-submitted" : "is-review"}"><header class="receipt-masthead"><span>DUMPLING Lab / 饺</span><span>${escapeHTML(order.table || table || "—")} · ${escapeHTML(order.group || group)}</span></header><div class="receipt-heading"><div><h2 ${confirmed ? "" : 'id="sheetTitle"'}>${confirmed ? bi("已下单", "Order placed") : bi("确认订单", "Review order")}</h2></div>${confirmed ? `<span class="receipt-stamp">${bi("已提交", "SENT")}</span>` : ""}</div>${confirmed ? `<div class="receipt-meta"><span>#${escapeHTML(order.no)}</span><time>${new Date(order.at).toLocaleString(language === "zh" ? "zh-CN" : "en-SG", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div>` : ""}${submitter}<div class="receipt-dish-strip" aria-hidden="true">${order.items
       .slice(0, 5)
       .map((i) =>
         dish(i.id)?.img ? `<img src="${photo(dish(i.id), "s", i.style)}" alt="">` : "",
       )
       .join(
         "",
-      )}</div><div class="receipt-lines">${order.items.map((i) => `<div><span><strong>${dishNameHTML({ ...dish(i.id), cn: i.name || dish(i.id).cn, name: i.englishName || dish(i.id).name })}</strong>${i.style ? `<small>${styleName(i.style)}</small>` : ""}</span><span>× ${i.qty}</span><b>${money((i.price ?? itemPrice(dish(i.id), i.style)) * i.qty)}</b></div>`).join("")}</div>${order.note ? `<p class="receipt-note">${tr("备注", "NOTE")} · ${escapeHTML(order.note)}</p>` : ""}<div class="receipt-sum"><span>${tr("菜品小计", "Food subtotal")}</span><strong>${money(subtotal)}</strong></div><footer>${confirmed ? (production ? tr("订单已提交", "Order submitted") : tr("本地体验已收单 · 未发送至真实厨房", "Saved locally · Not sent to a real kitchen")) : tr("请确认菜品、份数和做法。税费如适用，以店内结账为准。", "Check dishes, portions and preparation. Applicable charges are confirmed in-store.")}</footer></article>`;
+      )}</div><div class="receipt-lines">${order.items.map((i) => `<div><span class="receipt-item">${dish(i.id)?.img ? `<img class="receipt-line-photo" src="${photo(dish(i.id), "s", i.style)}" alt="" width="48" height="48">` : ""}<span class="receipt-item-copy"><strong>${dishNameHTML({ ...dish(i.id), cn: i.name || dish(i.id).cn, name: i.englishName || dish(i.id).name })}</strong>${i.style ? `<small>${styleHTML(i.style)}</small>` : ""}</span></span><span>× ${i.qty}</span><b>${money((i.price ?? itemPrice(dish(i.id), i.style)) * i.qty)}</b></div>`).join("")}</div>${order.note ? `<p class="receipt-note">${bi("备注", "NOTE")} · ${escapeHTML(order.note)}</p>` : ""}<div class="receipt-sum"><span>${bi("菜品小计", "Food subtotal")}</span><strong>${money(subtotal)}</strong></div><footer>${confirmed ? (production ? bi("订单已提交", "Order submitted") : bi("本地体验已收单 · 未发送至真实厨房", "Saved locally · Not sent to a real kitchen")) : bi("请确认菜品、份数和做法。税费如适用，以店内结账为准。", "Check dishes, portions and preparation. Applicable charges are confirmed in-store.")}</footer></article>`;
   }
   function render(before = null) {
     if (modal !== "cart") return;
@@ -45,8 +50,9 @@ const SharedTable = (() => {
     if (existing) scrollPosition = existing.scrollTop;
     const items = store.items,
       pending = cartTab === "pending";
+    $("#sheet").classList.toggle("is-empty-cart", pending && !items.length && !store.order);
     $("#sheetBody").innerHTML =
-      `<div class="cart-page"><div class="cart-scroll"><header class="our-table-head"><div><p class="eyebrow">DUMPLING LAB · ${tr("点单", "ORDER")}</p><h2 id="sheetTitle">${tr("本桌点单", "Table order")}</h2></div><div class="table-number"><small>${tr("桌号", "TABLE")}</small><strong>${escapeHTML(table || "—")}</strong></div></header><div class="table-members"><span>${statusCopy()} · ${tr("点餐组", "Group")} ${escapeHTML(group)}</span><button data-action="nickname">${store.nickname ? escapeHTML(store.nickname) : tr("设置称呼", "Set name")} <span aria-hidden="true">↗</span></button></div><div class="cart-viewbar"><div class="receipt-tabs"><button data-cart-tab="pending" class="${pending ? "active" : ""}" aria-pressed="${pending}">${tr("待下单", "Selected")} ${count()}</button><button data-cart-tab="ordered" class="${pending ? "" : "active"}" aria-pressed="${!pending}">${tr("已下单", "Placed")} ${store.orders.length}</button></div>${pending ? `<button class="layout-switch" data-table-layout="${layout === "table" ? "list" : "table"}" aria-label="${tr("切换摆盘或清单", "Switch table and list views")}"><dl-table-view-motion layout="${layout}" aria-hidden="true"></dl-table-view-motion><span>${layout === "table" ? tr("看清单", "List") : tr("看摆盘", "Table")}</span></button>` : ""}</div>${pending ? `${store.order ? `<p class="drawer-note">${tr("上一笔订单仍待确认，请先查询或安全重试。", "Your last order awaits confirmation. Safely check it below.")}</p>` : ""}<div class="cart-dishes" data-layout="${layout}">${items.map(itemHTML).join("")}</div>${!items.length ? `<div class="table-empty"><span aria-hidden="true">◯</span><h3>${tr("尚未选菜", "No dishes selected")}</h3><button class="secondary" data-action="close">${tr("去选菜", "Explore the menu")}</button></div>` : `<label class="note-label table-note">${tr("备注", "Note")}<textarea id="cartNote" maxlength="240" placeholder="${tr("例如：不要香菜", "e.g. No coriander")}" ${store.order ? "disabled" : ""}>${escapeHTML(noteDraft ?? store.noteConflict?.local ?? store.note)}</textarea></label><div id="noteConflict" class="note-conflict" role="status" aria-live="polite" hidden></div>`}` : `<div class="placed-receipts">${store.orders.length ? store.orders.map((o) => receipt(o, true)).join("") : `<div class="table-empty"><h3>${tr("还没有提交的订单", "No placed orders yet")}</h3></div>`}</div>`}<button class="table-invite" data-action="table">${tr("邀请同桌 / 拼桌独立点餐", "Invite companions / separate group")} ↗</button></div><footer class="cart-checkout">${pending && (items.length || store.order) ? `<span><small>${tr("本次待下单", "Not placed yet")}</small><strong>${money(total(items))}</strong></span><button class="primary" data-action="review" ${submitting ? "disabled" : ""}>${store.order ? tr("确认上一笔订单", "Check last order") : tr("确认订单", "Review order")} ↗</button>` : `<button class="primary" data-action="close">${tr("继续选菜", "Keep exploring")} ↗</button>`}</footer></div>`;
+      `<div class="cart-page"><div class="cart-scroll"><header class="our-table-head"><div><p class="eyebrow">DUMPLING LAB · ${bi("点单", "ORDER")}</p><h2 id="sheetTitle">${bi("本桌点单", "Table order")}</h2></div><div class="table-number"><small>${bi("桌号", "TABLE")}</small><strong>${escapeHTML(table || "—")}</strong></div></header><div class="table-members"><span>${bilingualText(statusCopy())} · ${bi("点餐组", "Group")} ${escapeHTML(group)}</span><button data-action="nickname">${store.nickname ? escapeHTML(store.nickname) : bi("设置称呼", "Set name")} <span aria-hidden="true">↗</span></button></div><div class="cart-viewbar"><div class="receipt-tabs"><button data-cart-tab="pending" class="${pending ? "active" : ""}" aria-pressed="${pending}">${bi("待下单", "Selected")} ${count()}</button><button data-cart-tab="ordered" class="${pending ? "" : "active"}" aria-pressed="${!pending}">${bi("已下单", "Placed")} ${store.orders.length}</button></div>${pending && items.length ? `<button class="layout-switch" data-table-layout="${layout === "table" ? "list" : "table"}" aria-label="${tr("切换摆盘或清单", "Switch table and list views")}"><dl-table-view-motion layout="${layout}" aria-hidden="true"></dl-table-view-motion><span>${layout === "table" ? bi("看清单", "List") : bi("看摆盘", "Table")}</span></button>` : ""}</div>${pending ? `${store.order ? `<p class="drawer-note">${bi("上一笔订单仍待确认，请先查询或安全重试。", "Your last order awaits confirmation. Safely check it below.")}</p>` : ""}<div class="cart-dishes" data-layout="${layout}">${items.map(itemHTML).join("")}</div>${!items.length ? `<div class="table-empty"><svg class="empty-plate" viewBox="0 0 220 128" aria-hidden="true"><ellipse cx="99" cy="104" rx="73" ry="8" fill="#302b26" opacity=".05"/><path d="M23 62v9c0 27 151 27 151 0v-9" fill="#eeece7" stroke="#d9d5ce"/><ellipse cx="98.5" cy="61" rx="75.5" ry="36" fill="#fff" stroke="#d9d5ce"/><ellipse cx="98.5" cy="61" rx="57" ry="25" fill="#faf9f6" stroke="#e7e3dd"/><path d="M53 64c7 20 77 22 91 0" fill="none" stroke="#efede8"/><path d="m181 24-7 76m17-73-7 76" stroke="#8e493b" stroke-width="3" stroke-linecap="round"/><path d="m168 84 24 3" stroke="#b7aea2" stroke-width="6" stroke-linecap="round"/></svg><h3>${bi("尚未选菜", "No dishes selected")}</h3><button class="secondary" data-action="close">${bi("去选菜", "Explore the menu")}</button></div>` : `<label class="note-label table-note">${bi("备注", "Note")}<textarea id="cartNote" maxlength="240" placeholder="${tr("例如：不要香菜", "e.g. No coriander")}" ${store.order ? "disabled" : ""}>${escapeHTML(noteDraft ?? store.noteConflict?.local ?? store.note)}</textarea></label><div id="noteConflict" class="note-conflict" role="status" aria-live="polite" hidden></div>`}` : `<div class="placed-receipts">${store.orders.length ? store.orders.map((o) => receipt(o, true)).join("") : `<div class="table-empty"><h3>${bi("还没有提交的订单", "No placed orders yet")}</h3></div>`}</div>`}<button class="table-invite" data-action="table">${bi("邀请同桌 / 拼桌独立点餐", "Invite companions / separate group")} ↗</button></div><footer class="cart-checkout">${pending && (items.length || store.order) ? `<span><small>${bi("本次待下单", "Not placed yet")}</small><strong>${money(total(items))}</strong></span><button class="primary" data-action="review" ${submitting ? "disabled" : ""}>${store.order ? bi("确认上一笔订单", "Check last order") : bi("确认订单", "Review order")} ↗</button>` : `<button class="primary" data-action="close">${bi("继续选菜", "Keep exploring")} ↗</button>`}</footer></div>`;
     $(".cart-scroll").scrollTop = scrollPosition;
     updateNoteConflict();
     if (before) motion()?.reconcile($(".cart-dishes"), before);
@@ -89,8 +95,7 @@ const SharedTable = (() => {
     container.dataset.layout = layout;
     const button = $("[data-table-layout]");
     button.dataset.tableLayout = layout === "table" ? "list" : "table";
-    button.querySelector("span").textContent =
-      layout === "table" ? tr("看清单", "List") : tr("看摆盘", "Table");
+    setBilingual(button.querySelector("span"), layout === "table" ? tr("看清单", "List") : tr("看摆盘", "Table"));
     button.querySelector("dl-table-view-motion").setAttribute("layout", layout);
     motion()?.reconcile(container, before);
   }
@@ -123,7 +128,7 @@ const SharedTable = (() => {
     return true;
   }
   function nameForm() {
-    return `<div class="nickname-form"><input id="nickname" maxlength="16" autocomplete="nickname" aria-label="${tr("称呼（选填）", "Name (optional)")}" aria-describedby="nicknameHint" placeholder="${tr("输入称呼（选填）", "Name (optional)")}" value="${escapeHTML(store.nickname)}"><p id="nicknameHint">${tr("仅用于标记你选的菜，不填显示“同桌”。", "Labels your picks. Leave blank to appear as Guest.")}</p><button class="primary" data-action="save-nickname">${tr("保存", "Save")}</button></div>`;
+    return `<div class="nickname-form"><input id="nickname" maxlength="16" autocomplete="nickname" aria-label="${tr("称呼（选填）", "Name (optional)")}" aria-describedby="nicknameHint" placeholder="${tr("输入称呼（选填）", "Name (optional)")}" value="${escapeHTML(store.nickname)}"><p id="nicknameHint">${bi("用于标记你选的菜，并在小票上显示提交人；称呼可不填。", "Labels your picks and identifies the submitter on the receipt. Optional.")}</p><button class="primary" data-action="save-nickname">${bi("保存", "Save")}</button></div>`;
   }
   function observe() {
     updateMenu();
@@ -184,12 +189,12 @@ const SharedTable = (() => {
     document.querySelectorAll("[data-table-count]").forEach((node) => {
       const n = qty(node.dataset.tableCount);
       node.hidden = !n;
-      node.textContent = tr(`本桌已有 ${n} 份`, `${n} already selected`);
+      setBilingual(node, tr(`本桌已有 ${n} 份`, `${n} already selected`));
     });
   }
   function review(order) {
     $("#sheetBody").innerHTML =
-      `<div class="receipt-page">${receipt(order)}<p id="reviewUpdate" class="review-update" role="status" aria-live="polite" hidden></p><p class="fineprint">${tr("只提交这次确认的菜。同桌后来加的菜会留在下一单。", "Only this selection is submitted. Later additions stay for the next order.")}</p><button class="primary" data-action="submit">${tr("确认下单", "Place this order")} ↗</button><button class="secondary" data-action="cart">${tr("返回修改", "Edit order")}</button></div>`;
+      `<div class="receipt-page">${receipt(order)}<p id="reviewUpdate" class="review-update" role="status" aria-live="polite" hidden></p><p class="fineprint">${bi("只提交这次确认的菜。同桌后来加的菜会留在下一单。", "Only this selection is submitted. Later additions stay for the next order.")}</p><button class="primary" data-action="submit">${bi("确认下单", "Place this order")} ↗</button><button class="secondary" data-action="cart">${bi("返回修改", "Edit order")}</button></div>`;
     updateReview();
   }
   function updateNoteConflict() {
@@ -203,7 +208,7 @@ const SharedTable = (() => {
     const signature = JSON.stringify([conflict.remote, language]);
     if (box.dataset.signature === signature) return;
     box.dataset.signature = signature;
-    box.innerHTML = `<p>${tr("同桌修改了备注。你的文字仍保留在上方。", "Someone changed the note. Your text is kept above.")}</p><small>${tr("同桌的备注", "Current shared note")}</small><blockquote>${escapeHTML(conflict.remote || tr("（空）", "(empty)"))}</blockquote><div><button data-note-choice="remote">${tr("使用同桌备注", "Use shared note")}</button><button data-note-choice="local">${tr("保留我的备注", "Keep my note")}</button></div>`;
+    box.innerHTML = `<p>${bi("同桌修改了备注。你的文字仍保留在上方。", "Someone changed the note. Your text is kept above.")}</p><small>${bi("同桌的备注", "Current shared note")}</small><blockquote>${escapeHTML(conflict.remote || tr("（空）", "(empty)"))}</blockquote><div><button data-note-choice="remote">${bi("使用同桌备注", "Use shared note")}</button><button data-note-choice="local">${bi("保留我的备注", "Keep my note")}</button></div>`;
   }
   function reviewChanged() {
     if (!globalThis.getReviewSnapshot || store.order) return false;
@@ -230,17 +235,22 @@ const SharedTable = (() => {
     const later = (store.remote.opIds || []).some((id) => !snapshot.cartOpIds?.includes(id));
     const offline = store.status !== "synced";
     box.hidden = !store.order && !changed && !later && !offline;
-    box.textContent = store.order
+    setBilingual(box, store.order
       ? tr("订单结果还未确认。请查询或重试同一笔订单，不会重复下单。", "Order status is unconfirmed. Check or retry the same order; it will not be placed twice.")
       : changed ? tr("同桌修改了菜品或备注，请返回重新确认。", "Dishes or notes changed. Go back and review again.")
       : offline ? tr("等待本桌重新连接后再下单。", "Waiting for your table to reconnect.")
-      : later ? tr("同桌新加的菜会留到下一单。本次金额不变。", "New additions stay for the next order. This total is unchanged.") : "";
+      : later ? tr("同桌新加的菜会留到下一单。本次金额不变。", "New additions stay for the next order. This total is unchanged.") : "");
     button.disabled = !store.order && (changed || offline);
-    button.textContent = store.order ? tr("查询 / 重试本单", "Check / retry this order") : tr("确认下单", "Place this order");
+    setBilingual(button, store.order ? tr("查询 / 重试本单", "Check / retry this order") : tr("确认下单", "Place this order"));
   }
   function confirm(order) {
     $("#sheetBody").innerHTML =
-      `<div class="receipt-page"><h2 id="sheetTitle" class="sr-only">${tr("点单已提交", "Order submitted")}</h2>${receipt(order, true)}<button class="primary" data-action="ordered">${tr("查看本桌点单记录", "View our order history")}</button><button class="secondary" data-action="close">${tr("继续点餐", "Keep ordering")}</button></div>`;
+      `<div class="receipt-page receipt-success"><h2 id="sheetTitle" class="receipt-success-title" tabindex="-1">${bi("点单已提交", "Order submitted")}</h2><dl-receipt-print class="receipt-printer" data-order-id="${escapeHTML(order.id)}">${receipt(order, true)}</dl-receipt-print><button class="primary" data-action="ordered">${bi("查看本桌点单记录", "View our order history")}</button><button class="secondary" data-action="close">${bi("继续点餐", "Keep ordering")}</button></div>`;
+    if (order.id && !printedOrderIds.has(order.id)) {
+      printedOrderIds.add(order.id);
+      $("dl-receipt-print")?.restart?.();
+    }
+    $("#sheetTitle")?.focus({preventScroll:true});
   }
   function init() {
     document.addEventListener("keydown", (e) => {
@@ -279,7 +289,7 @@ const SharedTable = (() => {
       if (b.dataset.action === "nickname") {
         openModal("profile", "");
         $("#sheetBody").innerHTML =
-          `<div class="sheet-content nickname-content"><h2 id="sheetTitle">${tr("设置称呼", "Set name")}</h2>${nameForm()}</div>`;
+          `<div class="sheet-content nickname-content"><h2 id="sheetTitle">${bi("设置称呼", "Set name")}</h2>${nameForm()}</div>`;
         $("#nickname").focus();
       }
       if (b.dataset.action === "save-nickname") {
@@ -308,3 +318,5 @@ const SharedTable = (() => {
     reviewChanged,
   };
 })();
+
+undefined
