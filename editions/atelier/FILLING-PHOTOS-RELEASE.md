@@ -145,3 +145,10 @@ Each canonical dumpling now has preparationImages for its three valid methods, w
 
 All 13 new generated outputs visually inspected for filling distinction, correct sauce/plain/crust preparation, legible cross-sections and plate visibility. filling-photos-test verifies 15 distinct source PNGs plus 30 distinct WebPs, real alpha, square dimensions, transparent corners, and every variant mapping. DOM checks assert five distinct dumpling images in each preparation, matching detail selection and five distinct fried images in a cart fixture. These checks are not real-phone visual testing. Production is updated only after the isolated release build and regressions pass; no production kitchen test orders are sent.
 
+## Live release
+
+Runtime commit d9b57a8. Vercel deployment dpl_AwFPx1dymKLi2gzY9sV9D38drbdS reached Ready and was promoted to https://dumplinglab-menu.vercel.app/ on 2026-09-06. Deployment URL: https://dumplinglab-menu-mvp4qeiy6-youwenjiujius-projects.vercel.app.
+
+Public HTML, app.js and lunch-menu.js match the validated package. All 30 filling WebPs match local bytes. Read-only production cart API reports unchanged lunch-2026-09-06-v3. Public-source DOM tests passed, with mutations still directed to the local preview. Catalogue, checkout, table entry, shared-state, concurrency, assets, preparation photos, both cutaway suites, all three DOM entry modes and production-package checks passed before release.
+
+User subsequently questioned Georgia italic English, recommendation arrow buttons and the nickname dialog design. Their causes were explained; no typography/control redesign is included in this image-only release. A non-blocking preference question for Scto upright text and plus buttons remains unanswered at release time.
