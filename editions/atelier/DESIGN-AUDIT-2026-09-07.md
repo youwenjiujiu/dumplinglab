@@ -69,4 +69,11 @@ Use case: illustration-story. Asset: compact square illustration for a Chinese d
 
 ## 发布记录
 
-首轮受保护部署 dpl_9DVbLAt1sZPMAxiR5eM9zBZHj7mx 已通过资源、后台鉴权、选菜幂等和分组隔离检查；QA674AF237 已清空。随后统一了“全部菜单”的英文 From 价格顺序，最终版本待正式域名复核后补记。
+- 运行时代码提交：`d118b12`（Refine Atelier ordering UI, cooking motion and receipt attribution）。
+- 最终部署：`dpl_8zAmZoznzskdMcoeGyF6N3cSBqUU`，已完成 production promotion。
+- 正式网址：https://dumplinglab-menu.vercel.app/
+- 不变部署网址：https://dumplinglab-menu-24tmfh0tq-youwenjiujius-projects.vercel.app
+- 最终受保护部署与正式域名均通过 `deployment-visual-smoke.mjs`：最新脚本/素材、后台鉴权、选菜幂等、分组隔离；QA9ADF02B5 与 QA36C2C275 已清空，未下单或呼叫店员。
+- 正式站全新 Chrome 会话只读复核 320/390/768px：四种烹饪动画、点击做法直接选择馅料、编辑图标、云吞面详情图和标题、水平旋转、分类目录、v4 人物、中英切换，均通过且无页面脚本错误。
+- 正式站截图：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-production-final-VEleun`。
+- 首轮候选 `dpl_9DVbLAt1sZPMAxiR5eM9zBZHj7mx` 验收后补修了“全部菜单”的英文 From 价格顺序；正式域名使用的是以上最终部署，不是首轮候选。
