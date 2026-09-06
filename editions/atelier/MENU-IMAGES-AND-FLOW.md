@@ -150,3 +150,4 @@ Use case: product-mockup. Asset type: temporary generated menu image for a Chine
 - All 204 variants, prices, restrictions, durable retries and checkout tests retained.
 - Browser discovery reported no available browser; generated assets visually inspected, DOM/API checks are not real-device visual acceptance.
 
+Published successfully to https://dumplinglab-menu.vercel.app/ from runtime commit `469ecbc`, deployment `dumplinglab-menu-fs0lwz2um-youwenjiujius-projects.vercel.app` (`dpl_7TxxTfhPu7GYvgv884X8Kt2jKHME`). The public alias was verified against current catalogue/UI/CSS bytes; all 66 unique small/large image variants for 32 dishes and 4 preparations matched the validated local assets. Public HTML/JS also passed the named-root-entry DOM suite using only local test APIs, including the new preparation confirmation gate and restricted-filling visibility. No real kitchen order was created during this release verification.
