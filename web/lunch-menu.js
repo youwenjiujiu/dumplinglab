@@ -80,10 +80,16 @@
     simple("water", "水", "Water", "drinks", 1, generated("water")),
     simple("osmanthus-oolong", "桂花乌龙茶", "Osmanthus Oolong Tea", "drinks", 3, "lunch-v2-osmanthus-oolong-generated-v1.png"),
   ];
+  // Filling-specific pan-fried photos also follow the same variant into detail/cart.
+  const friedPhotos = {
+    "lunch-v2-pork-chive-shrimp": "potstickers-pork-shrimp-chive-cutaway-v1.png",
+    "lunch-v2-chicken-cabbage": "potstickers-chicken-cabbage-cutaway-v1.png",
+  };
+  for (const d of MENU) if (friedPhotos[d.id]) d.preparationImages = { fried: friedPhotos[d.id] };
   // Shortcuts, not duplicate SKUs. Unknown-price combinations remain non-orderable.
   globalThis.LUNCH_RECOMMENDATIONS = [
-    { id: "chive-fried", cn: "韭菜虾仁猪肉煎饺", name: "Pork, Shrimp & Chive Potstickers", dishId: "lunch-v2-pork-chive-shrimp", prep: "fried", img: "preparation-fried-generated-v3.png" },
-    { id: "chicken-fried", cn: "鸡肉包菜煎饺", name: "Chicken & Cabbage Potstickers", dishId: "lunch-v2-chicken-cabbage", prep: "fried", img: "preparation-fried-generated-v3.png" },
+    { id: "chive-fried", cn: "韭菜虾仁猪肉煎饺", name: "Pork, Shrimp & Chive Potstickers", dishId: "lunch-v2-pork-chive-shrimp", prep: "fried", img: friedPhotos["lunch-v2-pork-chive-shrimp"] },
+    { id: "chicken-fried", cn: "鸡肉包菜煎饺", name: "Chicken & Cabbage Potstickers", dishId: "lunch-v2-chicken-cabbage", prep: "fried", img: friedPhotos["lunch-v2-chicken-cabbage"] },
     { id: "red-oil-chaoshou", cn: "红油抄手", name: "Chao Shou in Chilli Oil", pending: "Independent product, portion and price unconfirmed", img: imageFor("sichuan-red-oil-chaoshou") },
     { id: "pork-soup", cn: "清汤鲜肉云吞", name: "Pork Wontons in Clear Broth", dishId: "lunch-v2-pork-wonton", prep: "soup", img: imageFor("hk-crab-roe-wonton") },
     { id: "roe-wonton-noodles", cn: "鲜虾蟹籽云吞面", name: "Prawn & Crab Roe Wonton Noodles", dishId: "lunch-v2-prawn-roe-wonton", prep: "soup", noodles: true, img: imageFor("wonton-soup-noodles") },

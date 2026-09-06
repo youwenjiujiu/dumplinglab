@@ -190,8 +190,13 @@ try {
     assert(document.querySelector(`[data-recommendation="${id}"]`).disabled);
   }
   for (const id of ["chive-fried","chicken-fried","pork-soup"]) {
+    const recommendationImage = document.querySelector(`[data-recommendation="${id}"] img`).getAttribute("src");
     click(`[data-recommendation="${id}"]`);
     assert.equal(run("modal"),"dish");
+    if (id.endsWith("fried")) {
+      assert(recommendationImage.includes("cutaway-v1"));
+      assert.equal(document.querySelector(".detail-image img").getAttribute("src"), recommendationImage.replace("/s/", "/l/"));
+    }
     assert.equal(document.querySelector('[data-lunch-option="prep"]'),null,"Recommended preparation stays locked");
     click('[data-lunch-option="pieces"][data-value="9"]');
     assert.equal(run("detail.variants[detailStyle].pieces"),9);
@@ -232,9 +237,11 @@ try {
   }
   // Render a full catalogue cart fixture without creating API cart/order writes.
   const savedRemote = store.remote;
-  store.remote = { ...savedRemote, items: run('MENU.map(d => ({id:d.id, style:d.styles?.[0] || null, qty:1}))') };
+  store.remote = { ...savedRemote, items: run('MENU.map(d => ({id:d.id, style:d.preparationImages?.fried ? "煎 · 5颗" : d.styles?.[0] || null, qty:1}))') };
   run('showCart()');
   assert.equal(document.querySelectorAll(".cart-photo img").length,34,"All cart dishes have images");
+  const cutawayCartImages = [...document.querySelectorAll('.cart-photo img')].map(img=>img.getAttribute('src')).filter(src=>src.includes('cutaway-v1'));
+  assert.equal(new Set(cutawayCartImages).size,2,"Both fried fillings keep their own cutaway photo in the cart");
   store.remote = savedRemote;
   run('renderTray()');
   click("#closeSheet"); await until(()=>!browserHistory.state?.atelierSheet);
@@ -261,7 +268,7 @@ try {
   click('[data-detail-delta="1"]');
   assert.equal(document.querySelector('[data-action="add-detail"] strong').textContent,"S$27.60");
   click('[data-lunch-option="prep"][data-value="fried"]');
-  assert(document.querySelector('.detail-image img').getAttribute('src').includes('preparation-fried-generated-v3'));
+  assert(document.querySelector('.detail-image img').getAttribute('src').includes('potstickers-pork-shrimp-chive-cutaway-v1'));
   assert.equal(document.querySelector('[data-lunch-option="noodles"]'),null);
   assert.equal(document.querySelector('[data-lunch-option="spicy"]'),null);
   assert.equal(document.querySelector(".detail-price").textContent,"S$10.80");

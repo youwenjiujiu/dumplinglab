@@ -61,7 +61,8 @@ const categoryOther = (id) => I18N.sections[id] === SECTION_LABELS[id] ? "" : tr
 const dish = (id) => MENU.find((d) => d.id === id) || (globalThis.LEGACY_MENU || []).find(d => d.id === id) || { id, cn: "原菜单菜品", name: "Previous menu item", section: "sides", price: 0 };
 const itemPrice = (d, style) => lunchPrice(d, style) ?? d.price;
 const photo = (d, size = "s", style = null) => {
-  const img = d.kind === "dumpling" && style ? LUNCH_PREPARATIONS.find(p=>p.id===d.variants?.[style]?.prep)?.img || d.img : d.img;
+  const preparation = d.variants?.[style]?.prep;
+  const img = d.preparationImages?.[preparation] || (d.kind === "dumpling" && style ? LUNCH_PREPARATIONS.find(p=>p.id===preparation)?.img || d.img : d.img);
   return img ? `/img/${size}/${img.replace(/\.(png|jpe?g|webp)$/i, ".webp")}` : "";
 };
 const description = (d) => tr(I18N.dishes[d.id]?.flavor || d.flavor, d.flavor);
