@@ -3,6 +3,8 @@
 Target: https://dumplinglab-menu.vercel.app/ (existing production alias).
 User confirmed lunch service and preparation → filling → portion flow.
 
+Published successfully: deployment dumplinglab-menu-71zxdprjp-youwenjiujius-projects.vercel.app, source commit 87ce0d5. The public alias was checked after promotion: HTTP 200, lunch title and catalogue, all linked JS/CSS available, preview notice absent, staff feed protected with 401. Original-password candidate passed isolated cart checks on QA70C807E8; the acceptance-only password was rejected. No test orders/calls were created on the promoted candidate.
+
 ## Ten rounds
 
 1. **Menu transcription — passed.** All 32 names/base prices, 9 filling 10-piece prices, 4 categories, and the 3 explicitly supplied side portions compared against independent expected fixtures.
