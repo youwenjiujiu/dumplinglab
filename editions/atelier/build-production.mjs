@@ -1,0 +1,46 @@
+// Build a fresh, allowlisted release. Never overwrite the legacy web/ frontend.
+import { mkdtemp, mkdir, copyFile, readFile, writeFile, readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+const here = dirname(fileURLToPath(import.meta.url)), root = resolve(here, "../.."), web = resolve(root, "web");
+const output = await mkdtemp(resolve(tmpdir(), "dumplinglab-release-"));
+async function copy(source, target) {
+  await mkdir(dirname(resolve(output, target)), { recursive: true });
+  await copyFile(source, resolve(output, target));
+}
+for (const file of ["atelier.css", "shared-table.css", "app.js", "cart-store.js", "shared-table.js"]) await copy(resolve(here, file), file);
+await copy(resolve(here, "generated/table-view-motion/developer/web-component/table-layout.js"), "shared-motion.js");
+for (const file of ["menu-data.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
+for (const dir of ["api", "server", "img/s", "img/l"]) {
+  for (const file of await readdir(resolve(web, dir))) {
+    if (/\.(js|webp)$/.test(file)) await copy(resolve(web, dir, file), `${dir}/${file}`);
+  }
+}
+for (const file of ["scto-grotesk-a-regular.woff2", "scto-grotesk-a-medium.woff2"]) await copy(resolve(web, "fonts", file), `fonts/${file}`);
+await copy(resolve(web, "brand/dumpling-lab-primary.png"), "brand/dumpling-lab-primary.png");
+let html = (await readFile(resolve(here, "index.html"), "utf8"))
+  .replace('<html lang="zh-CN">', '<html lang="zh-CN" data-environment="production">')
+  .replace('class="preview-notice" id="previewNotice"', 'class="preview-notice" id="previewNotice" hidden');
+for (const match of [...html.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))(?:\?[^" ]*)?"/g)]) {
+  const hash = createHash("sha256").update(await readFile(resolve(output, `.${match[1]}`))).digest("hex").slice(0, 12);
+  html = html.replace(match[0], match[0].replace(/"[^\"]+"$/, `"${match[1]}?v=${hash}"`));
+}
+await writeFile(resolve(output, "index.html"), html);
+await writeFile(resolve(output, "vercel.json"), JSON.stringify({
+  regions: ["sin1"], cleanUrls: true,
+  functions: { "api/*.js": { maxDuration: 30 } },
+  headers: [
+    { source: "/(.*)", headers: [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      { key: "Cache-Control", value: "no-store" },
+    ] },
+    { source: "/(img|fonts|brand)/(.*)", headers: [{ key: "Cache-Control", value: "public, max-age=0, must-revalidate" }] },
+  ],
+}, null, 2));
+// A Vercel runtime project binding is not source data or a secret.
+await copy(resolve(web, ".vercel/project.json"), ".vercel/project.json");
+console.log(output);

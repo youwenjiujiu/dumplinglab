@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Cinematic Icon Motion · Developer Demo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 32px 20px 48px;
+      color: #f5f5f5;
+      background: #111;
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+    .shell { width: min(100%, 760px); margin: 0 auto; }
+    h1 { margin: 0 0 8px; font-size: clamp(24px, 5vw, 42px); }
+    .lede { margin: 0 0 24px; color: #aaa; }
+    .nav-demo {
+      width: min(100%, 430px);
+      min-height: 82px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: center;
+      padding: 9px 11px;
+      border-radius: 28px;
+      background: #090909;
+      box-shadow: 0 20px 46px rgba(0,0,0,.34);
+    }
+    .nav-item {
+      height: 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: 0;
+      border-radius: 20px;
+      color: #706d66;
+      background: transparent;
+    }
+    .nav-item.active { color: #f4f1ea; background: rgba(255,255,255,.06); }
+    .nav-item > span { font-size: 11px; }
+    .placeholder-icon {
+      width: 24px;
+      height: 24px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+    }
+    dl-table-view-motion {
+      position: relative;
+      z-index: 2;
+      width: 24px;
+      height: 24px;
+      overflow: visible;
+    }
+    .control-scope {
+      width: fit-content;
+      min-height: 0;
+      display: block;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+    .control-scope .nav-item.active {
+      width: auto;
+      height: auto;
+      padding: 0;
+      background: transparent;
+    }
+    .control-scope .nav-item.active > span,
+    .control-scope .nav-item:not(:first-child) { display: none; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    button, input {
+      min-height: 42px;
+      border: 1px solid #3c3c3c;
+      border-radius: 12px;
+      color: #f5f5f5;
+      background: #222;
+    }
+    button { padding: 0 16px; cursor: pointer; }
+    button:hover { background: #2d2d2d; }
+    input[type="range"] { flex: 1 1 220px; padding: 0 10px; }
+    .status { min-height: 1.5em; margin-top: 12px; color: #9d9d9d; }
+  </style>
+  <script type="module" src="./web-component/icon-motion.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <h1>Icon Motion</h1>
+    <p class="lede">Responsive Web Component · Shadow DOM · no runtime dependency</p>
+    <nav class="nav-demo" aria-label="Motion preview navigation">
+      <button class="nav-item active" type="button" data-action="restart">
+        <dl-table-view-motion
+          id="motion"
+          accent="#983f32"
+          background="#F0EEE8"
+          bar="#090909"
+          foreground="#E4E1D9"
+          light="#f5efe3"
+          muted="#706D66"
+          shadow="rgba(38,34,27,.42)"
+          duration="5000"
+          label="本桌"
+          result-label=""
+          secondary-label="History"
+          tertiary-label="Check"
+          autoplay="false"
+          loop="false"
+          presentation="inline"
+          aria-hidden="true"
+        ></dl-table-view-motion>
+        <span>本桌</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="placeholder-icon" aria-hidden="true"></span>
+        <span>History</span>
+      </button>
+      <button class="nav-item" type="button">
+        <span class="placeholder-icon" aria-hidden="true"></span>
+        <span>Check</span>
+      </button>
+    </nav>
+    <div class="controls">
+      <button type="button" data-action="play">Play</button>
+      <button type="button" data-action="pause">Pause</button>
+      <button type="button" data-action="restart-control">Restart</button>
+      <input aria-label="Motion progress" type="range" min="0" max="1" step="0.001" value="0">
+    </div>
+    <div class="status" role="status">Waiting for component…</div>
+  </div>
+  <script type="module">
+    const motion = document.querySelector("#motion");
+    const progress = document.querySelector('input[type="range"]');
+    const status = document.querySelector(".status");
+    document.querySelector('[data-action="play"]').addEventListener("click", () => motion.play());
+    document.querySelector('[data-action="pause"]').addEventListener("click", () => motion.pause());
+    for (const restart of document.querySelectorAll('[data-action^="restart"]')) restart.addEventListener("click", () => {
+      progress.value = 0;
+      motion.restart();
+    });
+    progress.addEventListener("input", () => motion.setProgress(Number(progress.value)));
+    for (const name of ["motion-ready", "motion-play", "motion-pause", "motion-seek", "motion-loop"]) {
+      motion.addEventListener(name, (event) => {
+        status.textContent = `${name} · ${JSON.stringify(event.detail)}`;
+      });
+    }
+  </script>
+</body>
+</html>

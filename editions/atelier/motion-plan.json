@@ -1,0 +1,44 @@
+{
+  "reference": "jh0LskGZ5WeyrPp3 (2).mp4",
+  "source": { "width": 1212, "height": 2160, "fps": 60, "seconds": 15.978667 },
+  "scope": "control",
+  "initial": "same dishes in a compact list",
+  "resolved": "same dishes in a two-column unframed arrangement",
+  "verb": "rearrange",
+  "plateInteraction": {
+    "input": "Horizontal pointer drag or Left/Right keys; Home resets",
+    "result": "Direct 2D photograph rotation, limited to +/-22 degrees",
+    "scroll": "Vertical touch movement remains native scrolling",
+    "release": "Stops at the chosen angle without inertia or automatic motion",
+    "reducedMotion": "Direct manipulation only, no interpolation or auto-spin"
+  },
+  "supportingVerb": "settle",
+  "parts": [
+    "food photograph",
+    "dish name",
+    "price",
+    "quantity",
+    "paper surface"
+  ],
+  "referenceObservations": [
+    "At roughly 0.3–0.7s, the list photographs grow and move into two columns; the paper stays stationary.",
+    "At roughly 1.2–1.6s the same photographs return to the list; labels follow their respective dish.",
+    "At roughly 5s a selected photograph enlarges into a detail page; image remains above readable copy.",
+    "Resolved views are still; no idle orbit, bounce or ambient movement."
+  ],
+  "timing": {
+    "layoutMs": 480,
+    "entryMs": 420,
+    "closeMs": 320,
+    "addMs": 520,
+    "ease": "cubic-bezier(.22,.72,.18,1)"
+  },
+  "reducedMotion": "Immediately show the final layout; do not fly, scale or stamp.",
+  "qualityGates": [
+    "One copy of each dish",
+    "Prices and quantities stay authoritative",
+    "No changes to checkout semantics",
+    "Focus and notes survive shared-cart updates",
+    "Pending items never merge with placed orders"
+  ]
+}

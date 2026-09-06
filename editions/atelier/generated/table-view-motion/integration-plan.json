@@ -1,0 +1,47 @@
+{
+  "project": "/Users/youwen/dumplinglab/editions/atelier",
+  "framework": "vanilla",
+  "adapter": "web-component",
+  "packageManager": "npm",
+  "sourceRoots": [
+    "."
+  ],
+  "reactServerComponents": false,
+  "verificationCommands": [],
+  "homeCandidates": [
+    {
+      "file": "app.js",
+      "line": 406,
+      "score": 1,
+      "preview": "\"Make yourself at home. Pick a few favourites.\","
+    }
+  ],
+  "recommendedGeneratedDir": "generated/table-view-motion",
+  "mode": "generic",
+  "meaning": null,
+  "label": "本桌",
+  "elementName": "dl-table-view-motion",
+  "resultLabel": null,
+  "accent": "#983f32",
+  "light": "#f5efe3",
+  "presentation": "inline",
+  "generatedDir": "generated/table-view-motion",
+  "generatedOutput": {
+    "output": "/Users/youwen/dumplinglab/editions/atelier/generated/table-view-motion",
+    "html": "/Users/youwen/dumplinglab/editions/atelier/generated/table-view-motion/index.html",
+    "developer": "/Users/youwen/dumplinglab/editions/atelier/generated/table-view-motion/developer",
+    "plan": null,
+    "exports": []
+  },
+  "imports": {
+    "webComponent": "generated/table-view-motion/developer/web-component/icon-motion.js"
+  },
+  "integrationPattern": "inline-nav-icon",
+  "nextSteps": [
+    "Patch the existing Home interaction; do not replace the application.",
+    "Preserve the original Home route or state update.",
+    "Use the generated framework wrapper when present, otherwise the Web Component.",
+    "Keep presentation=inline unless an enlarged cinematic treatment is explicitly requested.",
+    "Run the project's existing verification commands after integration."
+  ]
+}

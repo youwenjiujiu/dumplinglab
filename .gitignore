@@ -13,3 +13,18 @@ web/models/candidates/
 web/models/rejected/
 web/splats/
 web/img/candidates/
+
+# generated print sources (multi-MB PNGs); the site ships only the inked .webp plates
+web/img/print/*.png
+
+# admin photo originals (the site ships the cutouts in web/img)
+uploads/
+
+# corporate proxy root CA handed to Node for `vercel` on the office network (exported from the macOS keychain)
+deploy-ca.pem
+
+# generated placeholder dish photos (the site ships the webp copies in img/s and img/l)
+web/img/*-placeholder.png
+
+# Local-only ordering preview data
+.local/

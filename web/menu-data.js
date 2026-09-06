@@ -1,9 +1,9 @@
 // Generated from the real A1 order sheet. Prices are placeholders — confirm.
-const SECTIONS = ["signature", "diy", "noodles", "buns", "tangzi", "rice", "soup", "sides", "fried", "veg", "dessert"];
-const SECTION_LABELS = {"signature": "Signature", "diy": "Build Your Own", "noodles": "Noodles", "buns": "Buns & Soup Buns", "tangzi": "Wuxi Tangzi", "rice": "Fried Rice", "soup": "Soups", "sides": "Sides", "fried": "Fried", "veg": "Vegetables", "dessert": "Guizhou Ice"};
-const TAGLINES = {"signature": "", "diy": "", "noodles": "", "buns": "", "tangzi": "", "rice": "", "soup": "", "sides": "", "fried": "", "veg": "", "dessert": ""};
-const STYLE_LABELS = {"水煮": "Boiled", "煎饺": "Pan-fried", "清汤": "Clear soup", "辣拌": "Spicy-tossed", "混酱": "Mixed sauce"};
-const MENU = [
+globalThis.SECTIONS = ["signature", "diy", "noodles", "buns", "tangzi", "rice", "soup", "sides", "fried", "veg", "dessert"];
+globalThis.SECTION_LABELS = {"signature": "Signature", "diy": "Build Your Own", "noodles": "Noodles", "buns": "Buns & Soup Buns", "tangzi": "Wuxi Tangzi", "rice": "Fried Rice", "soup": "Soups", "sides": "Sides", "fried": "Fried", "veg": "Vegetables", "dessert": "Guizhou Ice"};
+globalThis.TAGLINES = {"signature": "", "diy": "", "noodles": "", "buns": "", "tangzi": "", "rice": "", "soup": "", "sides": "", "fried": "", "veg": "", "dessert": ""};
+globalThis.STYLE_LABELS = {"水煮": "Boiled", "煎饺": "Pan-fried", "清汤": "Clear soup", "辣拌": "Spicy-tossed", "混酱": "Mixed sauce"};
+globalThis.MENU = [
  {
   "id": "beijing-pork-guotie",
   "name": "Beijing Pork Potstickers",
@@ -33,9 +33,10 @@ const MENU = [
   "skin": "#edd19e",
   "accent": "#9e6138",
   "glow": "#5c3d26",
-  "img": null,
+  "img": "beijing-pork-guotie-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "jp-chicken-gyoza",
@@ -66,9 +67,10 @@ const MENU = [
   "skin": "#edd19e",
   "accent": "#9e6138",
   "glow": "#5c3d26",
-  "img": null,
+  "img": "jp-chicken-gyoza-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "hk-crab-roe-wonton",
@@ -132,9 +134,10 @@ const MENU = [
   "skin": "#edd19e",
   "accent": "#9e6138",
   "glow": "#5c3d26",
-  "img": null,
+  "img": "grandma-fried-wonton-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "nanjing-beef-guotie",
@@ -165,9 +168,10 @@ const MENU = [
   "skin": "#edd19e",
   "accent": "#9e6138",
   "glow": "#5c3d26",
-  "img": null,
+  "img": "nanjing-beef-guotie-placeholder.png",
   "meat": "beef",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "sichuan-red-oil-chaoshou",
@@ -198,9 +202,10 @@ const MENU = [
   "skin": "#edd19e",
   "accent": "#9e6138",
   "glow": "#5c3d26",
-  "img": null,
+  "img": "sichuan-red-oil-chaoshou-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "red-oil-wontons",
@@ -232,8 +237,6 @@ const MENU = [
   "accent": "#9e6138",
   "glow": "#5c3d26",
   "img": "red-oil-wontons-cutout.png",
-  "cover": "3d-covers/red-oil-wontons.webp",
-  "model": "red-oil-wontons.glb",
   "meat": "pork",
   "veg": false
  },
@@ -266,7 +269,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-chicken-cabbage-placeholder.png",
   "meat": "chicken",
   "veg": false,
   "styles": [
@@ -275,7 +278,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-beef-curry-onion",
@@ -306,7 +310,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-beef-curry-onion-placeholder.png",
   "meat": "beef",
   "veg": false,
   "styles": [
@@ -315,7 +319,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-pork-celery-shrimp",
@@ -346,7 +351,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-pork-celery-shrimp-placeholder.png",
   "meat": "pork",
   "veg": false,
   "styles": [
@@ -355,7 +360,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-saltedegg-roe-shrimp",
@@ -386,7 +392,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-saltedegg-roe-shrimp-placeholder.png",
   "meat": "shrimp",
   "veg": false,
   "styles": [
@@ -395,7 +401,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-pork-scallion",
@@ -426,7 +433,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-pork-scallion-placeholder.png",
   "meat": "pork",
   "veg": false,
   "styles": [
@@ -435,7 +442,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-chicken-corn-carrot",
@@ -466,7 +474,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-chicken-corn-carrot-placeholder.png",
   "meat": "chicken",
   "veg": false,
   "styles": [
@@ -475,7 +483,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-pork-chive",
@@ -506,7 +515,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-pork-chive-placeholder.png",
   "meat": "pork",
   "veg": false,
   "styles": [
@@ -515,7 +524,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-tomato-egg",
@@ -545,7 +555,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-tomato-egg-placeholder.png",
   "meat": "vegetarian",
   "veg": true,
   "styles": [
@@ -554,7 +564,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-four-veg",
@@ -584,7 +595,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-four-veg-placeholder.png",
   "meat": "vegan",
   "veg": true,
   "styles": [
@@ -593,7 +604,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-veg-pork-wonton",
@@ -624,7 +636,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-veg-pork-wonton-placeholder.png",
   "meat": "pork",
   "veg": false,
   "styles": [
@@ -633,7 +645,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "diy-chive-wonton",
@@ -663,7 +676,7 @@ const MENU = [
   "skin": "#f5e6c2",
   "accent": "#d99e66",
   "glow": "#664724",
-  "img": null,
+  "img": "diy-chive-wonton-placeholder.png",
   "meat": "vegetarian",
   "veg": true,
   "styles": [
@@ -672,7 +685,8 @@ const MENU = [
    "清汤",
    "辣拌",
    "混酱"
-  ]
+  ],
+  "placeholder": true
  },
  {
   "id": "xian-hot-oil-noodles",
@@ -735,9 +749,10 @@ const MENU = [
   "skin": "#f2dead",
   "accent": "#e0a85c",
   "glow": "#66471f",
-  "img": null,
+  "img": "xinjiang-dapanji-noodles-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "shanghai-scallion-noodles",
@@ -767,9 +782,10 @@ const MENU = [
   "skin": "#f2dead",
   "accent": "#e0a85c",
   "glow": "#66471f",
-  "img": null,
+  "img": "shanghai-scallion-noodles-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "beijing-zhajiang-noodles",
@@ -800,9 +816,10 @@ const MENU = [
   "skin": "#f2dead",
   "accent": "#e0a85c",
   "glow": "#66471f",
-  "img": null,
+  "img": "beijing-zhajiang-noodles-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "signature-chicken-ramen",
@@ -833,9 +850,10 @@ const MENU = [
   "skin": "#f2dead",
   "accent": "#e0a85c",
   "glow": "#66471f",
-  "img": null,
+  "img": "signature-chicken-ramen-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "yangzhou-plain-noodles",
@@ -865,9 +883,10 @@ const MENU = [
   "skin": "#f2dead",
   "accent": "#e0a85c",
   "glow": "#66471f",
-  "img": null,
+  "img": "yangzhou-plain-noodles-placeholder.png",
   "meat": "vegetarian",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "minced-pork-egg-noodles",
@@ -900,8 +919,6 @@ const MENU = [
   "accent": "#e0a85c",
   "glow": "#66471f",
   "img": "minced-pork-egg-noodles-cutout.png",
-  "cover": "3d-covers/minced-pork-egg-noodles.webp",
-  "model": "minced-pork-egg-noodles.glb",
   "meat": "pork",
   "veg": false
  },
@@ -935,8 +952,6 @@ const MENU = [
   "accent": "#e0a85c",
   "glow": "#66471f",
   "img": "wonton-soup-noodles-cutout.png",
-  "cover": "3d-covers/wonton-soup-noodles.webp",
-  "model": "wonton-soup-noodles.glb",
   "meat": "pork",
   "veg": false
  },
@@ -970,8 +985,6 @@ const MENU = [
   "accent": "#e0a85c",
   "glow": "#66471f",
   "img": "dry-wonton-noodles-cutout.png",
-  "cover": "3d-covers/dry-wonton-noodles.webp",
-  "model": "dry-wonton-noodles.glb",
   "meat": "pork",
   "veg": false
  },
@@ -1004,9 +1017,10 @@ const MENU = [
   "skin": "#f5e6c9",
   "accent": "#d9a873",
   "glow": "#664724",
-  "img": null,
+  "img": "nanjing-soup-bun-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "traditional-pork-bun",
@@ -1037,9 +1051,10 @@ const MENU = [
   "skin": "#f5e6c9",
   "accent": "#d9a873",
   "glow": "#664724",
-  "img": null,
+  "img": "traditional-pork-bun-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "wildrice-pork-tangzi",
@@ -1070,9 +1085,10 @@ const MENU = [
   "skin": "#f5eddb",
   "accent": "#d98c59",
   "glow": "#614c2e",
-  "img": null,
+  "img": "wildrice-pork-tangzi-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "radish-pork-tangzi",
@@ -1103,9 +1119,10 @@ const MENU = [
   "skin": "#f5eddb",
   "accent": "#d98c59",
   "glow": "#614c2e",
-  "img": null,
+  "img": "radish-pork-tangzi-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "redbean-tangyuan",
@@ -1135,9 +1152,10 @@ const MENU = [
   "skin": "#f5eddb",
   "accent": "#d98c59",
   "glow": "#614c2e",
-  "img": null,
+  "img": "redbean-tangyuan-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "sesame-tangyuan",
@@ -1167,9 +1185,10 @@ const MENU = [
   "skin": "#f5eddb",
   "accent": "#d98c59",
   "glow": "#614c2e",
-  "img": null,
+  "img": "sesame-tangyuan-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "shrimp-egg-fried-rice",
@@ -1200,9 +1219,10 @@ const MENU = [
   "skin": "#f5db94",
   "accent": "#f0b240",
   "glow": "#6b4c1a",
-  "img": null,
+  "img": "shrimp-egg-fried-rice-placeholder.png",
   "meat": "shrimp",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "spicy-chicken-fried-rice",
@@ -1233,9 +1253,10 @@ const MENU = [
   "skin": "#f5db94",
   "accent": "#f0b240",
   "glow": "#6b4c1a",
-  "img": null,
+  "img": "spicy-chicken-fried-rice-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "chaozhou-fishball-soup",
@@ -1265,9 +1286,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#d97340",
   "glow": "#5c381a",
-  "img": null,
+  "img": "chaozhou-fishball-soup-placeholder.png",
   "meat": "fish",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "tomato-beef-soup",
@@ -1298,9 +1320,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#d97340",
   "glow": "#5c381a",
-  "img": null,
+  "img": "tomato-beef-soup-placeholder.png",
   "meat": "beef",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "lionhead-soup",
@@ -1331,9 +1354,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#d97340",
   "glow": "#5c381a",
-  "img": null,
+  "img": "lionhead-soup-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "mashed-potato-salad",
@@ -1363,9 +1387,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#b84c2e",
   "glow": "#57331a",
-  "img": null,
+  "img": "mashed-potato-salad-placeholder.png",
   "meat": "vegetarian",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "sweetsour-pork-ribs",
@@ -1396,9 +1421,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#b84c2e",
   "glow": "#57331a",
-  "img": null,
+  "img": "sweetsour-pork-ribs-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "mouthwatering-chicken",
@@ -1429,9 +1455,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#b84c2e",
   "glow": "#57331a",
-  "img": null,
+  "img": "mouthwatering-chicken-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "drunken-brine-shrimp",
@@ -1462,9 +1489,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#b84c2e",
   "glow": "#57331a",
-  "img": null,
+  "img": "drunken-brine-shrimp-placeholder.png",
   "meat": "shrimp",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "minced-pork-tofu",
@@ -1495,9 +1523,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#b84c2e",
   "glow": "#57331a",
-  "img": null,
+  "img": "minced-pork-tofu-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "big-plate-chicken",
@@ -1528,9 +1557,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#b84c2e",
   "glow": "#57331a",
-  "img": null,
+  "img": "big-plate-chicken-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "egg-luncheon-meat",
@@ -1561,9 +1591,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#b84c2e",
   "glow": "#57331a",
-  "img": null,
+  "img": "egg-luncheon-meat-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "braised-lionhead",
@@ -1594,9 +1625,10 @@ const MENU = [
   "skin": "#e6b873",
   "accent": "#b84c2e",
   "glow": "#57331a",
-  "img": null,
+  "img": "braised-lionhead-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "yunnan-lava-tofu",
@@ -1659,9 +1691,10 @@ const MENU = [
   "skin": "#e0a857",
   "accent": "#8c5926",
   "glow": "#613d14",
-  "img": null,
+  "img": "secret-pork-cutlet-placeholder.png",
   "meat": "pork",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "13spice-chicken-nuggets",
@@ -1692,9 +1725,10 @@ const MENU = [
   "skin": "#e0a857",
   "accent": "#8c5926",
   "glow": "#613d14",
-  "img": null,
+  "img": "13spice-chicken-nuggets-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "13spice-chicken-wings",
@@ -1725,9 +1759,10 @@ const MENU = [
   "skin": "#e0a857",
   "accent": "#8c5926",
   "glow": "#613d14",
-  "img": null,
+  "img": "13spice-chicken-wings-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "old-style-fried-drumstick",
@@ -1758,9 +1793,10 @@ const MENU = [
   "skin": "#e0a857",
   "accent": "#8c5926",
   "glow": "#613d14",
-  "img": null,
+  "img": "old-style-fried-drumstick-placeholder.png",
   "meat": "chicken",
-  "veg": false
+  "veg": false,
+  "placeholder": true
  },
  {
   "id": "cold-veg-shreds",
@@ -1790,9 +1826,10 @@ const MENU = [
   "skin": "#739959",
   "accent": "#d9cc8c",
   "glow": "#33471f",
-  "img": null,
+  "img": "cold-veg-shreds-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "cold-eggplant-peashoot",
@@ -1822,9 +1859,10 @@ const MENU = [
   "skin": "#739959",
   "accent": "#d9cc8c",
   "glow": "#33471f",
-  "img": null,
+  "img": "cold-eggplant-peashoot-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "veg-with-dip",
@@ -1854,9 +1892,10 @@ const MENU = [
   "skin": "#739959",
   "accent": "#d9cc8c",
   "glow": "#33471f",
-  "img": null,
+  "img": "veg-with-dip-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "pickled-radish",
@@ -1886,9 +1925,10 @@ const MENU = [
   "skin": "#739959",
   "accent": "#d9cc8c",
   "glow": "#33471f",
-  "img": null,
+  "img": "pickled-radish-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "garlic-broccoli",
@@ -1918,9 +1958,10 @@ const MENU = [
   "skin": "#739959",
   "accent": "#d9cc8c",
   "glow": "#33471f",
-  "img": null,
+  "img": "garlic-broccoli-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "oyster-lettuce",
@@ -1950,9 +1991,10 @@ const MENU = [
   "skin": "#739959",
   "accent": "#d9cc8c",
   "glow": "#33471f",
-  "img": null,
+  "img": "oyster-lettuce-placeholder.png",
   "meat": "vegetarian",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "sesame-spinach",
@@ -1982,9 +2024,10 @@ const MENU = [
   "skin": "#739959",
   "accent": "#d9cc8c",
   "glow": "#33471f",
-  "img": null,
+  "img": "sesame-spinach-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "mango-ice",
@@ -2014,9 +2057,10 @@ const MENU = [
   "skin": "#f7cc8c",
   "accent": "#fc8c73",
   "glow": "#754c24",
-  "img": null,
+  "img": "mango-ice-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "watermelon-ice",
@@ -2046,9 +2090,10 @@ const MENU = [
   "skin": "#f7cc8c",
   "accent": "#fc8c73",
   "glow": "#754c24",
-  "img": null,
+  "img": "watermelon-ice-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  },
  {
   "id": "cucumber-ice",
@@ -2078,8 +2123,9 @@ const MENU = [
   "skin": "#f7cc8c",
   "accent": "#fc8c73",
   "glow": "#754c24",
-  "img": null,
+  "img": "cucumber-ice-placeholder.png",
   "meat": "vegan",
-  "veg": true
+  "veg": true,
+  "placeholder": true
  }
 ];

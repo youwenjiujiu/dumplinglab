@@ -10,7 +10,7 @@
   body{background:var(--bg);color:var(--ink);min-height:100vh;}
   header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:2;}
   header h1{font-size:17px;font-weight:700;letter-spacing:.02em;}
-  header .st{font-size:12px;color:var(--sesame);display:flex;align-items:center;gap:6px;}
+  header .st{font-size:12px;color:var(--sesame);display:flex;align-items:center;gap:6px;cursor:pointer;}
   header .dot{width:8px;height:8px;border-radius:99px;background:#888;}
   header .dot.on{background:#4caf50;box-shadow:0 0 8px #4caf50;}
   #enable{background:var(--sesame);color:#241a12;border:none;border-radius:99px;padding:8px 14px;font-size:13px;font-weight:700;}
@@ -44,9 +44,30 @@
 <div id="list"><div class="empty" id="empty">等待顾客呼叫与下单…<br><small>把这个页面开在收银台的手机或平板上</small></div></div>
 
 <script>
-const list=document.getElementById("list"), empty=document.getElementById("empty");
+const list=document.getElementById("list");
 const dot=document.getElementById("dot"), stTxt=document.getElementById("stTxt");
-let soundOn=false, ctx;
+let soundOn=false, ctx, cursor=0, firstLoad=true;
+const seen=new Set(), cards=new Map();
+let staffPassword=sessionStorage.getItem("dl-staff-password")||"";
+let authCancelled=false;
+
+const authValue=password=>{
+  const bytes=new TextEncoder().encode(`staff:${password}`);
+  return "Basic "+btoa(String.fromCharCode(...bytes));
+};
+async function staffFetch(url,options={},mayPrompt=true){
+  const headers={...(options.headers||{})}; if(staffPassword) headers.authorization=authValue(staffPassword);
+  let response=await fetch(url,{...options,headers});
+  if(response.status!==401||!mayPrompt||authCancelled) return response;
+  staffPassword=""; sessionStorage.removeItem("dl-staff-password");
+  const entered=prompt("请输入店员密码");
+  if(entered===null){ authCancelled=true; return response; }
+  staffPassword=entered; sessionStorage.setItem("dl-staff-password",entered);
+  response=await staffFetch(url,options,false);
+  if(response.status===401){ staffPassword=""; sessionStorage.removeItem("dl-staff-password"); }
+  return response;
+}
+dot.parentElement.onclick=()=>{ authCancelled=false; staffPassword=""; sessionStorage.removeItem("dl-staff-password"); stTxt.textContent="等待登录…"; };
 
 document.getElementById("enable").onclick=()=>{
   ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
@@ -65,42 +86,60 @@ function ding(times=1){
 function flash(){ const f=document.getElementById("flash"); f.classList.add("on"); setTimeout(()=>f.classList.remove("on"),150); }
 
 function money(n){ return "S$"+(Number.isInteger(n)?n:n.toFixed(2)); }
+function esc(value){ const el=document.createElement("span"); el.textContent=String(value??""); return el.innerHTML; }
+function ensureEmpty(){
+  let el=document.getElementById("empty");
+  if(cards.size){ el?.remove(); return; }
+  if(!el){ el=document.createElement("div"); el.id="empty"; el.className="empty"; el.innerHTML="等待顾客呼叫与下单…<br><small>把这个页面开在收银台的手机或平板上</small>"; list.append(el); }
+}
 function render(evt){
-  if(empty) empty.remove();
+  if(!evt.id||seen.has(evt.id)) return false;
+  seen.add(evt.id); document.getElementById("empty")?.remove();
   const el=document.createElement("div");
   el.className="item "+(evt.type==="call"?"call":"order");
+  el.dataset.id=evt.id;
   const time=new Date(evt.at).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
   if(evt.type==="call"){
-    el.innerHTML=`<div class="top"><span class="table">${evt.table||"?"} 号桌</span><span class="kind call">${evt.reason?`需要：${evt.reason}`:"呼叫服务员"}</span></div>
+    el.innerHTML=`<div class="top"><span class="table">${esc(evt.table||"?")} 号桌 · ${esc(evt.group||"A")}组</span><span class="kind call">${evt.reason?`需要：${esc(evt.reason)}`:"呼叫服务员"}</span></div>
       <div class="time">${time}</div><button class="done">已处理</button>`;
   }else{
     const lines=(evt.items||[]).map(it=>{
       const nm = it.name||it.id; const st = it.style?` · ${it.style}`:"";
-      return `${nm}${st} ×${it.qty}`;
+      return `${esc(nm)}${esc(st)} ×${esc(it.qty)}`;
     }).join("<br>");
-    el.innerHTML=`<div class="top"><span class="table">${evt.table||"?"} 号桌</span><span class="kind order">新订单 #${evt.no||""}</span></div>
+    el.innerHTML=`<div class="top"><span class="table">${esc(evt.table||"?")} 号桌 · ${esc(evt.group||"A")}组</span><span class="kind order">新订单 #${esc(evt.no||"")}</span></div>
       <div class="time">${time}</div>
       <div class="lines">${lines}</div>
-      ${evt.note?`<div class="note">备注：${evt.note}</div>`:""}
+      ${evt.note?`<div class="note">备注：${esc(evt.note)}</div>`:""}
       <div class="total">${money(evt.total||0)}</div>
       <button class="done">已完成</button>`;
   }
-  el.querySelector(".done").onclick=()=>{ el.classList.add("gone"); setTimeout(()=>el.remove(),400); };
+  el.querySelector(".done").onclick=async()=>{
+    const button=el.querySelector(".done"), label=button.textContent; button.disabled=true; button.textContent="保存中…";
+    try{
+      const res=await staffFetch("/api/resolve",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:evt.id})});
+      const out=await res.json().catch(()=>({})); if(!res.ok||!out.ok) throw new Error(out.error||`HTTP ${res.status}`);
+      cards.delete(evt.id); el.classList.add("gone"); setTimeout(()=>{el.remove();ensureEmpty();},400);
+    }catch(error){ button.disabled=false; button.textContent=label; stTxt.textContent="未能标记完成"; }
+  };
+  cards.set(evt.id,el);
   list.prepend(el);
+  return true;
 }
 
-function connect(){
-  const es=new EventSource("/api/events");
-  es.onopen=()=>{ dot.classList.add("on"); stTxt.textContent="已连接"; };
-  es.onerror=()=>{ dot.classList.remove("on"); stTxt.textContent="重连中…"; };
-  es.onmessage=e=>{
-    const evt=JSON.parse(e.data);
-    if(evt.type==="hello"){ (evt.feed||[]).forEach(render); return; }
-    render(evt); ding(evt.type==="call"?3:1); flash();
-    if(navigator.vibrate) navigator.vibrate(evt.type==="call"?[100,60,100]:60);
-  };
+async function poll(){
+  try{
+    const res=await staffFetch(`/api/feed?after=${Math.max(0,cursor-1)}`,{cache:"no-store"});
+    const out=await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.error||`HTTP ${res.status}`);
+    const active=new Set(out.activeIds||[]);
+    for(const [id,el] of cards) if(!active.has(id)){ cards.delete(id); el.remove(); }
+    for(const evt of out.events||[]) if(render(evt)&&!firstLoad){ ding(evt.type==="call"?3:1); flash(); if(navigator.vibrate) navigator.vibrate(evt.type==="call"?[100,60,100]:60); }
+    cursor=Math.max(cursor,Number(out.cursor)||0); firstLoad=false; ensureEmpty();
+    dot.classList.add("on"); stTxt.textContent="已连接";
+  }catch(error){ dot.classList.remove("on"); stTxt.textContent=error.message||"重连中…"; }
+  setTimeout(poll,2000);
 }
-connect();
+poll();
 </script>
 </body>
 </html>

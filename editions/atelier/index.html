@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#954b3d" />
+    <title>Dumpling Lab · 菜单</title>
+    <link
+      rel="preload"
+      href="/fonts/scto-grotesk-a-regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/atelier.css?v=9" />
+    <link rel="stylesheet" href="/shared-table.css?v=3" />
+    <script src="/menu-data.js" defer></script>
+    <script src="/i18n.js" defer></script>
+    <script src="/cart-store.js" defer></script>
+    <script src="/shared-motion.js" defer></script>
+    <script src="/shared-table.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="preview-notice" id="previewNotice">
+      本地体验版 · 下单与呼叫不会发送到真实厨房
+    </div>
+    <header class="masthead">
+      <a href="#menu" class="brand" aria-label="Dumpling Lab"
+        ><img src="/brand/dumpling-lab-primary.png" alt="Dumpling Lab"
+      /></a>
+      <div class="header-actions">
+        <button id="tableButton" class="table-button"></button
+        ><button
+          id="languageButton"
+          class="icon-button"
+          aria-label="Switch language"
+        >
+          EN</button
+        ><button
+          id="serviceButton"
+          class="icon-button"
+          aria-label="呼叫服务员"
+        ></button>
+      </div>
+    </header>
+    <div class="workspace">
+      <aside class="desktop-index">
+        <p class="eyebrow">THE MENU / 菜单</p>
+        <nav id="sideCategories" aria-label="菜单分类"></nav>
+        <div class="side-note">
+          <span class="tiny-seal">饺</span>
+        </div>
+      </aside>
+      <main id="main" tabindex="-1">
+        <section class="table-line">
+          <button id="connectionButton" class="connection"></button
+          ><button id="planButton" class="plan-button"></button>
+        </section>
+        <div class="menu-toolbar">
+          <div
+            class="category-scroll"
+            id="categoryScroll"
+            role="navigation"
+            aria-label="菜品分类"
+          ></div>
+          <button
+            id="categoryButton"
+            class="category-button"
+            aria-label="全部分类"
+          ></button
+          ><button
+            id="searchButton"
+            class="search-button"
+            aria-label="搜索菜品"
+          ></button>
+        </div>
+        <div id="searchPanel" class="search-panel" hidden>
+          <label class="search-input"
+            ><span id="searchIcon"></span
+            ><input
+              id="searchInput"
+              type="search"
+              placeholder="搜索菜名、食材"
+              aria-label="搜索菜名、食材"
+              enterkeyhint="search"
+              autocomplete="off"
+            /><button id="clearSearch" aria-label="清除搜索">×</button></label
+          >
+          <div id="filters" class="filters"></div>
+        </div>
+        <div id="searchSummary" class="search-summary" hidden>
+          <span id="searchSummaryText" role="status" aria-live="polite" aria-atomic="true"></span>
+          <button data-action="reset-search" id="resetSearchFilters">清除</button>
+        </div>
+        <button class="table-experience" id="tableExperience" hidden>
+          <svg viewBox="0 0 90 70" aria-hidden="true">
+            <ellipse cx="45" cy="23" rx="31" ry="12" />
+            <path
+              d="M14 23v22c0 16 62 16 62 0V23M14 34c0 16 62 16 62 0M36 11c0-10 18-10 18 0M24 18l40 10M33 13l37 10M20 24l33 9"
+            />
+          </svg>
+          <span
+            ><strong id="experienceTitle">揭笼，上桌。</strong
+            ><small id="experienceCopy">转动一桌好菜 · 进入 3D</small></span
+          ><span aria-hidden="true">↗</span>
+        </button>
+        <div id="menuList"></div>
+        <footer class="colophon">
+          <span>DUMPLING LAB</span><span id="footerCopy"></span><b>饺</b>
+        </footer>
+      </main>
+      <aside class="desktop-ticket" id="desktopTicket"></aside>
+    </div>
+    <div class="table-tray">
+      <div id="trayPictures" class="tray-pictures" role="list" tabindex="0"></div>
+      <button id="tray" class="tray-summary" aria-label="查看本桌点单">
+      <span class="tray-copy"
+        ><strong id="trayLabel"></strong><small id="trayCaption"></small></span
+      ><span class="tray-action"
+        ><span id="trayActionLabel">查看本桌</span
+        ><strong class="tray-total" id="trayTotal"></strong
+      ></span>
+      </button>
+    </div>
+    <dialog id="sheet" aria-labelledby="sheetTitle">
+      <div class="sheet-header">
+        <span class="eyebrow" id="sheetEyebrow"></span
+        ><button class="close-button" id="closeSheet" aria-label="关闭">
+          ×
+        </button>
+      </div>
+      <div id="sheetBody"></div>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <div
+      id="tableActivity"
+      class="table-activity"
+      role="status"
+      aria-live="polite"
+      hidden
+    ></div>
+  </body>
+</html>
