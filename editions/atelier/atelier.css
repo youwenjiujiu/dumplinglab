@@ -17,7 +17,7 @@
   --red: #983f32;
   --backdrop: #954b3d;
   --line: #dcd2c0;
-  --serif: "Songti SC", "STSong", "Noto Serif SC", Georgia, serif;
+  --serif: Scto, "Songti SC", "STSong", "Noto Serif SC", serif;
   --sans: Scto, -apple-system, "PingFang SC", sans-serif;
   --ease: cubic-bezier(0.2, 0.75, 0.2, 1);
 }
@@ -657,9 +657,9 @@ dl-value-motion { display: inline-block; font: inherit; color: inherit; }
   margin: 0;
 }
 .section-heading .translation {
-  font-family: Georgia, serif;
+  font-family: var(--sans);
   font-size: 17px;
-  font-style: italic;
+  font-style: normal;
   color: var(--muted);
 }
 .section-heading .section-count {
@@ -1216,8 +1216,8 @@ dialog[open] {
   padding-top: 3px;
 }
 .detail-other {
-  font-family: Georgia, serif;
-  font-style: italic;
+  font-family: var(--sans);
+  font-style: normal;
   font-size: 16px;
   color: var(--muted);
 }
@@ -1550,7 +1550,8 @@ dialog[open] {
   margin: 0;
 }
 .paper-heading em {
-  font-family: Georgia, serif;
+  font-family: var(--sans);
+  font-style: normal;
   font-size: 13px;
   color: var(--muted);
 }

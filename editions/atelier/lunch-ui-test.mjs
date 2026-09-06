@@ -186,6 +186,7 @@ try {
 
   assert.deepEqual(Array.from(document.querySelectorAll(".menu-section")).map(s=>s.dataset.section), ["recommended","dumplings","noodles","sides","drinks"]);
   assert.equal(document.querySelectorAll("#section-recommended .dish-card").length,6);
+  for (const button of document.querySelectorAll('#section-recommended .dish-add:not([disabled])')) assert.equal(button.textContent, '+', 'Recommendation uses the same plus entry as other dishes');
   for (const id of ["red-oil-chaoshou"]) {
     assert(document.querySelector(`[data-recommendation="${id}"]`).disabled);
   }
@@ -395,4 +396,42 @@ try {
   assert.equal(store.items.length,0);
   assert(document.querySelector(".receipt-lines").textContent.includes("9颗"));
   console.log("ROUND 8 PASS — bilingual controls, Chinese words, accessible buttons, reduced motion, receipt option persistence and lost-response recovery.");
+  const originalNickname = store.nickname;
+  const originalOrderCount = store.orders.length;
+  run('showCart()');
+  for (const value of ['小陈', '', originalNickname]) {
+    click('[data-action="nickname"]');
+    assert.equal(run('modal'), 'profile');
+    assert.equal(document.querySelectorAll('#sheetBody h2').length, 1);
+    assert.equal(document.querySelector('#sheetTitle').textContent, '设置称呼');
+    assert.equal(document.querySelector('.nickname-form label'), null, 'No duplicate large question heading');
+    assert.equal(document.querySelector('#nickname').getAttribute('aria-describedby'), 'nicknameHint');
+    assert(document.querySelector('#nickname').getAttribute('aria-label').includes('选填'));
+    assert(document.querySelector('#nicknameHint').textContent.includes('不填'));
+    assert.equal(document.querySelector('[data-action="save-nickname"]').textContent, '保存');
+    document.querySelector('#nickname').value = value;
+    click('[data-action="save-nickname"]');
+    assert.equal(store.nickname, value);
+    assert.equal(run('modal'), 'cart');
+    assert.equal(store.orders.length, originalOrderCount, 'Saving a name never places an order');
+  }
+  click('[data-action="nickname"]');
+  document.querySelector('#nickname').value = '未保存';
+  click('#closeSheet'); await until(()=>!browserHistory.state?.atelierSheet);
+  assert.equal(store.nickname, originalNickname, 'Close cancels unsaved edits');
+  run('showCart()'); click('[data-action="nickname"]');
+  document.querySelector('#nickname').value = originalNickname;
+  const enterName = new window.Event('keydown', {bubbles:true, cancelable:true});
+  enterName.key = 'Enter';
+  document.querySelector('#nickname').dispatchEvent(enterName);
+  assert.equal(run('modal'), 'cart', 'Enter saves the optional name');
+  assert.equal(store.orders.length, originalOrderCount);
+  click('#closeSheet'); await until(()=>!browserHistory.state?.atelierSheet);
+  click('#languageButton'); run('showCart()'); click('[data-action="nickname"]');
+  assert.equal(document.querySelector('#sheetTitle').textContent, 'Set name');
+  assert.equal(document.querySelector('[data-action="save-nickname"]').textContent, 'Save');
+  assert.equal(document.querySelector('#nickname').getAttribute('aria-label'), 'Name (optional)');
+  click('#closeSheet'); await until(()=>!browserHistory.state?.atelierSheet);
+  click('#languageButton');
+  console.log('PROFILE PASS — compact single-heading editor, accessible optional name, save/clear/cancel, no order mutation.');
 } finally { timers.forEach(id=>clearTimeout(id)); }

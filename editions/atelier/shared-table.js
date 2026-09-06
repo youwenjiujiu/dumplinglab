@@ -123,7 +123,7 @@ const SharedTable = (() => {
     return true;
   }
   function nameForm() {
-    return `<div class="nickname-form"><label for="nickname">${tr("同桌怎么称呼你？", "What should your table call you?")}</label><input id="nickname" maxlength="16" autocomplete="nickname" placeholder="${tr("比如：小陈（可不填）", "e.g. Alex (optional)")}" value="${escapeHTML(store.nickname)}"><p>${tr("自选称呼仅用于提示谁加了菜，不代表已验证身份。不填则显示“同桌”。", "An optional, unverified label for dish updates. Leave blank to appear as Guest.")}</p><button class="primary" data-action="save-nickname">${tr("记住这个称呼", "Save this name")}</button></div>`;
+    return `<div class="nickname-form"><input id="nickname" maxlength="16" autocomplete="nickname" aria-label="${tr("称呼（选填）", "Name (optional)")}" aria-describedby="nicknameHint" placeholder="${tr("输入称呼（选填）", "Name (optional)")}" value="${escapeHTML(store.nickname)}"><p id="nicknameHint">${tr("仅用于标记你选的菜，不填显示“同桌”。", "Labels your picks. Leave blank to appear as Guest.")}</p><button class="primary" data-action="save-nickname">${tr("保存", "Save")}</button></div>`;
   }
   function observe() {
     updateMenu();
@@ -243,6 +243,12 @@ const SharedTable = (() => {
       `<div class="receipt-page"><h2 id="sheetTitle" class="sr-only">${tr("点单已提交", "Order submitted")}</h2>${receipt(order, true)}<button class="primary" data-action="ordered">${tr("查看本桌点单记录", "View our order history")}</button><button class="secondary" data-action="close">${tr("继续点餐", "Keep ordering")}</button></div>`;
   }
   function init() {
+    document.addEventListener("keydown", (e) => {
+      if (e.target.id === "nickname" && e.key === "Enter" && !e.isComposing) {
+        e.preventDefault();
+        document.querySelector('[data-action="save-nickname"]')?.click();
+      }
+    });
     document.addEventListener("focusout", (e) => {
       if (e.target.id !== "cartNote") return;
       requestAnimationFrame(() => {
@@ -273,15 +279,15 @@ const SharedTable = (() => {
       if (b.dataset.action === "nickname") {
         openModal("profile", "");
         $("#sheetBody").innerHTML =
-          `<div class="sheet-content"><h2 id="sheetTitle">${tr("设置称呼", "Set name")}</h2>${nameForm()}</div>`;
+          `<div class="sheet-content nickname-content"><h2 id="sheetTitle">${tr("设置称呼", "Set name")}</h2>${nameForm()}</div>`;
         $("#nickname").focus();
       }
       if (b.dataset.action === "save-nickname") {
         store.setNickname($("#nickname").value);
         toast(
           tr(
-            "称呼已保存，之后加菜会带上你的名字。",
-            "Name saved. It will appear on your next additions.",
+            "称呼已保存",
+            "Name saved",
           ),
         );
         open();

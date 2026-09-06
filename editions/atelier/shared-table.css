@@ -596,6 +596,56 @@ body.viewing-table .table-tray {
   color: var(--muted);
   margin: 15px 0 22px;
 }
+/* The optional name editor is a compact utility sheet, not another checkout. */
+#sheet[data-mode="profile"] {
+  width: min(420px, calc(100% - 24px));
+  max-width: calc(100% - 24px);
+  border-radius: 18px;
+}
+@media (max-width: 700px) {
+  #sheet[data-mode="profile"] { margin: auto auto max(12px, env(safe-area-inset-bottom)); }
+}
+#sheet[data-mode="profile"] .sheet-header {
+  padding-inline: 14px;
+}
+#sheet[data-mode="profile"] .close-button { width: 44px; height: 44px; }
+#sheet[data-mode="profile"] .nickname-content {
+  padding: 4px 22px 22px;
+}
+#sheet[data-mode="profile"] .nickname-content h2 {
+  margin: 0 0 24px;
+  font-size: 24px;
+  line-height: 1.4;
+}
+#sheet[data-mode="profile"] .nickname-form { padding: 0; }
+#sheet[data-mode="profile"] .nickname-form input {
+  min-height: 48px;
+  padding: 10px 2px;
+  border-radius: 0;
+  box-shadow: none;
+  font-family: var(--sans);
+  font-size: 16px;
+  transition: border-color 150ms ease;
+}
+#sheet[data-mode="profile"] .nickname-form input:focus {
+  outline: 2px solid var(--red);
+  outline-offset: 4px;
+  border-bottom-color: var(--red);
+}
+#sheet[data-mode="profile"] .nickname-form input::placeholder { color: var(--muted); opacity: 1; }
+#sheet[data-mode="profile"] .nickname-form p {
+  margin: 12px 0 24px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+#sheet[data-mode="profile"] .nickname-form .primary {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 20px;
+  font-size: 15px;
+  border-radius: 6px;
+  justify-content: center;
+}
 #sheet[data-return-to="table"] .detail-image img {
   animation: none;
 }
