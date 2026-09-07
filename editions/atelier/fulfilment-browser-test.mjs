@@ -27,7 +27,7 @@ try {
     assert(await page.locator('#tableButton').isHidden());
     assert(await page.locator('#serviceButton').isHidden());
     await page.locator('.dish-add[data-recommendation="chive-fried"]').click();
-    assert.equal(await page.locator('.detail-price').innerText(),'$7.41');
+    assert.equal(await page.locator('.detail-price').innerText(),'$6.80');
     await page.locator('[data-action="add-detail"]').click();
     await page.locator('#tray').click();
     assert.equal(await page.locator('.table-number').count(),0);
@@ -36,8 +36,9 @@ try {
     assert.equal(await page.locator('#onlineForm').count(),0,'pickup goes directly to review');
     assert.equal(await page.locator('#tableEntry, #customerName, #customerPhone, [name="date"], [name="slot"]').count(),0,'no table, personal or reservation fields for pickup');
     assert.equal(await page.locator('#taxNotice').count(),0,'no tax notice in menu header');
-    assert.equal(await page.locator('.payment-total dd').innerText(),'$7.41');
-    assert((await page.locator('.payment-breakdown').innerText()).includes('$0.61'));
+    assert.equal(await page.locator('.payment-total dd').innerText(),'$6.80');
+    assert((await page.locator('.payment-breakdown').innerText()).includes('$0.56'));
+    assert((await page.locator('.payment-breakdown').innerText()).includes('$6.24'));
     await page.screenshot({path:join(output,`pickup-review-${lang}-${width}.png`)});
     await page.locator('[data-online-pay]').click();
     await page.locator('[data-preview-pay]').waitFor();
@@ -50,7 +51,7 @@ try {
     await page.screenshot({path:join(output,`pickup-ticket-${lang}-${width}.png`)});
     await page.locator('[data-action="ordered"]').click();
     await page.locator('.placed-receipts .paper-receipt').waitFor();
-    assert.equal(await page.locator('.payment-total dd').innerText(),'$7.41');
+    assert.equal(await page.locator('.payment-total dd').innerText(),'$6.80');
     assert.equal(writes.filter(p=>p==='/api/cart'||p==='/api/order').length,0,'online order never writes to table API');
     await page.locator('#closeSheet').click();
     // Delivery draft stays separate; no loss of the pickup history.
@@ -68,7 +69,7 @@ try {
     await page.locator('#postalCode').fill('059911');await page.locator('#onlineForm [type="submit"]').click();
     await page.locator('[data-online-pay]').waitFor();
     const breakdown=await page.locator('.payment-breakdown').innerText();
-    for(const amount of ['$136.00','$12.24','$13.34','$161.58'])assert(breakdown.includes(amount),amount);
+    for(const amount of ['$124.77','$11.23','$12.24','$148.24'])assert(breakdown.includes(amount),amount);
     await page.screenshot({path:join(output,`delivery-review-${lang}-${width}.png`)});
     await page.locator('[data-online-pay]').click();await page.locator('[data-preview-pay]').waitFor();
     // Returning from a cancelled payment / refreshing recovers the same request.
@@ -77,7 +78,7 @@ try {
     await page.locator('[data-online-retry]').click();await page.locator('[data-preview-pay]').waitFor();
     await page.locator('[data-preview-pay]').click();await page.locator('.placed-receipts .paper-receipt').waitFor();
     assert.equal(await page.locator('.placed-receipts .paper-receipt').count(),1,'refresh/retry places exactly one delivery');
-    assert.equal(await page.locator('.payment-total dd').innerText(),'$161.58');
+    assert.equal(await page.locator('.payment-total dd').innerText(),'$148.24');
     await page.locator('#closeSheet').click();
     await page.reload();await page.locator('[data-fulfilment="takeaway"]').waitFor();
     await page.locator('[data-fulfilment="takeaway"]').click();await page.locator('#tray').click();

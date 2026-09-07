@@ -20,7 +20,9 @@ const service=createOnlineService({config,now:()=>now,storage:{
 },payment:{ensureReady(){},async create(o){creates++;return{id:`cs_${o.id}`,url:'https://checkout.stripe.com/test'};}},checkAddress:async p=>({distanceKm:p==='999999'?10.01:10,address:'Verified server address'})});
 const input=make();
 const quote=await service.quote({...input,total:0,items:[{id:dish.id,qty:1,price:0}]});
-assert.equal(quote.subtotal,dish.price);assert.equal(quote.gst,Math.round(dish.price*9)/100);
+assert.equal(quote.total,dish.price);assert.equal(quote.gst,Math.round(dish.price*100*9/109)/100);
+assert.equal(quote.foodTotal,dish.price);
+assert.equal(Math.round((quote.subtotal+quote.gst)*100),Math.round(dish.price*100));
 assert.equal(quote.table,null);assert.equal(quote.tokenHash,undefined);
 const first=await service.checkout(input);assert.equal(first.order.status,'awaiting_payment');assert.deepEqual(await service.feed(),[]);
 assert.equal(first.order.pickup,undefined,'no pickup credential before payment');
@@ -51,7 +53,7 @@ const delivery=make({mode:'delivery',items:[{id:dish.id,qty:20}],customer:{name:
 const deliveryQuote=await service.quote(delivery);
 assert.equal(deliveryQuote.customer.address,'Verified server address');
 assert.equal(deliveryQuote.deliveryFee,Math.round(deliveryQuote.subtotal*9)/100);
-assert.equal(deliveryQuote.gst,Math.round((deliveryQuote.subtotal+deliveryQuote.deliveryFee)*9)/100);
+assert.equal(deliveryQuote.gst,Math.round((deliveryQuote.foodGst+deliveryQuote.deliveryGst)*100)/100);
 await assert.rejects(service.quote({...delivery,customer:{...delivery.customer,postalCode:'999999'}}),/10 km/);
 await assert.rejects(service.quote({...delivery,items:[{id:dish.id,qty:1}]}),/100/);
 assert.throws(()=>cleanOnline({...delivery,date:'2026-09-07'},config,now),/日期/);
@@ -64,9 +66,9 @@ assert.throws(()=>cleanOnline(make({items:[{id:dish.id,qty:21}]}),config,now),/�
 const dine=cleanOrder({...make(),table:'A1',group:'A',no:'1234'});
 assert.equal(dine.deliveryFee,0);assert.equal(dine.gstRate,.09);
 assert.equal(dine.total,globalThis.OrderPricing.inclusive(dish.price));
-assert.equal(globalThis.OrderPricing.quote(100,'delivery').total,118.81);
-assert.equal(globalThis.OrderPricing.quote(27.03,'takeaway').gst,2.43,'reference screenshot GST');
-assert.equal(globalThis.OrderPricing.quote(27.03,'takeaway').total,29.46,'reference screenshot total');
+assert.equal(globalThis.OrderPricing.quote(100,'delivery').total,109);
+assert.equal(globalThis.OrderPricing.quote(27.03,'takeaway').gst,2.23,'GST extracted from menu total');
+assert.equal(globalThis.OrderPricing.quote(27.03,'takeaway').total,27.03,'menu total does not increase');
 // Real HMAC verification, no provider requests or real secrets.
 const raw=Buffer.from('{ "id": "evt_test", "type": "unused" }');
 const secret='whsec_local_test',timestamp=String(Math.floor(Date.now()/1000));
@@ -92,4 +94,12 @@ const numbers=await Promise.all(batch.map(async i=>(await service.get(i.requestI
 assert.equal(new Set(numbers).size,5,'concurrent paid orders get unique pickup numbers');
 const unpaid=await service.checkout(make());
 await assert.rejects(service.pickup(unpaid.order.id,'0'.repeat(32),true),e=>e.status===404);
+// A historical paid v1 order retains its recorded amounts after the pricing update.
+const legacyRecord=records.get(input.requestId).value;
+Object.assign(legacyRecord,{pricingVersion:'sg-gst9-delivery9-v1',subtotal:dish.price,gst:Math.round(dish.price*9)/100,total:Math.round(dish.price*109)/100});
+const legacySnapshot=structuredClone(legacyRecord);
+const legacyRetry=await service.checkout(input);
+assert.equal(legacyRetry.order.total,legacySnapshot.total);
+assert.equal(legacyRetry.order.pricingVersion,'sg-gst9-delivery9-v1');
+assert.deepEqual(records.get(input.requestId).value,legacySnapshot,'historical order is never repriced');
 console.log('PASS online service: server pricing, GST, scope/privacy, payment idempotency, verified webhook, pending exclusion, 10 km limit, booking cutoff, legacy table flow');

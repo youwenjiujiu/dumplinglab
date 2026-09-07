@@ -4,6 +4,8 @@ Updated 2026-09-07. Source `9b55ce7` is deployed to https://dumplinglab-menu.ver
 
 ## Current experience
 
+- Local change after the above release: catalogue prices are now the final GST-inclusive food prices (`sg-inclusive-gst9-delivery9-v2`), not net prices plus another 9%. Checkout extracts food GST at 9/109; $5.80 = $5.32 net + $0.48 GST. Delivery remains 9% of net food plus GST on that fee. Historic v1 order snapshots retain their original amounts. This pricing change has not yet been deployed.
+
 - Entry is a centered native dialog: dine-in, takeaway, delivery. Three red/white brand illustrations use the existing dumpling mark; delivery shows a cyclist carrying the branded bag.
 - Original two-column menu-card layout is preserved.
 - Header GST copy is removed. Displayed food prices remain inclusive; review/receipts break out net food, delivery, GST and final amount.
