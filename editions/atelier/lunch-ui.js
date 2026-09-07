@@ -29,6 +29,19 @@ const LunchMenu = (() => {
     if (d.fixedPreparation) return `<div id="lunchOptions">${group(tr("选份量", "Portion"), "pieces", Object.keys(d.portionPrices).map(Number).map(n => ({value:n,label:tr(`${n} 颗 · ${money(d.portionPrices[n])}`,`${n} pieces · ${money(d.portionPrices[n] + (value.noodles ? LUNCH_NOODLE_EXTRA : 0))}`)})), value.pieces)}</div>`;
     return `<div id="lunchOptions">${detailPreset ? `<p class="detail-portion">${bi("做法", "Preparation")} · ${bi(prep(value.prep).cn, prep(value.prep).en)}</p>` : group(tr("做法", "Preparation"), "prep", LUNCH_PREPARATIONS.filter(p => d.preparations.includes(p.id)).map(p => ({ value: p.id, label: tr(p.cn, p.en) })), value.prep)}${group(tr("选份量", "Portion"), "pieces", Object.keys(d.portionPrices).map(Number).map(n => ({ value: n, label: tr(`${n} 颗 · ${money(d.portionPrices[n] + (value.noodles ? LUNCH_NOODLE_EXTRA : 0))}`,`${n} pieces · ${money(d.portionPrices[n] + (value.noodles ? LUNCH_NOODLE_EXTRA : 0))}`) })), value.pieces)}${extrasControls(value,"lunch-option",Boolean(detailPreset?.noodles))}</div>`;
   }
+  function ingredients(d, style) {
+    const info = d.ingredientInfo;
+    const items = [...(info?.items || [])];
+    const value = options(d, style);
+    if (value?.prep === "soup") items.push({cn:"高汤", en:"Broth"});
+    if (value?.noodles) items.push({cn:"面条", en:"Noodles"});
+    if (value?.sesame) items.push({cn:"芝麻酱", en:"Sesame sauce"});
+    // Spicy is an option, not proof of a specific oil, pepper or sauce recipe.
+    if (value?.spicy && value.prep === "tossed") items.push({cn:"辣味调料", en:"Spicy seasoning"});
+    const unique = [...new Map(items.map(item => [item.cn, item])).values()];
+    const note = info?.note || (!unique.length ? ["食材信息请向店员确认。", "Please check ingredient information with staff."] : null);
+    return `<section id="detailIngredients" class="detail-ingredients" aria-labelledby="ingredientHeading"><h2 id="ingredientHeading">${bi("主要食材", "Main ingredients")}</h2>${unique.length ? `<p class="ingredient-list">${unique.map(item => escapeHTML(tr(item.cn,item.en))).join(" · ")}</p>` : ""}${note ? `<p class="ingredient-note">${bi(...note)}</p>` : ""}</section>`;
+  }
   function recommendationSection() {
     const entries = LUNCH_RECOMMENDATIONS.filter(matches);
     if (!entries.length) return "";
@@ -84,5 +97,5 @@ return `<section class="menu-section" id="section-recommended" data-section="rec
   }
   const menuPrice = d => d.variants ? fromPrice(d.price + (flavor.noodles ? LUNCH_NOODLE_EXTRA : 0)) : money(d.price);
   const start = () => { step = "preparation"; };
-  return { recommendationPrice, openBoiledFillings, section, recommendationSection, controls, handle, visible, firstStyle, menuPrice, options, readyFor, start };
+  return { recommendationPrice, openBoiledFillings, section, recommendationSection, controls, ingredients, handle, visible, firstStyle, menuPrice, options, readyFor, start };
 })();

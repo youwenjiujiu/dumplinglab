@@ -29,7 +29,7 @@ try {
     assert(await page.locator('.header-actions').evaluate(e=>e.getBoundingClientRect().right<=innerWidth));
     await page.locator('#tableButton').tap();
     assert.equal(await page.locator('#tableEntry').evaluate(e=>e===document.activeElement),false,'no forced keyboard on entry');
-    assert.equal(await page.locator('#tableEntryForm button').innerText(),'确认桌号','header entry is not checkout review');
+    assert.equal(await page.locator('#tableEntryForm button').innerText(),'确认','header entry is not checkout review');
     assert.equal(await page.locator('#closeSheet .icon').evaluate(e=>getComputedStyle(e).width),'18px');
     assert.equal(await page.locator('#closeSheet').evaluate(e=>getComputedStyle(e).outlineStyle),'none');
     const close=await page.locator('#closeSheet').boundingBox();

@@ -69,6 +69,18 @@ Use case: illustration-story. Asset: compact square illustration for a Chinese d
 
 生菜采用此前内置 imagegen 生成并已目视检查的白底修正版（exec-c7c052ec-c669-417e-913a-94a0aecc4e0b.png）；目标为保留食物与盘子、去除灰色背景，未把 RGB 文件误称为透明图片。
 
+## 本地待发布：共用表单与键盘布局修复
+
+- 桌号改为紧凑单标题表单，移除重复的桌号标题和品牌眉题；输入框、错误提示、按钮使用独立网格间距，按钮简化为“确认”或“继续”。
+- 称呼编辑不再强制弹键盘；统一桌号、称呼、备注、分享链接的输入字号、内边距和焦点样式。
+- 键盘布局在输入框失焦后保持到可见区域真正恢复，避免保存按钮在 pointer-down 和 click 之间移动。备注区域随可见高度滚动，结算按钮保留在可见范围。
+- 弹窗锁定并恢复页面滚动；搜索必须先保存滚动位置再固定主区域，关闭时先恢复菜单内容再恢复滚动，避免跳回顶部。
+- 遮罩改为文档层连续纯色遮罩，保留原生 dialog 的焦点、inert 与 Escape 行为，不再叠加模糊原生 backdrop。iOS 透明浏览器栏存在相关 WebKit 问题，但不能仅凭截图断定用户遇到同一版本的缺陷。[WebKit 300965](https://bugs.webkit.org/show_bug.cgi?id=300965)
+- 新增 `form-layout-browser-test.mjs`：320/390/768px × 中英文，验证桌号、错误提示、称呼保存、备注、核对入口、遮罩与关闭后滚动恢复。全部通过；截图已逐张抽查桌号、英文称呼与备注。
+- 本轮截图：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-form-layout-AiPIZm`；手机控件回归：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-mobile-controls-2P5ZVU`。
+- `lunch-ui-test.mjs --browse --named`、`table-entry-test.mjs`、手机控件与设计浏览器回归通过。键盘仅通过合成 visualViewport 测试，**不是 iPhone Safari 真机验收，本轮尚未部署**。
+- 用户追加的“顺时针旋转”尚未实现：现有详情动画为 Y 轴左右轻摆。已询问是保持碗直立的水平转台，还是整图在屏幕平面旋转；此前用户明确反对整图翻转，不将现有效果计作已满足。
+
 ## 发布记录
 
 ### 最新正式发布：搜索空白初始态与撤回示意图

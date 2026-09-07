@@ -53,13 +53,9 @@ try {
     await page.locator('#closeSheet').click();
     await page.emulateMedia({reducedMotion:'no-preference'});
     await page.locator('#section-dumplings .dish-add[data-add]').first().click();await loaded(page);
-    await page.waitForFunction(()=>document.querySelector('.detail-image')?.dataset.plateMotion==='turning');
-    assert.equal(await page.locator('.detail-image img').evaluate(e=>e.getAnimations()[0].effect.getTiming().iterations),Infinity);
-    assert(await page.locator('.detail-image img').evaluate(e=>e.getAnimations()[0].effect.getKeyframes().every(f=>f.transform.includes('rotateY'))),'upright horizontal yaw, not an in-plane spin');
-    const transform=await page.locator('.detail-image img').evaluate(e=>getComputedStyle(e).transform);
-    await page.waitForFunction(t=>getComputedStyle(document.querySelector('.detail-image img')).transform!==t,transform);
-    await page.locator('.detail-image').press('ArrowRight');
-    assert.equal(await page.locator('.detail-image').getAttribute('data-plate-motion'),'idle');
+    assert.equal(await page.locator('.detail-image img').evaluate(e=>e.getAnimations().length),0,'photo stays static even without reduced motion');
+    assert.equal(await page.locator('.detail-image img').evaluate(e=>getComputedStyle(e).transform),'none');
+    assert.equal(await page.locator('.detail-image').getAttribute('role'),null,'static image is not announced as a slider');
     await page.locator('[data-action="add-detail"]').click();
     await page.locator('#tray').click();await page.locator('[data-action="review"]').click();
     await page.locator('[data-action="submit"]').click();

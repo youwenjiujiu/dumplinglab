@@ -290,7 +290,7 @@ const SharedTable = (() => {
         openModal("profile", "");
         $("#sheetBody").innerHTML =
           `<div class="sheet-content nickname-content"><h2 id="sheetTitle">${bi("设置称呼", "Set name")}</h2>${nameForm()}</div>`;
-        $("#nickname").focus();
+        // Do not force the software keyboard before the guest sees the form.
       }
       if (b.dataset.action === "save-nickname") {
         store.setNickname($("#nickname").value);

@@ -94,6 +94,64 @@
       price: chaoshou.portionPrices[pieces], en: `Chilli oil · ${pieces} pieces` };
   }
   MENU.push(chaoshou);
+  // Ingredient summaries are limited to the current menu's explicit names.
+  // They are NOT complete kitchen recipes or an allergen/suitability declaration.
+  // Do not infer ingredients from generated photos or the retired menu.
+  const ingredientSummaries = {
+    "pork-chive-shrimp": [["韭菜", "Chives"], ["虾仁", "Shrimp"], ["猪肉", "Pork"], ["饺子皮", "Dumpling wrappers"]],
+    "chicken-cabbage": [["鸡肉", "Chicken"], ["包菜", "Cabbage"], ["饺子皮", "Dumpling wrappers"]],
+    "pork-celery-shrimp": [["芹菜", "Celery"], ["虾仁", "Shrimp"], ["猪肉", "Pork"], ["饺子皮", "Dumpling wrappers"]],
+    "pork-cabbage": [["白菜", "Chinese cabbage"], ["猪肉", "Pork"], ["饺子皮", "Dumpling wrappers"]],
+    "pork-scallion": [["猪肉", "Pork"], ["大葱", "Scallions"], ["饺子皮", "Dumpling wrappers"]],
+    "prawn-roe-wonton": [["鲜虾", "Prawns"], ["蟹籽", "Crab roe"], ["云吞皮", "Wonton wrappers"]],
+    "chicken-corn-wonton": [["鸡肉", "Chicken"], ["玉米", "Corn"], ["云吞皮", "Wonton wrappers"]],
+    "pork-wonton": [["猪肉", "Pork"], ["云吞皮", "Wonton wrappers"]],
+    "mince-scallion-noodles": [["面条", "Noodles"], ["肉末", "Minced meat"], ["葱油", "Scallion oil"]],
+    "mince-chilli-noodles": [["面条", "Noodles"], ["肉末", "Minced meat"], ["辣椒", "Chilli"]],
+    "kampong-chicken-soup": [["拉面", "Noodles"], ["甘榜鸡", "Kampong chicken"], ["汤底", "Broth"]],
+    "shaanxi-hot-oil-noodles": [["面条", "Noodles"], ["食用油", "Cooking oil"]],
+    "century-egg-noodles": [["面条", "Noodles"], ["皮蛋", "Century egg"]],
+    "mince-red-oil-noodles": [["面条", "Noodles"], ["肉末", "Minced meat"], ["红油", "Chilli oil"]],
+    "pork-rice": [["猪肉", "Pork"], ["米饭", "Rice"]],
+    "braised-tofu": [["豆腐", "Tofu"]],
+    "braised-pork-belly": [["五花肉", "Pork belly"]],
+    "fishball-soup": [["鱼丸", "Fishballs"], ["汤底", "Broth"]],
+    "pork-cutlet": [["猪肉", "Pork"]],
+    "chicken-wings": [["鸡翅", "Chicken wings"]],
+    "cold-veg-shreds": [["蔬菜丝", "Shredded vegetables"]],
+    "choy-sum": [["菜心", "Choy sum"], ["酱油", "Soy sauce"]],
+    "mouthwatering-chicken": [["鸡肉", "Chicken"], ["辣味酱汁", "Chilli sauce"]],
+    "oyster-lettuce": [["生菜", "Lettuce"], ["蚝油", "Oyster sauce"]],
+    "century-egg-tofu": [["皮蛋", "Century egg"], ["豆腐", "Tofu"]],
+    "soft-egg": [["蛋", "Egg"]],
+    "pickled-radish": [["萝卜", "Radish"]],
+    "cucumber": [["黄瓜", "Cucumber"]],
+    "barley": [["薏米", "Barley"], ["水", "Water"]],
+    "lemon-tea": [["柠檬", "Lemon"], ["茶", "Tea"]],
+    "sour-plum": [["酸梅", "Sour plum"]],
+    "soft-drink": [],
+    "water": [["水", "Water"]],
+    "osmanthus-oolong": [["桂花", "Osmanthus"], ["乌龙茶", "Oolong tea"]],
+    "red-oil-chaoshou": [["抄手皮", "Wonton wrappers"], ["红油", "Chilli oil"]],
+  };
+  const ingredientNotes = {
+    "mince-scallion-noodles": ["肉末种类请向店员确认。", "Please check the type of minced meat with staff."],
+    "mince-chilli-noodles": ["肉末种类请向店员确认。", "Please check the type of minced meat with staff."],
+    "mince-red-oil-noodles": ["肉末种类请向店员确认。", "Please check the type of minced meat with staff."],
+    "cold-veg-shreds": ["具体蔬菜种类请向店员确认。", "Please check which vegetables are used with staff."],
+    "red-oil-chaoshou": ["馅料成分请向店员确认。", "Please check the filling ingredients with staff."],
+    "soft-drink": ["成分以所选饮品的包装配料表为准。", "Check the ingredient label on your chosen drink."],
+  };
+  for (const d of MENU) {
+    const key = d.id.replace(/^lunch-v[24]-/, "");
+    if (!Object.hasOwn(ingredientSummaries, key)) throw new Error(`Missing ingredient summary: ${d.id}`);
+    d.ingredientInfo = {
+      items: ingredientSummaries[key].map(([cn, en]) => ({cn, en})),
+      note: ingredientNotes[key] || null,
+      source: "current-menu-names",
+      completeRecipe: false,
+    };
+  }
   // Each filling has its own cutaway for each supported preparation.
   const friedPhotos = {
     "lunch-v2-pork-chive-shrimp": "potstickers-pork-shrimp-chive-cutaway-v1.png",

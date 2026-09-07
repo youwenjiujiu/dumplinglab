@@ -1093,8 +1093,18 @@ dialog {
   overscroll-behavior: contain;
 }
 dialog::backdrop {
-  background: #28221bd0;
-  backdrop-filter: blur(5px);
+  background: transparent;
+  backdrop-filter: none;
+}
+/* Paint a single continuous scrim in the document, including behind Safari's
+   translucent browser controls. The native dialog still owns focus/inertness. */
+html.has-open-sheet::before {
+  content: "";
+  position: fixed;
+  inset: -100vmax;
+  z-index: 999;
+  background: rgb(40 34 27 / 58%);
+  pointer-events: none;
 }
 dialog[open] {
   animation: sheet-in 0.3s var(--ease);

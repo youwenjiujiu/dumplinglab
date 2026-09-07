@@ -449,7 +449,7 @@ try {
   assert.equal(document.querySelector("[data-image-retry]").disabled, true);
   missingPhoto.dispatchEvent(new window.Event("load", { bubbles: true }));
   assert.equal(document.querySelector(".image-fallback"), null);
-  assert.equal(document.querySelector(".detail-image").getAttribute("role"), "slider");
+  assert.equal(document.querySelector(".detail-image").getAttribute("role"), null);
   assert.equal(document.querySelector(".detail-image img"), missingPhoto);
   click("#closeSheet");
   click("#closeSheet");

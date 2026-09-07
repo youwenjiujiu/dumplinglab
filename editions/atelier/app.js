@@ -229,12 +229,33 @@ const sheetNavigation = (() => {
   });
   return { remember, closed };
 })();
+let pageScrollLock = null;
+function lockPageScroll() {
+  if (pageScrollLock) return;
+  const properties = ["position", "top", "left", "right", "width", "overflow"];
+  pageScrollLock = {
+    x: window.scrollX || 0, y: window.scrollY || 0,
+    styles: Object.fromEntries(properties.map(key => [key, document.body.style.getPropertyValue(key)])),
+  };
+  Object.assign(document.body.style, {position:"fixed", top:`-${pageScrollLock.y}px`, left:"0", right:"0", width:"100%", overflow:"hidden"});
+}
+function unlockPageScroll() {
+  if (!pageScrollLock || $("#sheet").open || document.body.classList.contains("search-open")) return;
+  const saved = pageScrollLock;
+  pageScrollLock = null;
+  for (const [key, value] of Object.entries(saved.styles)) {
+    if (value) document.body.style.setProperty(key, value);
+    else document.body.style.removeProperty(key);
+  }
+  window.scrollTo?.({left:saved.x, top:saved.y, behavior:"instant"});
+}
 function openModal(type, eyebrow) {
   $(".detail-image")?.stopPlateMotion?.();
   sheetNavigation.remember(type);
   disposeTableScene();
   if (!$("#sheet").open) lastFocus = document.activeElement;
   modal = type;
+  $("#sheet").classList.remove("table-entry-sheet");
   $("#closeSheet").innerHTML = icon("close");
   $("#closeSheet").ariaLabel = tr("关闭", "Close");
   if (type !== "cart") document.body.classList.remove("viewing-table");
@@ -242,8 +263,9 @@ function openModal(type, eyebrow) {
   setBilingual($("#sheetEyebrow"),eyebrow || "");
   $("#sheet").classList.toggle("plain-heading", !eyebrow);
   if (!$("#sheet").open) {
+    lockPageScroll();
+    document.documentElement.classList.add("has-open-sheet");
     $("#sheet").showModal();
-    document.body.style.overflow = "hidden";
   }
   $("#sheet").scrollTop = 0;
 }
@@ -255,10 +277,11 @@ function closeModal(options = {}) {
   $("#sheet").removeAttribute("data-return-to");
   disposeTableScene();
   $("#sheet").close();
+  document.documentElement.classList.remove("has-open-sheet");
   modal = null;
   delete $("#sheet").dataset.mode;
   review = null;
-  document.body.style.overflow = document.body.classList.contains("search-open") ? "hidden" : "";
+  unlockPageScroll();
   if (lastFocus?.isConnected) lastFocus.focus({ preventScroll: true });
   if (!options.fromHistory) sheetNavigation.closed();
 }
@@ -275,8 +298,23 @@ function syncVisibleViewport() {
   const root = document.documentElement;
   root.style.setProperty("--visible-height", `${viewport.height}px`);
   root.style.setProperty("--visible-top", `${viewport.offsetTop}px`);
-  const editing = document.activeElement?.matches?.("input, textarea, [contenteditable=true]");
-  root.classList.toggle("keyboard-open", Boolean(editing && viewport.scale < 1.1 && window.innerHeight - viewport.height > 100));
+  const editing = document.activeElement?.matches?.('input:not([type="checkbox"]):not([type="radio"]):not([readonly]), textarea, [contenteditable=true]');
+  const obscured = viewport.scale < 1.1 && window.innerHeight - viewport.height > 100;
+  // Keep the keyboard layout through pointer-down → blur → click. Moving the
+  // sheet on blur can put the pressed button elsewhere before the tap completes.
+  root.classList.toggle("keyboard-open", Boolean(obscured && (editing || root.classList.contains("keyboard-open"))));
+  if (root.classList.contains("keyboard-open") && $("#sheet").contains(document.activeElement)) {
+    requestAnimationFrame(() => {
+      const input = document.activeElement;
+      if (!input?.matches?.("input, textarea")) return;
+      const scroller = input.closest(".cart-scroll") || $("#sheet");
+      const r = input.getBoundingClientRect(), frame = scroller.getBoundingClientRect();
+      const top = Math.max(frame.top, viewport.offsetTop) + 64;
+      const bottom = Math.min(frame.bottom, viewport.offsetTop + viewport.height) - 16;
+      if (r.bottom > bottom) scroller.scrollTop += r.bottom - bottom;
+      else if (r.top < top) scroller.scrollTop -= top - r.top;
+    });
+  }
 }
 window.visualViewport?.addEventListener("resize", syncVisibleViewport);
 window.visualViewport?.addEventListener("scroll", syncVisibleViewport);
@@ -627,10 +665,10 @@ function renderDetail() {
   $(".detail-image")?.stopPlateMotion?.();
   const d = presentedDish(detail, detailStyle);
   $("#sheetBody").innerHTML =
-    `${d.img ? `<div class="detail-image" role="slider" tabindex="0" aria-label="${tr("旋转菜品图片", "Rotate dish photo")}" aria-valuemin="-22" aria-valuemax="22" aria-valuenow="0" aria-orientation="horizontal"><img src="${photo(d, "l", detailStyle)}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><div class="detail-top"><div><h1 id="sheetTitle">${dishNameHTML(d)}</h1><div class="detail-other">${otherName(d)}</div></div><span class="detail-price">${money(itemPrice(d, detailStyle))}</span></div>${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${bi("每份", "Per portion")} · ${bi(d.portion, d.portion.replace("块"," piece").replace("个"," pieces"))}</p>` : ""}<p class="fineprint">${bi("如有食物过敏，请先向店员确认食材与共用厨具情况。", "For food allergies, check ingredients and shared preparation areas with staff.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? bi("暂时售罄", "Sold out") : bi("加入本桌", "Add to our table")}<strong>${money(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
-  globalThis.TableMotion?.attachPlate($(".detail-image"));
+    `${d.img ? `<div class="detail-image"><img draggable="false" src="${photo(d, "l", detailStyle)}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><div class="detail-top"><div><h1 id="sheetTitle">${dishNameHTML(d)}</h1><div class="detail-other">${otherName(d)}</div></div><span class="detail-price">${money(itemPrice(d, detailStyle))}</span></div>${LunchMenu.ingredients(detail, detailStyle)}${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${bi("每份", "Per portion")} · ${bi(d.portion, d.portion.replace("块"," piece").replace("个"," pieces"))}</p>` : ""}<p class="fineprint">${bi("以上为菜单注明的主要食材，非完整配料表。如有过敏，请向店员确认酱汁、调味料与共用厨具情况。", "These are menu-listed main ingredients, not a complete ingredient list. For allergies, check sauces, seasonings and shared preparation areas with staff.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? bi("暂时售罄", "Sold out") : bi("加入本桌", "Add to our table")}<strong>${money(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
 }
 function updateDetailSelection() {
+  if ($("#detailIngredients")) $("#detailIngredients").outerHTML = LunchMenu.ingredients(detail, detailStyle);
   const image = $(".detail-image img");
   const presentation = presentedDish(detail, detailStyle);
   if (image && detail?.img) {
@@ -866,9 +904,10 @@ async function submit() {
   }
 }
 function showTable(forReview = false) {
-  openModal("table", "DUMPLING LAB / TOGETHER");
+  openModal("table", table ? "DUMPLING LAB / TOGETHER" : "");
   if (!table) {
-    $("#sheetBody").innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${bi("确认桌号", "Choose your table")}</h2><p class="sheet-intro">${bi("填写桌牌上的桌号，或扫描桌上的点餐二维码。", "Enter the number on your table, or scan its ordering QR code.")}</p><form id="tableEntryForm" class="nickname-form" data-review="${forReview}"><label for="tableEntry">${bi("桌号", "Table number")}</label><input id="tableEntry" name="table" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="${tr("例如 A1", "e.g. A1")}" aria-describedby="tableEntryError"><p id="tableEntryError" role="alert"></p><button class="primary" type="submit">${bi(forReview ? "确认桌号，继续核对订单" : "确认桌号", forReview ? "Continue to order review" : "Confirm table")}</button></form><p class="fineprint">${bi("选好的菜会保留。无需填写姓名。", "Your picks are kept. No name required.")}</p></div>`;
+    $("#sheet").classList.add("table-entry-sheet");
+    $("#sheetBody").innerHTML = `<div class="sheet-content form-content"><h2 id="sheetTitle">${bi("输入桌号", "Table number")}</h2><p id="tableEntryHint" class="form-hint">${bi("填写桌牌上的编号", "Enter the number on your table")}</p><form id="tableEntryForm" class="nickname-form" data-review="${forReview}"><label for="tableEntry" class="sr-only">${bi("桌号", "Table number")}</label><input id="tableEntry" name="table" maxlength="12" autocomplete="off" autocapitalize="characters" enterkeyhint="done" spellcheck="false" placeholder="${tr("例如 A1", "e.g. A1")}" aria-describedby="tableEntryHint tableEntryError"><p id="tableEntryError" class="field-error" role="alert"></p><button class="primary" type="submit">${bi(forReview ? "继续" : "确认", forReview ? "Continue" : "Confirm")}</button></form></div>`;
     // Let the guest read the form before opening the software keyboard.
     return;
   }
@@ -1215,14 +1254,8 @@ function restoreFoodPhoto(img) {
   host.classList.remove("image-unavailable");
   host.querySelector(".image-fallback")?.remove();
   if (host.classList.contains("detail-image")) {
-    host.setAttribute("role", "slider");
-    host.setAttribute("tabindex", "0");
-    host.setAttribute("aria-label", tr("旋转菜品图片", "Rotate dish photo"));
-    host.setAttribute("aria-valuemin", "-22");
-    host.setAttribute("aria-valuemax", "22");
-    host.setAttribute("aria-orientation", "horizontal");
-    host.setAttribute("aria-valuenow", String(Math.round(parseFloat(host.style.getPropertyValue("--plate-angle")) || 0)));
-    if (hadFocus) host.focus({ preventScroll: true });
+    for (const attr of ["role", "tabindex", "aria-label", "aria-valuemin", "aria-valuemax", "aria-valuenow", "aria-orientation"]) host.removeAttribute(attr);
+    if (hadFocus) $("#closeSheet").focus({ preventScroll: true });
   }
 }
 document.addEventListener("error", (e) => {
@@ -1315,9 +1348,9 @@ $("#planButton").onclick = showPlanner;
 $("#serviceButton").onclick = showService;
 $("#searchButton").onclick = () => {
   if (!$("#searchPanel").hidden) { cancelSearch(); return; }
+  lockPageScroll();
   $("#searchPanel").hidden = false;
   document.body.classList.add("search-open");
-  document.body.style.overflow = "hidden";
   $("#searchButton").setAttribute("aria-expanded", "true");
   renderMenu();
   $("#main").scrollTop = 0;
@@ -1332,9 +1365,9 @@ function cancelSearch() {
   $("#searchInput").blur();
   $("#searchPanel").hidden = true;
   document.body.classList.remove("search-open");
-  document.body.style.overflow = $("#sheet").open ? "hidden" : "";
   $("#searchButton").setAttribute("aria-expanded", "false");
   renderFilters(); renderMenu();
+  unlockPageScroll();
   $("#searchButton").focus({ preventScroll: true });
 }
 $("#cancelSearch").onclick = cancelSearch;
