@@ -1,6 +1,6 @@
-# Ordering modes — implemented locally, not activated in production
+# Ordering modes — deployed UI, online checkout not activated
 
-Updated 2026-09-07. No deployment or real payment was performed.
+Updated 2026-09-07. Source `9b55ce7` is deployed to https://dumplinglab-menu.vercel.app/ (Vercel deployment `dpl_4PoeQds31aBkS5wvc3euxaSWvC2u`, Ready). No real payment was performed; merchant configuration still gates online checkout.
 
 ## Current experience
 
@@ -37,6 +37,6 @@ Checkout fails closed when configuration is absent. Do not copy credentials from
 - online-service-test.mjs: authoritative prices, unpaid exclusion, privacy, signed webhook, concurrent pickup numbering, stable retry credentials, staff-auth gate, explicit collection, delivery validation.
 - pickup-staff-browser-test.mjs + decode-pickup-qr.swift: Apple's independent Vision QR decode, staff inspection, explicit collection, duplicate scan prevention.
 - Menu layout and existing form/keyboard regressions pass. Keyboard coverage is simulated, not a physical iPhone.
-- Release build includes the new APIs, assets and QR dependency; this is an artifact build, not a deployment.
+- Release build includes the new APIs, assets and QR dependency. Production checks matched the exact frontend source and all six entry/header illustrations; no preview banner is present. `/api/online` reports `preview: false`, `takeawayEnabled: false`, `deliveryEnabled: false`. Anonymous staff-feed and pickup requests return 401. These checks created no orders or payments.
 
 QR generation uses the maintained node-qrcode package, pinned to 1.5.4: https://github.com/soldair/node-qrcode
