@@ -69,7 +69,7 @@ Use case: illustration-story. Asset: compact square illustration for a Chinese d
 
 生菜采用此前内置 imagegen 生成并已目视检查的白底修正版（exec-c7c052ec-c669-417e-913a-94a0aecc4e0b.png）；目标为保留食物与盘子、去除灰色背景，未把 RGB 文件误称为透明图片。
 
-## 本地待发布：共用表单与键盘布局修复
+## 共用表单与键盘布局修复（已随本次发布）
 
 - 桌号改为紧凑单标题表单，移除重复的桌号标题和品牌眉题；输入框、错误提示、按钮使用独立网格间距，按钮简化为“确认”或“继续”。
 - 称呼编辑不再强制弹键盘；统一桌号、称呼、备注、分享链接的输入字号、内边距和焦点样式。
@@ -78,12 +78,23 @@ Use case: illustration-story. Asset: compact square illustration for a Chinese d
 - 遮罩改为文档层连续纯色遮罩，保留原生 dialog 的焦点、inert 与 Escape 行为，不再叠加模糊原生 backdrop。iOS 透明浏览器栏存在相关 WebKit 问题，但不能仅凭截图断定用户遇到同一版本的缺陷。[WebKit 300965](https://bugs.webkit.org/show_bug.cgi?id=300965)
 - 新增 `form-layout-browser-test.mjs`：320/390/768px × 中英文，验证桌号、错误提示、称呼保存、备注、核对入口、遮罩与关闭后滚动恢复。全部通过；截图已逐张抽查桌号、英文称呼与备注。
 - 本轮截图：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-form-layout-AiPIZm`；手机控件回归：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-mobile-controls-2P5ZVU`。
-- `lunch-ui-test.mjs --browse --named`、`table-entry-test.mjs`、手机控件与设计浏览器回归通过。键盘仅通过合成 visualViewport 测试，**不是 iPhone Safari 真机验收，本轮尚未部署**。
-- 用户追加的“顺时针旋转”尚未实现：现有详情动画为 Y 轴左右轻摆。已询问是保持碗直立的水平转台，还是整图在屏幕平面旋转；此前用户明确反对整图翻转，不将现有效果计作已满足。
+- `lunch-ui-test.mjs --browse --named`、`table-entry-test.mjs`、手机控件与设计浏览器回归通过。键盘仅通过合成 visualViewport 测试，**不是 iPhone Safari 真机验收**。
+- 转台多角度生成试验未通过连续性验收，未放入发布包。随后用户明确要求取消图片转动；已移除详情照片的自动左右摆、拖动旋转和 slider 语义，保留静态照片。购物车布局与收据动效不受影响。
 
 ## 发布记录
 
-### 最新正式发布：搜索空白初始态与撤回示意图
+### 最新正式发布：主要食材、共用表单与静态详情照片
+
+- 用户明确要求部署，并在部署过程中追加取消菜图旋转。
+- 运行时代码：`5b03727`；部署 ID：`dpl_9qPZ42JSLCWvb2SGZ4uiun1qnh6t`。
+- 正式网址：https://dumplinglab-menu.vercel.app/
+- 不变部署：https://dumplinglab-menu-fe6pxcrbt-youwenjiujius-projects.vercel.app
+- 35 个产品都有主要食材区，中英文支持，汤底、加面、芝麻酱和辣味选项联动；完整配方尚未确认，保留明确披露。价格与下单配置不变。
+- 候选发布包检查、受保护部署检查已通过；正式域名已切换。隔离测试桌 QAF09F9C0E 已清空，没有下单或呼叫店员。
+- 正式域名接口复查通过，隔离测试桌 QA39485EA1 已清空。线上全新浏览器会话覆盖 35 个详情 × 中英文 × 320/390/768px，静态照片、食材、加料、价格排版全部通过，无页面脚本错误；截图：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-ingredients-Givqp0`。这不等于 iPhone Safari 真机键盘验收。
+- 取消详情照片自动旋转、拖动旋转和滑块语义，未发布转台实验素材。
+
+### 前次发布：搜索空白初始态与撤回示意图
 
 - 用户明确要求部署后，发布运行时代码 `b66a34d`，包含此前 `81aa0de` 的手机交互修复。
 - 部署 ID：`dpl_521e57TFgx7EutkjyCxTvpe2CCfi`；已完成正式域名切换。

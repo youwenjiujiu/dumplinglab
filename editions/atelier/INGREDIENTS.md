@@ -1,6 +1,6 @@
 # Detail ingredient summaries
 
-Added 2026-09-07 at the user's request. Local changes; not deployed.
+Added 2026-09-07 at the user's request. Published to https://dumplinglab-menu.vercel.app/ with runtime commit `5b03727`.
 
 ## Source and limits
 
@@ -34,4 +34,8 @@ Kitchen data can replace the summary record when supplied. Do not change `comple
 
 `ingredients-browser-test.mjs` checks all 35 detail pages at 320/390/768px in both languages, explicit uncertainty notes, recommendation extras, live ingredient updates, portion stability, language changes and text overflow. Existing lunch/checkout tests cover unchanged IDs, all prices and option validity. Browser tests do not verify recipe truth.
 
-All six size/language combinations passed. Screenshot review found long English names touching prices; English detail titles now wrap within their own column. The test checks the title/price gap and text overflow for all dishes. Final screenshots: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-ingredients-vCRBVS`. Local lunch DOM, pricing, table entry, form geometry, mobile controls and release-package checks also passed. No production deployment or orders were made.
+All six size/language combinations passed. Screenshot review found long English names touching prices; English detail titles now wrap within their own column. The test checks the title/price gap and text overflow for all dishes. Initial screenshots: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-ingredients-vCRBVS`. Local lunch DOM, pricing, table entry, form geometry, mobile controls and release-package checks also passed.
+
+Before deployment the user requested cancellation of dish-image rotation. Auto-yaw, drag rotation and slider semantics were removed from all detail photos. All 35 details were rechecked with normal motion settings at 320/390/768px in both languages; screenshots: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-ingredients-ufofmY`. The experimental sprite atlases are not included in the release. No production orders or staff calls were made.
+
+The same 35-product browser checks passed on the public production domain after promotion, in all six size/language combinations. Production screenshots: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-ingredients-Givqp0`.
