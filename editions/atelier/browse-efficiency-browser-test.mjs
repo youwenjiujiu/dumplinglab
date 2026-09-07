@@ -36,10 +36,10 @@ try {
     await page.locator('.dish-add[data-recommendation="chicken-fried"]').click();
     assert.equal(await page.locator('#detailPreparation').innerText(),lang==='zh'?'煎':'Pan-fried');
     await page.locator('[data-lunch-option="pieces"][data-value="9"]').click();
-    assert.equal(await page.locator('.detail-price').innerText(),'$10.03');
-    assert.equal(await page.locator('.dish-action strong').innerText(),'$10.03');
+    assert.equal(await page.locator('.detail-price').innerText(),'$9.20');
+    assert.equal(await page.locator('.dish-action strong').innerText(),'$9.20');
     await page.locator('[data-detail-delta="1"]').click();
-    assert.equal(await page.locator('.dish-action strong').innerText(),'$20.06');
+    assert.equal(await page.locator('.dish-action strong').innerText(),'$18.40');
     assert.equal(await page.locator('.detail-image img').evaluate(e=>getComputedStyle(e).transform),'none');
     await page.screenshot({path:join(output,`detail-${lang}-${width}.png`)});
     await page.locator('[data-action="add-detail"]').click();

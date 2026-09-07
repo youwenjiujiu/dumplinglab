@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { chromium } from 'playwright';
+import { launchBrowser, browserEngine } from './browser-test-runtime.mjs';
 import { mkdir } from 'node:fs/promises';
-const output = new URL('./test-output/entry-brand/', import.meta.url).pathname;
+const output = new URL(`./test-output/entry-brand/${browserEngine}/`, import.meta.url).pathname;
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ channel: 'chrome' });
+const browser = await launchBrowser();
 try {
   for (const width of [320, 390, 724]) for (const lang of ['zh', 'en']) {
     const context = await browser.newContext({ viewport: { width, height: 844 }, reducedMotion: 'reduce' });

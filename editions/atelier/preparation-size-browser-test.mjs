@@ -20,9 +20,17 @@ try {
     assert.equal(measures.length,4);
     for(const m of measures){assert(Math.abs(m.ratio-.85)<.01);assert(Math.abs(m.center)<1);assert(m.gap>=0);}
     await page.locator('#section-dumplings').screenshot({path:`${output}${width}.png`});
-    for(const prep of ['soup','dry','boiled','fried']) {
+    for(const prep of ['soup','tossed','boiled','fried']) {
       const button=page.locator(`[data-lunch-prep="${prep}"]`);
-      if(await button.count()) {await button.click();await page.locator('[data-lunch-back]').click();}
+      assert.equal(await button.count(),1,`${prep} must exist; do not silently skip preparation coverage`);
+      await button.click();
+      await page.locator('#section-dumplings .dish-add').first().waitFor();
+      await page.locator('#section-dumplings .dish-add').first().click();
+      const selected=page.locator('[data-lunch-option="prep"][aria-pressed="true"]');
+      assert.equal(await selected.getAttribute('data-value'),prep,'detail must keep the preparation selected on the menu');
+      assert.equal(await selected.innerText(),{soup:'高汤',tossed:'干拌',boiled:'水煮',fried:'煎'}[prep]);
+      await page.locator('#closeSheet').click();
+      await page.locator('[data-lunch-back]').click();
     }
     console.log(`PASS four preparation photos 85%, centered, no overlap: ${width}`);
     await page.close();

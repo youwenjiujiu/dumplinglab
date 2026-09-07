@@ -21,6 +21,10 @@
   border-radius: inherit;
 }
 .cart-dishes .cart-quantity button { min-width: 44px; min-height: 44px; }
+.cart-quantity:focus-visible, .empty-ticket-copy h3:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 3px;
+}
 .cart-dishes[data-layout="table"] .cart-quantity b { min-width: 22px; }
 #sheet[data-mode="dish"] .dish-action .quantity button { min-width: 44px; min-height: 44px; }
 .search-summary {
@@ -118,6 +122,44 @@ body.search-open .filters button { border: 0; border-radius: 4px; padding: 4px 1
   gap: 16px;
 }
 #toast[hidden] { display: none; }
+#toast[data-kind="added"] {
+  justify-content: center;
+  gap: 7px;
+  bottom: var(--added-toast-bottom, 108px);
+  min-height: 40px;
+  padding: 8px 15px 8px 11px;
+  border: 1px solid #e8d9d4;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--red);
+  box-shadow: 0 3px 14px #302a2410;
+  font: 500 13px/1.4 var(--sans);
+  white-space: nowrap;
+  pointer-events: none;
+}
+#toast[data-kind="added"] > svg {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  padding: 2px;
+  border-radius: 50%;
+  background: #983f320b;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.toast-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 #toast button {
   flex: none;
   min-width: 44px;
@@ -825,7 +867,9 @@ html[lang="en"] .empty-ticket h3 { font: 400 16px/1.45 var(--sans); }
 .table-line { align-items: center; }
 .table-line[hidden] { display: none; }
 .table-button .status-dot { width: 4px; height: 4px; }
-.preview-notice { font: 400 9px/1.4 var(--sans); padding: 4px 12px; border: 0; color: var(--muted); }
+/* Keep the notice's white background in its own paint layer: WebKit otherwise
+   leaves a transparent corner while the body is fixed behind a modal. */
+.preview-notice { position: relative; z-index: 1; font: 400 9px/1.4 var(--sans); padding: 4px 12px; border: 0; color: var(--muted); }
 .dish-price { white-space: nowrap; }
 .category-footer { display: flex; gap: 18px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
 .category-footer button { min-height: 44px; font: 400 13px/1.4 var(--sans); color: var(--muted); }
@@ -1231,7 +1275,9 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
   font-weight: 400;
   border-color: #a04b3e65;
 }
-.menu-section .dish-add::after { content: ""; position: absolute; inset: -7px; }
+/* The absolute containing block excludes the 1px button border: -8px gives
+   a real 44px hit box around the unchanged 30px visual circle. */
+.menu-section .dish-add::after { content: ""; position: absolute; inset: -8px; }
 /* Keep image intrinsic dimensions out of card height calculations. */
 .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-image {
   width: 100%;

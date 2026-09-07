@@ -1,12 +1,12 @@
 // Read-only browser check: no orders or kitchen calls. Restores the original
 // card geometry instead of asserting the rejected compact layout's density.
 import assert from 'node:assert/strict';
-import { chromium } from 'playwright';
+import { launchBrowser } from './browser-test-runtime.mjs';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 const output = await mkdtemp(join(tmpdir(), 'dumpling-menu-restored-'));
-const browser = await chromium.launch({ channel: 'chrome' });
+const browser = await launchBrowser();
 try {
   for (const width of [320,375,390,430,724]) for (const lang of ['zh','en']) {
     const context = await browser.newContext({viewport:{width,height:1000},reducedMotion:'reduce'});

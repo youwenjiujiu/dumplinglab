@@ -51,7 +51,12 @@ const SharedTable = (() => {
   function render(before = null) {
     if (modal !== "cart") return;
     const active = document.activeElement;
-    const focus = active?.dataset.cartDelta ? { ...active.dataset } : null;
+    const rows = [...document.querySelectorAll('.shared-dish')];
+    const focusedRow = active?.closest('.shared-dish');
+    const focus = $('.cart-page')?.contains(active) && active.matches('button, .cart-quantity, .empty-ticket-copy h3')
+      ? { data: { ...active.dataset }, key: focusedRow?.dataset.cartKey, index: rows.indexOf(focusedRow),
+          quantity: active.matches('[data-cart-delta], .cart-quantity'), empty: active.matches('.empty-ticket-copy h3') }
+      : null;
     const existing = $(".cart-scroll");
     if (existing) scrollPosition = existing.scrollTop;
     const items = store.items,
@@ -63,15 +68,24 @@ const SharedTable = (() => {
     $(".cart-scroll").scrollTop = scrollPosition;
     updateNoteConflict();
     if (before) motion()?.reconcile($(".cart-dishes"), before);
-    if (focus)
-      [...document.querySelectorAll("[data-cart-delta]")]
-        .find(
-          (b) =>
-            b.dataset.id === focus.id &&
-            b.dataset.style === focus.style &&
-            b.dataset.cartDelta === focus.cartDelta,
-        )
-        ?.focus({ preventScroll: true });
+    if (focus) {
+      const currentRows = [...document.querySelectorAll('.shared-dish')];
+      const row = currentRows.find(el => el.dataset.cartKey === focus.key);
+      let target;
+      if (focus.quantity) {
+        target = row && [...row.querySelectorAll('[data-cart-delta]')].find(b => b.dataset.cartDelta === focus.data.cartDelta && !b.disabled);
+        // At a limit or after removal, focus a group rather than another action:
+        // holding Enter must never start decrementing or deleting the next dish.
+        target ||= (row || currentRows[Math.min(focus.index, currentRows.length - 1)])?.querySelector('.cart-quantity') || $('.empty-ticket-copy h3');
+      } else if (focus.data.cartTab) target = $(`.receipt-tabs [data-cart-tab="${focus.data.cartTab}"]`);
+      else if (focus.data.cartDish) target = row?.querySelector('.cart-dish-open');
+      else if (focus.data.tableLayout) target = $('[data-table-layout]');
+      else if (focus.data.action) target = [...document.querySelectorAll('.cart-page [data-action]')].find(b => b.dataset.action === focus.data.action && !b.disabled);
+      else if (focus.empty) target = $('.empty-ticket-copy h3');
+      target ||= $('.receipt-tabs [aria-pressed="true"]');
+      if (target?.matches('.cart-quantity, .empty-ticket-copy h3')) target.tabIndex = -1;
+      target?.focus({ preventScroll: true });
+    }
   }
   function open(tab = "pending", options = {}) {
     const origins =
@@ -114,7 +128,7 @@ const SharedTable = (() => {
     openDish(dish(button.dataset.cartDish), selected?.style);
     $("#sheet").dataset.returnTo = "table";
     $("#closeSheet").textContent = "←";
-    $("#closeSheet").ariaLabel = tr("返回本桌", "Back to our table");
+    $("#closeSheet").ariaLabel = Fulfilment.remote() ? tr("返回订单", "Back to order") : tr("返回本桌", "Back to our table");
     const img = $(".detail-image img");
     if (img && origin) {
       img.dataset.motionKey = `photo:${detailOrigin.key}`;
@@ -127,11 +141,13 @@ const SharedTable = (() => {
   }
   function returnFromDetail() {
     if (modal !== "dish" || !detailOrigin) return false;
+    const returnKey = detailOrigin.key;
     const origins = new Map(),
       image = $(".detail-image img");
     if (image) origins.set(`photo:${detailOrigin.key}`, motion()?.rect(image));
     detailOrigin = null;
     open("pending", { keepScroll: true, origins });
+    [...document.querySelectorAll('.cart-dish-open')].find(b => b.dataset.cartKey === returnKey)?.focus({ preventScroll: true });
     return true;
   }
   function nameForm() {

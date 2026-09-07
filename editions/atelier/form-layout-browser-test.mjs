@@ -1,11 +1,11 @@
 // Local, fresh contexts. No production orders. Keyboard geometry is synthetic.
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+import {launchBrowser} from './browser-test-runtime.mjs';
 import {mkdtemp} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 const output=await mkdtemp(join(tmpdir(),'dumpling-form-layout-'));
-const browser=await chromium.launch({channel:'chrome'});
+const browser=await launchBrowser();
 try {
   for(const width of [320,390,768]) for(const lang of ['zh','en']) {
     const context=await browser.newContext({viewport:{width,height:900},hasTouch:true,reducedMotion:'reduce'});

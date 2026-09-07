@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import vm from "node:vm";
+import { createHash } from "node:crypto";
 const release = process.argv[2];
 assert.match(release || "", /\/dumplinglab-release-[A-Za-z0-9]+$/);
 const html = await readFile(resolve(release,"index.html"),"utf8");
@@ -12,6 +13,13 @@ assert.doesNotMatch(html,/id="previewNotice"|本地体验版/);
 const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map(m=>m[1].split("?")[0]);
 assert(scripts.indexOf("/lunch-menu.js") > scripts.indexOf("/menu-data.js"));
 assert(scripts.indexOf("/lunch-menu.js") < scripts.indexOf("/cart-store.js"));
+assert(scripts.includes('/error-copy.js'), 'bilingual error boundary must ship');
+assert(scripts.indexOf('/error-copy.js') < scripts.indexOf('/app.js'), 'error boundary loads before callers');
+for (const match of html.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))(?:\?v=([a-f0-9]+))?"/g)) {
+  assert.match(match[2] || '', /^[a-f0-9]{12}$/, `asset needs a content version: ${match[1]}`);
+  const hash=createHash('sha256').update(await readFile(resolve(release,'.'+match[1]))).digest('hex').slice(0,12);
+  assert.equal(match[2],hash,`cache version matches shipped bytes: ${match[1]}`);
+}
 const ctx = vm.createContext({});
 for (const file of ["menu-data.js","i18n.js","lunch-archive.js","lunch-menu.js"]) vm.runInContext(await readFile(resolve(release,file),"utf8"),ctx);
 assert.equal(ctx.MENU.length,35);

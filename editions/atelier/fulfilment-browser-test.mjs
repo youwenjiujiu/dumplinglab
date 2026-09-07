@@ -1,12 +1,12 @@
 // Fresh browser contexts and local-only preview payments; no real transactions.
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+import {launchBrowser} from './browser-test-runtime.mjs';
 import {mkdtemp} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 const origin='http://127.0.0.1:7898';
 const output=await mkdtemp(join(tmpdir(),'dumpling-fulfilment-'));
-const browser=await chromium.launch({channel:'chrome'});
+const browser=await launchBrowser();
 try {
   for(const width of [320,390,768]) for(const lang of ['zh','en']) {
     const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce',hasTouch:true});
@@ -66,6 +66,7 @@ try {
     await page.locator('[name="date"]').selectOption({index:1});await page.locator('[name="slot"]').selectOption({index:1});
     await page.locator('#onlineForm [type="submit"]').click();
     await page.waitForFunction(()=>document.querySelector('#onlineError')?.textContent.includes('10 km'));
+    if(lang==='en')assert(!/[\u3400-\u9fff]/.test(await page.locator('#onlineError').innerText()),'English delivery errors must be readable without Chinese');
     await page.locator('#postalCode').fill('059911');await page.locator('#onlineForm [type="submit"]').click();
     await page.locator('[data-online-pay]').waitFor();
     const breakdown=await page.locator('.payment-breakdown').innerText();
@@ -79,6 +80,7 @@ try {
     await page.locator('[data-preview-pay]').click();await page.locator('.placed-receipts .paper-receipt').waitFor();
     assert.equal(await page.locator('.placed-receipts .paper-receipt').count(),1,'refresh/retry places exactly one delivery');
     assert.equal(await page.locator('.payment-total dd').innerText(),'$148.24');
+    assert.equal(await page.evaluate(()=>sessionStorage.getItem('atelier:checkout-draft:delivery')),null,'paid delivery clears transient address draft');
     await page.locator('#closeSheet').click();
     await page.reload();await page.locator('[data-fulfilment="takeaway"]').waitFor();
     await page.locator('[data-fulfilment="takeaway"]').click();await page.locator('#tray').click();

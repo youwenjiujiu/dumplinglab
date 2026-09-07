@@ -14,6 +14,7 @@ let language = q.get("lang") === "en" ? "en" : q.get("lang") === "zh" ? "zh" : (
   try { return localStorage.getItem("atelier-language") === "en" ? "en" : "zh"; } catch { return "zh"; }
 })();
 const tr = (zh, en) => String(language === "en" && en ? en : zh ?? "");
+const errorText = error => OrderErrors.message(error, language);
 const escapeHTML = (text) =>
   String(text ?? "").replace(
     /[&<>"']/g,
@@ -167,20 +168,54 @@ const statusCopy = () =>
         rejected: tr("同步需处理 · 点击查看", "Sync needs attention · view"),
       }[store.status];
 
-function toast(text) {
+function positionAddedToast() {
+  if ($('#toast').dataset.kind !== 'added' || $('#toast').hidden) return;
+  const sheetOpen = $('#sheet').open;
+  (sheetOpen ? $('#sheet') : document.body).append($('#toast'));
+  const rect = $('.table-tray').getBoundingClientRect();
+  const bottom = !sheetOpen && rect.height && rect.top < innerHeight ? innerHeight - rect.top + 12 : 108;
+  $('#toast').style.setProperty('--added-toast-bottom', `${bottom}px`);
+}
+function toast(text, options = {}) {
   const surface = $("#sheet").open ? $("#sheet") : document.body;
   surface.append($("#toast"));
-  $("#toast").textContent = text;
+  $("#toast").dataset.kind = options.kind || 'message';
+  if (options.kind === 'added') {
+    $("#toast").innerHTML = `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 10 3.2 3.2L15 6.5"/></svg><span>${escapeHTML(text)}</span><span class="toast-announcement">${escapeHTML(options.announcement || '')}</span>`;
+    requestAnimationFrame(() => {
+      if ($('#toast').dataset.kind !== 'added' || $('#toast').hidden) return;
+      // Adding from detail closes that dialog synchronously. Keep confirmation
+      // visible in the surviving surface and clear of the cart's touch area.
+      positionAddedToast();
+      // The photo strip can grow after its images load; keep the same clearance.
+      if (!toast.resizeObserver && globalThis.ResizeObserver) {
+        toast.resizeObserver = new ResizeObserver(positionAddedToast);
+        toast.resizeObserver.observe($('.table-tray'));
+      }
+    });
+  } else $("#toast").textContent = text;
   $("#toast").hidden = false;
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => ($("#toast").hidden = true), 3200);
+  toast.timer = setTimeout(() => ($("#toast").hidden = true), options.kind === 'added' ? 1800 : 3200);
 }
 let removedDish = null;
+function undoMatchesCart() {
+  return removedDish?.owner === store && removedDish.scope === store.key;
+}
+function discardUndo() {
+  removedDish = null;
+  if ($('#toast').dataset.kind === 'undo') {
+    clearTimeout(toast.timer);
+    $('#toast').hidden = true;
+    $('#toast').replaceChildren();
+  }
+}
 function offerUndo(item) {
-  removedDish = { id: item.id, style: item.style || null };
+  removedDish = { id: item.id, style: item.style || null, owner:store, scope:store.key };
   clearTimeout(toast.timer);
   const surface = $("#sheet").open ? $("#sheet") : document.body;
   surface.append($("#toast"));
+  $("#toast").dataset.kind = 'undo';
   $("#toast").innerHTML = `<span>${escapeHTML(tr("已移除 ", "Removed ") + name(dish(item.id)))}</span><button data-action="undo-remove">${bi("撤销", "Undo")}</button>`;
   $("#toast").hidden = false;
   toast.timer = setTimeout(() => { $("#toast").hidden = true; removedDish = null; }, 8000);
@@ -190,7 +225,7 @@ function offerUndo(item) {
 const sheetNavigation = (() => {
   const history = globalThis.history;
   const token = crypto.randomUUID();
-  let restoring = false, waitingForClose = false, lastPanel = null;
+  let restoring = false, waitingForClose = false, lastPanel = null, afterClose = null;
   const ownsEntry = () => history?.state?.atelierSheet === token;
   function remember(type) {
     lastPanel = { type, dishId: detail?.id, style: detailStyle, preset: detailPreset, tab: cartTab };
@@ -199,15 +234,22 @@ const sheetNavigation = (() => {
     if (ownsEntry()) history.replaceState(state, "");
     else history.pushState(state, "");
   }
-  function closed() {
-    if (!ownsEntry() || restoring) return;
+  function closed(action = null) {
+    if (!ownsEntry() || restoring) { action?.(); return; }
+    afterClose = action;
     waitingForClose = true;
     history.back();
   }
   if (history?.pushState) addEventListener("popstate", () => {
     if (waitingForClose) {
       waitingForClose = false;
+      const action = afterClose;
+      afterClose = null;
       if ($("#sheet").open) remember(modal);
+      // Native Back may restore the older document offset after popstate.
+      // Apply an explicit new-start action before the next painted frame,
+      // without disturbing another sheet opened in the meantime.
+      if (action) requestAnimationFrame(() => { if (!$("#sheet").open) action(); });
       return;
     }
     if (!ownsEntry()) {
@@ -225,6 +267,9 @@ const sheetNavigation = (() => {
         case "planner": showPlanner(); break;
         case "service": showService(); break;
         case "table": showTable(); break;
+        case "fulfilment": Fulfilment.select(); break;
+        case "online": Fulfilment.checkout(); break;
+        case "pickup": Fulfilment.paid(); break;
         default: showCart(lastPanel.tab || "pending");
       }
     } finally { restoring = false; }
@@ -285,7 +330,8 @@ function closeModal(options = {}) {
   review = null;
   unlockPageScroll();
   if (lastFocus?.isConnected) lastFocus.focus({ preventScroll: true });
-  if (!options.fromHistory) sheetNavigation.closed();
+  if (options.startMenu) startMenu();
+  if (!options.fromHistory) sheetNavigation.closed(options.startMenu ? startMenu : null);
 }
 $("#closeSheet").onclick = closeModal;
 // Safari can mark programmatically focused controls as focus-visible after a tap.
@@ -394,6 +440,22 @@ function jump(c) {
       : "smooth",
     block: "start",
   });
+}
+function startMenu() {
+  if (document.body.classList.contains('search-open')) cancelSearch();
+  clearTimeout(searchTimer);
+  searchComposing = false;
+  if (search || filter !== 'all') {
+    search = '';
+    filter = 'all';
+    $('#searchInput').value = '';
+    renderFilters();
+    renderMenu();
+  }
+  setActive('recommended');
+  // This is a new menu entry, not a smooth trip through every category.
+  window.scrollTo({left:0, top:0, behavior:'instant'});
+  $('#categoryScroll').scrollTo({left:0, behavior:'instant'});
 }
 function renderFilters() {
   $("#filters").innerHTML = [
@@ -543,6 +605,9 @@ function renderChrome() {
   Fulfilment.chrome();
 }
 function renderTray() {
+  if (removedDish && !undoMatchesCart()) discardUndo();
+  const remoteOrder = Fulfilment.remote();
+  const viewOrder = remoteOrder ? tr('查看订单', 'View order') : tr('查看本桌点单', 'View our table');
   const removedCount = (store.remote.unavailableItems || []).length + (store.retiredPending || []).length
     + store.remote.items.filter(i => !isLunchItem(i.id, i.style)).length;
   const notice = $("#menuChangeNotice");
@@ -555,7 +620,7 @@ function renderTray() {
   const pictures = [...new Set(items.map((i) => i.id))];
   const visible = pictures;
   const rack = $("#trayPictures");
-  const signature = JSON.stringify([visible, items.map(i=>i.style), language]);
+  const signature = JSON.stringify([visible, items.map(i=>i.style), language, Fulfilment.mode()]);
   if (rack.dataset.signature !== signature) {
     const existing = new Map(
       [...rack.querySelectorAll("[data-id]")].map((img) => [img.dataset.id, img]),
@@ -583,20 +648,22 @@ function renderTray() {
     }
     rack.replaceChildren(next);
     rack.hidden = !pictures.length;
-    rack.setAttribute("aria-label", tr("已选菜品，可横向滚动，按回车查看本桌", "Selected dishes. Scroll horizontally or press Enter to view table"));
+    rack.setAttribute("aria-label", remoteOrder
+      ? tr("已选菜品，可横向滚动，按回车查看订单", "Selected dishes. Scroll horizontally or press Enter to view order")
+      : tr("已选菜品，可横向滚动，按回车查看本桌", "Selected dishes. Scroll horizontally or press Enter to view table"));
     rack.dataset.signature = signature;
   }
   updateText($("#trayLabel"), n
     ? tr(`已选 ${n} 份`, `${n} portions`)
     : store.orders.length
-      ? tr("本桌已下单", "Order placed")
+      ? (remoteOrder ? tr("已下单", "Order placed") : tr("本桌已下单", "Order placed"))
       : tr("尚未选菜", "No dishes selected"));
-  setBilingual($("#trayCaption"),statusCopy());
+  setBilingual($("#trayCaption"),remoteOrder ? Fulfilment.label() : statusCopy());
   updateText($("#trayTotal"), n ? cartMoney(items) : "");
   $("#trayTotal").hidden = !n;
-  setBilingual($("#trayActionLabel"), tr("查看本桌", "View table"));
+  setBilingual($("#trayActionLabel"), remoteOrder ? viewOrder : tr("查看本桌", "View table"));
   $("#tray").ariaLabel =
-    `${tr("查看本桌点单", "View our table")}, ${$("#trayLabel").textContent}${n ? ", " + cartMoney(items) : ""}`;
+    `${viewOrder}, ${$("#trayLabel").textContent}${n ? ", " + cartMoney(items) : ""}`;
   $("#connectionButton").innerHTML =
     `<span class="status-dot ${store.status}"></span>${bilingualText(statusCopy())}${table && group !== "A" ? " · " + group : ""}`;
   $$("[data-add]").forEach((b) => {
@@ -607,7 +674,7 @@ function renderTray() {
     }
   });
   $("#desktopTicket").innerHTML =
-    `<div class="ticket-title"><h3>${bi("本桌点单", "Our table")}</h3><span class="ticket-table">${table || "—"}</span></div>${
+    `<div class="ticket-title"><h3>${remoteOrder ? escapeHTML(Fulfilment.label()) : bi("本桌点单", "Our table")}</h3>${remoteOrder ? '' : `<span class="ticket-table">${escapeHTML(table || "—")}</span>`}</div>${
       items.length
         ? items
             .slice(0, 5)
@@ -620,7 +687,7 @@ function renderTray() {
             ? `<p class="fineprint">+ ${items.length - 5} ${bi("道菜", "more dishes")}</p>`
             : "")
         : `<div class="ticket-empty">${icon("plate")}<p>${bi("尚未选菜", "No dishes selected")}</p><small>${bi("点击 + 添加菜品", "Tap + to add a dish")}</small></div>`
-    }<div class="ticket-summary"><span>${bi("菜品小计", "Subtotal")}</span><strong>${cartMoney(items)}</strong></div><button class="primary" data-action="cart">${bi("查看本桌点单", "View our table")} ↗</button><p class="ticket-foot">${bilingualText(statusCopy())}</p>`;
+    }<div class="ticket-summary"><span>${Fulfilment.mode() === 'delivery' ? bi("预估总额", "Estimated total") : bi("菜品小计", "Subtotal")}</span><strong>${cartMoney(items)}</strong></div><button class="primary" data-action="cart">${escapeHTML(viewOrder)} ↗</button><p class="ticket-foot">${bilingualText(statusCopy())}</p>`;
 }
 function add(d, style = null, amount = 1) {
   if (d.soldOut) return false;
@@ -636,7 +703,7 @@ function add(d, style = null, amount = 1) {
   try {
     store.mutate({ kind: "delta", dishId: d.id, style, delta: amount });
   } catch (e) {
-    toast(e.message);
+    toast(errorText(e));
     return false;
   }
   requestAnimationFrame(() => {
@@ -646,7 +713,7 @@ function add(d, style = null, amount = 1) {
       ) || $("#trayPictures");
     globalThis.TableMotion?.fly(photo(d, "s", style), origin, target);
   });
-  toast(tr(`${name(d)} · 已加入${table ? "本桌" : "购物车"}`, `${name(d)} · added to ${table ? "your table" : "cart"}`));
+  toast(tr('已加入', 'Added'), { kind:'added', announcement:tr(`：${name(d)}，${amount} 份`, `: ${name(d)}, ${amount} ${amount === 1 ? 'portion' : 'portions'}`) });
   return true;
 }
 function openDish(d, selectedStyle = null, lockedPrep = null) {
@@ -870,7 +937,7 @@ async function prepareReview() {
     openModal("review", "");
     SharedTable.review(review);
   } catch (e) {
-    toast(e.message);
+    toast(errorText(e));
   } finally {
     submitting = false;
     SharedTable.updateReview();
@@ -894,7 +961,7 @@ async function submit() {
     openModal("success", "DUMPLING LAB / ORDER RECEIVED");
     SharedTable.confirm(lastOrder);
   } catch (e) {
-    toast(e.message);
+    toast(errorText(e));
     if (e.status === 409) {
       await store.poll();
       submitting = false;
@@ -945,8 +1012,8 @@ document.addEventListener("submit", async (event) => {
     if (form.dataset.review === "true") await prepareReview();
     else { await store.flush(); await store.poll(); }
   } catch (e) {
-    if (error.isConnected) error.textContent = e.message;
-    else toast(e.message);
+    if (error.isConnected) error.textContent = errorText(e);
+    else toast(errorText(e));
   }
 });
 function buildSuggestions() {
@@ -1092,7 +1159,7 @@ document.addEventListener("click", async (e) => {
       });
       if (Number(b.dataset.cartDelta) === -1 && removed?.qty === 1) offerUndo(removed);
     } catch (err) {
-      toast(err.message);
+      toast(errorText(err));
     }
     return;
   }
@@ -1135,6 +1202,7 @@ document.addEventListener("click", async (e) => {
   switch (b.dataset.action) {
     case "undo-remove": {
       if (!removedDish) break;
+      if (!undoMatchesCart()) { discardUndo(); break; }
       if (store.order || submitting) {
         toast(tr("请先确认上一笔订单", "Check your pending order first"));
         break;
@@ -1300,7 +1368,7 @@ document.addEventListener("input", (e) => {
       try {
         store.mutate({ kind: "note", note: value });
       } catch (err) {
-        toast(err.message);
+        toast(errorText(err));
       }
     }, 450);
   }

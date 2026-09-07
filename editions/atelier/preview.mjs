@@ -280,6 +280,7 @@ createServer(async (req, res) => {
       "/app.js",
       "/lunch-ui.js",
       "/cart-store.js",
+      "/error-copy.js",
       "/fulfilment.js",
       "/table-scene.js",
       "/shared-table.css",
