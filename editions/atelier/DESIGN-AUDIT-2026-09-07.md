@@ -25,7 +25,7 @@
 
 ## 已验证
 
-最新本地修正：移除四个 `dl-preparation-motion` 实例、页面脚本引用及发布包拷贝，保留原稿文件但不加载。`cooking-browser-test.mjs` 现验证四张照片真实可见、旧矢量组件不存在、四种选择与编辑仍工作；320/390/768px 通过。截图目录：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-cooking-hZ1Qhr`。下列动画验收记录属于已撤回的旧版，不代表当前接受状态。此更改尚未部署。
+最新修正：移除四个 `dl-preparation-motion` 实例、页面脚本引用及发布包拷贝，保留原稿文件但不加载。`cooking-browser-test.mjs` 现验证四张照片真实可见、旧矢量组件不存在、四种选择与编辑仍工作；320/390/768px 通过。下列动画验收记录属于已撤回的旧版，不代表当前接受状态。此更改已随 `b66a34d` 部署，见最新发布记录。
 
 - Chrome 独立浏览器，320/390/768px：分类、图片实际加载、空状态高度、编辑图标对齐、字体、语言、图片水平旋转与减少动态效果。
 - 四个烹饪场景的动画、热气、暂停/重播、减少动态效果、按钮边界稳定、一次点击选择正确馅料。
@@ -70,6 +70,17 @@ Use case: illustration-story. Asset: compact square illustration for a Chinese d
 生菜采用此前内置 imagegen 生成并已目视检查的白底修正版（exec-c7c052ec-c669-417e-913a-94a0aecc4e0b.png）；目标为保留食物与盘子、去除灰色背景，未把 RGB 文件误称为透明图片。
 
 ## 发布记录
+
+### 最新正式发布：搜索空白初始态与撤回示意图
+
+- 用户明确要求部署后，发布运行时代码 `b66a34d`，包含此前 `81aa0de` 的手机交互修复。
+- 部署 ID：`dpl_521e57TFgx7EutkjyCxTvpe2CCfi`；已完成正式域名切换。
+- 正式网址：https://dumplinglab-menu.vercel.app/
+- 不变部署网址：https://dumplinglab-menu-17e454cpo-youwenjiujius-projects.vercel.app
+- 发布包、候选受保护部署和正式域名检查均通过；QA235CBFCE 与 QAD9AAB8FB 的测试购物车已清空，无生产下单或呼叫。
+- 正式站全新浏览器会话 320/390/768px 验证：空搜索无菜品/数量/筛选区；输入后出现去重结果；清空再次空白；取消可退出；四张食物照片实际加载，矢量烹饪组件和脚本不存在；做法、详情、编辑入口正常。
+- 正式站截图：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-mobile-controls-MBcOAJ`、`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-cooking-wTMG3p`。
+- 键盘避让验证采用合成 visualViewport，不是 iPhone Safari 真机验收。烹饪动画暂时撤回，尚未重新设计。
 
 ### 手机截图反馈：第二轮修复与 10 轮专项回归
 
