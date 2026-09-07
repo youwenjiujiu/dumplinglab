@@ -1,10 +1,10 @@
 # Ordering modes — deployed UI, online checkout not activated
 
-Updated 2026-09-07. Source `9b55ce7` is deployed to https://dumplinglab-menu.vercel.app/ (Vercel deployment `dpl_4PoeQds31aBkS5wvc3euxaSWvC2u`, Ready). No real payment was performed; merchant configuration still gates online checkout.
+Updated 2026-09-07. Source `a86c68b` is deployed to https://dumplinglab-menu.vercel.app/ (Vercel deployment `dpl_GbK1aUEmKvea5L8vEREavwqhkcN9`, Ready). No real payment was performed; merchant configuration still gates online checkout.
 
 ## Current experience
 
-- Local change after the above release: catalogue prices are now the final GST-inclusive food prices (`sg-inclusive-gst9-delivery9-v2`), not net prices plus another 9%. Checkout extracts food GST at 9/109; $5.80 = $5.32 net + $0.48 GST. Delivery remains 9% of net food plus GST on that fee. Historic v1 order snapshots retain their original amounts. This pricing change has not yet been deployed.
+- Catalogue prices are the final GST-inclusive food prices (`sg-inclusive-gst9-delivery9-v2`), not net prices plus another 9%. Checkout extracts food GST at 9/109; $5.80 = $5.32 net + $0.48 GST. Delivery remains 9% of net food plus GST on that fee. Historic v1 order snapshots retain their original amounts. The deployed pricing and checkout source were matched exactly to the validated release; live arithmetic checks confirmed these amounts. No orders or payments were created by deployment checks.
 
 - Entry is a centered native dialog: dine-in, takeaway, delivery. Three red/white brand illustrations use the existing dumpling mark; delivery shows a cyclist carrying the branded bag.
 - Original two-column menu-card layout is preserved.
