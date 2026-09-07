@@ -52,6 +52,17 @@ try {
     assert.equal(await page.locator('#fillingStepTitle').evaluate(e=>getComputedStyle(e).outlineStyle),'none','no blue heading focus rectangle after touch');
     await page.locator('#searchButton').tap();
     await page.evaluate(()=>setKeyboardViewport(360,20));
+    async function assertEmptySearch() {
+      assert.equal(await page.locator('#menuList').innerHTML(),'','no full menu or zero-results message before typing');
+      assert(await page.locator('#searchSummary').isHidden(),'no dish count before typing');
+      assert(await page.locator('#filters').isHidden(),'no filtering toolbar before typing');
+      assert(await page.locator('#clearSearch').isHidden(),'no redundant clear control for empty text');
+      assert(await page.locator('#cancelSearch').isVisible(),'cancel stays available');
+    }
+    await assertEmptySearch();
+    await page.screenshot({path:join(output,`search-empty-${width}.png`)});
+    await page.locator('#searchInput').fill('   ');
+    await assertEmptySearch();
     const originalCount=await page.locator('.search-result').count();
     await page.locator('#searchInput').evaluate(e=>{
       e.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true}));
@@ -82,11 +93,18 @@ try {
     assert.equal((await page.locator('.detail-image img').getAttribute('src')).replace('/l/','/s/'),selectedPhoto,'search thumbnail and default detail preparation match');
     assert(await page.locator('[data-lunch-option="prep"]').count()>0,'search result can choose preparation');
     await page.locator('#closeSheet').tap();
+    await page.locator('#clearSearch').tap();
+    await assertEmptySearch();
+    await page.locator('#searchInput').fill('猪肉');
+    await page.waitForFunction(()=>document.querySelectorAll('.search-result').length===4);
+    await page.locator('#searchInput').fill('');
+    await assertEmptySearch();
     await page.locator('#cancelSearch').tap();
     assert(await page.locator('#searchPanel').isHidden());
     assert.equal(await page.locator('body').evaluate(e=>e.classList.contains('search-open')),false);
     assert.equal(await page.locator('body').evaluate(e=>e.style.overflow),'');
     await page.locator('#searchButton').tap();
+    await assertEmptySearch();
     await page.locator('#searchInput').fill('不存在的菜品');
     await page.waitForFunction(()=>document.querySelector('#searchSummaryText').textContent.includes('0 道菜'));
     assert.equal(await page.locator('.search-result').count(),0);
@@ -102,6 +120,7 @@ try {
     assert.equal(await page.locator('#tableButton').innerText(),'Set table');
     await page.locator('#searchButton').tap();
     assert.equal(await page.locator('#cancelSearch').innerText(),'Cancel');
+    await assertEmptySearch();
     await page.locator('#cancelSearch').tap();
     assert.deepEqual(errors,[]);
     await context.close();

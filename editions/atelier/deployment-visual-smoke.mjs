@@ -13,12 +13,24 @@ async function request(path,body){
   });const n=output.lastIndexOf('\n');return {status:Number(output.slice(n+1)),text:output.slice(0,n)};
 }
 const html=await request('/');assert.equal(html.status,200);assert.match(html.text,/data-environment="production"/);assert.doesNotMatch(html.text,/id="previewNotice"/);assert.match(html.text,/午晚餐菜单/);
-for(const file of ['cooking-motion.js','sharing-motion.js','receipt-motion.js','bilingual-fit.js'])assert(html.text.includes('/'+file));
-const files=await Promise.all(['/app.js','/lunch-ui.js','/sharing-motion.js','/cooking-motion.js','/shared-motion.js','/api/feed'].map(p=>request(p)));
-assert(files.slice(0,5).every(r=>r.status===200));assert.equal(files[5].status,401);
+for(const file of ['sharing-motion.js','receipt-motion.js','bilingual-fit.js'])assert(html.text.includes('/'+file));
+assert(!html.text.includes('/cooking-motion.js'),'rejected cooking artwork must not load');
+const files=await Promise.all(['/app.js','/lunch-ui.js','/sharing-motion.js','/shared-motion.js','/api/feed'].map(p=>request(p)));
+assert(files.slice(0,4).every(r=>r.status===200));assert.equal(files[4].status,401);
 assert(files[0].text.includes('combinationPresentation'));assert(!files[0].text.includes('What sounds good?'));
+assert(html.text.includes('id="cancelSearch"'));
+assert(files[0].text.includes('function searchEntries()'));
+assert(files[0].text.includes('if (!search.trim()) return [];'));
+assert(files[0].text.includes('if (!hasQuery) {'));
+assert(files[0].text.includes('function syncVisibleViewport()'));
+assert(files[0].text.includes('selectedDish.styles?.[0]'));
+assert(!files[0].text.includes('<span>⌄</span>'));
+const mobileStyles=await request('/shared-table.css');
+assert.equal(mobileStyles.status,200);
+assert(mobileStyles.text.includes('html.keyboard-open #sheet[open]'));
+assert(mobileStyles.text.includes('body.search-open #main'));
 assert(!files[1].text.includes('order-progress'));assert(files[1].text.includes('edit-preparation'));
-assert(files[2].text.includes('-v4.webp'));assert(files[3].text.includes('dl-preparation-motion'));assert(files[4].text.includes('rotateY'));
+assert(files[2].text.includes('-v4.webp'));assert(!files[1].text.includes('dl-preparation-motion'));assert(files[3].text.includes('rotateY'));
 if(!protectedDeployment){
   const assets=[...html.text.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))(?:\?[^" ]*)?"/g)].map(m=>m[1]);
   assets.push('/img/s/dining-together-v4.webp','/img/s/dining-separate-v4.webp','/img/s/oyster-lettuce-clean-v2.webp','/img/l/oyster-lettuce-clean-v2.webp');

@@ -10,23 +10,20 @@ try{
     const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'no-preference'});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto('http://127.0.0.1:7898/?table=A1');
-    await page.locator('dl-preparation-motion').first().waitFor();
+    await page.locator('.preparation-photo img').first().waitFor();
     await page.locator('.lunch-preparations').scrollIntoViewIfNeeded();
-    await page.waitForFunction(()=>[...document.querySelectorAll('dl-preparation-motion')].every(e=>e.dataset.playing==='true'));
-    assert.equal(await page.locator('dl-preparation-motion').count(),4);
+    await page.waitForFunction(()=>[...document.querySelectorAll('.preparation-photo img')].every(e=>e.complete&&e.naturalWidth>0));
+    assert.equal(await page.locator('dl-preparation-motion').count(),0,'rejected cooking cartoons must not return');
+    assert.equal(await page.locator('script[src*="cooking-motion"]').count(),0);
+    assert.equal(await page.locator('.preparation-photo img').count(),4);
     for(const mode of ['soup','tossed','boiled','fried']){
-      const scene=page.locator(`dl-preparation-motion[mode="${mode}"]`);
-      assert.equal(await scene.locator('.steam').count(),3);
-      assert(await scene.evaluate(e=>e.animations().some(a=>a.playState==='running')));
-      const bounds=await scene.boundingBox();
-      await scene.evaluate(e=>e.seek(1800));
-      assert.deepEqual(await scene.boundingBox(),bounds,'animation never changes button allocation');
-      await scene.evaluate(e=>e.play());
+      const photo=page.locator(`[data-lunch-prep="${mode}"] .preparation-photo img`);
+      assert((await photo.getAttribute('src')).includes(`preparation-${mode}-generated-v3.webp`));
+      assert(await photo.isVisible(),'actual food photo is visible, not a hidden fallback');
     }
     await page.locator('.lunch-preparations').screenshot({path:join(output,`cooking-${width}.png`)});
     await page.emulateMedia({reducedMotion:'reduce'});
-    await page.waitForFunction(()=>[...document.querySelectorAll('dl-preparation-motion')].every(e=>e.dataset.playing==='false'));
-    assert(await page.locator('dl-preparation-motion').evaluateAll(es=>es.every(e=>e.animations().length===0)));
+    assert(await page.locator('.preparation-photo img').evaluateAll(es=>es.every(e=>e.getAnimations().length===0)));
     for(const [mode,count] of [['soup',3],['tossed',8],['boiled',5],['fried',5]]){
       await page.locator(`[data-lunch-prep="${mode}"]`).click();
       assert.equal(await page.locator('#section-dumplings .dish-card').count(),count);
@@ -43,7 +40,7 @@ try{
     assert.equal(await page.locator('#sheetTitle').innerText(),'鲜虾蟹籽云吞面');
     assert((await page.locator('.detail-image img').getAttribute('src')).includes('wonton-soup-noodles'));
     await page.screenshot({path:join(output,`noodle-detail-${width}.png`)});
-    assert.deepEqual(errors,[]);await page.close();console.log(`PASS ${width}: all four cooking motions/steam, stable bounds, reduced motion, immediate selection, aligned pencil, noodle photo/name`);
+    assert.deepEqual(errors,[]);await page.close();console.log(`PASS ${width}: four visible food photos, rejected cartoons absent, immediate selection, aligned pencil, noodle photo/name. Cooking animation withdrawn, not redesigned.`);
   }
   console.log(`Cooking screenshots: ${output}`);
 }finally{await browser.close();}

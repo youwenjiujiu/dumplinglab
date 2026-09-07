@@ -381,6 +381,7 @@ function matches(d) {
   );
 }
 function searchEntries() {
+  if (!search.trim()) return [];
   const entries = new Map(MENU.filter(matches).map(d => [d.id, { d }]));
   for (const r of LUNCH_RECOMMENDATIONS.filter(matches)) {
     const key = r.noodles ? `${r.dishId}:noodles` : r.dishId || r.id;
@@ -389,8 +390,18 @@ function searchEntries() {
   return [...entries.values()];
 }
 function renderSearchResults() {
-  const entries = searchEntries();
   observer?.disconnect();
+  const hasQuery = Boolean(search.trim());
+  $("#filters").hidden = !hasQuery;
+  $("#clearSearch").hidden = !$("#searchInput").value.trim();
+  $("#clearSearch").disabled = $("#clearSearch").hidden;
+  if (!hasQuery) {
+    $("#menuList").innerHTML = "";
+    $("#searchSummary").hidden = true;
+    $("#searchSummaryText").textContent = "";
+    return;
+  }
+  const entries = searchEntries();
   $("#menuList").innerHTML = `<section class="search-results" aria-label="${tr("搜索结果", "Search results")}">${entries.map(({d,recommendation}) => {
     const attribute = recommendation ? `data-recommendation="${d.id}"` : `data-dish="${d.id}"`;
     return `<article class="search-result"><button class="search-result-open" ${attribute}><img src="${photo(d,"s",recommendation ? undefined : d.styles?.[0])}" alt="" loading="lazy"><span><strong>${dishNameHTML(d)}</strong><small>${recommendation ? fromPrice(LunchMenu.recommendationPrice(d)) : d.variants ? fromPrice(d.price) : money(d.price)}</small></span><span class="search-result-arrow" aria-hidden="true">›</span></button></article>`;
@@ -1337,7 +1348,14 @@ function scheduleSearch() {
   }, 170);
 }
 $("#searchInput").oninput = (e) => {
-  $("#clearSearch").disabled = !e.target.value;
+  $("#clearSearch").hidden = !e.target.value.trim();
+  $("#clearSearch").disabled = $("#clearSearch").hidden;
+  if (!e.target.value.trim()) {
+    clearTimeout(searchTimer);
+    search = "";
+    renderMenu();
+    return;
+  }
   if (e.isComposing || searchComposing) return;
   scheduleSearch();
 };
