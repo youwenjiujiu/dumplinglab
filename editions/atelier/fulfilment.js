@@ -1,0 +1,203 @@
+// Remote orders never enter table/group APIs. Browser drafts and credentials are
+// private to this device; only verified backend payment state clears a draft.
+class OnlineCart extends TableCart {
+  constructor(mode) { super(null, 'A', `atelier:online:${mode}`); this.mode = mode; this.status = 'local'; }
+  async flush() { this.status = 'local'; }
+  start() { this.poll(); this.timer = setInterval(() => this.poll(), 5000); }
+  async poll() {
+    if (!this.order?.requestId || this.polling) return;
+    this.polling = true;
+    try {
+      const res = await fetch(`/api/online?id=${this.order.requestId}`, { headers: { authorization: `Bearer ${this.order.token}` }, cache: 'no-store', signal: AbortSignal.timeout(9000) });
+      const out = await res.json();
+      if (!res.ok || !out.ok) return;
+      if (out.order.status === 'paid') {
+        this.remote = { items: [], note: '', opIds: [], orders: [...this.orders.filter(o => o.id !== out.order.id), out.order] };
+        this.pending = []; this.order = null; this.emit();
+        if (store === this) Fulfilment.paid();
+      } else if (out.order.status === 'expired') {
+        this.order = null; this.emit();
+        if (store === this) toast(tr('付款已过期，选菜已保留，请重新确认', 'Payment expired. Your selection is saved; please review again.'));
+      }
+    } catch { /* Keep durable pending order during network outages. */ }
+    finally { this.polling = false; }
+  }
+  async checkoutOnline(input) {
+    if (!this.order) {
+      this.order = { ...input, action: 'checkout' };
+      if (!this.writeStorage(this.key, JSON.stringify({ remote: this.remote, pending: this.pending, order: this.order }))) {
+        this.order = null; throw new Error(tr('请允许网站存储以保留订单凭证', 'Enable browser storage to save your order access'));
+      }
+    }
+    this.emit();
+    let out;
+    try { out = await this.api('/api/online', this.order); }
+    catch (e) {
+      // Validation failures happen before order creation; safe to edit the draft.
+      // Conflict, network and server errors retain the original request ID.
+      if ([400,410,422].includes(e.status)) { this.order = null; this.emit(); }
+      throw e;
+    }
+    if (out.order.status === 'paid') { await this.poll(); return; }
+    this.order.paymentUrl = out.paymentUrl; this.emit();
+    if (out.paymentUrl?.startsWith('https://checkout.stripe.com/')) location.assign(out.paymentUrl);
+    else if (!production && out.paymentUrl?.startsWith('/?preview_payment=')) Fulfilment.previewPayment(out.order);
+    else throw new Error(tr('付款页面暂时不可用，订单已保留，可安全重试', 'Payment unavailable. Your order is saved; retry safely.'));
+  }
+}
+const Fulfilment = (() => {
+  const stores = new Map(); let config = null, formDraft = {}, quoted = null;
+  const remote = () => Boolean(store.mode);
+  const mode = () => store.mode || 'dinein';
+  const label = (value = mode()) => ({ dinein: tr('堂食', 'Dine-in'), takeaway: tr('打包自取', 'Pickup'), delivery: tr('外送', 'Delivery') })[value];
+  const credentials = () => ({ requestId: crypto.randomUUID(), token: [...crypto.getRandomValues(new Uint8Array(32))].map(v => v.toString(16).padStart(2,'0')).join('') });
+  const summary = order => `<dl class="payment-breakdown"><div><dt>${bi('菜品金额（未税）','Food (before GST)')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}<div><dt>GST 9%</dt><dd>${money(order.gst)}</dd></div><div class="payment-total"><dt>${bi('应付总额','Total to pay')}</dt><dd>${money(order.total)}</dd></div></dl>`;
+  function chrome() {
+    const button = $('#fulfilmentButton');
+    button.innerHTML = `<img class="fulfilment-mode-icon" src="/brand/header-${mode()}-v1.svg" alt="" width="32" height="28"><span>${escapeHTML(label())}</span><svg class="fulfilment-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>`;
+    button.ariaLabel = tr(`用餐方式：${label()}，点击切换`, `Order type: ${label()}. Change order type`);
+    $('#dineinControls').hidden = remote();
+    $('#tableButton').hidden = remote(); $('#serviceButton').hidden = remote();
+    if (remote()) { $('#trayActionLabel').textContent = tr('查看订单','View order'); $('#trayCaption').textContent = label(); }
+  }
+  // Entry is bilingual before the guest has chosen the app language.
+  const entryText = (zh, en) => `<span class="entry-copy"><span lang="zh-CN">${escapeHTML(zh)}</span><span lang="en" class="entry-en">${escapeHTML(en)}</span></span>`;
+  function select() {
+    openModal('fulfilment', '');
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><img class="entry-art" src="/brand/entry-dinein-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><img class="entry-art" src="/brand/entry-takeaway-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('打包外带','Takeaway')}</strong></button><button data-fulfilment="delivery"><img class="entry-art" src="/brand/entry-delivery-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('外送','Delivery')}</strong></button></div></div>`;
+    $('#closeSheet').ariaLabel = '关闭 / Close';
+    const heading = $('#sheetTitle'); heading.tabIndex = -1; heading.focus({preventScroll:true});
+  }
+  function visit() {
+    openModal('fulfilment', '');
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('到店用餐','At the restaurant')}</h2><div class="fulfilment-choices"><button data-fulfilment="dinein"><strong>${bi('堂食','Dine-in')}</strong><small>${bi('按桌号下单','Order for your table')}</small></button><button data-fulfilment="takeaway"><strong>${bi('打包自取','Pickup')}</strong><small>${bi('无需桌号','No table number needed')}</small></button></div></div>`;
+  }
+  function switchTo(next, close = true) {
+    if (next === mode()) { try {localStorage.setItem('atelier-mode',next);} catch {} if (close) closeModal(); return; }
+    if (store.order || submitting) { toast(tr('请先确认上一笔付款或订单状态','Check your pending payment or order first')); return; }
+    clearTimeout(noteTimer);
+    const note = $('#cartNote'); if (note && note.value !== store.note) store.mutate({kind:'note',note:note.value});
+    noteDraft = null;
+    const previous = store;
+    stores.set(mode(), store);
+    if (!stores.has(next)) stores.set(next, next === 'dinein' ? new TableCart(table, group) : new OnlineCart(next));
+    const target = stores.get(next);
+    // First selection from a browsing-only draft travels with the customer.
+    if (!previous.table && !previous.mode && next !== 'dinein' && !target.items.length && !target.order) {
+      target.pending = structuredClone(previous.pending); target.persist();
+      previous.pending = []; previous.persist();
+    }
+    store.removeEventListener('change', onCartChange); clearInterval(store.timer);
+    store = target; table = target.table;
+    store.addEventListener('change', onCartChange); store.start();
+    try { localStorage.setItem('atelier-mode', next); } catch { /* no persistence */ }
+    formDraft = {}; quoted = null;
+    if (close) closeModal();
+    renderChrome(); renderMenu(); renderTray(); chrome();
+  }
+  async function getConfig() {
+    const out = await store.api('/api/online'); config = out.config; return config;
+  }
+  const field = (id, title, attributes = '') => `<label class="online-field" for="${id}"><span>${title}</span><input id="${id}" name="${id}" ${attributes} value="${escapeHTML(formDraft[id] || '')}"></label>`;
+  function pickupTicket(order) {
+    if (order.mode !== 'takeaway' || order.status !== 'paid' || !order.pickup) return '';
+    const p = order.pickup;
+    return `<section class="pickup-ticket" aria-label="${tr('取餐凭证','Pickup ticket')}"><div><span>${bi('取餐号','PICKUP NO.')}</span><strong>${escapeHTML(p.number)}</strong><small>${escapeHTML(p.date)}</small></div><img src="${escapeHTML(p.qr)}" width="160" height="160" alt="${tr('向店员出示此取餐二维码','Show this pickup QR code to staff')}"><p>${order.collectedAt ? bi('已取餐','Collected') : bi('已付款 · 请留意叫号，取餐时出示此码','Paid · Listen for your number and show this code at pickup')}</p></section>`;
+  }
+  function renderOnlineReview(input, order) {
+    const pickup = order.mode === 'takeaway';
+    $('#sheet').scrollTop = 0;
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${pickup ? bi('核对自取订单','Review pickup order') : bi('确认订单','Review order')}</h2><p class="online-policy">${escapeHTML(label(order.mode))}${pickup ? '' : ` · ${escapeHTML(input.date)} · ${escapeHTML(input.slot)}`}</p><p>${escapeHTML(pickup ? order.fulfilment.pickupName : order.customer.address)}<small class="pickup-location">${escapeHTML(pickup ? order.fulfilment.pickupAddress : order.customer.unit || '')}</small></p><div class="online-review-items">${order.items.map(i => `<div><span>${escapeHTML(language === 'zh' ? i.name : i.englishName)}<small>${i.style ? escapeHTML(styleName(i.style)) : ''} × ${i.qty}</small></span><b>${money(i.price*i.qty)}</b></div>`).join('')}</div>${summary(order)}<p class="fineprint">${pickup ? bi('付款后生成取餐号和取餐码，请留意门店叫号。','Your pickup number and QR code appear after payment. Listen for your number at the store.') : bi('支持信用卡及 PayNow。支付成功后提交门店。','Card and PayNow. Sent to the restaurant after successful payment.')}</p><p id="onlineError" class="field-error" role="alert"></p><button class="primary" data-online-pay>${bi('付款','Pay')} ${money(order.total)}</button><button class="online-back" ${pickup ? 'data-action="cart"' : 'data-online-start'}>${pickup ? bi('返回修改菜品','Edit selected items') : bi('修改资料','Edit details')}</button></div>`;
+  }
+  async function quoteInput(input) {
+    const out = await store.api('/api/online', input);
+    if (modal !== 'online' || mode() !== input.mode) return;
+    input.expectedTotal = out.order.total; quoted = { input, order:out.order };
+    document.activeElement?.blur(); $('#toast').hidden = true;
+    renderOnlineReview(input, out.order);
+  }
+  async function pickupCheckout(enabled) {
+    if (enabled && config.locations.length === 1) {
+      try {
+        await quoteInput({ ...credentials(), mode:'takeaway', items:structuredClone(store.items), note:store.note, pickupLocation:config.locations[0].id, action:'quote' });
+      } catch (e) {
+        if (modal === 'online') $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('核对自取订单','Review pickup order')}</h2><p class="field-error" role="alert">${escapeHTML(e.message)}</p><button class="primary" data-online-start>${bi('重试','Retry')}</button></div>`;
+      }
+      return;
+    }
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('打包自取','Pickup')}</h2><p>${bi('付款后凭取餐号和取餐码领取。','Collect with your pickup number and QR code after payment.')}</p><form id="onlineForm">${config.locations.length ? `<label class="online-field"><span>${bi('自取门店','Pickup location')}</span><select name="pickupLocation" required>${config.locations.map(l=>`<option value="${escapeHTML(l.id)}">${escapeHTML(l.name)} — ${escapeHTML(l.address)}</option>`).join('')}</select></label>` : ''}<p id="onlineError" class="field-error" role="alert">${enabled ? '' : bi('线上付款尚未开放；请联系门店。选菜会保留。','Online payment is not available yet. Contact the restaurant; your selection is saved.')}</p><button class="primary" type="submit" ${enabled ? '' : 'disabled'}>${bi('核对订单','Review order')}</button></form></div>`;
+  }
+  async function checkout() {
+    $('#toast').hidden = true;
+    clearTimeout(noteTimer); const note = $('#cartNote');
+    if (note && note.value !== store.note) store.mutate({kind:'note',note:note.value});
+    noteDraft = null;
+    if (store.order) {
+      openModal('online', '');
+      $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('等待付款确认','Awaiting payment')}</h2><p>${bi('付款成功后才会提交门店；未付款不会重复下单。','Your order reaches the restaurant after payment. Retrying will not duplicate it.')}</p><button class="primary" data-online-retry>${bi('继续付款 / 查询状态','Continue payment / Check status')}</button><p id="onlineError" class="field-error" role="alert"></p></div>`;
+      return;
+    }
+    if (!store.items.length) return showCart();
+    openModal('online', '');
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${escapeHTML(label())}</h2><p role="status">${bi('正在核对订单…','Checking your order…')}</p></div>`;
+    try { await getConfig(); } catch (e) { if (modal === 'online') $('#sheetBody').innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${bi('暂时无法读取下单信息','Unable to load order details')}</h2><button class="secondary" data-online-start>${bi('重试','Retry')}</button></div>`; return; }
+    if (modal !== 'online') return;
+    const delivery = mode() === 'delivery', enabled = delivery ? config.deliveryEnabled : config.takeawayEnabled;
+    if (!delivery) return pickupCheckout(enabled);
+    const options = (values, selected) => values.map(v => `<option value="${escapeHTML(v)}" ${v === selected ? 'selected' : ''}>${escapeHTML(v)}</option>`).join('');
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${escapeHTML(label())}</h2><p class="online-policy">${delivery ? bi('10 km 内 · 菜品未税满 $100 · 配送费 9%','Within 10 km · $100 food minimum before GST · 9% delivery fee') : bi('预约自取，无需桌号','Scheduled pickup. No table number needed.')}</p><form id="onlineForm"><div class="online-fields">${field('customerName', bi('姓名','Name'), 'required maxlength="60" autocomplete="name"')}${field('customerPhone', bi('手机号码','Phone'), 'type="tel" required maxlength="24" autocomplete="tel" placeholder="+65"')}${delivery ? `${field('postalCode',bi('邮编','Postal code'),'required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="postal-code"')}${field('address',bi('配送地址','Address'),'required maxlength="180" autocomplete="street-address"')}${field('unit',bi('楼层 / 单位号（选填）','Unit / floor (optional)'),'maxlength="40" autocomplete="address-line2"')}` : `<label class="online-field"><span>${bi('自取门店','Pickup location')}</span><select name="pickupLocation" required>${config.locations.map(l => `<option value="${escapeHTML(l.id)}" ${formDraft.pickupLocation === l.id ? 'selected' : ''}>${escapeHTML(l.name)} — ${escapeHTML(l.address)}</option>`).join('')}</select></label>`}<label class="online-field"><span>${bi('日期','Date')}</span><select name="date" required><option value="">${bi('选择日期','Select date')}</option>${options(config.dates,formDraft.date)}</select></label><label class="online-field"><span>${bi('时段','Time slot')}</span><select name="slot" required><option value="">${bi('选择时段','Select slot')}</option>${options(config.slots,formDraft.slot)}</select></label></div><p class="fineprint">${bi('提前一天预订，次日订单前晚 21:00 截止。时间以新加坡为准。','Order at least one day ahead; next-day cutoff is 9 pm Singapore time.')}</p>${summary({...OrderPricing.quote(total(store.items),mode()),mode:mode()})}<p class="field-error" id="onlineError" role="alert">${enabled ? '' : bi('线上付款尚未开放；请联系门店。选菜会保留。','Online payment is not available yet. Please contact the restaurant. Your selection is saved.')}</p><button class="primary" type="submit" ${enabled ? '' : 'disabled'}>${bi('核对订单','Review order')}</button></form></div>`;
+  }
+  async function quoteForm(form) {
+    const button = form.querySelector('[type="submit"]'); button.disabled = true;
+    formDraft = Object.fromEntries(new FormData(form));
+    const input = { ...credentials(), mode: mode(), items: structuredClone(store.items), note: store.note,
+      customer: { name: formDraft.customerName, phone: formDraft.customerPhone, postalCode: formDraft.postalCode, address: formDraft.address, unit: formDraft.unit },
+      date: formDraft.date, slot: formDraft.slot, pickupLocation: formDraft.pickupLocation, action: 'quote' };
+    try {
+      await quoteInput(input);
+    } catch (e) { const error = $('#onlineError'); if (error) error.textContent = e.message; button.disabled = false; }
+  }
+  function previewPayment(order) {
+    if (production) return;
+    openModal('online','');
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('本地模拟付款','Local payment simulation')}</h2><p>${bi('仅用于测试，不会扣款或发送至真实厨房。','For testing only. No charge and no real kitchen order.')}</p>${summary(order)}<button class="primary" data-preview-pay>${bi('模拟支付成功','Simulate successful payment')}</button><p id="onlineError" role="alert" class="field-error"></p></div>`;
+  }
+  function paid() {
+    $('#toast').hidden = true;
+    const order = store.orders.at(-1);
+    if (order?.mode === 'takeaway' && order.pickup) {
+      openModal('pickup','');
+      $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content pickup-success"><h2 id="sheetTitle" tabindex="-1">${bi('取餐凭证','Your pickup ticket')}</h2>${pickupTicket(order)}<p>${escapeHTML(order.fulfilment.pickupName)}<small class="pickup-location">${escapeHTML(order.fulfilment.pickupAddress)}</small></p><button class="primary" data-action="ordered">${bi('查看订单','View order')}</button></div>`;
+      $('#sheetTitle').focus({preventScroll:true});
+    } else showCart('ordered');
+  }
+  function init() {
+    stores.set('dinein',store); $('#fulfilmentButton').onclick = select;
+    if (!q.get('table')) {
+      let selected; try { selected = localStorage.getItem('atelier-mode'); } catch { /* default */ }
+      if (['takeaway','delivery'].includes(selected)) switchTo(selected,false);
+    }
+    chrome();
+    // Payment returns recover their pending transaction; every normal page/QR
+    // entry explicitly offers dine-in/takeaway, even with a saved preference.
+    if (q.get('online_order') && remote()) checkout();
+    else if (store.order) { if (remote()) checkout(); else showCart(); }
+    else select();
+  }
+  document.addEventListener('submit', e => { if (e.target.id === 'onlineForm') { e.preventDefault(); quoteForm(e.target); } });
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.fulfilment) return b.dataset.fulfilment === 'visit' ? visit() : switchTo(b.dataset.fulfilment);
+    if (b.hasAttribute('data-online-start')) return checkout();
+    if (b.hasAttribute('data-online-pay') || b.hasAttribute('data-online-retry') || b.hasAttribute('data-preview-pay')) {
+      if (submitting) return; submitting = true; b.disabled = true;
+      try {
+        if (b.hasAttribute('data-preview-pay') && !production) {
+          await store.api('/api/online', { action:'preview-pay', requestId:store.order.requestId, token:store.order.token }); await store.poll();
+        } else { await store.poll(); if (modal === 'online') await store.checkoutOnline(quoted?.input || store.order); }
+      } catch (err) { const error = $('#onlineError'); if (error) error.textContent = err.message; }
+      finally { submitting = false; b.disabled = false; }
+    }
+  });
+  return { init, remote, mode, label, chrome, select, checkout, summary, paid, previewPayment, pickupTicket };
+})();

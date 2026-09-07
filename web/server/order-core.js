@@ -1,5 +1,6 @@
 import "../menu-data.js";
 import "../lunch-menu.js";
+import "../order-pricing.js";
 
 const CATALOG = new Map(globalThis.MENU.map(dish => [dish.id, dish]));
 const TABLE_RE = /^[a-z0-9-]{1,12}$/i;
@@ -39,6 +40,15 @@ function baseEvent(input) {
 
 export function cleanOrder(input) {
   const event = baseEvent(input);
+  const items = cleanItems(input.items);
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const note = typeof input.note === "string" ? input.note.trim().slice(0, 240) : "";
+  const no = requiredText(input.no, /^\d{4}$/, "订单号无效");
+  return { ...event, type: "order", mode: "dinein", no, items, note: note || null, ...globalThis.OrderPricing.quote(subtotal) };
+}
+
+export function cleanItems(inputItems) {
+  const input = { items: inputItems };
   if (!Array.isArray(input.items) || !input.items.length || input.items.length > 50) throw new RequestError("订单菜品数量无效");
   const items = input.items.map(item => {
     const dish = CATALOG.get(item?.id);
@@ -53,10 +63,7 @@ export function cleanOrder(input) {
     if (!Number.isFinite(price)) throw new RequestError("菜品规格价格无效");
     return { id: dish.id, name: dish.cn, englishName: dish.name, style, qty, price, service: "lunch" };
   });
-  const total = Math.round(items.reduce((sum, item) => sum + item.price * item.qty, 0) * 100) / 100;
-  const note = typeof input.note === "string" ? input.note.trim().slice(0, 240) : "";
-  const no = requiredText(input.no, /^\d{4}$/, "订单号无效");
-  return { ...event, type: "order", no, items, note: note || null, total };
+  return items;
 }
 
 export function cleanCall(input) {

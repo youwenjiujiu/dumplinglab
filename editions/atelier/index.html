@@ -21,8 +21,10 @@
     <script src="/i18n.js" defer></script>
     <script src="/lunch-archive.js" defer></script>
     <script src="/lunch-menu.js" defer></script>
+    <script src="/order-pricing.js" defer></script>
     <script src="/lunch-ui.js" defer></script>
     <script src="/cart-store.js" defer></script>
+    <script src="/fulfilment.js" defer></script>
     <script src="/shared-motion.js" defer></script>
     <script src="/micro-motion.js" defer></script>
     <script src="/receipt-motion.js" defer></script>
@@ -40,15 +42,18 @@
         ><img src="/brand/dumpling-lab-primary.png" alt="Dumpling Lab"
       /></a>
       <div class="header-actions">
-        <button id="tableButton" class="table-button"></button
-        ><button id="languageButton" class="language-button" aria-label="Switch to English">EN</button
-        ><button
+        <button id="fulfilmentButton" class="fulfilment-switch" aria-haspopup="dialog"></button>
+        <button id="languageButton" class="language-button" aria-label="Switch to English">EN</button>
+      </div>
+    </header>
+    <div class="dinein-controls" id="dineinControls">
+      <button id="tableButton" class="table-button"></button>
+      <button
           id="serviceButton"
           class="icon-button"
           aria-label="呼叫服务员"
         ></button>
-      </div>
-    </header>
+    </div>
     <div class="workspace">
       <aside class="desktop-index">
         <p class="eyebrow">THE MENU / 菜单</p>

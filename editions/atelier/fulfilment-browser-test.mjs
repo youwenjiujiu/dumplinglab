@@ -1,0 +1,92 @@
+// Fresh browser contexts and local-only preview payments; no real transactions.
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {mkdtemp} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+const origin='http://127.0.0.1:7898';
+const output=await mkdtemp(join(tmpdir(),'dumpling-fulfilment-'));
+const browser=await chromium.launch({channel:'chrome'});
+try {
+  for(const width of [320,390,768]) for(const lang of ['zh','en']) {
+    const context=await browser.newContext({viewport:{width,height:900},reducedMotion:'reduce',hasTouch:true});
+    await context.addInitScript(()=>{
+      const native=visualViewport,mock=new EventTarget();let h=null;
+      Object.defineProperties(mock,{height:{get:()=>h??native.height},offsetTop:{get:()=>0},width:{get:()=>native.width},scale:{get:()=>1}});
+      Object.defineProperty(window,'visualViewport',{value:mock});
+      window.keyboardFixture=value=>{h=value;mock.dispatchEvent(new Event('resize'));};
+    });
+    const page=await context.newPage(),errors=[],writes=[];
+    page.on('pageerror',e=>errors.push(e.message));
+    page.on('request',r=>{if(r.method()==='POST')writes.push(new URL(r.url()).pathname);});
+    await page.goto(`${origin}/?lang=${lang}&table=Q${width}${lang}`);
+    await page.locator('[data-fulfilment="takeaway"]').waitFor();
+    assert.equal(await page.locator('#sheet').getAttribute('data-mode'),'fulfilment','QR landing asks for order type');
+    await page.screenshot({path:join(output,`entry-${lang}-${width}.png`)});
+    await page.locator('[data-fulfilment="takeaway"]').click();
+    assert(await page.locator('#tableButton').isHidden());
+    assert(await page.locator('#serviceButton').isHidden());
+    await page.locator('.dish-add[data-recommendation="chive-fried"]').click();
+    assert.equal(await page.locator('.detail-price').innerText(),'$7.41');
+    await page.locator('[data-action="add-detail"]').click();
+    await page.locator('#tray').click();
+    assert.equal(await page.locator('.table-number').count(),0);
+    await page.locator('[data-action="review"]').click();
+    await page.locator('[data-online-pay]').waitFor();
+    assert.equal(await page.locator('#onlineForm').count(),0,'pickup goes directly to review');
+    assert.equal(await page.locator('#tableEntry, #customerName, #customerPhone, [name="date"], [name="slot"]').count(),0,'no table, personal or reservation fields for pickup');
+    assert.equal(await page.locator('#taxNotice').count(),0,'no tax notice in menu header');
+    assert.equal(await page.locator('.payment-total dd').innerText(),'$7.41');
+    assert((await page.locator('.payment-breakdown').innerText()).includes('$0.61'));
+    await page.screenshot({path:join(output,`pickup-review-${lang}-${width}.png`)});
+    await page.locator('[data-online-pay]').click();
+    await page.locator('[data-preview-pay]').waitFor();
+    await page.locator('[data-preview-pay]').click();
+    await page.locator('#sheet[data-mode="pickup"]').waitFor();
+    await page.locator('.pickup-ticket img').waitFor();
+    await page.locator('.pickup-ticket img').evaluate(img=>img.decode());
+    assert.match(await page.locator('.pickup-ticket strong').innerText(),/^A\d{3,}$/);
+    await page.locator('.pickup-ticket').scrollIntoViewIfNeeded();
+    await page.screenshot({path:join(output,`pickup-ticket-${lang}-${width}.png`)});
+    await page.locator('[data-action="ordered"]').click();
+    await page.locator('.placed-receipts .paper-receipt').waitFor();
+    assert.equal(await page.locator('.payment-total dd').innerText(),'$7.41');
+    assert.equal(writes.filter(p=>p==='/api/cart'||p==='/api/order').length,0,'online order never writes to table API');
+    await page.locator('#closeSheet').click();
+    // Delivery draft stays separate; no loss of the pickup history.
+    await page.locator('#fulfilmentButton').click();await page.locator('[data-fulfilment="delivery"]').click();
+    await page.locator('.dish-add[data-recommendation="chive-fried"]').click();
+    for(let n=1;n<20;n++)await page.locator('[data-detail-delta="1"]').click();
+    await page.locator('[data-action="add-detail"]').click();await page.locator('#tray').click();
+    await page.locator('[data-action="review"]').click();await page.locator('#onlineForm').waitFor();
+    await page.locator('#customerName').fill('Local delivery QA');await page.locator('#customerPhone').fill('91234567');
+    await page.locator('#postalCode').fill('999999');await page.locator('#address').fill('Test address');
+    await page.locator('#unit').fill('#01-01');
+    await page.locator('[name="date"]').selectOption({index:1});await page.locator('[name="slot"]').selectOption({index:1});
+    await page.locator('#onlineForm [type="submit"]').click();
+    await page.waitForFunction(()=>document.querySelector('#onlineError')?.textContent.includes('10 km'));
+    await page.locator('#postalCode').fill('059911');await page.locator('#onlineForm [type="submit"]').click();
+    await page.locator('[data-online-pay]').waitFor();
+    const breakdown=await page.locator('.payment-breakdown').innerText();
+    for(const amount of ['$136.00','$12.24','$13.34','$161.58'])assert(breakdown.includes(amount),amount);
+    await page.screenshot({path:join(output,`delivery-review-${lang}-${width}.png`)});
+    await page.locator('[data-online-pay]').click();await page.locator('[data-preview-pay]').waitFor();
+    // Returning from a cancelled payment / refreshing recovers the same request.
+    await page.goto(`${origin}/?lang=${lang}`);
+    await page.locator('[data-online-retry]').waitFor();
+    await page.locator('[data-online-retry]').click();await page.locator('[data-preview-pay]').waitFor();
+    await page.locator('[data-preview-pay]').click();await page.locator('.placed-receipts .paper-receipt').waitFor();
+    assert.equal(await page.locator('.placed-receipts .paper-receipt').count(),1,'refresh/retry places exactly one delivery');
+    assert.equal(await page.locator('.payment-total dd').innerText(),'$161.58');
+    await page.locator('#closeSheet').click();
+    await page.reload();await page.locator('[data-fulfilment="takeaway"]').waitFor();
+    await page.locator('[data-fulfilment="takeaway"]').click();await page.locator('#tray').click();
+    await page.locator('[data-cart-tab="ordered"]').click();
+    assert.equal(await page.locator('.placed-receipts .paper-receipt').count(),1,'pickup history survives mode switch');
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    assert.deepEqual(errors,[]);
+    console.log(`PASS ${width} ${lang}: entry, table-free pickup, delivery, GST, keyboard, private drafts, refresh-safe payment`);
+    await context.close();
+  }
+} finally {await browser.close();}
+console.log(output);

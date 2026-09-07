@@ -17,6 +17,7 @@ try {
     });
     const page=await context.newPage(), errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto('http://127.0.0.1:7898/');
+    await page.locator('[data-fulfilment="dinein"]').click();
     await page.locator('.recommendation-card').first().waitFor();
     if(lang==='en')await page.locator('#languageButton').tap();
     const assertGap=async (a,b,min=12)=>{

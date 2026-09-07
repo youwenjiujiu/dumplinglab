@@ -64,7 +64,8 @@ assert.deepEqual(out.cart.contributors, {});
 assert.equal(out.order.contributors[id + "|"][0].name, "小陈");
 assert.equal(out.order.actorName, "小陈");
 assert.equal(out.cart.orders[0].items[0].price, 5.8);
-assert.equal(out.cart.orders[0].total, 5.8, "Receipt reflects server price");
+assert.equal(out.cart.orders[0].subtotal, 5.8, "Receipt reflects server price");
+assert.equal(out.cart.orders[0].total, 6.32, "Receipt includes server-computed GST");
 assert.deepEqual(contributorsFor([]), {});
 console.log(
   "PASS: optional nicknames, server sanitization, truthful contribution counts, no retry duplicates, group-isolated activity, persistent receipt attribution and prices.",

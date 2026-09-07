@@ -15,6 +15,13 @@
   header .dot.on{background:#4caf50;box-shadow:0 0 8px #4caf50;}
   #enable{background:var(--sesame);color:#241a12;border:none;border-radius:99px;padding:8px 14px;font-size:13px;font-weight:700;}
   #list{padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .pickup-check{padding:14px 18px;border-bottom:1px solid var(--line);}
+  .pickup-check form{display:flex;gap:8px;margin-top:8px;}
+  .pickup-check input{flex:1;min-width:0;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:16px;}
+  .pickup-check button{padding:12px;border:0;border-radius:8px;background:var(--sesame);color:var(--bg);}
+  #pickupResult{line-height:1.7;font-size:14px;margin-top:10px;}
+  #pickupResult strong{font-size:30px;}
+  #pickupResult button{display:block;width:100%;margin-top:12px;}
   .item{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;animation:pop .35s cubic-bezier(.22,1.4,.5,1);}
   .item.call{border-color:var(--red);}
   @keyframes pop{from{transform:scale(.95);opacity:0;}to{transform:scale(1);opacity:1;}}
@@ -41,6 +48,7 @@
   <div class="st"><span class="dot" id="dot"></span><span id="stTxt">连接中…</span></div>
   <button id="enable">开启响铃</button>
 </header>
+<section class="pickup-check"><label for="pickupInput">核验取餐码</label><form id="pickupForm"><input id="pickupInput" autocomplete="off" placeholder="扫描顾客二维码，或粘贴取餐码链接"><button>核验</button></form><div id="pickupResult" role="status" aria-live="polite"></div></section>
 <div id="list"><div class="empty" id="empty">等待顾客呼叫与下单…<br><small>把这个页面开在收银台的手机或平板上</small></div></div>
 
 <script>
@@ -103,16 +111,21 @@ function render(evt){
     el.innerHTML=`<div class="top"><span class="table">${esc(evt.table||"?")} 号桌 · ${esc(evt.group||"A")}组</span><span class="kind call">${evt.reason?`需要：${esc(evt.reason)}`:"呼叫服务员"}</span></div>
       <div class="time">${time}</div><button class="done">已处理</button>`;
   }else{
+    const online=['takeaway','delivery'].includes(evt.mode);
+    const heading=online ? (evt.mode==='delivery'?'外送':'打包自取') : `${esc(evt.table||'?')} 号桌 · ${esc(evt.group||'A')}组`;
     const lines=(evt.items||[]).map(it=>{
       const nm = it.name||it.id; const st = it.style?` · ${it.style}`:"";
       return `${esc(nm)}${esc(st)} ×${esc(it.qty)}`;
     }).join("<br>");
-    el.innerHTML=`<div class="top"><span class="table">${esc(evt.table||"?")} 号桌 · ${esc(evt.group||"A")}组</span><span class="kind order">新订单 #${esc(evt.no||"")}</span></div>
+    el.innerHTML=`<div class="top"><span class="table">${heading}</span><span class="kind order">${online?'已付款 · ':''}新订单 #${esc(evt.no||"")}</span></div>
       <div class="time">${time}</div>
+      ${evt.pickup ? `<div class="table">取餐号 ${esc(evt.pickup.number)}</div>` : ''}
+      ${online?`<div class="note">${evt.fulfilment?.date ? `${esc(evt.fulfilment.date)} · ${esc(evt.fulfilment.slot)}<br>` : ''}${evt.customer?.name ? `${esc(evt.customer.name)} · ${esc(evt.customer.phone)}<br>` : ''}${esc(evt.fulfilment?.pickupAddress || [evt.customer?.address,evt.customer?.unit].filter(Boolean).join(' '))}</div>`:''}
       <div class="lines">${lines}</div>
       ${evt.note?`<div class="note">备注：${esc(evt.note)}</div>`:""}
+      ${evt.pricingVersion?`<div class="time">菜品 ${money(evt.subtotal)}${evt.mode==='delivery'?` · 配送费 9% ${money(evt.deliveryFee)}`:''} · GST 9% ${money(evt.gst)}</div>`:''}
       <div class="total">${money(evt.total||0)}</div>
-      <button class="done">已完成</button>`;
+      <button class="done">${evt.pickup ? '确认已交餐' : '已完成'}</button>`;
   }
   el.querySelector(".done").onclick=async()=>{
     const button=el.querySelector(".done"), label=button.textContent; button.disabled=true; button.textContent="保存中…";
@@ -139,6 +152,39 @@ async function poll(){
   }catch(error){ dot.classList.remove("on"); stTxt.textContent=error.message||"重连中…"; }
   setTimeout(poll,2000);
 }
+async function inspectPickup(value) {
+  const result=document.getElementById('pickupResult');
+  let credential=value.trim();
+  try { if(credential.includes('#')) credential=new URLSearchParams(new URL(credential).hash.slice(1)).get('pickup')||''; } catch { credential=''; }
+  const match=/^([a-f0-9-]{36})\.([a-f0-9]{32})$/.exec(credential);
+  if(!match){result.textContent='取餐码格式不正确';return;}
+  const input={id:match[1],code:match[2]};
+  result.textContent='核验中…';
+  try {
+    const response=await staffFetch('/api/pickup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...input,action:'inspect'})});
+    const out=await response.json();if(!response.ok||!out.ok)throw new Error(out.error||'核验失败');
+    const o=out.order;
+    result.innerHTML=`<strong>${esc(o.pickup.number)}</strong> · ${esc(o.pickup.date)}<br>${o.collectedAt?'此订单已取餐，请勿重复交餐':'已付款 · 请核对菜品后交餐'}<br>${o.items.map(i=>`${esc(i.name)} × ${esc(i.qty)}`).join('<br>')}${o.collectedAt?'':'<button id="collectPickup">确认交餐</button>'}`;
+    const button=document.getElementById('collectPickup');
+    if(button)button.onclick=async()=>{
+      button.disabled=true;
+      try {
+        const res=await staffFetch('/api/pickup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...input,action:'collect'})});
+        const data=await res.json();if(!res.ok||!data.ok)throw new Error(data.error||'保存失败');
+        result.textContent=`${data.order.pickup.number} 已取餐`;
+      }catch(e){button.disabled=false;stTxt.textContent=e.message;}
+    };
+  }catch(e){result.textContent=e.message;}
+}
+document.getElementById('pickupForm').onsubmit=e=>{e.preventDefault();inspectPickup(document.getElementById('pickupInput').value);};
+function pickupFromHash(){
+  const value=new URLSearchParams(location.hash.slice(1)).get('pickup');
+  if(!value)return;
+  history.replaceState(null,'',location.pathname+location.search);
+  inspectPickup(value);
+}
+window.addEventListener('hashchange',pickupFromHash);
+pickupFromHash();
 poll();
 </script>
 </body>

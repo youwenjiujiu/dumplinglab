@@ -1,12 +1,12 @@
 // Optimistic shared cart: independent operation IDs, durable retries, idempotent checkout.
 class TableCart extends EventTarget {
-  constructor(table, group) {
+  constructor(table, group, namespace = null) {
     super();
     this.table = table;
     this.group = group;
     this.status = "connecting";
     this.storageAvailable = true;
-    this.key = `atelier:${table || "browse"}:${group}`;
+    this.key = namespace || `atelier:${table || "browse"}:${group}`;
     const read = (key) => {
       let raw;
       try {

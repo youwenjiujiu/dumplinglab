@@ -26,7 +26,11 @@ try {
         assert.equal(await page.locator('.detail-image img').evaluate(e=>e.getAnimations().length),0,'detail photo must not auto-rotate');
         assert.equal(await page.locator('.detail-image img').evaluate(e=>getComputedStyle(e).transform),'none');
         assert.equal(await page.locator('.detail-image').getAttribute('role'),null);
-        assert.equal(await page.locator('#ingredientHeading').innerText(),lang==='zh'?'主要食材':'Main ingredients');
+        assert.equal(await page.locator('#ingredientHeading').innerText(),lang==='zh'?'食材':'Ingredients');
+        assert.equal(await page.locator('#ingredientHeading').isVisible(),true,'ingredients have a visible, subordinate label');
+        assert.equal(await page.locator('.ingredient-plus').count(),0,'no ingredient formula');
+        assert.equal(await page.locator('#detailIngredients').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)','no oversized background panel');
+        for(const size of await page.locator('.ingredient-name').evaluateAll(es=>es.map(e=>parseFloat(getComputedStyle(e).fontSize))))assert(size<=14,'ingredients must not compete with title');
         const content=await page.locator('#detailIngredients').innerText();
         for(const item of d.items)assert(content.includes(item[lang==='zh'?'cn':'en']),`${d.id}: ${JSON.stringify(item)}`);
         if(d.note)assert(content.includes(d.note[lang==='zh'?0:1]));
@@ -36,11 +40,28 @@ try {
         assert(title.x+title.width<=price.x-8,`${d.id}: title must leave a gap before price`);
         const titleOverflow=await page.locator('#sheetTitle').evaluate(e=>e.scrollWidth>e.clientWidth+1);
         assert.equal(titleOverflow,false,`${d.id}: title text exceeds allocated column`);
-        assert(await page.locator('#sheetBody .fineprint').innerText().then(t=>t.includes(lang==='zh'?'非完整配料表':'not a complete ingredient list')));
-        if(d.id==='lunch-v2-mince-scallion-noodles')await page.screenshot({path:join(shots,`noodles-${lang}-${width}.png`)});
+        assert.equal(await page.locator('.ingredient-disclosure, .disclosure-chevron').count(),0,'no rejected settings-style row');
+        assert.equal(await page.locator('.ingredient-advisory').innerText(),lang==='zh'?'如有食物过敏，请先告知店员。':'Please tell staff about any food allergies.');
+        if(d.id==='lunch-v2-mince-scallion-noodles' || d.items.length===2 && !d.note){
+          await page.waitForFunction(()=>document.querySelector('dl-ingredient-reveal').dataset.motionState==='complete');
+          await page.screenshot({path:join(shots,`${d.id==='lunch-v2-mince-scallion-noodles'?'noodles':d.id}-${lang}-${width}.png`)});
+          if(lang==='zh' && d.items.length===2 && !d.note)assert((await page.locator('#detailIngredients').boundingBox()).height<30,'two ingredients use one compact line');
+        }
         await page.locator('#closeSheet').click();
       }
       // A recommendation is a preset of the same dish, not a second ingredient record.
+      await page.locator('.dish-add[data-recommendation="chicken-fried"]').click();
+      assert.equal(await page.locator('#detailPreparation').innerText(),lang==='zh'?'煎':'Pan-fried');
+      assert.equal(await page.locator('.detail-portion').count(),0,'preset preparation is a badge, not a repeated paragraph');
+      assert.equal(await page.locator('.lunch-options-pieces legend').getAttribute('class'),'sr-only');
+      assert.equal(await page.locator('.ingredient-advisory').isVisible(),true);
+      await page.locator('#detailIngredients').scrollIntoViewIfNeeded();
+      await page.waitForFunction(()=>document.querySelector('dl-ingredient-reveal').dataset.motionState==='complete');
+      await page.screenshot({path:join(shots,`chicken-compact-${lang}-${width}.png`)});
+      await page.locator('[data-lunch-option="pieces"][data-value="9"]').click();
+      assert.equal(await page.locator('.detail-price').innerText(),'$9.20');
+      assert.equal(await page.locator('#detailPreparation').innerText(),lang==='zh'?'煎':'Pan-fried');
+      await page.locator('#closeSheet').click();
       await page.locator('.dish-add[data-recommendation="roe-wonton-noodles"]').click();
       assert((await page.locator('.ingredient-list').innerText()).includes(lang==='zh'?'面条':'Noodles'));
       assert((await page.locator('.ingredient-list').innerText()).includes(lang==='zh'?'高汤':'Broth'));
@@ -62,7 +83,7 @@ try {
       // The language control is outside the modal: switch, then reopen detail.
       await page.locator('#languageButton').click();
       await page.evaluate(()=>openDish(dish('lunch-v2-oyster-lettuce')));
-      assert.equal(await page.locator('#ingredientHeading').innerText(),lang==='zh'?'Main ingredients':'主要食材');
+      assert.equal(await page.locator('#ingredientHeading').innerText(),lang==='zh'?'Ingredients':'食材');
       await page.locator('#closeSheet').click();
       await page.locator('#languageButton').click();
       console.log(`PASS ${width} ${lang}: all 35 details, unknown recipe notes, presets, dynamic extras, portion stability, language and width`);

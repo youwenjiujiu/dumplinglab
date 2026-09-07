@@ -49,7 +49,8 @@ console.log("PASS 2: 160 explicit variants + 16 compatible v2 keys; exact +S$3 n
 const envelope=()=>({requestId:randomUUID(),table:"QLUNCH",group:"A",no:"6001"});
 for (const d of MENU) for (const [style,v] of d.variants?Object.entries(d.variants):[[null,{price:d.price}]]) for (const qty of [1,2,20]) {
   const order=cleanOrder({...envelope(),items:[{id:d.id,style,qty,price:.01}]});
-  assert.equal(order.total,Math.round(v.price*100)*qty/100);
+  assert.equal(order.subtotal,Math.round(v.price*100)*qty/100);
+  assert.equal(order.total,OrderPricing.inclusive(order.subtotal));
   assert.equal(order.items[0].price,v.price); assert.equal(order.items[0].style,style);
 }
 for (const style of [null,"水煮","高汤 · 5颗","煎 · 10颗","干拌 · 5颗 · 加面","干拌 · 5颗 · 加芝麻酱","干拌 · 5颗 · 辣"]) {
@@ -75,7 +76,8 @@ assert.deepEqual(product.styles,["红油 · 5颗","红油 · 9颗"]);
 assert.deepEqual(product.portionPrices,{5:5.8,9:9.2});
 for (const style of [null,"高汤 · 5颗","干拌 · 5颗","水煮 · 5颗","红油 · 10颗"]) assert.throws(()=>cleanOrder({...envelope(),items:[{id:product.id,style,qty:1}]}));
 const pair=cleanOrder({...envelope(),items:[{id:product.id,style:product.styles[0],qty:1},{id:"lunch-v2-pork-wonton",style:"高汤 · 5颗",qty:1}]});
-assert.equal(pair.total,11.6);
+assert.equal(pair.subtotal,11.6);
+assert.equal(pair.total,12.64);
 assert.notEqual(pair.items[0].id,pair.items[1].id);
 assert.equal(pair.items[0].name,"红油抄手");
 assert(!MENU.some(d=>/西红柿鸡蛋|菜肉云吞/.test(d.cn)));

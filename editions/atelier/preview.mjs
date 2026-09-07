@@ -18,6 +18,7 @@ import {
   cleanGroup,
   RequestError,
 } from "../../web/server/order-core.js";
+import { createOnlineService, bookingDates, SLOTS } from '../../web/server/online-core.js';
 
 const here = dirname(fileURLToPath(import.meta.url)),
   root = resolve(here, "../..");
@@ -73,6 +74,27 @@ function transaction(fn) {
   queue = result.catch(() => {});
   return result;
 }
+// Local fixtures are explicitly labelled and never sent to external providers.
+db.online ||= {};
+const previewLocations = [{ id: 'preview-store', name: '本地测试门店 / Preview store', address: '本地测试地址（非真实自取点）' }];
+const online = createOnlineService({
+  storage: {
+    async read(id) { await queue; const r = db.online[id]; return r ? {value:structuredClone(r.value),etag:String(r.version)} : null; },
+    async write(id,value,etag) { return transaction(() => {
+      if (String(db.online[id]?.version || '') !== String(etag || '')) { const e=new Error('Conflict');e.conflict=true;throw e; }
+      db.online[id]={value,version:(db.online[id]?.version||0)+1};
+    }); },
+    isConflict: e=>e.conflict,
+    async all() { await queue; return Object.values(db.online).map(r=>structuredClone(r.value)); },
+  },
+  payment: { ensureReady() {}, async create(o) { return {id:`preview_${o.id}`,url:`/?preview_payment=${o.id}`}; } },
+  async checkAddress(postal) {
+    if (postal === '999999') return {distanceKm:11,address:'Outside test zone'};
+    if (postal !== '059911') throw new RequestError('本地测试请使用邮编 059911；999999 用于测试超区');
+    return {distanceKm:1,address:'本地配送测试地址 · 059911（非真实配送）'};
+  },
+  config: { locations: previewLocations, origin:'http://127.0.0.1:7898' },
+});
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript",
@@ -107,6 +129,22 @@ createServer(async (req, res) => {
         } catch {
           throw new RequestError("Invalid JSON");
         }
+      }
+      if (url.pathname === '/api/online') {
+        if (req.method === 'GET') {
+          const id = url.searchParams.get('id');
+          if (id) return json(200,{ok:true,order:await online.get(id,String(req.headers.authorization||'').replace(/^Bearer /,''))});
+          return json(200,{ok:true,config:{preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,takeawayEnabled:true,deliveryEnabled:true,deliveryMinimum:100,deliveryRate:0.09,gstRate:0.09,radiusKm:10}});
+        }
+        if (req.method === 'POST') {
+          if (input.action === 'preview-pay') {
+            const order=await online.get(input.requestId,input.token);
+            await online.paymentEvent({id:`preview_${order.id}`,metadata:{order_id:order.id},currency:'sgd',amount_total:Math.round(order.total*100),payment_status:'paid'});
+            return json(200,{ok:true});
+          }
+          return json(200,{ok:true,...(input.action==='quote'?{order:await online.quote(input)}:await online.checkout(input))});
+        }
+        return json(405,{ok:false,error:'Method not allowed'});
       }
       if (url.pathname === "/api/cart" && req.method === "GET") {
         await queue;
@@ -219,7 +257,16 @@ createServer(async (req, res) => {
       }
       if (url.pathname === "/api/feed" && req.method === "GET") {
         await queue;
-        return json(200, { events: db.events });
+        const events=[...db.events.filter(e=>!e.resolvedAt),...await online.feed()];
+        return json(200, { events,activeIds:events.map(e=>e.id),cursor:Date.now() });
+      }
+      if (url.pathname === '/api/pickup' && req.method === 'POST') {
+        if (!['inspect','collect'].includes(input.action)) throw new RequestError('无效操作');
+        return json(200,{ok:true,order:await online.pickup(input.id,input.code,input.action==='collect')});
+      }
+      if (url.pathname === '/api/resolve' && req.method === 'POST') {
+        if (!await online.resolve(input.id)) await transaction(()=>{const e=db.events.find(e=>e.id===input.id);if(e)e.resolvedAt=new Date().toISOString();});
+        return json(200,{ok:true});
       }
       return json(404, { error: "Unknown endpoint" });
     }
@@ -233,6 +280,7 @@ createServer(async (req, res) => {
       "/app.js",
       "/lunch-ui.js",
       "/cart-store.js",
+      "/fulfilment.js",
       "/table-scene.js",
       "/shared-table.css",
       "/shared-motion.js",
@@ -245,7 +293,7 @@ createServer(async (req, res) => {
     ]);
     const allowedAsset =
       /^\/(img|brand|fonts)\//.test(path) ||
-      ["/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/i18n.js", "/vendor/three.module.js"].includes(path);
+      ["/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
     if (!localFiles.has(path) && !allowedAsset)
       return json(404, { error: "Not found" });
     const data = await readFile(

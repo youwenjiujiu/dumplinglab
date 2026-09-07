@@ -135,9 +135,6 @@
     "red-oil-chaoshou": [["抄手皮", "Wonton wrappers"], ["红油", "Chilli oil"]],
   };
   const ingredientNotes = {
-    "mince-scallion-noodles": ["肉末种类请向店员确认。", "Please check the type of minced meat with staff."],
-    "mince-chilli-noodles": ["肉末种类请向店员确认。", "Please check the type of minced meat with staff."],
-    "mince-red-oil-noodles": ["肉末种类请向店员确认。", "Please check the type of minced meat with staff."],
     "cold-veg-shreds": ["具体蔬菜种类请向店员确认。", "Please check which vegetables are used with staff."],
     "red-oil-chaoshou": ["馅料成分请向店员确认。", "Please check the filling ingredients with staff."],
     "soft-drink": ["成分以所选饮品的包装配料表为准。", "Check the ingredient label on your chosen drink."],

@@ -10,12 +10,12 @@ async function copy(source, target) {
   await mkdir(dirname(resolve(output, target)), { recursive: true });
   await copyFile(source, resolve(output, target));
 }
-for (const file of ["atelier.css", "shared-table.css", "app.js", "cart-store.js", "shared-table.js", "lunch-ui.js", "bilingual-fit.js"]) await copy(resolve(here, file), file);
+for (const file of ["atelier.css", "shared-table.css", "app.js", "cart-store.js", "fulfilment.js", "shared-table.js", "lunch-ui.js", "bilingual-fit.js"]) await copy(resolve(here, file), file);
 await copy(resolve(here, "generated/table-view-motion/developer/web-component/table-layout.js"), "shared-motion.js");
 await copy(resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js"), "micro-motion.js");
 await copy(resolve(here, "generated/receipt-print/developer/web-component/receipt-print.js"), "receipt-motion.js");
 await copy(resolve(here, "generated/table-sharing/developer/web-component/table-sharing.js"), "sharing-motion.js");
-for (const file of ["menu-data.js", "lunch-archive.js", "lunch-menu.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
+for (const file of ["menu-data.js", "lunch-archive.js", "lunch-menu.js", "order-pricing.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
 for (const dir of ["api", "server", "img/s", "img/l"]) {
   for (const file of await readdir(resolve(web, dir))) {
     if (/^dining-(together|separate)-v[23]\.webp$/.test(file)) continue;
@@ -24,6 +24,7 @@ for (const dir of ["api", "server", "img/s", "img/l"]) {
 }
 for (const file of ["scto-grotesk-a-regular.woff2", "scto-grotesk-a-medium.woff2"]) await copy(resolve(web, "fonts", file), `fonts/${file}`);
 await copy(resolve(web, "brand/dumpling-lab-primary.png"), "brand/dumpling-lab-primary.png");
+for (const file of ["entry-dinein-v1.svg", "entry-takeaway-v1.svg", "entry-delivery-v1.svg", "header-dinein-v1.svg", "header-takeaway-v1.svg", "header-delivery-v1.svg"]) await copy(resolve(web, "brand", file), `brand/${file}`);
 let html = (await readFile(resolve(here, "index.html"), "utf8"))
   .replace('<html lang="zh-CN">', '<html lang="zh-CN" data-environment="production">')
   .replace(/<div class="preview-notice" id="previewNotice">[\s\S]*?<\/div>/, "");

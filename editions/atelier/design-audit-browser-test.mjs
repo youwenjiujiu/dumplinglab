@@ -34,7 +34,7 @@ try {
     await page.screenshot({path:join(output,`sharing-${width}.png`)});
     await page.locator('#closeSheet').click();
     await page.locator('#tray').click();
-    assert.equal(await page.locator('.empty-plate').count(),1);
+    assert.equal(await page.locator('.empty-plate').count(),0);
     assert.equal(await page.locator('[data-table-layout]').count(),0);
     assert((await page.locator('#sheet').boundingBox()).height<640,'empty cart is content-sized');
     assert.equal(await page.locator('.cart-checkout').isVisible(),false,'no duplicate CTA');

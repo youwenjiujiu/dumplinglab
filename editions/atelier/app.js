@@ -23,12 +23,14 @@ const escapeHTML = (text) =>
       ],
   );
 const money = (n) => `$${Number(n).toFixed(2)}`;
+const foodMoney = n => money(OrderPricing.inclusive(n));
+const cartMoney = items => money(OrderPricing.quote(total(items), store.mode || "dinein").total);
 const bi = (zh, en) => escapeHTML(tr(zh,en));
 const bilingualText = text => escapeHTML(text);
 const setBilingual = (node, text) => { if(node) node.innerHTML = bilingualText(text); };
 const name = (d) => tr(d.cn,d.name),
   otherName = (d) => tr(d.name,d.cn);
-const fromPrice = n => language === "en" ? `From ${money(n)}` : `${money(n)} 起`;
+const fromPrice = n => language === "en" ? `From ${foodMoney(n)}` : `${foodMoney(n)} 起`;
 // Explicit word boundaries keep ingredients intact at narrow widths.
 const dishNameParts = new Map([
   "韭菜 虾仁 猪肉", "芹菜 虾仁 猪肉", "白菜 猪肉", "鸡肉 玉米 云吞", "鲜肉 云吞",
@@ -119,7 +121,7 @@ const icons = {
 };
 const icon = (key) =>
   `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${icons[key]}</svg>`;
-const store = new TableCart(table, group);
+let store = new TableCart(table, group);
 let tableScene = null,
   sceneSession = null,
   sceneOpened = false,
@@ -151,7 +153,7 @@ const count = () => store.items.reduce((s, i) => s + i.qty, 0);
 const total = (items) =>
   Math.round(items.reduce((s, i) => s + (i.price ?? itemPrice(dish(i.id), i.style) ?? 0) * i.qty, 0) * 100) / 100;
 const statusCopy = () =>
-  !table
+  store.mode ? tr('个人选菜已保留', 'Your selection is saved') : !table
     ? tr("已保留选菜 · 下单前确认桌号", "Picks saved · choose your table before ordering")
     : {
         synced: tr("同桌已同步", "Table synced"),
@@ -442,7 +444,7 @@ function renderSearchResults() {
   const entries = searchEntries();
   $("#menuList").innerHTML = `<section class="search-results" aria-label="${tr("搜索结果", "Search results")}">${entries.map(({d,recommendation}) => {
     const attribute = recommendation ? `data-recommendation="${d.id}"` : `data-dish="${d.id}"`;
-    return `<article class="search-result"><button class="search-result-open" ${attribute}><img src="${photo(d,"s",recommendation ? undefined : d.styles?.[0])}" alt="" loading="lazy"><span><strong>${dishNameHTML(d)}</strong><small>${recommendation ? fromPrice(LunchMenu.recommendationPrice(d)) : d.variants ? fromPrice(d.price) : money(d.price)}</small></span><span class="search-result-arrow" aria-hidden="true">›</span></button></article>`;
+    return `<article class="search-result"><button class="search-result-open" ${attribute}><img src="${photo(d,"s",recommendation ? undefined : d.styles?.[0])}" alt="" loading="lazy"><span><strong>${dishNameHTML(d)}</strong><small>${recommendation ? fromPrice(LunchMenu.recommendationPrice(d)) : d.variants ? fromPrice(d.price) : foodMoney(d.price)}</small></span><span class="search-result-arrow" aria-hidden="true">›</span></button></article>`;
   }).join("") || `<div class="empty-state"><h3>${bi("没有找到菜品", "No matching dishes")}</h3></div>`}</section>`;
   $("#searchSummary").hidden = false;
   const conditions = [search ? `“${search}”` : "", filter === "veg" ? tr("素食", "Vegetarian") : ""].filter(Boolean);
@@ -538,6 +540,7 @@ function renderChrome() {
   ));
   renderNavigation();
   renderFilters();
+  Fulfilment.chrome();
 }
 function renderTray() {
   const removedCount = (store.remote.unavailableItems || []).length + (store.retiredPending || []).length
@@ -545,7 +548,7 @@ function renderTray() {
   const notice = $("#menuChangeNotice");
   if (notice) {
     notice.hidden = !removedCount;
-    setBilingual(notice, tr("已切换午餐菜单，原选菜品中有已下架项目，请重新选菜。已下单记录保留。", "Lunch menu updated. Some previous selections are unavailable; please choose again. Placed orders are preserved."));
+    setBilingual(notice, tr("部分已选菜品已更新，请重新选择。", "Some selected dishes have changed. Please choose again."));
   }
   const items = store.items,
     n = count();
@@ -589,11 +592,11 @@ function renderTray() {
       ? tr("本桌已下单", "Order placed")
       : tr("尚未选菜", "No dishes selected"));
   setBilingual($("#trayCaption"),statusCopy());
-  updateText($("#trayTotal"), n ? money(total(items)) : "");
+  updateText($("#trayTotal"), n ? cartMoney(items) : "");
   $("#trayTotal").hidden = !n;
   setBilingual($("#trayActionLabel"), tr("查看本桌", "View table"));
   $("#tray").ariaLabel =
-    `${tr("查看本桌点单", "View our table")}, ${$("#trayLabel").textContent}${n ? ", " + money(total(items)) : ""}`;
+    `${tr("查看本桌点单", "View our table")}, ${$("#trayLabel").textContent}${n ? ", " + cartMoney(items) : ""}`;
   $("#connectionButton").innerHTML =
     `<span class="status-dot ${store.status}"></span>${bilingualText(statusCopy())}${table && group !== "A" ? " · " + group : ""}`;
   $$("[data-add]").forEach((b) => {
@@ -610,14 +613,14 @@ function renderTray() {
             .slice(0, 5)
             .map(
               (i) =>
-                `<div class="ticket-line"><span>${name(dish(i.id))}${i.style ? " · " + styleName(i.style) : ""} × ${i.qty}</span><span>${money(itemPrice(dish(i.id), i.style) * i.qty)}</span></div>`,
+                `<div class="ticket-line"><span>${name(dish(i.id))}${i.style ? " · " + styleName(i.style) : ""} × ${i.qty}</span><span>${foodMoney(itemPrice(dish(i.id), i.style) * i.qty)}</span></div>`,
             )
             .join("") +
           (items.length > 5
             ? `<p class="fineprint">+ ${items.length - 5} ${bi("道菜", "more dishes")}</p>`
             : "")
         : `<div class="ticket-empty">${icon("plate")}<p>${bi("尚未选菜", "No dishes selected")}</p><small>${bi("点击 + 添加菜品", "Tap + to add a dish")}</small></div>`
-    }<div class="ticket-summary"><span>${bi("菜品小计", "Subtotal")}</span><strong>${money(total(items))}</strong></div><button class="primary" data-action="cart">${bi("查看本桌点单", "View our table")} ↗</button><p class="ticket-foot">${bilingualText(statusCopy())}</p>`;
+    }<div class="ticket-summary"><span>${bi("菜品小计", "Subtotal")}</span><strong>${cartMoney(items)}</strong></div><button class="primary" data-action="cart">${bi("查看本桌点单", "View our table")} ↗</button><p class="ticket-foot">${bilingualText(statusCopy())}</p>`;
 }
 function add(d, style = null, amount = 1) {
   if (d.soldOut) return false;
@@ -665,10 +668,14 @@ function renderDetail() {
   $(".detail-image")?.stopPlateMotion?.();
   const d = presentedDish(detail, detailStyle);
   $("#sheetBody").innerHTML =
-    `${d.img ? `<div class="detail-image"><img draggable="false" src="${photo(d, "l", detailStyle)}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><div class="detail-top"><div><h1 id="sheetTitle">${dishNameHTML(d)}</h1><div class="detail-other">${otherName(d)}</div></div><span class="detail-price">${money(itemPrice(d, detailStyle))}</span></div>${LunchMenu.ingredients(detail, detailStyle)}${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${bi("每份", "Per portion")} · ${bi(d.portion, d.portion.replace("块"," piece").replace("个"," pieces"))}</p>` : ""}<p class="fineprint">${bi("以上为菜单注明的主要食材，非完整配料表。如有过敏，请向店员确认酱汁、调味料与共用厨具情况。", "These are menu-listed main ingredients, not a complete ingredient list. For allergies, check sauces, seasonings and shared preparation areas with staff.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? bi("暂时售罄", "Sold out") : bi("加入本桌", "Add to our table")}<strong>${money(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
+    `${d.img ? `<div class="detail-image"><img draggable="false" src="${photo(d, "l", detailStyle)}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><div class="detail-top"><div class="detail-title"><h1 id="sheetTitle">${dishNameHTML(d)}</h1>${LunchMenu.preparationBadge(detail, detailStyle)}</div><span class="detail-price">${foodMoney(itemPrice(d, detailStyle))}</span></div>${LunchMenu.ingredients(detail, detailStyle)}${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${bi("每份", "Per portion")} · ${bi(d.portion, d.portion.replace("块"," piece").replace("个"," pieces"))}</p>` : ""}<p class="ingredient-advisory">${bi("如有食物过敏，请先告知店员。", "Please tell staff about any food allergies.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? bi("暂时售罄", "Sold out") : (Fulfilment.remote() ? bi("加入订单", "Add to order") : bi("加入本桌", "Add to our table"))}<strong>${foodMoney(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
 }
 function updateDetailSelection() {
-  if ($("#detailIngredients")) $("#detailIngredients").outerHTML = LunchMenu.ingredients(detail, detailStyle);
+  if ($("#detailPreparation")) $("#detailPreparation").outerHTML = LunchMenu.preparationBadge(detail, detailStyle);
+  if ($("#detailIngredients")) {
+    const previousKeys=$$("#detailIngredients [data-ingredient-key]").map(node=>node.dataset.ingredientKey);
+    $("#detailIngredients").outerHTML = LunchMenu.ingredients(detail, detailStyle, previousKeys);
+  }
   const image = $(".detail-image img");
   const presentation = presentedDish(detail, detailStyle);
   if (image && detail?.img) {
@@ -683,8 +690,8 @@ function updateDetailSelection() {
   updateText(quantity.querySelector("b"), detailQty);
   quantity.querySelector('[data-detail-delta="-1"]').disabled = detailQty <= 1;
   quantity.querySelector('[data-detail-delta="1"]').disabled = detailQty >= 20;
-  updateText($('[data-action="add-detail"] strong'), money(itemPrice(detail, detailStyle) * detailQty));
-  updateText($(".detail-price"), money(itemPrice(detail, detailStyle)));
+  updateText($('[data-action="add-detail"] strong'), foodMoney(itemPrice(detail, detailStyle) * detailQty));
+  updateText($(".detail-price"), foodMoney(itemPrice(detail, detailStyle)));
   $$(".styles [data-style]").forEach((button) => {
     const selected = button.dataset.style === detailStyle;
     button.classList.toggle("active", selected);
@@ -714,8 +721,8 @@ function refreshTableScene() {
   }
   setBilingual($("#sceneCount"), count()
     ? tr(
-        `这一桌，已选 ${count()} 份 · ${money(total(store.items))}`,
-        `${count()} portions · ${money(total(store.items))}`,
+        `这一桌，已选 ${count()} 份 · ${cartMoney(store.items)}`,
+        `${count()} portions · ${cartMoney(store.items)}`,
       )
     : tr(
         "空桌不空心，选几道喜欢的。",
@@ -809,7 +816,7 @@ function showPaper() {
           )
             .map(
               (d) =>
-                `<button class="paper-row" data-dish="${d.id}"><span>${name(d)}<small>${otherName(d)}</small></span><i></i><b>${d.soldOut ? bi("售罄", "Sold") : (d.variants ? fromPrice(d.price) : money(d.price))}</b></button>`,
+                `<button class="paper-row" data-dish="${d.id}"><span>${name(d)}<small>${otherName(d)}</small></span><i></i><b>${d.soldOut ? bi("售罄", "Sold") : (d.variants ? fromPrice(d.price) : foodMoney(d.price))}</b></button>`,
             )
             .join("")}`,
       )
@@ -824,6 +831,7 @@ function renderCart() {
 }
 async function prepareReview() {
   if (submitting) return;
+  if (Fulfilment.remote()) return Fulfilment.checkout();
   if (!table) {
     clearTimeout(noteTimer);
     const note = $("#cartNote");
@@ -992,7 +1000,7 @@ function renderPlanner() {
       )
       .join(
         "",
-      )}</div><div class="planner-list">${suggestions.map((d) => `<label class="planner-item"><img src="${photo(d)}" alt=""><span><strong>${dishNameHTML(d)}</strong><small lang="en">${escapeHTML(otherName(d))}</small><small>${escapeHTML(categoryName(d.section))} · ${portions} ${bi("份", "portions")} · ${money(d.price * portions)}</small></span><input type="checkbox" data-suggestion="${d.id}" ${selectedSuggestions.has(d.id) ? "checked" : ""}></label>`).join("")}</div><p class="fineprint">${bi("搭配依据菜单分类与标注，不代表营养或过敏安全建议。食量不同，请按需调整。", "Based on menu categories and labels, not nutritional or allergy advice. Adjust to your appetite.")}</p><button class="primary" data-action="add-plan" ${!selectedSuggestions.size ? "disabled" : ""}>${bi("加入已选", "Add selected dishes")}<strong>${money(amount)}</strong></button></div>`;
+      )}</div><div class="planner-list">${suggestions.map((d) => `<label class="planner-item"><img src="${photo(d)}" alt=""><span><strong>${dishNameHTML(d)}</strong><small lang="en">${escapeHTML(otherName(d))}</small><small>${escapeHTML(categoryName(d.section))} · ${portions} ${bi("份", "portions")} · ${foodMoney(d.price * portions)}</small></span><input type="checkbox" data-suggestion="${d.id}" ${selectedSuggestions.has(d.id) ? "checked" : ""}></label>`).join("")}</div><p class="fineprint">${bi("搭配依据菜单分类与标注，不代表营养或过敏安全建议。食量不同，请按需调整。", "Based on menu categories and labels, not nutritional or allergy advice. Adjust to your appetite.")}</p><button class="primary" data-action="add-plan" ${!selectedSuggestions.size ? "disabled" : ""}>${bi("加入已选", "Add selected dishes")}<strong>${foodMoney(amount)}</strong></button></div>`;
 }
 function showService() {
   openModal("service", "");
@@ -1308,7 +1316,7 @@ document.addEventListener("change", (e) => {
         0,
       );
     $('[data-action="add-plan"]').disabled = !selectedSuggestions.size;
-    $('[data-action="add-plan"] strong').textContent = money(amount);
+    $('[data-action="add-plan"] strong').textContent = foodMoney(amount);
   }
 });
 $("#categoryButton").onclick = showCategories;
@@ -1414,13 +1422,15 @@ $("#clearSearch").onclick = () => {
   renderMenu();
   $("#searchInput").focus();
 };
-store.addEventListener("change", () => {
+function onCartChange() {
   renderTray();
   SharedTable.observe();
   refreshTableScene();
   if (modal === "cart" && document.activeElement?.id !== "cartNote")
     renderCart();
-});
+  Fulfilment.chrome();
+}
+store.addEventListener("change", onCartChange);
 $("#languageButton").onclick = () => {
   language = language === "zh" ? "en" : "zh";
   try { localStorage.setItem("atelier-language",language); } catch { /* Works without persistence. */ }
@@ -1431,5 +1441,6 @@ renderMenu();
 renderTray();
 SharedTable.init();
 store.start();
-if (location.hash === "#index") showPaper();
-if (location.hash === "#table3d" || location.hash === "#cart") showCart();
+Fulfilment.init();
+if (!modal && location.hash === "#index") showPaper();
+if (!modal && (location.hash === "#table3d" || location.hash === "#cart")) showCart();
