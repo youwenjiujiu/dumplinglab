@@ -69,6 +69,31 @@ Use case: illustration-story. Asset: compact square illustration for a Chinese d
 
 ## 发布记录
 
+### 手机截图反馈：第二轮修复与 10 轮专项回归
+
+按 10 个流程分别检查，不将重复运行同一命令计作“完整检查 10 遍”。修复后结果：
+
+| 轮次 | 检查范围 | 证据与结果 |
+| --- | --- | --- |
+| 1 | 桌号入口、空值、确认、绑定与草稿 | `mobile-controls-browser-test.mjs`、`table-entry-test.mjs`、`lunch-ui-test.mjs --browse --named` 通过；明确“选择桌号”，无破折号/下拉字符，普通入口不再误带下单核对文案 |
+| 2 | 关闭、返回、点击区域 | 新浏览器回归通过；18px SVG、44px 点击区域；关闭详情能回搜索，再取消能回菜单 |
+| 3 | 触屏焦点与键盘导航 | 新浏览器回归通过；触屏不画关闭红框/馅料蓝框，键盘保留焦点提示与 Escape |
+| 4 | 搜索打开、清空、取消、中文输入法 | 新浏览器回归通过；取消独立可见；Enter 收起输入焦点；组词未完成不提交、不收键盘；去掉原生重复清除叉号 |
+| 5 | 搜索结果与数量 | 新浏览器回归通过；“猪肉”4个不同结果，推荐去重；不受未选做法隐藏；零结果正确；搜索卡图片与详情默认做法一致 |
+| 6 | 搜索与桌号键盘避让 | 模拟可见高度360px、顶部偏移20px；320/390px 下输入、取消、首条结果、桌号确认按钮均在可见区域内；未自动聚焦桌号；不是 iPhone 真机测试 |
+| 7 | 做法、馅料、份量、加料、图片、烹饪动效 | `cooking-browser-test.mjs`、`lunch-test.mjs`、DOM 回归通过；搜索菜品可直接进详情选择做法 |
+| 8 | 购物车、分组、并发、备注、提交与重试、呼叫与鉴权 | `shared-test.mjs`、`walkthrough-test.mjs`、`production-test.mjs`、DOM 回归通过；无生产订单或呼叫测试 |
+| 9 | 小票名字、成功/历史、语言、空状态、字体 | `design-audit-browser-test.mjs`、`receipt-sharing-browser-test.mjs`、`ui-consistency-test.mjs` 通过；320/390/768px |
+| 10 | 发布包、资源与语法 | `lunch-build-test.mjs`、`assets-test.mjs`、`git diff --check` 通过；生产域名验收另记下方 |
+
+新增测试：`mobile-controls-browser-test.mjs`。最终本地截图：`/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumpling-mobile-controls-6RKNSl`。
+
+键盘处理依据：屏幕键盘可能只缩小 visual viewport，不改变 layout viewport；因此接入 `visualViewport` 的高度、偏移与 resize/scroll 更新，而不只依赖 `dvh`。[MDN VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport)
+
+本轮仍未连接 iPhone Safari，保留真机验收限制；不承诺所有设备零错误。
+
+### 首轮视觉发布
+
 - 运行时代码提交：`d118b12`（Refine Atelier ordering UI, cooking motion and receipt attribution）。
 - 最终部署：`dpl_8zAmZoznzskdMcoeGyF6N3cSBqUU`，已完成 production promotion。
 - 正式网址：https://dumplinglab-menu.vercel.app/

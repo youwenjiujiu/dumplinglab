@@ -363,7 +363,11 @@ body:after {
   display: flex;
   gap: 12px;
   align-items: center;
+  min-height: 44px;
+  white-space: nowrap;
+  border: 1px solid var(--line);
 }
+.table-button.needs-table { color: var(--red); }
 .table-button b {
   color: var(--red);
   font-weight: 500;
@@ -1128,12 +1132,21 @@ dialog[open] {
   color: #67645f;
 }
 .close-button {
-  width: 42px;
-  height: 42px;
-  font-size: 27px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  font-size: 20px;
   color: var(--ink);
   font-weight: 300;
 }
+.close-button .icon { width: 18px; height: 18px; stroke-width: 1.6; }
+.close-button:focus-visible { outline-offset: 0; }
+html[data-input-mode="pointer"] .close-button:focus,
+html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
 .sheet-content {
   padding: 26px 26px 32px;
 }
@@ -1907,9 +1920,8 @@ dialog[open] {
   .workspace {
     padding-inline: 8px;
   }
-  .table-button span {
-    display: none;
-  }
+  .brand img { width: 94px; }
+  .table-button { padding-inline: 8px; gap: 5px; }
   .featured .dish-name {
     font-size: 23px;
   }

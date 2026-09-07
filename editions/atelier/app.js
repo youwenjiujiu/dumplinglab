@@ -108,6 +108,7 @@ const styleName = s => tr(s,styleEnglish(s));
 const styleHTML = s => bi(s,styleEnglish(s));
 const categories = SECTIONS.filter((id) => id === "recommended" || MENU.some((d) => d.section === id));
 const icons = {
+  close: '<path d="m4 4 16 16M20 4 4 20"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
   grid: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
   bell: '<path d="M5 17h14M7 17v-6a5 5 0 0 1 10 0v6M10 21h4M12 3v3"/>',
@@ -234,7 +235,7 @@ function openModal(type, eyebrow) {
   disposeTableScene();
   if (!$("#sheet").open) lastFocus = document.activeElement;
   modal = type;
-  $("#closeSheet").textContent = "×";
+  $("#closeSheet").innerHTML = icon("close");
   $("#closeSheet").ariaLabel = tr("关闭", "Close");
   if (type !== "cart") document.body.classList.remove("viewing-table");
   $("#sheet").dataset.mode = type;
@@ -257,11 +258,32 @@ function closeModal(options = {}) {
   modal = null;
   delete $("#sheet").dataset.mode;
   review = null;
-  document.body.style.overflow = "";
+  document.body.style.overflow = document.body.classList.contains("search-open") ? "hidden" : "";
   if (lastFocus?.isConnected) lastFocus.focus({ preventScroll: true });
   if (!options.fromHistory) sheetNavigation.closed();
 }
 $("#closeSheet").onclick = closeModal;
+// Safari can mark programmatically focused controls as focus-visible after a tap.
+// Keep keyboard focus feedback, but do not draw it for touch/pointer navigation.
+document.addEventListener("pointerdown", () => { document.documentElement.dataset.inputMode = "pointer"; }, true);
+document.addEventListener("keydown", (e) => {
+  if (!["Shift", "Control", "Alt", "Meta"].includes(e.key)) document.documentElement.dataset.inputMode = "keyboard";
+}, true);
+function syncVisibleViewport() {
+  const viewport = window.visualViewport;
+  if (!viewport) return;
+  const root = document.documentElement;
+  root.style.setProperty("--visible-height", `${viewport.height}px`);
+  root.style.setProperty("--visible-top", `${viewport.offsetTop}px`);
+  const editing = document.activeElement?.matches?.("input, textarea, [contenteditable=true]");
+  root.classList.toggle("keyboard-open", Boolean(editing && viewport.scale < 1.1 && window.innerHeight - viewport.height > 100));
+}
+window.visualViewport?.addEventListener("resize", syncVisibleViewport);
+window.visualViewport?.addEventListener("scroll", syncVisibleViewport);
+window.addEventListener("resize", syncVisibleViewport);
+document.addEventListener("focusin", syncVisibleViewport);
+document.addEventListener("focusout", () => requestAnimationFrame(syncVisibleViewport));
+syncVisibleViewport();
 $("#sheet").addEventListener("cancel", (e) => {
   e.preventDefault();
   closeModal();
@@ -314,6 +336,7 @@ function setActive(c) {
     });
 }
 function jump(c) {
+  if (document.body.classList.contains("search-open")) cancelSearch();
   clearTimeout(searchTimer);
   searchComposing = false;
   if (search || filter !== "all") {
@@ -357,7 +380,29 @@ function matches(d) {
     (filter !== "noPork" || (d.meat && d.meat !== "pork") || d.veg)
   );
 }
+function searchEntries() {
+  const entries = new Map(MENU.filter(matches).map(d => [d.id, { d }]));
+  for (const r of LUNCH_RECOMMENDATIONS.filter(matches)) {
+    const key = r.noodles ? `${r.dishId}:noodles` : r.dishId || r.id;
+    if (!entries.has(key)) entries.set(key, { d: r, recommendation: true });
+  }
+  return [...entries.values()];
+}
+function renderSearchResults() {
+  const entries = searchEntries();
+  observer?.disconnect();
+  $("#menuList").innerHTML = `<section class="search-results" aria-label="${tr("搜索结果", "Search results")}">${entries.map(({d,recommendation}) => {
+    const attribute = recommendation ? `data-recommendation="${d.id}"` : `data-dish="${d.id}"`;
+    return `<article class="search-result"><button class="search-result-open" ${attribute}><img src="${photo(d,"s",recommendation ? undefined : d.styles?.[0])}" alt="" loading="lazy"><span><strong>${dishNameHTML(d)}</strong><small>${recommendation ? fromPrice(LunchMenu.recommendationPrice(d)) : d.variants ? fromPrice(d.price) : money(d.price)}</small></span><span class="search-result-arrow" aria-hidden="true">›</span></button></article>`;
+  }).join("") || `<div class="empty-state"><h3>${bi("没有找到菜品", "No matching dishes")}</h3></div>`}</section>`;
+  $("#searchSummary").hidden = false;
+  const conditions = [search ? `“${search}”` : "", filter === "veg" ? tr("素食", "Vegetarian") : ""].filter(Boolean);
+  conditions.push(tr(`${entries.length} 道菜`, `${entries.length} dishes`));
+  setBilingual($("#searchSummaryText"), conditions.join(" · "));
+  $("#clearSearch").disabled = !$("#searchInput").value;
+}
 function renderMenu() {
+  if (!$("#searchPanel").hidden || search || filter !== "all") { renderSearchResults(); return; }
   const browsing = !search && filter === "all";
   $("#menuList").innerHTML =
     categories
@@ -386,14 +431,8 @@ function renderMenu() {
     { rootMargin: "-145px 0px -55% 0px", threshold: 0 },
   );
   $$(".menu-section").forEach((s) => observer.observe(s));
-  const summary = $("#searchSummary");
-  summary.hidden = browsing;
-  const filterLabel = {
-    all: "", veg: tr("素食", "Vegetarian"), mild: tr("不辣", "Not spicy"), noPork: tr("不含猪肉", "No pork"),
-  }[filter];
-  const conditions = [search ? `“${search}”` : "", filterLabel].filter(Boolean).join(" · ");
-  const found = MENU.filter(matches).length + LUNCH_RECOMMENDATIONS.filter(matches).length;
-  setBilingual($("#searchSummaryText"), browsing ? "" : `${conditions} · ${tr(`${found} 道菜`, `${found} dishes`)}`);
+  $("#searchSummary").hidden = true;
+  $("#searchSummaryText").textContent = "";
   $("#clearSearch").disabled = !$("#searchInput").value;
 }
 function renderChrome() {
@@ -415,7 +454,11 @@ function renderChrome() {
     "A new perspective · Explore in 3D",
   ));
   $("#tableButton").innerHTML =
-    `<span lang="en">Table</span><b>${table || "—"}</b><span>⌄</span>`;
+    table ? `<span lang="en">Table</span><b>${escapeHTML(table)}</b>` : `<span>${tr("选择桌号", "Set table")}</span>`;
+  $("#tableButton").classList.toggle("needs-table", !table);
+  $("#tableButton").ariaLabel = table ? tr(`桌号 ${table}，查看同桌与拼桌`, `Table ${table}, view table and groups`) : tr("选择桌号", "Set your table number");
+  $("#tableButton").setAttribute("aria-haspopup", "dialog");
+  $("#tableButton").setAttribute("aria-controls", "sheet");
   $("#connectionButton").innerHTML =
     `<span class="status-dot ${store.status}"></span>${bilingualText(statusCopy())}${table && group !== "A" ? " · " + group : ""}`;
   $("#planButton").innerHTML =
@@ -431,6 +474,8 @@ function renderChrome() {
   $("#searchButton").setAttribute("aria-expanded", String(!$("#searchPanel").hidden));
   $("#searchInput").setAttribute("aria-label", tr("搜索菜名、食材", "Search dishes or ingredients"));
   $("#clearSearch").ariaLabel = tr("清除搜索文字", "Clear search text");
+  $("#clearSearch").innerHTML = icon("close");
+  $("#cancelSearch").textContent = tr("取消", "Cancel");
   setBilingual($("#resetSearchFilters"), tr("清除", "Clear"));
   $("#resetSearchFilters").ariaLabel = tr("清除搜索和筛选", "Clear search and filters");
   $("#searchIcon").innerHTML = icon("search");
@@ -813,7 +858,7 @@ function showTable(forReview = false) {
   openModal("table", "DUMPLING LAB / TOGETHER");
   if (!table) {
     $("#sheetBody").innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${bi("确认桌号", "Choose your table")}</h2><p class="sheet-intro">${bi("填写桌牌上的桌号，或扫描桌上的点餐二维码。", "Enter the number on your table, or scan its ordering QR code.")}</p><form id="tableEntryForm" class="nickname-form" data-review="${forReview}"><label for="tableEntry">${bi("桌号", "Table number")}</label><input id="tableEntry" name="table" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="${tr("例如 A1", "e.g. A1")}" aria-describedby="tableEntryError"><p id="tableEntryError" role="alert"></p><button class="primary" type="submit">${bi(forReview ? "确认桌号，继续核对订单" : "确认桌号", forReview ? "Continue to order review" : "Confirm table")}</button></form><p class="fineprint">${bi("选好的菜会保留。无需填写姓名。", "Your picks are kept. No name required.")}</p></div>`;
-    $("#tableEntry").focus({ preventScroll: true });
+    // Let the guest read the form before opening the software keyboard.
     return;
   }
   $("#sheetBody").innerHTML =
@@ -939,7 +984,8 @@ document.addEventListener("click", async (e) => {
     const origin =
       b.querySelector("img") &&
       globalThis.TableMotion?.rect(b.querySelector("img"));
-    openDish(dish(b.dataset.dish));
+    const selectedDish = dish(b.dataset.dish);
+    openDish(selectedDish, b.classList.contains("search-result-open") ? selectedDish.styles?.[0] : null);
     const image = $(".detail-image img");
     if (origin && image) {
       image.dataset.motionKey = "opened-dish";
@@ -1252,19 +1298,35 @@ $("#trayPictures").addEventListener("keydown", (event) => {
   trayGesture = null;
   openTray();
 });
-$("#tableButton").onclick = showTable;
-$("#connectionButton").onclick = showTable;
+$("#tableButton").onclick = () => showTable();
+$("#connectionButton").onclick = () => showTable();
 $("#planButton").onclick = showPlanner;
 $("#serviceButton").onclick = showService;
 $("#searchButton").onclick = () => {
-  const panel = $("#searchPanel");
-  panel.hidden = !panel.hidden;
-  $("#searchButton").setAttribute("aria-expanded", String(!panel.hidden));
-  if (!panel.hidden) {
-    $("#searchInput").focus();
-    panel.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-  }
+  if (!$("#searchPanel").hidden) { cancelSearch(); return; }
+  $("#searchPanel").hidden = false;
+  document.body.classList.add("search-open");
+  document.body.style.overflow = "hidden";
+  $("#searchButton").setAttribute("aria-expanded", "true");
+  renderMenu();
+  $("#main").scrollTop = 0;
+  $("#searchInput").focus({ preventScroll: true });
 };
+function cancelSearch() {
+  clearTimeout(searchTimer);
+  searchComposing = false;
+  search = "";
+  filter = "all";
+  $("#searchInput").value = "";
+  $("#searchInput").blur();
+  $("#searchPanel").hidden = true;
+  document.body.classList.remove("search-open");
+  document.body.style.overflow = $("#sheet").open ? "hidden" : "";
+  $("#searchButton").setAttribute("aria-expanded", "false");
+  renderFilters(); renderMenu();
+  $("#searchButton").focus({ preventScroll: true });
+}
+$("#cancelSearch").onclick = cancelSearch;
 let searchTimer, searchComposing = false;
 function scheduleSearch() {
   clearTimeout(searchTimer);
@@ -1282,11 +1344,16 @@ $("#searchInput").oninput = (e) => {
 $("#searchInput").addEventListener("compositionstart", () => { searchComposing = true; clearTimeout(searchTimer); });
 $("#searchInput").addEventListener("compositionend", () => { searchComposing = false; scheduleSearch(); });
 $("#searchInput").addEventListener("keydown", (e) => {
-  if (e.key !== "Escape" || e.isComposing || searchComposing) return;
+  if (e.isComposing || searchComposing) return;
+  if (e.key === "Enter") {
+    e.preventDefault(); clearTimeout(searchTimer);
+    search = $("#searchInput").value.trim(); renderMenu();
+    $("#searchInput").blur();
+    return;
+  }
+  if (e.key !== "Escape") return;
   e.preventDefault();
-  $("#searchPanel").hidden = true;
-  $("#searchButton").setAttribute("aria-expanded", "false");
-  $("#searchButton").focus();
+  cancelSearch();
 });
 $("#clearSearch").onclick = () => {
   clearTimeout(searchTimer);
