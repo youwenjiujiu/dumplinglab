@@ -1,5 +1,21 @@
 # Stripe pre-opening preparation — 2026-09-08
 
+## Checkout recovery hotfix — 2026-09-08
+
+Source `818fd42` deployed as `dpl_Fum8tPCTLVy5FwRHU5tKu7DEQ7BZ` and promoted
+to the existing public URL. Owned pending payments resume before draft flushes;
+other devices read the group lock before attempting checkout. Lock conflicts
+carry the safe `PAYMENT_PENDING` code without exposing payment credentials.
+Failed loading is replaced by explicit recovery actions. A losing reservation
+request is not retained as a payment owner. Cart polling continues after a
+blocked edit so later unlocks are visible; drafts are preserved. Payer-initiated
+cancellation refreshes the group lock before editing or adding items.
+
+All 14 service/VM/isolated HTTP suites passed, including checkout recovery cases;
+the release package passed and staged/public UI bytes were verified. No browser
+or real-payment confirmation was performed. Existing live Stripe settings were
+unchanged. The customer's pending payment was not cancelled or modified.
+
 ## Live activation follow-up — current work
 
 The merchant subsequently explicitly requested the shared **live** Stripe
