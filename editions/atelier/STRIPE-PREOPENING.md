@@ -31,7 +31,24 @@ charge, refund or synthetic paid callback has been submitted. Local port 7898
 remains a deliberately simulated environment; use the production URL for live
 payment, never copy live keys into the preview server.
 
-Live rollout status will be recorded after deployment verification.
+Live rollout completed on 2026-09-08:
+
+- Source commit: `a6e4532`.
+- Deployment: `dpl_J2don1X6FmKDbucTSpMyzsuyMUM6`, promoted to
+  `https://dumplinglab-menu.vercel.app`.
+- `DL_PAYMENTS_ENABLED=true`, `DL_GST_REGISTERED=true`, and the confirmed
+  pickup location were saved in Production and read back for equality.
+- Shared live public/secret keys were checked against comedy in memory.
+- Restaurant webhook `we_1UDJzqDn9TOajD4ln9NsvK0T` is now **enabled**.
+  The two existing endpoints were compared before/after and were unchanged.
+- Protected staged and public frontend bytes matched the exact release;
+  `/api/online` reports `preview=false`, dine-in/pickup enabled, delivery
+  disabled, live public key and the confirmed location. Anonymous staff feed
+  returns 401; webhook GET returns 405; staff page loads.
+- No real payment, Stripe Session creation, wallet confirmation or paid webhook
+  delivery was exercised. These checks do not prove a completed live payment.
+
+Everything below records the earlier preparation state, before this activation.
 
 ## Scope and current state
 
