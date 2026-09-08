@@ -106,6 +106,8 @@ assert(!paid.calls.some(c=>c.input?.action==='checkout'));
 const expired=fixture({own:true,expired:true,draft:true});await expired.open();
 assert.equal(expired.owner.order,null);assert.equal(expired.owner.pending.length,1);
 assert(!expired.calls.some(c=>c.input?.action==='checkout'));
+const expiring=fixture({own:true,expired:true});expiring.owner.paymentPolling=true;await expiring.open();
+assert.match(expiring.root.innerHTML,/付款已过期/);assert(!expiring.root.innerHTML.includes('付款已完成'));
 
 // A blocked flush must not suppress GET polling forever (real TableCart code).
 const cache=new Map();let isLocked=true,gets=0;

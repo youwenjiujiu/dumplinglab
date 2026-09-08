@@ -149,7 +149,7 @@ const CheckoutUI = (() => {
       if (view.order.status === 'paid' || view.order.status === 'expired') {
         view.confirmed = view.order.status === 'paid';
         await refresh(owner);
-        if (current(view)) recovery(view, new Error('付款已完成，正在同步订单，请勿重复支付。'));
+        if (current(view)) recovery(view, new Error(view.confirmed ? '付款已完成，正在同步订单，请勿重复支付。' : '付款已过期，请重新确认订单'));
         return;
       }
       view.input.expectedTotal = view.order.total;
