@@ -57,9 +57,11 @@ export function cleanOnline(input, config, now = new Date()) {
     mode: input.mode, table: null, group: null, items, customer, fulfilment,
     note: typeof input.note === 'string' ? input.note.trim().slice(0, 240) : '', ...pricing };
 }
+export const preparationState = order => order.collectedAt || order.resolvedAt ? 'collected'
+  : order.readyAt ? 'ready' : order.preparingAt ? 'preparing' : 'received';
 export const publicOrder = order => {
   const { tokenHash: secret, fingerprint, requestFingerprint, sessionId, ...view } = order;
-  return view;
+  return { ...view, ...(order.mode === 'takeaway' && order.status === 'paid' ? { preparationStatus: preparationState(order) } : {}) };
 };
 export function createOnlineService({ storage, payment, checkAddress, config, now = () => new Date() }) {
   const requestFingerprint = input => createHash('sha256').update(JSON.stringify({
@@ -152,6 +154,29 @@ export function createOnlineService({ storage, payment, checkAddress, config, no
       });
     },
     async feed() { return (await storage.all()).filter(o => o.status === 'paid' && !o.resolvedAt).map(publicOrder); },
+    // A pickup credential grants status-only access, not staff authority or PII.
+    // It also lets receipts created before status tracking refresh safely.
+    async progress(id, code) {
+      if (!validId(id)) throw new RequestError('订单编号无效');
+      const order = (await storage.read(id))?.value;
+      checkPickup(order, code);
+      return { id: order.id, preparationStatus: preparationState(order),
+        preparingAt: order.preparingAt || null, readyAt: order.readyAt || null,
+        collectedAt: order.collectedAt || null, resolvedAt: order.resolvedAt || null };
+    },
+    async advance(id, next) {
+      if (!validId(id) || !['preparing', 'ready'].includes(next)) throw new RequestError('无效订单状态');
+      return publicOrder(await mutate(id, order => {
+        if (!order || order.type !== 'order') throw new RequestError('找不到该订单', 404);
+        if (order.mode !== 'takeaway' || order.status !== 'paid') throw new RequestError('仅支持已付款自取订单', 409);
+        const current = preparationState(order);
+        if (current === next) return order; // Safe duplicate/retry, no new timestamp.
+        if ((current === 'received' && next === 'preparing') || (current === 'preparing' && next === 'ready')) {
+          return { ...order, [next === 'preparing' ? 'preparingAt' : 'readyAt']: now().toISOString() };
+        }
+        throw new RequestError('订单状态已更新，请刷新后操作', 409);
+      }));
+    },
     async pickup(id, code, collect = false) {
       if (!validId(id)) throw new RequestError('订单编号无效');
       if (!collect) { const order = (await storage.read(id))?.value; checkPickup(order,code); return publicOrder(order); }

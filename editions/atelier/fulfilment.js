@@ -4,14 +4,36 @@ class OnlineCart extends TableCart {
   constructor(mode) { super(null, 'A', `atelier:online:${mode}`); this.mode = mode; this.status = 'local'; }
   async flush() { this.status = 'local'; }
   start() { this.poll(); this.timer = setInterval(() => this.poll(), 5000); }
+  async refreshProgress() {
+    this.progressSync ||= {};
+    const active = this.orders.filter(o => o.mode === 'takeaway' && !o.collectedAt && !o.resolvedAt);
+    const targets = (active.length ? active : this.orders.filter(o => o.mode === 'takeaway').slice(-1)).slice(-10);
+    await Promise.all(targets.map(async order => {
+      if (!order.pickup?.code) { this.progressSync[order.id] = 'unavailable'; return; }
+      try {
+        const response = await fetch(`/api/online?id=${encodeURIComponent(order.id)}&progress=1`, {
+          headers: { 'x-pickup-code': order.pickup.code }, cache: 'no-store', signal: AbortSignal.timeout(9000),
+        });
+        const out = await response.json();
+        if (!response.ok || !out.ok || out.progress?.id !== order.id ||
+            !['received','preparing','ready','collected'].includes(out.progress.preparationStatus)) throw new Error('Status unavailable');
+        this.remote.orders = this.orders.map(o => o.id === order.id ? { ...o, ...out.progress } : o);
+        this.progressSync[order.id] = 'synced';
+      } catch { this.progressSync[order.id] = 'offline'; }
+    }));
+    this.emit();
+  }
   async poll() {
-    if (!this.order?.requestId || this.polling) return;
+    if (this.polling) return;
     this.polling = true;
     try {
+      if (!this.order?.requestId) { await this.refreshProgress(); return; }
       const res = await fetch(`/api/online?id=${this.order.requestId}`, { headers: { authorization: `Bearer ${this.order.token}` }, cache: 'no-store', signal: AbortSignal.timeout(9000) });
       const out = await res.json();
       if (!res.ok || !out.ok) return;
       if (out.order.status === 'paid') {
+        this.progressSync ||= {};
+        this.progressSync[out.order.id] = 'synced';
         Fulfilment.clearDraft(this.mode);
         this.remote = { items: [], note: '', opIds: [], orders: [...this.orders.filter(o => o.id !== out.order.id), out.order] };
         this.pending = []; this.order = null; this.emit();
@@ -90,7 +112,7 @@ const Fulfilment = (() => {
   const entryText = (zh, en) => `<span class="entry-copy"><span lang="zh-CN">${escapeHTML(zh)}</span><span lang="en" class="entry-en">${escapeHTML(en)}</span></span>`;
   function select() {
     openModal('fulfilment', '');
-    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><img class="entry-art" src="/brand/entry-dinein-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><img class="entry-art" src="/brand/entry-takeaway-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('打包外带','Takeaway')}</strong></button><button data-fulfilment="delivery"><img class="entry-art" src="/brand/entry-delivery-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('外送','Delivery')}</strong></button></div></div>`;
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><img class="entry-art" src="/brand/entry-dinein-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><img class="entry-art" src="/brand/entry-takeaway-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('打包外带','Takeaway')}</strong></button></div></div>`;
     $('#closeSheet').ariaLabel = '关闭 / Close';
     const heading = $('#sheetTitle'); heading.tabIndex = -1; heading.focus({preventScroll:true});
   }
@@ -99,6 +121,8 @@ const Fulfilment = (() => {
     $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('到店用餐','At the restaurant')}</h2><div class="fulfilment-choices"><button data-fulfilment="dinein"><strong>${bi('堂食','Dine-in')}</strong><small>${bi('按桌号下单','Order for your table')}</small></button><button data-fulfilment="takeaway"><strong>${bi('打包自取','Pickup')}</strong><small>${bi('无需桌号','No table number needed')}</small></button></div></div>`;
   }
   function switchTo(next, close = true) {
+    // Preserve old delivery data, but reject retired entry actions before mutation.
+    if (!['dinein', 'takeaway'].includes(next)) return;
     if (next === mode()) { try {localStorage.setItem('atelier-mode',next);} catch {} if (close) closeModal({startMenu:true}); return; }
     if (store.order || submitting) { toast(tr('请先确认上一笔付款或订单状态','Check your pending payment or order first')); return; }
     clearTimeout(noteTimer);
@@ -134,7 +158,35 @@ const Fulfilment = (() => {
   function pickupTicket(order) {
     if (order.mode !== 'takeaway' || order.status !== 'paid' || !order.pickup) return '';
     const p = order.pickup;
-    return `<section class="pickup-ticket" aria-label="${tr('取餐凭证','Pickup ticket')}"><div><span>${bi('取餐号','PICKUP NO.')}</span><strong>${escapeHTML(p.number)}</strong><small>${escapeHTML(p.date)}</small></div><img src="${escapeHTML(p.qr)}" width="160" height="160" alt="${tr('向店员出示此取餐二维码','Show this pickup QR code to staff')}"><p>${order.collectedAt ? bi('已取餐','Collected') : bi('已付款 · 请留意叫号，取餐时出示此码','Paid · Listen for your number and show this code at pickup')}</p></section>`;
+    const stage = order.collectedAt || order.resolvedAt ? 'collected' : order.readyAt ? 'ready' : order.preparingAt ? 'preparing' : 'received';
+    const stages = ['received','preparing','ready','collected'];
+    const labels = [['已下单','Ordered'],['制作中','Preparing'],['待取餐','Ready'],['已取餐','Collected']];
+    // Original brand marks + the user's preferred steaming dumpling pot.
+    // Paper and bag silhouettes are CSS containers for the original marks.
+    // Progress remains server-driven; there is no simulated timing or advancement.
+    const illustrations = [
+      '<i class="progress-order-slip"><em class="progress-slip-logo"></em><em class="progress-slip-items"></em><em class="progress-slip-stamp"></em></i>',
+      '<i class="progress-steam"></i><i class="progress-pot"><em></em><em></em><em></em></i>',
+      '<i class="progress-brand-bag"><em class="progress-bag-lockup"></em><em class="progress-bag-fold"></em></i>',
+      '<i class="progress-seal"></i>',
+    ];
+    const sync = store.progressSync?.[order.id];
+    const note = sync === 'synced' ? bi('状态已更新 · 页面打开时自动刷新','Up to date · Refreshes while this page is open')
+      : sync === 'offline' ? bi('暂时无法更新，显示上次记录。请向店员确认。','Unable to refresh. Showing the last saved status; check with staff.')
+      : sync === 'unavailable' ? bi('此旧订单暂无法同步，请向店员确认。','This older order cannot be refreshed; check with staff.')
+      : bi('正在更新，以下为上次记录…','Refreshing the last saved status…');
+    return `<section class="pickup-ticket" data-pickup-id="${escapeHTML(order.id)}" data-stage="${stage}" aria-label="${tr('取餐凭证','Pickup ticket')}">
+      <div class="pickup-number"><span lang="zh-CN">取餐号</span><small lang="en">PICKUP NUMBER</small><strong>${escapeHTML(p.number)}</strong></div>
+      <ol class="pickup-progress" aria-label="${tr('取餐进度','Order progress')}">${stages.map((s,i)=>`<li class="${i<stages.indexOf(stage)?'is-complete':''}" ${s===stage?'aria-current="step"':''}><span class="progress-art progress-art--${s}" aria-hidden="true">${illustrations[i]}</span><span class="progress-label" lang="zh-CN">${labels[i][0]}</span><small lang="en">${labels[i][1]}</small></li>`).join('')}</ol>
+      <p class="pickup-status" role="status"><b>${stage === 'ready' ? bi('餐已备好，请到柜台取餐','Your order is ready. Please collect at the counter.') : stage === 'preparing' ? bi('正在为您制作，请稍候','We are preparing your order.') : stage === 'collected' ? bi('已取餐，祝您用餐愉快','Collected. Enjoy your meal!') : bi('订单已收到，等待制作','Order received. Waiting to be prepared.')}</b><small>${note}</small></p>
+      ${stage === 'collected' ? `<div class="pickup-code pickup-code--collected"><span>${bi('本单已完成','Order completed')}</span><small>${escapeHTML(p.date)}</small></div>` : `<div class="pickup-code"><img class="pickup-qr" src="${escapeHTML(p.qr)}" width="140" height="140" alt="${tr('向店员出示此取餐二维码','Show this pickup QR code to staff')}"><div><span>${bi('取餐时出示','Show at collection')}</span><small>${bi('取餐号或二维码','Pickup number or QR code')}</small><small>${escapeHTML(p.date)}</small></div></div>`}
+    </section>`;
+  }
+  function refreshTicket() {
+    if (modal !== 'pickup') return;
+    const node = $('#sheetBody .pickup-ticket');
+    const order = store.orders.find(o => o.id === node?.dataset.pickupId);
+    if (node && order) node.outerHTML = pickupTicket(order);
   }
   function renderOnlineReview(input, order) {
     const pickup = order.mode === 'takeaway';
@@ -205,7 +257,7 @@ const Fulfilment = (() => {
   }
   function paid() {
     $('#toast').hidden = true;
-    const order = store.orders.at(-1);
+    const order = store.orders.filter(o => o.mode === 'takeaway' && !o.collectedAt && !o.resolvedAt).at(-1) || store.orders.at(-1);
     if (order?.mode === 'takeaway' && order.pickup) {
       openModal('pickup','');
       $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content pickup-success"><h2 id="sheetTitle" tabindex="-1">${bi('取餐凭证','Your pickup ticket')}</h2>${pickupTicket(order)}<p>${escapeHTML(order.fulfilment.pickupName)}<small class="pickup-location">${escapeHTML(order.fulfilment.pickupAddress)}</small></p><button class="primary" data-action="ordered">${bi('查看订单','View order')}</button></div>`;
@@ -216,13 +268,17 @@ const Fulfilment = (() => {
     stores.set('dinein',store); $('#fulfilmentButton').onclick = select;
     if (!q.get('table')) {
       let selected; try { selected = localStorage.getItem('atelier-mode'); } catch { /* default */ }
-      if (['takeaway','delivery'].includes(selected)) switchTo(selected,false);
+      if (selected === 'takeaway') switchTo(selected,false);
+      else if (selected === 'delivery') {
+        try { localStorage.setItem('atelier-mode', 'dinein'); } catch { /* chooser still opens */ }
+      }
     }
     chrome();
     // Payment returns recover their pending transaction; every normal page/QR
     // entry explicitly offers dine-in/takeaway, even with a saved preference.
     if (q.get('online_order') && remote()) checkout();
     else if (store.order) { if (remote()) checkout(); else showCart(); }
+    else if (remote() && store.orders.some(o => o.mode === 'takeaway' && o.pickup)) paid();
     else select();
   }
   for (const event of ['input','change']) document.addEventListener(event, e => {
@@ -244,5 +300,5 @@ const Fulfilment = (() => {
       finally { submitting = false; b.disabled = false; }
     }
   });
-  return { init, remote, mode, label, chrome, select, checkout, summary, paid, previewPayment, pickupTicket, clearDraft };
+  return { init, remote, mode, label, chrome, select, checkout, summary, paid, previewPayment, pickupTicket, refreshTicket, clearDraft };
 })();

@@ -6,6 +6,8 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const id = req.query?.id;
       if (!id) return json(res, 200, { ok: true, config: onlineConfig() });
+      if (req.query?.progress === '1') return json(res, 200, { ok: true,
+        progress: await onlineService.progress(id, req.headers['x-pickup-code']) });
       const token = String(req.headers.authorization || '').replace(/^Bearer /, '');
       return json(res, 200, { ok: true, order: await onlineService.get(id, token) });
     }

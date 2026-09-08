@@ -133,6 +133,7 @@ createServer(async (req, res) => {
       if (url.pathname === '/api/online') {
         if (req.method === 'GET') {
           const id = url.searchParams.get('id');
+          if (id && url.searchParams.get('progress') === '1') return json(200,{ok:true,progress:await online.progress(id,req.headers['x-pickup-code'])});
           if (id) return json(200,{ok:true,order:await online.get(id,String(req.headers.authorization||'').replace(/^Bearer /,''))});
           return json(200,{ok:true,config:{preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,takeawayEnabled:true,deliveryEnabled:true,deliveryMinimum:100,deliveryRate:0.09,gstRate:0.09,radiusKm:10}});
         }
@@ -268,6 +269,9 @@ createServer(async (req, res) => {
         if (!await online.resolve(input.id)) await transaction(()=>{const e=db.events.find(e=>e.id===input.id);if(e)e.resolvedAt=new Date().toISOString();});
         return json(200,{ok:true});
       }
+      if (url.pathname === '/api/order-status' && req.method === 'POST') {
+        return json(200,{ok:true,order:await online.advance(input.id,input.status)});
+      }
       return json(404, { error: "Unknown endpoint" });
     }
     let path = decodeURIComponent(url.pathname);
@@ -277,6 +281,9 @@ createServer(async (req, res) => {
     const localFiles = new Set([
       "/index.html",
       "/atelier.css",
+      "/restaurant.css",
+      "/photography.js",
+      "/photo-review.html",
       "/app.js",
       "/lunch-ui.js",
       "/cart-store.js",

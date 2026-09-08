@@ -18,12 +18,15 @@ await copy(resolve(here, "generated/table-sharing/developer/web-component/table-
 for (const file of ["menu-data.js", "lunch-archive.js", "lunch-menu.js", "order-pricing.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
 for (const dir of ["api", "server", "img/s", "img/l"]) {
   for (const file of await readdir(resolve(web, dir))) {
+    // Photographer shoot is archived locally, not part of the active menu.
+    if (file.startsWith('shoot-20260908-')) continue;
     if (/^dining-(together|separate)-v[23]\.webp$/.test(file)) continue;
     if (/\.(js|webp)$/.test(file)) await copy(resolve(web, dir, file), `${dir}/${file}`);
   }
 }
 for (const file of ["scto-grotesk-a-regular.woff2", "scto-grotesk-a-medium.woff2"]) await copy(resolve(web, "fonts", file), `fonts/${file}`);
 await copy(resolve(web, "brand/dumpling-lab-primary.png"), "brand/dumpling-lab-primary.png");
+for (const file of ["order-packaging-lockup.svg", "order-complete-seal.svg", "dumpling-symbol.svg"]) await copy(resolve(web, "brand", file), `brand/${file}`);
 for (const file of ["entry-dinein-v1.svg", "entry-takeaway-v1.svg", "entry-delivery-v1.svg", "header-dinein-v1.svg", "header-takeaway-v1.svg", "header-delivery-v1.svg"]) await copy(resolve(web, "brand", file), `brand/${file}`);
 let html = (await readFile(resolve(here, "index.html"), "utf8"))
   .replace('<html lang="zh-CN">', '<html lang="zh-CN" data-environment="production">')

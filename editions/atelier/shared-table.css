@@ -1518,10 +1518,10 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
 .fulfilment-entry h2 .entry-en { margin-top: 3px; font-size: 14px; color: var(--muted); }
 .entry-choices strong .entry-en { color: var(--ink); }
 .entry-choices small .entry-en { font-size: 11px; }
-.entry-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+.entry-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
 .entry-choices button { position: relative; align-items: center; gap: 8px; padding: 6px 8px 22px; border: 0; border-radius: 0; text-align: center; min-width: 0; }
 .entry-choices button + button::before { content: ""; position: absolute; left: 0; top: 30px; bottom: 22px; width: 1px; background: var(--line); }
-.entry-choices .entry-art { display: block; width: 100%; max-width: 238px; height: auto; aspect-ratio: 260 / 220; object-fit: contain; margin-bottom: 8px; pointer-events: none; }
+.entry-choices .entry-art { display: block; width: 100%; max-width: 180px; height: auto; aspect-ratio: 260 / 220; object-fit: contain; margin-bottom: 8px; pointer-events: none; }
 .entry-choices strong { font-size: clamp(15px, 4.3vw, 21px); font-weight: 500; white-space: nowrap; }
 .entry-choices small { max-width: 100%; min-height: 36px; text-wrap: balance; }
 .entry-choices button:hover strong { color: var(--entry-red); }
@@ -1537,16 +1537,75 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
 .delivery-entry { width: 100%; display: flex; align-items: center; justify-content: space-between; min-height: 52px; margin-top: 16px; padding: 12px 2px; border-top: 1px solid var(--line); color: var(--red); font: 400 14px/1.4 var(--sans); }
 .online-policy { color: var(--muted); }
 .pickup-location { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
-.pickup-ticket { display: grid; grid-template-columns: minmax(0,1fr) 140px; align-items: center; gap: 8px 12px; margin: 20px 0; padding: 18px 0; border-block: 1px solid var(--line); }
-.pickup-ticket > div { display: grid; gap: 6px; }
-.pickup-ticket span, .pickup-ticket small { font: 400 12px/1.5 var(--sans); color: var(--muted); }
-.pickup-ticket strong { color: var(--red); font: 500 clamp(30px,9vw,52px)/1.1 var(--sans); overflow-wrap: anywhere; }
-.pickup-ticket img { width: 140px; height: 140px; display: block; }
-.pickup-ticket > p { grid-column: 1 / -1; margin: 8px 0 0; font: 400 12px/1.6 var(--sans); color: var(--muted); }
-.pickup-success h2 { font-size: 24px; }
-.pickup-success .pickup-ticket { margin-top: 12px; padding-block: 24px; }
-.pickup-success .pickup-ticket strong { font-size: clamp(36px,12vw,64px); }
-@media (max-width:360px) { .pickup-ticket { grid-template-columns: minmax(0,1fr) 112px; gap: 8px; } .pickup-ticket img { width:112px; height:112px; } }
+/* Preserve the approved progress design independently of the menu theme. */
+#sheet[data-mode="pickup"] { --ink: #242424; --muted: #686765; --line: #d4d4d1; --red: #bd3023; border-radius: 8px; border-top: 4px solid var(--red); }
+#sheet[data-mode="pickup"] .primary { border-radius: 4px; }
+.pickup-ticket { --ink: #242424; --muted: #686765; --line: #d4d4d1; --progress-red: #bd3023; margin: 20px 0; padding: 26px 0 0; border-top: 1px solid var(--line); font-family: var(--sans); }
+.pickup-ticket .pickup-number { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.pickup-number > span { color: var(--ink); font-size: 13px; font-weight: 500; }
+.pickup-number > small { color: var(--muted); font-size: 10px; letter-spacing: .15em; }
+.pickup-number > strong { max-width: 100%; margin-top: 8px; color: var(--progress-red); font: 500 clamp(44px,12vw,64px)/1.15 var(--sans); letter-spacing: -.035em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pickup-success h2 { font-size: 22px; }
+.pickup-success .pickup-ticket { margin-top: 16px; }
+.pickup-progress { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); list-style: none; margin: 28px 0 0; padding: 0; }
+.pickup-progress li { position: relative; min-width: 0; text-align: center; color: #817d78; font: 400 11px/1.5 var(--sans); }
+.pickup-progress li:not(:last-child)::after { content: ''; position: absolute; top: 38px; left: 82%; width: 36%; border-top: 1px dashed #ccc8c3; }
+.pickup-progress .progress-art { position: relative; display: block; width: min(100%,86px); height: 80px; margin: 0 auto 10px; color: #aaa49d; }
+.pickup-progress .progress-label { display: block; font-size: 13px; }
+.pickup-progress small { display: block; margin-top: 3px; font-size: 10px; white-space: nowrap; }
+.pickup-progress [aria-current="step"] .progress-label { font-weight: 600; }
+.pickup-progress [aria-current="step"], .pickup-progress [aria-current="step"] .progress-art { color: var(--progress-red); }
+.pickup-progress .is-complete::after { border-color: #c59c94; }
+.pickup-progress .progress-art img { display: block; width: 100%; height: 80px; object-fit: contain; filter: grayscale(1); opacity: .48; }
+.pickup-progress [aria-current="step"] .progress-art img { filter: none; opacity: 1; }
+/* Freshly printed branded slip; preparation restores the preferred pot.
+   Bag and completion artwork are deliberately unchanged. */
+.progress-order-slip { --slip-edge: polygon(0 0,100% 0,100% 95%,90% 100%,80% 95%,70% 100%,60% 95%,50% 100%,40% 95%,30% 100%,20% 95%,10% 100%,0 95%); position: absolute; width: 46px; height: 64px; top: 8px; left: calc(50% - 25px); transform: rotate(-7deg); }
+.progress-order-slip::before { content: ''; position: absolute; inset: 0; background: currentColor; clip-path: var(--slip-edge); }
+.progress-order-slip::after { content: ''; position: absolute; inset: 1.4px 1.4px 1.8px; background: white; clip-path: var(--slip-edge); }
+.progress-slip-logo { position: absolute; z-index: 1; top: 8px; left: 6px; width: 34px; height: 12px; background: currentColor; mask: url('/brand/order-packaging-lockup.svg') center / contain no-repeat; }
+.progress-slip-items { position: absolute; z-index: 1; top: 27px; left: 8px; width: 23px; height: 14px; background: repeating-linear-gradient(to bottom,currentColor 0 1.4px,transparent 1.4px 6px); }
+.progress-slip-items::before { content: ''; position: absolute; top: -4px; left: -2px; width: 34px; border-top: 1px dotted currentColor; opacity: .65; }
+.progress-slip-items::after { content: ''; position: absolute; top: 0; left: 28px; width: 4px; height: 14px; background: inherit; }
+.progress-slip-stamp { position: absolute; z-index: 2; width: 26px; height: 26px; right: -8px; bottom: 3px; background: white; border-radius: 50%; transform: rotate(17deg); }
+.progress-slip-stamp::before { content: ''; position: absolute; inset: 0; background: currentColor; mask: url('/brand/order-complete-seal.svg') center / contain no-repeat; }
+.progress-pot { position: absolute; isolation: isolate; width: 49px; height: 29px; left: calc(50% - 24.5px); bottom: 12px; border: 2px solid currentColor; border-radius: 3px 3px 17px 17px; background: #fff; box-shadow: inset 0 -6px 0 #f3efeb; }
+.progress-pot::before { content: ''; position: absolute; width: 61px; height: 10px; top: 3px; left: -8px; border: 2px solid currentColor; border-radius: 5px; z-index: -1; }
+.progress-pot::after { content: ''; position: absolute; inset: -6px -2px auto; height: 11px; border: 2px solid currentColor; border-radius: 50%; background: #fff; }
+.progress-pot em { position: absolute; z-index: 1; width: 13px; height: 16px; top: -11px; background: currentColor; mask: url('/brand/dumpling-symbol.svg') center / contain no-repeat; transform: rotate(75deg); }
+.progress-pot em:nth-child(1) { left: 2px; }
+.progress-pot em:nth-child(2) { left: 16px; top: -14px; }
+.progress-pot em:nth-child(3) { left: 30px; }
+.progress-steam { position: absolute; top: 11px; left: calc(50% - 1px); width: 5px; height: 17px; border-left: 1.5px solid currentColor; border-radius: 50%; }
+.progress-steam::before, .progress-steam::after { content: ''; position: absolute; top: 4px; width: 5px; height: 14px; border-left: 1.5px solid currentColor; border-radius: 50%; }
+.progress-steam::before { left: -14px; }
+.progress-steam::after { left: 12px; }
+.pickup-progress [aria-current="step"] .progress-pot { background: var(--progress-red); box-shadow: none; }
+.progress-brand-bag { position: absolute; width: 55px; height: 49px; top: 24px; left: calc(50% - 27.5px); border: 1px solid currentColor; background: #fff; transform: rotate(-5deg); }
+.progress-brand-bag::before { content: ''; position: absolute; width: 23px; height: 22px; top: -21px; left: 14px; border: 1.5px solid currentColor; border-bottom: 0; border-radius: 11px 11px 0 0; }
+.progress-brand-bag::after { content: ''; position: absolute; top: 0; left: 24px; width: 6px; height: 8px; background: currentColor; }
+.progress-bag-lockup { position: absolute; width: 43px; height: 16px; top: 20px; left: 3px; background: currentColor; mask: url('/brand/order-packaging-lockup.svg') center / contain no-repeat; }
+.progress-bag-fold { position: absolute; inset: 0 0 0 auto; width: 5px; border-left: 1px solid currentColor; background: currentColor; opacity: .16; }
+.progress-seal { position: absolute; width: 62px; height: 62px; top: 9px; left: calc(50% - 31px); background: currentColor; mask: url('/brand/order-complete-seal.svg') center / contain no-repeat; }
+.pickup-status { margin: 22px 0 0; padding: 15px 10px; text-align: center; background: #f8f7f5; }
+.pickup-ticket[data-stage="ready"] .pickup-status { background: #fcf1ed; }
+.pickup-status b { display: block; font-size: 14px; font-weight: 500; line-height: 1.6; color: var(--ink); }
+.pickup-ticket[data-stage="ready"] .pickup-status b { color: var(--progress-red); }
+.pickup-status small { display: block; margin-top: 6px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.pickup-code { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.pickup-code .pickup-qr { display: block; flex-shrink: 0; width: 112px; height: 112px; }
+.pickup-code > div { min-width: 0; }
+.pickup-code span { display: block; color: var(--ink); font-size: 13px; }
+.pickup-code small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.pickup-code--collected { flex-direction: column; gap: 0; }
+@media (max-width:360px) {
+  .pickup-progress .progress-label { font-size: 12px; }
+  .pickup-progress small { font-size: 9px; }
+  .pickup-progress .progress-art { transform: scale(.88); }
+  .pickup-progress li:not(:last-child)::after { left: 90%; width: 20%; }
+  .pickup-code { gap: 12px; }
+  .pickup-code .pickup-qr { width: 96px; height: 96px; }
+}
 .online-fields { display: grid; gap: 18px; margin-top: 24px; }
 .online-field { display: grid; gap: 8px; min-width: 0; font: 400 14px/1.4 var(--sans); }
 .online-field input, .online-field select { width: 100%; min-width: 0; min-height: 48px; border: 1px solid var(--line); border-radius: 6px; padding: 12px; background: #fff; color: var(--ink); font: 400 16px/1.4 var(--sans); }

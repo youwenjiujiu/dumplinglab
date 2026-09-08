@@ -101,11 +101,17 @@ function ensureEmpty(){
   if(!el){ el=document.createElement("div"); el.id="empty"; el.className="empty"; el.innerHTML="等待顾客呼叫与下单…<br><small>把这个页面开在收银台的手机或平板上</small>"; list.append(el); }
 }
 function render(evt){
-  if(!evt.id||seen.has(evt.id)) return false;
+  if(!evt.id) return false;
+  const signature=JSON.stringify(evt), previous=cards.get(evt.id), isNew=!seen.has(evt.id);
+  if(previous?.dataset.signature===signature) return false;
+  const phases=['received','preparing','ready','collected'];
+  if(previous && phases.indexOf(evt.preparationStatus||'received')<phases.indexOf(previous.dataset.phase||'received')) return false;
   seen.add(evt.id); document.getElementById("empty")?.remove();
   const el=document.createElement("div");
   el.className="item "+(evt.type==="call"?"call":"order");
   el.dataset.id=evt.id;
+  el.dataset.signature=signature;
+  el.dataset.phase=evt.preparationStatus||'received';
   const time=new Date(evt.at).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"});
   if(evt.type==="call"){
     el.innerHTML=`<div class="top"><span class="table">${esc(evt.table||"?")} 号桌 · ${esc(evt.group||"A")}组</span><span class="kind call">${evt.reason?`需要：${esc(evt.reason)}`:"呼叫服务员"}</span></div>
@@ -120,24 +126,27 @@ function render(evt){
     el.innerHTML=`<div class="top"><span class="table">${heading}</span><span class="kind order">${online?'已付款 · ':''}新订单 #${esc(evt.no||"")}</span></div>
       <div class="time">${time}</div>
       ${evt.pickup ? `<div class="table">取餐号 ${esc(evt.pickup.number)}</div>` : ''}
+      ${evt.pickup ? `<div class="note">${({received:'等待制作',preparing:'制作中',ready:'可取餐',collected:'已交餐'})[evt.preparationStatus||'received'] || '等待制作'}</div>` : ''}
       ${online?`<div class="note">${evt.fulfilment?.date ? `${esc(evt.fulfilment.date)} · ${esc(evt.fulfilment.slot)}<br>` : ''}${evt.customer?.name ? `${esc(evt.customer.name)} · ${esc(evt.customer.phone)}<br>` : ''}${esc(evt.fulfilment?.pickupAddress || [evt.customer?.address,evt.customer?.unit].filter(Boolean).join(' '))}</div>`:''}
       <div class="lines">${lines}</div>
       ${evt.note?`<div class="note">备注：${esc(evt.note)}</div>`:""}
       ${evt.pricingVersion?`<div class="time">菜品 ${money(evt.subtotal)}${evt.mode==='delivery'?` · 配送费 9% ${money(evt.deliveryFee)}`:''} · GST 9% ${money(evt.gst)}</div>`:''}
       <div class="total">${money(evt.total||0)}</div>
-      <button class="done">${evt.pickup ? '确认已交餐' : '已完成'}</button>`;
+      <button class="done">${evt.pickup ? (evt.preparationStatus==='ready' ? '确认已交餐' : evt.preparationStatus==='preparing' ? '标记可取餐' : '开始制作') : '已完成'}</button>`;
   }
   el.querySelector(".done").onclick=async()=>{
     const button=el.querySelector(".done"), label=button.textContent; button.disabled=true; button.textContent="保存中…";
     try{
-      const res=await staffFetch("/api/resolve",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:evt.id})});
+      const next=evt.pickup && evt.preparationStatus!=='ready' ? (evt.preparationStatus==='preparing'?'ready':'preparing') : null;
+      const res=await staffFetch(next ? '/api/order-status' : '/api/resolve',{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:evt.id,...(next?{status:next}:{})})});
       const out=await res.json().catch(()=>({})); if(!res.ok||!out.ok) throw new Error(out.error||`HTTP ${res.status}`);
-      cards.delete(evt.id); el.classList.add("gone"); setTimeout(()=>{el.remove();ensureEmpty();},400);
+      if(next){ if(cards.has(evt.id)) render(out.order); return; }
+      const current=cards.get(evt.id); cards.delete(evt.id); current?.remove(); ensureEmpty();
     }catch(error){ button.disabled=false; button.textContent=label; stTxt.textContent="未能标记完成"; }
   };
   cards.set(evt.id,el);
-  list.prepend(el);
-  return true;
+  if(previous) previous.replaceWith(el); else list.prepend(el);
+  return isNew;
 }
 
 async function poll(){

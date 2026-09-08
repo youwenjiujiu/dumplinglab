@@ -1,5 +1,13 @@
 # Ordering modes — deployed UI, online checkout not activated
 
+## Local changes pending deployment — 2026-09-07
+
+- Restored the accepted original menu styling. The entry now offers only dine-in and takeaway; retired delivery data is retained, but its entry action is disabled.
+- Paid takeaway orders persist preparation timestamps on the server: received → preparing → ready → collected. Staff explicitly advances the whole order, after confirming all food and drinks are ready. This is not automatic printer/station completion tracking.
+- In the same browser, a saved takeaway receipt reopens with its pickup number and ticket. Active receipts refresh from the server every five seconds and when the page becomes visible or comes online. Offline receipts explicitly show that the status is the last saved record. Browser storage must be retained; cross-device recovery is not implemented.
+- Customer status requests use the existing random pickup credential in a request header and return status/timestamps only. Production status changes require staff authentication. Collected tickets no longer present a pickup QR.
+- `pickup-progress-test.mjs`, `online-service-test.mjs` and `two-mode-entry-test.mjs` pass. These are service/VM tests, not physical-phone acceptance tests. No SMS, background push, automatic printing or live payments have been added. The deployed version described below is unchanged.
+
 Updated 2026-09-07. Source `18ed437` is deployed to https://dumplinglab-menu.vercel.app/ (Vercel deployment `dpl_HDKYeG72Ebn8EZJLvqTa8suXfQwm`, Ready and promoted). The user explicitly authorized deployment. Exact served frontend files were matched to the validated production package. No real payment was performed; merchant configuration still gates online checkout.
 
 ## Current experience

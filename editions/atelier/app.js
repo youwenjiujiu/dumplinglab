@@ -603,6 +603,7 @@ function renderChrome() {
   renderNavigation();
   renderFilters();
   Fulfilment.chrome();
+  Fulfilment.refreshTicket();
 }
 function renderTray() {
   if (removedDish && !undoMatchesCart()) discardUndo();
@@ -1497,6 +1498,7 @@ function onCartChange() {
   if (modal === "cart" && document.activeElement?.id !== "cartNote")
     renderCart();
   Fulfilment.chrome();
+  Fulfilment.refreshTicket();
 }
 store.addEventListener("change", onCartChange);
 $("#languageButton").onclick = () => {

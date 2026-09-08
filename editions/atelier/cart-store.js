@@ -70,6 +70,7 @@ class TableCart extends EventTarget {
       noteConflict: this.noteConflict,
       status: this.status,
       storageAvailable: this.storageAvailable,
+      progressSync: this.progressSync,
     });
     if (signature === this.lastEmission) return;
     this.lastEmission = signature;
