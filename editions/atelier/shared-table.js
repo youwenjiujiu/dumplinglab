@@ -267,6 +267,7 @@ const SharedTable = (() => {
     setBilingual(button, store.order ? tr("查询 / 重试本单", "Check / retry this order") : tr("确认下单", "Place this order"));
   }
   function confirm(order) {
+    if (order.status === 'paid') return Fulfilment.showPaidOrder(order);
     $("#sheetBody").innerHTML =
       `<div class="receipt-page receipt-success"><h2 id="sheetTitle" class="receipt-success-title" tabindex="-1">${bi("点单已提交", "Order submitted")}</h2><dl-receipt-print class="receipt-printer" data-order-id="${escapeHTML(order.id)}">${receipt(order, true)}</dl-receipt-print><button class="primary" data-action="ordered">${bi("查看本桌点单记录", "View our order history")}</button><button class="secondary" data-action="close">${bi("继续点餐", "Keep ordering")}</button></div>`;
     if (order.id && !printedOrderIds.has(order.id)) {

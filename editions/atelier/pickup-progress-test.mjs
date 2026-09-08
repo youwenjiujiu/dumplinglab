@@ -50,6 +50,7 @@ function customer(){
     document:{hidden:false,addEventListener(){}},
     localStorage:{getItem:k=>local.get(k)||null,setItem:(k,v)=>local.set(k,v)},sessionStorage:{getItem:()=>null},
     isLunchItem:()=>true,q:new URLSearchParams(),table:null,group:'A',modal:null,noteTimer:null,noteDraft:null,submitting:false,
+    language:'zh',money:n=>`$${Number(n).toFixed(2)}`,CheckoutUI:{dispose(){},itemsHTML:()=>''},
     tr:(a,b)=>a,bi:(a,b)=>a,escapeHTML:s=>String(s),onCartChange(){},renderChrome(){},renderMenu(){},renderTray(){},
     openModal(type){ctx.modal=type;},closeModal(){ctx.modal=null;},
     $:s=>{if(!elements.has(s))elements.set(s,{focus(){}});return elements.get(s);},

@@ -100,7 +100,7 @@ const Fulfilment = (() => {
   }
   const label = (value = mode()) => ({ dinein: tr('堂食', 'Dine-in'), takeaway: tr('打包自取', 'Pickup'), delivery: tr('外送', 'Delivery') })[value];
   const credentials = () => ({ requestId: crypto.randomUUID(), token: [...crypto.getRandomValues(new Uint8Array(32))].map(v => v.toString(16).padStart(2,'0')).join('') });
-  const summary = order => `<dl class="payment-breakdown"><div><dt>${bi('菜品金额（未税）','Food (before GST)')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}<div><dt>${order.pricingVersion === 'sg-inclusive-gst9-delivery9-v2' ? bi('内含 GST 9%','Included GST 9%') : 'GST 9%'}</dt><dd>${money(order.gst)}</dd></div><div class="payment-total"><dt>${bi('应付总额','Total to pay')}</dt><dd>${money(order.total)}</dd></div></dl>`;
+  const summary = (order, paid = false) => `<dl class="payment-breakdown"><div><dt>${bi('菜品金额（未税）','Food (before GST)')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}<div><dt>${order.pricingVersion === 'sg-inclusive-gst9-delivery9-v2' ? bi('内含 GST 9%','Included GST 9%') : 'GST 9%'}</dt><dd>${money(order.gst)}</dd></div><div class="payment-total"><dt>${paid ? bi('实付金额','Total paid') : bi('应付总额','Total to pay')}</dt><dd>${money(order.total)}</dd></div></dl>`;
   function chrome() {
     const button = $('#fulfilmentButton');
     button.innerHTML = `<img class="fulfilment-mode-icon" src="/brand/header-${mode()}-v1.svg" alt="" width="32" height="28"><span>${escapeHTML(label())}</span><svg class="fulfilment-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>`;
@@ -238,10 +238,24 @@ const Fulfilment = (() => {
     $('#toast').hidden = true;
     const order = store.orders.filter(o => o.mode === 'takeaway' && !o.collectedAt && !o.resolvedAt).at(-1) || store.orders.at(-1);
     if (order?.mode === 'takeaway' && order.pickup) {
-      openModal('pickup','');
-      $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content pickup-success"><h2 id="sheetTitle" tabindex="-1">${bi('取餐凭证','Your pickup ticket')}</h2>${pickupTicket(order)}<p>${escapeHTML(order.fulfilment.pickupName)}<small class="pickup-location">${escapeHTML(order.fulfilment.pickupAddress)}</small></p><button class="primary" data-action="ordered">${bi('查看订单','View order')}</button></div>`;
-      $('#sheetTitle').focus({preventScroll:true});
+      showPaidOrder(order);
     } else showCart('ordered');
+  }
+  function showPaidOrder(order) {
+    // A presentation of the verified snapshot, never a client-side payment or
+    // preparation state. Legacy/unpaid receipts retain their existing renderer.
+    if (order.status !== 'paid') return;
+    const pickup = order.mode === 'takeaway';
+    openModal(pickup ? 'pickup' : 'success', tr('订单详情', 'Order details'));
+    const when = new Date(order.paidAt || order.at || order.createdAt);
+    const time = Number.isNaN(when.getTime()) ? '' : when.toLocaleString(language === 'zh' ? 'zh-CN' : 'en-SG', {timeZone:'Asia/Singapore',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    $('#sheetBody').innerHTML = `<div class="order-result ${pickup ? 'pickup-success' : 'dinein-success'}"><h2 id="sheetTitle" class="sr-only" tabindex="-1">${bi('订单详情', 'Order details')}</h2><div class="order-result-scroll">
+      ${pickup ? pickupTicket(order) : `<section class="dinein-paid"><img src="/brand/order-complete-seal.svg" alt="" width="42" height="42"><p class="eyebrow">${bi('已付款 · 堂食桌号', 'PAID · TABLE')}</p><strong>${escapeHTML(order.table || '')}</strong><p>${bi('订单已发送至门店，请在座位稍候', 'Your order has been sent. Please wait at your table.')}</p></section>`}
+      <section class="checkout-block"><h3>${pickup ? escapeHTML(order.fulfilment?.pickupName || 'Dumpling Lab') : 'Dumpling Lab'}</h3>${pickup ? `<p class="pickup-location">${escapeHTML(order.fulfilment?.pickupAddress || '')}</p>` : ''}<div class="checkout-lines">${CheckoutUI.itemsHTML(order)}</div>${order.note ? `<p class="checkout-note">${bi('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}</section>
+      <section class="checkout-block checkout-totals"><h3>${bi('付款明细', 'Payment details')}</h3>${summary(order, true)}</section>
+      <section class="checkout-block"><dl class="order-result-meta">${time ? `<div><dt>${bi('付款时间', 'Payment time')}</dt><dd>${escapeHTML(time)}</dd></div>` : ''}<div><dt>${bi('订单编号', 'Order number')}</dt><dd>${escapeHTML(order.no || order.id)}</dd></div><div><dt>${bi('用餐方式', 'Order type')}</dt><dd>${escapeHTML(label(order.mode))}${pickup ? '' : ` · ${escapeHTML(order.table)} / ${escapeHTML(order.group)}`}</dd></div></dl></section>
+      </div><footer class="order-result-footer"><button class="primary" data-action="ordered">${bi('查看全部订单', 'View all orders')}</button></footer></div>`;
+    $('#sheetTitle').focus({preventScroll:true});
   }
   function init() {
     stores.set('dinein',store); $('#fulfilmentButton').onclick = select;
@@ -279,5 +293,5 @@ const Fulfilment = (() => {
       finally { submitting = false; b.disabled = false; }
     }
   });
-  return { init, remote, mode, label, chrome, select, checkout, summary, paid, previewPayment, pickupTicket, refreshTicket, clearDraft };
+  return { init, remote, mode, label, chrome, select, checkout, summary, paid, showPaidOrder, previewPayment, pickupTicket, refreshTicket, clearDraft };
 })();

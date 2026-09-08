@@ -10,7 +10,7 @@ const config=await fetch(`${origin}/api/online`,{signal:AbortSignal.timeout(5000
 if(config.config?.preview!==true)throw Error('Refusing QA: local simulated preview is required.');
 const suites=process.argv.includes('--no-browser')?[
   'gst-inclusive-test.mjs','error-copy-test.mjs','lunch-test.mjs','online-service-test.mjs','table-entry-test.mjs','production-test.mjs',
-  'stripe-setup-test.mjs','paid-checkout-test.mjs','checkout-http-test.mjs','checkout-ui-test.mjs','checkout-recovery-test.mjs','pickup-progress-test.mjs','two-mode-entry-test.mjs','order-progress-design-test.mjs',
+  'stripe-setup-test.mjs','paid-checkout-test.mjs','checkout-http-test.mjs','checkout-ui-test.mjs','checkout-recovery-test.mjs','checkout-design-test.mjs','pickup-progress-test.mjs','two-mode-entry-test.mjs','order-progress-design-test.mjs',
 ]:browserEngine==='webkit'?[
   'menu-layout-restoration-test.mjs','entry-brand-browser-test.mjs','form-layout-browser-test.mjs',
   'navigation-draft-browser-test.mjs','cart-input-browser-test.mjs','fulfilment-browser-test.mjs',

@@ -347,7 +347,7 @@ function syncVisibleViewport() {
   const root = document.documentElement;
   root.style.setProperty("--visible-height", `${viewport.height}px`);
   root.style.setProperty("--visible-top", `${viewport.offsetTop}px`);
-  const editing = document.activeElement?.matches?.('input:not([type="checkbox"]):not([type="radio"]):not([readonly]), textarea, [contenteditable=true]');
+  const editing = document.activeElement?.matches?.('input:not([type="checkbox"]):not([type="radio"]):not([readonly]), textarea, [contenteditable=true], [data-payment-element] iframe');
   const obscured = viewport.scale < 1.1 && window.innerHeight - viewport.height > 100;
   // Keep the keyboard layout through pointer-down → blur → click. Moving the
   // sheet on blur can put the pressed button elsewhere before the tap completes.
@@ -355,8 +355,8 @@ function syncVisibleViewport() {
   if (root.classList.contains("keyboard-open") && $("#sheet").contains(document.activeElement)) {
     requestAnimationFrame(() => {
       const input = document.activeElement;
-      if (!input?.matches?.("input, textarea")) return;
-      const scroller = input.closest(".cart-scroll") || $("#sheet");
+      if (!input?.matches?.("input, textarea, [data-payment-element] iframe")) return;
+      const scroller = input.closest(".cart-scroll, .checkout-scroll") || $("#sheet");
       const r = input.getBoundingClientRect(), frame = scroller.getBoundingClientRect();
       const top = Math.max(frame.top, viewport.offsetTop) + 64;
       const bottom = Math.min(frame.bottom, viewport.offsetTop + viewport.height) - 16;
