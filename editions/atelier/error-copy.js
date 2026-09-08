@@ -1,6 +1,14 @@
 // Presentation only: never change status codes, pending payments or retry keys.
 (() => {
   const pairs = [
+    ['本组正在付款，请完成或取消付款后再修改菜品。', 'This group has a pending payment. Complete or cancel it before editing the dishes.'],
+    ['本组正在付款，请等待付款确认。', 'This group has a pending payment. Please wait for confirmation.'],
+    ['同桌正在支付本单，请勿重复付款。', 'Someone is paying for this group. Please do not pay again.'],
+    ['本组有未完成的付款。请在发起付款的原设备和浏览器继续，或在那里取消付款后再试。', 'This group has a pending payment. Continue in the original device and browser, or cancel it there before retrying.'],
+    ['旧订单需要先核实，请联系店员', 'Please ask staff to check the previous order'],
+    ['付款已完成，正在同步订单，请勿重复支付。', 'Payment is complete. Your order is syncing. Please do not pay again.'],
+    ['请先处理备注冲突', 'Resolve the note conflict first'],
+    ['订单同步未完成，请重新检查。', 'Your order has not finished syncing. Please check again.'],
     ['此地址超出 10 km 配送范围', 'This address is outside our 10 km delivery area.'],
     ['配送菜品小计需满 $100（未税，不含配送费）', 'Delivery requires at least $100 of food before GST, excluding the delivery fee.'],
     ['请选择有效的预订日期和时段；次日订单前晚 21:00 截止', 'Choose an available date and time. Next-day orders close at 9 pm Singapore time.'],

@@ -17,5 +17,5 @@ export function method(res, allowed) {
 export function fail(res, error) {
   const expected = error instanceof RequestError || error instanceof StorageUnavailableError || error instanceof StaffAuthError || (error.status >= 400 && error.status < 500);
   if (!expected) console.error(error);
-  return json(res, error.status || 500, { error: expected ? error.message : "服务暂时不可用，请稍后重试", ...(error.code === "NOTE_CONFLICT" ? { code: error.code, cart: error.cart } : {}) });
+  return json(res, error.status || 500, { error: expected ? error.message : "服务暂时不可用，请稍后重试", ...(error.code === 'PAYMENT_PENDING' ? { code: error.code } : {}), ...(error.code === "NOTE_CONFLICT" ? { code: error.code, cart: error.cart } : {}) });
 }

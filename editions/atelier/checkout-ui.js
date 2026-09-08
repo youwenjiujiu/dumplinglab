@@ -4,6 +4,36 @@ const CheckoutUI = (() => {
   const freshCredentials = () => ({ requestId: crypto.randomUUID(), token: [...crypto.getRandomValues(new Uint8Array(32))].map(v => v.toString(16).padStart(2, '0')).join('') });
   const current = view => active === view && view.node.isConnected && store === view.owner;
   function error(view, message) { if (current(view)) view.node.querySelector('[data-checkout-error]').textContent = message; }
+  const locked = e => e?.code === 'PAYMENT_PENDING' || /本组正在付款|同桌正在支付本单/.test(e?.message || '');
+  const pendingError = () => Object.assign(new Error('本组有未完成的付款。请在发起付款的原设备和浏览器继续，或在那里取消付款后再试。'), { code: 'PAYMENT_PENDING' });
+  function recovery(view, problem) {
+    if (!current(view)) return;
+    view.element?.destroy(); view.element = null; view.actions = null;
+    const own = Boolean(view.owner.order?.token), blocked = locked(problem);
+    const message = blocked ? errorText(pendingError()) : errorText(problem);
+    view.node.innerHTML = `<header class="checkout-heading"><h2 id="sheetTitle">${blocked ? bi('本组有待付款订单', 'Payment pending') : bi('暂时无法继续', 'Unable to continue')}</h2></header>
+      <p class="field-error" data-checkout-error role="alert">${escapeHTML(message)}</p>
+      <p class="fineprint">${bi('已选菜品与付款凭证会保留，请勿重复付款。', 'Your selection and payment access are retained. Please do not pay twice.')}</p>
+      <button class="primary" type="button" data-checkout-retry>${own ? bi('检查并继续原付款', 'Check & resume payment') : bi('重新检查', 'Check again')}</button>
+      ${own && !view.confirmed ? `<button class="online-back" type="button" data-checkout-edit>${bi('取消原付款并修改菜品', 'Cancel payment & edit order')}</button>` : ''}
+      <button class="online-back" type="button" data-checkout-back>${bi('返回菜单', 'Back to menu')}</button>`;
+  }
+  async function readCart(owner) {
+    const out = await owner.api(`/api/cart?table=${encodeURIComponent(owner.table)}&group=${encodeURIComponent(owner.group)}`);
+    owner.remote = out.cart;
+    if (owner.order && !owner.order.token && out.cart.orders?.some(o => o.id === owner.order.requestId)) owner.order = null;
+    owner.emit();
+    return out.cart;
+  }
+  async function sendCheckout(owner, request) {
+    try { return await owner.api('/api/online', { ...request, action: 'checkout' }); }
+    catch (e) {
+      // PAYMENT_PENDING is raised before this request is reserved or persisted.
+      // Do not retain a losing request as if it owned the other payer's session.
+      if (locked(e) && owner.order?.requestId === request.requestId) { owner.order = null; owner.emit(); }
+      throw e;
+    }
+  }
   function dispose() {
     active?.element?.destroy();
     active = null;
@@ -42,7 +72,7 @@ const CheckoutUI = (() => {
       if (!owner.storageAvailable) { owner.order = null; throw new Error(tr('请允许网站存储以保留付款凭证', 'Allow storage to retain payment access')); }
     }
     const request = owner.order;
-    const out = await owner.api('/api/online', request);
+    const out = await sendCheckout(owner, request);
     if (owner.order !== request) return;
     owner.emit();
     if (out.order.status === 'paid') { await refresh(owner); return; }
@@ -77,18 +107,27 @@ const CheckoutUI = (() => {
     const owner = store;
     clearTimeout(noteTimer);
     const note = $('#cartNote');
-    if (note && note.value !== owner.note) owner.mutate({ kind: 'note', note: note.value });
-    noteDraft = null;
+    const editedNote = note?.value;
     openModal('online', '');
     $('#sheetBody').innerHTML = `<div class="sheet-content checkout-page"><h2 id="sheetTitle">${bi('确认订单', 'Your order')}</h2><p role="status">${bi('正在核对订单…', 'Checking your order…')}</p><p class="field-error" data-checkout-error role="alert"></p></div>`;
-    const view = active = { owner, node: $('#sheetBody').firstElementChild, busy: false };
+    const view = active = { owner, node: $('#sheetBody').firstElementChild, busy: true };
     try {
-      await owner.flush(); await owner.poll();
-      if (!current(view)) return;
-      if (owner.noteConflict) throw new Error(tr('请先处理备注冲突', 'Resolve the note conflict first'));
+      const dining = Fulfilment.mode() === 'dinein';
+      // Resume the exact owned payment BEFORE flushing drafts: its reservation
+      // intentionally rejects edits until payment completes or is cancelled.
+      if (!owner.order?.token) {
+        if (dining && (await readCart(owner)).paymentPending) throw pendingError();
+        if (!current(view)) return;
+        if (editedNote !== undefined && editedNote !== owner.note && !owner.order) owner.mutate({ kind: 'note', note: editedNote });
+        noteDraft = null;
+        await owner.flush();
+        if (dining && (await readCart(owner)).paymentPending) throw pendingError();
+        if (!current(view)) return;
+        if (owner.pending?.length) throw new Error('订单同步未完成，请重新检查。');
+        if (owner.noteConflict) throw new Error(tr('请先处理备注冲突', 'Resolve the note conflict first'));
+      }
       view.config = (await owner.api('/api/online')).config;
       if (!current(view)) return;
-      const dining = Fulfilment.mode() === 'dinein';
       view.enabled = dining ? view.config.dineinEnabled : view.config.takeawayEnabled;
       if (owner.order && !owner.order.token) throw new Error(tr('旧订单需要先核实，请联系店员', 'Please ask staff to check the previous order'));
       if (!owner.order && !owner.items.length) return showCart();
@@ -102,18 +141,25 @@ const CheckoutUI = (() => {
         try { result = await readPayment(owner); }
         catch (e) {
           if (e.status !== 404) throw e;
-          result = await owner.api('/api/online', { ...owner.order, action: 'checkout' });
+          result = await sendCheckout(owner, owner.order);
         }
       } else result = await owner.api('/api/online', { ...view.input, action: 'quote' });
       view.order = result.order;
       if (!current(view)) return;
+      if (view.order.status === 'paid' || view.order.status === 'expired') {
+        view.confirmed = view.order.status === 'paid';
+        await refresh(owner);
+        if (current(view)) recovery(view, new Error('付款已完成，正在同步订单，请勿重复支付。'));
+        return;
+      }
       view.input.expectedTotal = view.order.total;
       draw(view);
       if (view.enabled) {
         view.busy = true;
         try { await prepare(view); } finally { view.busy = false; }
       }
-    } catch (e) { error(view, errorText(e)); }
+    } catch (e) { recovery(view, e); }
+    finally { view.busy = false; }
   }
   async function readPayment(owner) {
     const pending = owner.order;
@@ -150,12 +196,14 @@ const CheckoutUI = (() => {
     else { dispose(); showCart(); }
   }
   document.addEventListener('click', async e => {
-    const button = e.target.closest('[data-checkout-pay], [data-checkout-edit], [data-checkout-addon]');
+    const button = e.target.closest('[data-checkout-pay], [data-checkout-edit], [data-checkout-addon], [data-checkout-retry], [data-checkout-back]');
     const view = active;
     if (!button || !view || !current(view) || view.busy) return;
     view.busy = true; button.disabled = true;
     error(view, '');
     try {
+      if (button.hasAttribute('data-checkout-back')) { closeModal(); return; }
+      if (button.hasAttribute('data-checkout-retry')) { await open(); return; }
       if (button.hasAttribute('data-checkout-pay')) {
         if (view.config.preview && !production) {
           await view.owner.api('/api/online', { ...view.owner.order, action: 'preview-pay' });

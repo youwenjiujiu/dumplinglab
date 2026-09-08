@@ -8,6 +8,7 @@ import { cleanNickname, contributorsFor } from "./cart-meta.js";
 export const TABLE_STATE_PREFIX = "dumplinglab-tables/v2/";
 const canonical = items => JSON.stringify(items.map(i => [i.id, i.style || null, i.qty]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
 const cleanNote = note => typeof note === "string" ? note.trim().slice(0, 240) : "";
+const paymentLocked = message => Object.assign(new RequestError(message, 409), { code: 'PAYMENT_PENDING' });
 
 export function createTableStore(storage, legacy) {
   const pathFor = (table, group) => `${TABLE_STATE_PREFIX}${cleanTable(table)}/${cleanGroup(group)}.json`;
@@ -62,7 +63,7 @@ export function createTableStore(storage, legacy) {
       op.actorName = cleanNickname(input.actorName);
       const { state } = await transact(op.table, op.group, state => {
         if (state.operations.some(o => o.id === op.id) || state.events.some(e => e.cartOpIds?.includes(op.id))) return { changed: false };
-        if (state.paymentHold) throw new RequestError("本组正在付款，请完成或取消付款后再修改菜品。", 409);
+        if (state.paymentHold) throw paymentLocked("本组正在付款，请完成或取消付款后再修改菜品。");
         if (op.kind === "note" && Object.hasOwn(input, "baseNote") && cleanNote(input.baseNote) !== cleanNote(reduceCartOperations(state.operations).note)) {
           const error = new RequestError("同桌修改了备注，请确认要保留的内容。", 409);
           error.code = "NOTE_CONFLICT"; error.cart = snapshot(state); throw error;
@@ -78,7 +79,7 @@ export function createTableStore(storage, legacy) {
     async order(input) {
       const order = cleanOrder(input), ids = cleanCartOpIds(input.cartOpIds), selectedIds = new Set(ids);
       const { state, event } = await transact(order.table, order.group, state => {
-        if (state.paymentHold) throw new RequestError("本组正在付款，请等待付款确认。", 409);
+        if (state.paymentHold) throw paymentLocked("本组正在付款，请等待付款确认。");
         const prior = state.events.find(e => e.id === order.id);
         if (prior) {
           if (prior.type !== "order" || canonical(prior.items) !== canonical(order.items) || cleanNote(prior.note) !== cleanNote(order.note)) throw new RequestError("请求编号已用于另一份订单。", 409);
@@ -108,7 +109,7 @@ export function createTableStore(storage, legacy) {
               canonical(state.paymentHold.items) === canonical(order.items) &&
               JSON.stringify(state.paymentHold.cartOpIds) === JSON.stringify(ids) &&
               cleanNote(state.paymentHold.note) === cleanNote(order.note)) return { changed: false };
-          throw new RequestError("同桌正在支付本单，请勿重复付款。", 409);
+          throw paymentLocked("同桌正在支付本单，请勿重复付款。");
         }
         if (state.events.some(e => e.id === order.id)) throw new RequestError("此订单已提交，请查看已下单。", 409);
         if (ids.some(id => !state.operations.some(op => op.id === id))) throw new RequestError("购物车已更新，请重新确认。", 409);

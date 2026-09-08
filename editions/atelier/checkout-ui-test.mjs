@@ -19,6 +19,7 @@ const owner={table:'A1',group:'A',nickname:'Test',remote:{opIds:['op']},items:[{
   mutate(op){this.items.push({id:op.dishId,qty:1});},
   async api(path,input){
     apiCalls.push({path,action:input?.action});
+    if(path.startsWith('/api/cart?'))return {cart:{...this.remote,items:this.items,paymentPending:false}};
     if(!input)return {config:{dineinEnabled:true,preview:false,publishableKey:'pk_test_fixture'}};
     const items=input.items?.map(i=>({...i,name:catalog.find(d=>d.id===i.id).cn,englishName:'Item',price:catalog.find(d=>d.id===i.id).price}));
     const order={...input,id:input.requestId,items,fulfilment:{},total:items?.reduce((n,i)=>n+i.price*i.qty,0),subtotal:3.21,gst:.29,status:paid?'paid':'awaiting_payment',fulfilmentCommitted:paid};

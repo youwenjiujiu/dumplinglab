@@ -172,6 +172,7 @@ class TableCart extends EventTarget {
   }
   mutate(data) {
     if (this.order) throw new Error("请先确认上一次订单是否成功，再继续加菜。");
+    if (this.remote.paymentPending) throw Object.assign(new Error("本组正在付款，请完成或取消付款后再修改菜品。"), { status: 409, code: 'PAYMENT_PENDING' });
     if (data.kind === "note" && this.noteConflict) {
       this.noteConflict.local = String(data.note || "").slice(0, 240);
       this.emit();
@@ -229,7 +230,12 @@ class TableCart extends EventTarget {
     if (!this.table || this.polling || document.hidden) return;
     this.polling = true;
     try {
-      await this.flush();
+      try { await this.flush(); }
+      catch (error) {
+        // A rejected local edit must not prevent reading a later unlock/receipt.
+        // Keep all drafts, but continue polling the authoritative group state.
+        if (error.code !== 'PAYMENT_PENDING' && !/本组正在付款|同桌正在支付本单/.test(error.message || '')) throw error;
+      }
       // No POST can race the GET snapshot: mutation stays optimistic until next flush.
       const generationAtStart = this.generation;
       const out = await this.api(
