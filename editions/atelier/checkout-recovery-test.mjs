@@ -79,6 +79,11 @@ assert.equal(resumed.requestId,own.original.requestId);
 assert.equal(resumed.token,own.original.token);
 assert.equal(resumed.note,'original note');
 assert.equal(own.state.cancelled,0);
+own.owner.remote.paymentPending=true;
+await own.click('data-checkout-edit');
+assert.equal(own.state.cancelled,1);
+assert.equal(own.owner.remote.paymentPending,false,'Explicit cancellation refreshes the lock before further edits');
+assert.equal(own.owner.pending.length,1);
 
 // Race after preflight must not retain a losing request or cancel a rival.
 const race=fixture({conflict:true});

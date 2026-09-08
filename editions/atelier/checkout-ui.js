@@ -190,6 +190,7 @@ const CheckoutUI = (() => {
       // Never unlock a payable basket until the provider confirms expiration.
       await view.owner.api('/api/online', { ...view.owner.order, action: 'cancel' });
       view.owner.order = null; view.owner.emit();
+      if (view.owner.table) await readCart(view.owner);
     }
     if (!current(view)) return;
     if (addon) { view.owner.mutate({ kind: 'delta', dishId: addon, delta: 1 }); await view.owner.flush(); await open(); }
