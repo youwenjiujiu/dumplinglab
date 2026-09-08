@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { RequestError } from './order-core.js';
 import { ensureStorage } from './order-store.js';
 import { createOnlineService, bookingDates, SLOTS, validId } from './online-core.js';
+import { tableStore } from './table-production.js';
 
 const PREFIX = 'dumplinglab-online/v1/';
 const path = id => { if (!validId(id)) throw new RequestError('订单编号无效'); return `${PREFIX}${id}.json`; };
@@ -38,37 +39,54 @@ function settings() {
   locations = locations.filter(l => l && typeof l.id === 'string' && typeof l.name === 'string' && typeof l.address === 'string');
   return { locations, origin:process.env.DL_ORDER_ORIGIN };
 }
-const ready = () => Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET &&
+// Credentials alone must never open checkout before the restaurant is ready.
+const ready = () => Boolean(process.env.DL_PAYMENTS_ENABLED === 'true' && process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY && process.env.STRIPE_WEBHOOK_SECRET &&
   /^https:\/\//.test(process.env.DL_ORDER_ORIGIN || '') && process.env.DL_GST_REGISTERED === 'true');
 export function onlineConfig() {
   return { ...settings(), dates: bookingDates(), slots: SLOTS, preview: false,
+    dineinEnabled: ready(), publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null,
     takeawayEnabled: ready() && settings().locations.length > 0,
-    deliveryEnabled: ready() && Boolean(process.env.GOOGLE_MAPS_API_KEY && /^\d{6}$/.test(process.env.DL_DELIVERY_ORIGIN_POSTAL || '')),
+    deliveryEnabled: false,
     deliveryMinimum: 100, deliveryRate: 0.09, gstRate: 0.09, radiusKm: 10 };
 }
 async function stripePost(route, params, idempotencyKey) {
   const response = await fetch(`https://api.stripe.com/v1/${route}`, {
-    method: 'POST', headers: { authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'content-type': 'application/x-www-form-urlencoded', 'idempotency-key': idempotencyKey },
+    method: 'POST', headers: { authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'content-type': 'application/x-www-form-urlencoded', 'idempotency-key': idempotencyKey, 'Stripe-Version': '2026-08-26.dahlia' },
     body: params, signal: AbortSignal.timeout(15000),
   });
   const out = await response.json();
   if (!response.ok) throw new RequestError('付款服务暂时不可用，请重试', 503);
   return out;
 }
-const payment = {
-  ensureReady() { if (!ready()) throw new RequestError('线上付款尚未开放，请联系门店', 503); },
-  async create(order) {
+export function stripeCheckoutParams(order) {
     const origin = new URL(process.env.DL_ORDER_ORIGIN).origin;
-    const params = new URLSearchParams({ mode: 'payment', 'metadata[order_id]': order.id,
-      client_reference_id: order.id, success_url: `${origin}/?online_order=${order.id}`,
-      cancel_url: `${origin}/?online_order=${order.id}&payment=cancelled`,
+    const returnUrl = new URL(origin);
+    returnUrl.searchParams.set('online_order', order.id);
+    if (order.mode === 'dinein') { returnUrl.searchParams.set('table', order.table); returnUrl.searchParams.set('group', order.group); }
+    return new URLSearchParams({ mode: 'payment', ui_mode: 'elements', 'metadata[dumpling_order_id]': order.id,
+      'metadata[app]': 'dumplinglab',
+      'payment_intent_data[metadata][app]': 'dumplinglab',
+      'payment_intent_data[metadata][dumpling_order_id]': order.id,
+      client_reference_id: order.id, return_url: returnUrl.href,
+      expires_at: String(Math.floor(Date.parse(order.at) / 1000) + 3600),
+      // Match comedy's enabled methods without changing shared account settings.
+      // Apple Pay is a card wallet, not a separate API payment-method type.
       'payment_method_types[0]': 'card', 'payment_method_types[1]': 'paynow',
       'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': 'sgd',
       'line_items[0][price_data][unit_amount]': String(globalThis.OrderPricing.cents(order.total)),
       'line_items[0][price_data][product_data][name]': `Dumpling Lab ${order.no}`,
       'line_items[0][price_data][product_data][description]': `Food $${order.subtotal.toFixed(2)} · Delivery $${order.deliveryFee.toFixed(2)} · GST 9% $${order.gst.toFixed(2)}`,
     });
+}
+const payment = {
+  ensureReady() { if (!ready()) throw new RequestError('线上付款尚未开放，请联系门店', 503); },
+  async create(order) {
+    const params = stripeCheckoutParams(order);
     return stripePost('checkout/sessions', params, `dl-online-${order.id}`);
+  },
+  async expire(id) {
+    if (!/^cs_[A-Za-z0-9_]+$/.test(id || '')) throw new RequestError('付款编号无效');
+    return stripePost(`checkout/sessions/${id}/expire`, new URLSearchParams(), `dl-expire-${id}`);
   },
 };
 async function geocode(postal) {
@@ -86,7 +104,7 @@ async function checkAddress(postal) {
   const h = Math.sin(rad(b.lat-a.lat)/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(rad(b.lng-a.lng)/2)**2;
   return { distanceKm: 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h))), address: target.formatted_address };
 }
-export const onlineService = createOnlineService({ storage, payment, checkAddress, config: settings() });
+export const onlineService = createOnlineService({ storage, payment, checkAddress, config: settings(), dining: tableStore });
 export function verifyStripeWebhook(raw, signature, secret = process.env.STRIPE_WEBHOOK_SECRET, now = Date.now()) {
   if (!secret) throw new RequestError('付款回调尚未配置', 503);
   const parts = String(signature || '').split(',').map(p => p.split('='));

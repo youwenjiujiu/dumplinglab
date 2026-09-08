@@ -317,6 +317,7 @@ function openModal(type, eyebrow) {
   $("#sheet").scrollTop = 0;
 }
 function closeModal(options = {}) {
+  CheckoutUI.dispose();
   $(".detail-image")?.stopPlateMotion?.();
   if (SharedTable.returnFromDetail()) return;
   $("dl-receipt-print")?.finish?.();
@@ -609,13 +610,6 @@ function renderTray() {
   if (removedDish && !undoMatchesCart()) discardUndo();
   const remoteOrder = Fulfilment.remote();
   const viewOrder = remoteOrder ? tr('查看订单', 'View order') : tr('查看本桌点单', 'View our table');
-  const removedCount = (store.remote.unavailableItems || []).length + (store.retiredPending || []).length
-    + store.remote.items.filter(i => !isLunchItem(i.id, i.style)).length;
-  const notice = $("#menuChangeNotice");
-  if (notice) {
-    notice.hidden = !removedCount;
-    setBilingual(notice, tr("部分已选菜品已更新，请重新选择。", "Some selected dishes have changed. Please choose again."));
-  }
   const items = store.items,
     n = count();
   const pictures = [...new Set(items.map((i) => i.id))];
@@ -899,7 +893,7 @@ function renderCart() {
 }
 async function prepareReview() {
   if (submitting) return;
-  if (Fulfilment.remote()) return Fulfilment.checkout();
+  if (Fulfilment.remote()) return CheckoutUI.open();
   if (!table) {
     clearTimeout(noteTimer);
     const note = $("#cartNote");
@@ -908,76 +902,10 @@ async function prepareReview() {
     showTable(true);
     return;
   }
-  submitting = true;
-  try {
-    clearTimeout(noteTimer);
-    const note = $("#cartNote");
-    noteDraft = null;
-    if (note && note.value !== store.note)
-      store.mutate({ kind: "note", note: note.value });
-    await store.flush();
-    await store.poll();
-    if (store.noteConflict) throw new Error(tr("请先处理备注冲突", "Resolve the note conflict first"));
-    if (store.order) {
-      review = store.order;
-    } else {
-      if (!store.items.length) {
-        renderCart();
-        return;
-      }
-      if (store.status !== "synced")
-        throw new Error(
-          tr("请等待同步完成后下单。", "Wait for your table to reconnect."),
-        );
-      review = {
-        items: structuredClone(store.items),
-        note: store.note,
-        cartOpIds: [...store.remote.opIds],
-      };
-    }
-    openModal("review", "");
-    SharedTable.review(review);
-  } catch (e) {
-    toast(errorText(e));
-  } finally {
-    submitting = false;
-    SharedTable.updateReview();
-    if (modal === "cart") renderCart();
-  }
+  return CheckoutUI.open();
 }
 async function submit() {
-  if (submitting) return;
-  if (SharedTable.reviewChanged()) {
-    SharedTable.updateReview();
-    return;
-  }
-  submitting = true;
-  const button = $('[data-action="submit"]');
-  button.disabled = true;
-  button.setAttribute("aria-busy", "true");
-  button.dataset.orderState = "submitting";
-  setBilingual(button, tr("正在提交点单…", "Submitting your order…"));
-  try {
-    lastOrder = await store.checkout(review);
-    openModal("success", "DUMPLING LAB / ORDER RECEIVED");
-    SharedTable.confirm(lastOrder);
-  } catch (e) {
-    toast(errorText(e));
-    if (e.status === 409) {
-      await store.poll();
-      submitting = false;
-      showCart(store.items.length ? "pending" : "ordered");
-    } else {
-      button.disabled = false;
-      button.dataset.orderState = "error";
-      setBilingual(button, tr("重试 / 确认订单", "Retry / confirm order"));
-    }
-  } finally {
-    button.removeAttribute("aria-busy");
-    if (button.dataset.orderState === "submitting") delete button.dataset.orderState;
-    submitting = false;
-    SharedTable.updateReview();
-  }
+  return CheckoutUI.open();
 }
 function showTable(forReview = false) {
   openModal("table", table ? "DUMPLING LAB / TOGETHER" : "");

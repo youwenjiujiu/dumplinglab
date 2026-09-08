@@ -30,7 +30,7 @@ await assert.rejects(service.pickup(input.requestId,'0'.repeat(32)),e=>e.status=
 const again=await service.checkout(input);assert.equal(again.order.id,first.order.id);assert.equal(creates,1);
 await assert.rejects(service.get(input.requestId,randomBytes(32).toString('hex')),e=>e.status===404);
 await assert.rejects(service.checkout({...input,token:randomBytes(32).toString('hex')}),e=>e.status===404);
-const session={id:`cs_${input.requestId}`,metadata:{order_id:input.requestId},currency:'sgd',amount_total:Math.round(first.order.total*100),payment_status:'paid'};
+const session={id:`cs_${input.requestId}`,metadata:{dumpling_order_id:input.requestId},currency:'sgd',amount_total:Math.round(first.order.total*100),payment_status:'paid'};
 await assert.rejects(service.paymentEvent({...session,amount_total:1}),e=>e.status===409);
 await assert.rejects(service.paymentEvent({...session,id:'wrong'}),e=>e.status===409);
 await service.paymentEvent({...session,payment_status:'unpaid'});assert.equal((await service.feed()).length,0);
@@ -89,7 +89,7 @@ const invalid=await webhook.fetch(new Request('https://test/api/payment-webhook'
 delete process.env.STRIPE_WEBHOOK_SECRET;
 const batch=Array.from({length:5},()=>make({customer:undefined,date:undefined,slot:undefined}));
 const pending=await Promise.all(batch.map(i=>service.checkout(i)));
-await Promise.all(pending.map(({order:o})=>service.paymentEvent({id:`cs_${o.id}`,metadata:{order_id:o.id},currency:'sgd',amount_total:Math.round(o.total*100),payment_status:'paid'})));
+await Promise.all(pending.map(({order:o})=>service.paymentEvent({id:`cs_${o.id}`,metadata:{dumpling_order_id:o.id},currency:'sgd',amount_total:Math.round(o.total*100),payment_status:'paid'})));
 const numbers=await Promise.all(batch.map(async i=>(await service.get(i.requestId,i.token)).pickup.number));
 assert.equal(new Set(numbers).size,5,'concurrent paid orders get unique pickup numbers');
 const unpaid=await service.checkout(make());

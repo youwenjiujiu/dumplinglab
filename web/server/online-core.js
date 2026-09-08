@@ -1,6 +1,8 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import QRCode from 'qrcode';
-import { cleanItems, RequestError } from './order-core.js';
+import { cleanItems, cleanOrder, RequestError } from './order-core.js';
+import { cleanCartOpIds } from './cart-core.js';
+import { cleanNickname } from './cart-meta.js';
 
 export const SLOTS = ['11:30-12:30', '12:30-13:30', '13:30-14:30', '17:00-18:00'];
 export const validId = value => typeof value === 'string' && /^[a-f0-9-]{36}$/.test(value);
@@ -26,8 +28,13 @@ const text = (value, max, label) => {
   return out;
 };
 export function cleanOnline(input, config, now = new Date()) {
-  if (!input || !['takeaway', 'delivery'].includes(input.mode)) throw new RequestError('请选择自取或配送');
+  if (!input || !['dinein', 'takeaway', 'delivery'].includes(input.mode)) throw new RequestError('请选择用餐方式');
   if (!validId(input.requestId)) throw new RequestError('订单编号无效');
+  if (input.mode === 'dinein') {
+    const order = cleanOrder({ ...input, no: String(parseInt(input.requestId.replace(/-/g, '').slice(0, 6), 16) % 9000 + 1000) });
+    return { ...order, table: order.table.toUpperCase(), tokenHash: tokenHash(input.token),
+      cartOpIds: cleanCartOpIds(input.cartOpIds), actorName: cleanNickname(input.actorName), customer: {}, fulfilment: {} };
+  }
   const items = cleanItems(input.items);
   const pricing = globalThis.OrderPricing.quote(items.reduce((sum, i) => sum + i.price * i.qty, 0), input.mode);
   const c = input.customer || {};
@@ -60,13 +67,14 @@ export function cleanOnline(input, config, now = new Date()) {
 export const preparationState = order => order.collectedAt || order.resolvedAt ? 'collected'
   : order.readyAt ? 'ready' : order.preparingAt ? 'preparing' : 'received';
 export const publicOrder = order => {
-  const { tokenHash: secret, fingerprint, requestFingerprint, sessionId, ...view } = order;
+  const { tokenHash: secret, fingerprint, requestFingerprint, sessionId, clientSecret, ...view } = order;
   return { ...view, ...(order.mode === 'takeaway' && order.status === 'paid' ? { preparationStatus: preparationState(order) } : {}) };
 };
-export function createOnlineService({ storage, payment, checkAddress, config, now = () => new Date() }) {
+export function createOnlineService({ storage, payment, checkAddress, config, dining, now = () => new Date() }) {
   const requestFingerprint = input => createHash('sha256').update(JSON.stringify({
     mode:input.mode,items:input.items?.map(i=>[i.id,i.style||null,Number(i.qty)]),
     customer:input.customer,date:input.date,slot:input.slot,pickupLocation:input.pickupLocation||null,note:input.note||'',
+    table: input.table || null, group: input.group || null, cartOpIds: input.cartOpIds || null,
   })).digest('hex');
   async function mutate(id, fn) {
     for (let n = 0; n < 8; n++) {
@@ -124,18 +132,40 @@ export function createOnlineService({ storage, payment, checkAddress, config, no
       const data = saved || await checked(input);
       if (!saved && input.expectedTotal !== undefined && globalThis.OrderPricing.cents(input.expectedTotal) !== globalThis.OrderPricing.cents(data.total)) throw new RequestError('价格已更新，请重新核对订单', 422);
       payment.ensureReady();
+      if (data.mode === 'dinein') {
+        if (!dining) throw new RequestError('堂食付款尚未开放', 503);
+        if (!saved) await dining.reservePayment(data);
+      }
       const fingerprint = createHash('sha256').update(JSON.stringify(data)).digest('hex');
       let order = saved || await mutate(data.id, prior => {
         if (prior) { authorize(prior, input.token); if (prior.fingerprint !== fingerprint) throw new RequestError('订单内容已更改，请重新确认', 409); return prior; }
-        return { ...data, fingerprint, requestFingerprint:requestFingerprint(input), at: now().toISOString(), no: `W${data.id.slice(0, 8).toUpperCase()}`, status: 'awaiting_payment' };
+        return { ...data, fingerprint, requestFingerprint:requestFingerprint(input), at: now().toISOString(), no: data.no || `W${data.id.slice(0, 8).toUpperCase()}`, status: 'awaiting_payment' };
       });
       if (!order.sessionId) {
         // Don't reissue an uncertain payment after Stripe's key-retention window.
         if (now().getTime()-Date.parse(order.at)>23*3600000) throw new RequestError('原付款状态需门店核实，请勿重新付款', 503);
         const session = await payment.create(order);
-        order = await mutate(order.id, prior => ({ ...prior, sessionId: session.id, paymentUrl: session.url }));
+        order = await mutate(order.id, prior => ({ ...prior, sessionId: session.id, paymentUrl: session.url, clientSecret: session.client_secret }));
       }
-      return { order: publicOrder(order), paymentUrl: order.paymentUrl };
+      return { order: publicOrder(order), paymentUrl: order.paymentUrl, clientSecret: order.clientSecret };
+    },
+    async cancel(input) {
+      if (!validId(input.requestId)) throw new RequestError('订单编号无效');
+      const order = (await storage.read(input.requestId))?.value;
+      authorize(order, input.token);
+      if (order.status === 'paid') throw new RequestError('订单已付款，请查询订单状态', 409);
+      if (order.status !== 'expired') {
+        // Recover the exact idempotent Session if its creation response was lost.
+        const session = order.sessionId ? { id: order.sessionId } : await payment.create(order);
+        const expired = await payment.expire(session.id);
+        if (expired.status !== 'expired' || expired.payment_status === 'paid') throw new RequestError('付款正在确认，请稍后查询', 409);
+        await mutate(order.id, prior => {
+          if (prior.status === 'paid') throw new RequestError('订单已付款，请查询订单状态', 409);
+          return { ...prior, status: 'expired', sessionId: session.id };
+        });
+      }
+      if (order.mode === 'dinein') await dining.releasePayment(order);
+      return { cancelled: true };
     },
     async get(id, token) {
       if (!validId(id)) throw new RequestError('订单编号无效');
@@ -143,17 +173,26 @@ export function createOnlineService({ storage, payment, checkAddress, config, no
       return publicOrder(record);
     },
     async paymentEvent(session) {
-      const id = session.metadata?.order_id;
+      // Neither comedy's orderId nor the legacy restaurant's order_id is ours.
+      const id = session.metadata?.dumpling_order_id;
       if (!validId(id)) throw new RequestError('付款订单编号无效');
-      return mutate(id, async order => {
+      const updated = await mutate(id, async order => {
         if (!order || (order.sessionId && order.sessionId !== session.id)) throw new RequestError('付款订单不匹配', 409);
         if (session.currency !== 'sgd' || session.amount_total !== globalThis.OrderPricing.cents(order.total)) throw new RequestError('付款金额不匹配', 409);
         if (session.payment_status === 'paid') return { ...order, sessionId: session.id, status: 'paid', paidAt: order.paidAt || now().toISOString(), ...(order.mode === 'takeaway' ? {pickup:await pickupTicket(order)} : {}) };
         if (session.status === 'expired' && order.status !== 'paid') return { ...order, status: 'expired' };
         return order;
       });
+      if (updated.mode === 'dinein') {
+        if (updated.status === 'paid') {
+          await dining.finishPayment(updated);
+          return mutate(id, prior => ({ ...prior, fulfilmentCommitted: true }));
+        }
+        if (updated.status === 'expired') await dining.releasePayment(updated);
+      }
+      return updated;
     },
-    async feed() { return (await storage.all()).filter(o => o.status === 'paid' && !o.resolvedAt).map(publicOrder); },
+    async feed() { return (await storage.all()).filter(o => o.mode !== 'dinein' && o.status === 'paid' && !o.resolvedAt).map(publicOrder); },
     // A pickup credential grants status-only access, not staff authority or PII.
     // It also lets receipts created before status tracking refresh safely.
     async progress(id, code) {
@@ -187,7 +226,8 @@ export function createOnlineService({ storage, payment, checkAddress, config, no
     },
     async resolve(id) {
       if (!validId(id)) return false;
-      if (!(await storage.read(id))) return false;
+      const record = await storage.read(id);
+      if (!record || record.value.mode === 'dinein') return false;
       await mutate(id, order => {
         if (order.status !== 'paid') throw new RequestError('订单尚未付款', 409);
         return { ...order, resolvedAt: order.resolvedAt || now().toISOString(), ...(order.pickup ? {collectedAt:order.collectedAt || now().toISOString()} : {}) };

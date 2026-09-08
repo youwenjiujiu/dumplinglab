@@ -19,6 +19,7 @@ import {
   RequestError,
 } from "../../web/server/order-core.js";
 import { createOnlineService, bookingDates, SLOTS } from '../../web/server/online-core.js';
+import { createTableStore } from '../../web/server/table-state.js';
 
 const here = dirname(fileURLToPath(import.meta.url)),
   root = resolve(here, "../..");
@@ -76,6 +77,21 @@ function transaction(fn) {
 }
 // Local fixtures are explicitly labelled and never sent to external providers.
 db.online ||= {};
+db.tableStates ||= {};
+const dining = createTableStore({
+  async read(path) { await queue; return structuredClone(db.tableStates[path] || null); },
+  async write(path, value, etag) { return transaction(() => {
+    const old = db.tableStates[path];
+    if ((old?.etag || null) !== etag) throw Object.assign(new Error('Conflict'), { conflict: true });
+    db.tableStates[path] = { value, etag: String(Number(old?.etag || 0) + 1) };
+  }); },
+  isConflict: e => e.conflict,
+  async all() { await queue; return Object.values(db.tableStates).map(r => structuredClone(r.value)); },
+}, {
+  async read(table, group) { await queue; return { operations: db.scopes[scope(table, group)] || [], orders: db.events.filter(e => e.type === 'order' && e.table === table && e.group === group) }; },
+  async feed() { await queue; const events = db.events.filter(e => !e.resolvedAt); return { events, activeIds: events.map(e => e.id) }; },
+  async resolve(id) { return transaction(() => { const event = db.events.find(e => e.id === id); if (event) event.resolvedAt = new Date().toISOString(); }); },
+});
 const previewLocations = [{ id: 'preview-store', name: '本地测试门店 / Preview store', address: '本地测试地址（非真实自取点）' }];
 const online = createOnlineService({
   storage: {
@@ -87,7 +103,8 @@ const online = createOnlineService({
     isConflict: e=>e.conflict,
     async all() { await queue; return Object.values(db.online).map(r=>structuredClone(r.value)); },
   },
-  payment: { ensureReady() {}, async create(o) { return {id:`preview_${o.id}`,url:`/?preview_payment=${o.id}`}; } },
+  payment: { ensureReady() {}, async create(o) { return {id:`preview_${o.id}`,url:`/?preview_payment=${o.id}`}; }, async expire() { return {status:'expired',payment_status:'unpaid'}; } },
+  dining,
   async checkAddress(postal) {
     if (postal === '999999') return {distanceKm:11,address:'Outside test zone'};
     if (postal !== '059911') throw new RequestError('本地测试请使用邮编 059911；999999 用于测试超区');
@@ -105,7 +122,7 @@ const mime = {
   ".woff2": "font/woff2",
   ".svg": "image/svg+xml",
 };
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   const json = (status, out) => {
     res.writeHead(status, {
       "content-type": "application/json",
@@ -135,12 +152,13 @@ createServer(async (req, res) => {
           const id = url.searchParams.get('id');
           if (id && url.searchParams.get('progress') === '1') return json(200,{ok:true,progress:await online.progress(id,req.headers['x-pickup-code'])});
           if (id) return json(200,{ok:true,order:await online.get(id,String(req.headers.authorization||'').replace(/^Bearer /,''))});
-          return json(200,{ok:true,config:{preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,takeawayEnabled:true,deliveryEnabled:true,deliveryMinimum:100,deliveryRate:0.09,gstRate:0.09,radiusKm:10}});
+          return json(200,{ok:true,config:{preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,dineinEnabled:true,takeawayEnabled:true,deliveryEnabled:false,deliveryMinimum:100,deliveryRate:0.09,gstRate:0.09,radiusKm:10}});
         }
         if (req.method === 'POST') {
+          if (input.action === 'cancel') return json(200,{ok:true,...await online.cancel(input)});
           if (input.action === 'preview-pay') {
             const order=await online.get(input.requestId,input.token);
-            await online.paymentEvent({id:`preview_${order.id}`,metadata:{order_id:order.id},currency:'sgd',amount_total:Math.round(order.total*100),payment_status:'paid'});
+            await online.paymentEvent({id:`preview_${order.id}`,metadata:{dumpling_order_id:order.id},currency:'sgd',amount_total:Math.round(order.total*100),payment_status:'paid'});
             return json(200,{ok:true});
           }
           return json(200,{ok:true,...(input.action==='quote'?{order:await online.quote(input)}:await online.checkout(input))});
@@ -148,102 +166,13 @@ createServer(async (req, res) => {
         return json(405,{ok:false,error:'Method not allowed'});
       }
       if (url.pathname === "/api/cart" && req.method === "GET") {
-        await queue;
-        return json(200, {
-          ok: true,
-          cart: getCart(
-            cleanTable(url.searchParams.get("table")),
-            cleanGroup(url.searchParams.get("group")),
-            url.searchParams.get("version"),
-          ),
-        });
+        return json(200, {ok:true,cart:await dining.cart(url.searchParams.get('table'),url.searchParams.get('group'),url.searchParams.get('version'))});
       }
       if (url.pathname === "/api/cart" && req.method === "POST") {
-        const op = cleanCartOperation(input);
-        op.actorName = cleanNickname(input.actorName);
-        return json(
-          200,
-          await transaction(() => {
-            const key = scope(op.table, op.group),
-              list = (db.scopes[key] ||= []);
-            const consumed = db.events.some(
-              (e) =>
-                e.table === op.table &&
-                e.group === op.group &&
-                e.cartOpIds?.includes(op.id),
-            );
-            if (!consumed && !list.some((o) => o.id === op.id)) {
-              if (op.kind === "note" && Object.hasOwn(input, "baseNote")) {
-                const current = reduceCartOperations(list).note || "";
-                const base = typeof input.baseNote === "string" ? input.baseNote.trim().slice(0, 240) : "";
-                if (base !== current) {
-                  const error = new RequestError("同桌修改了备注，请确认要保留的内容。", 409);
-                  error.code = "NOTE_CONFLICT";
-                  error.cart = getCart(op.table, op.group);
-                  throw error;
-                }
-              }
-              op.storedAt = Math.max(Date.now(), db.sequence + 1);
-              db.sequence = op.storedAt;
-              list.push(op);
-              db.activity[key] = [...(db.activity[key] || []), op].slice(-80);
-            }
-            return { ok: true, cart: getCart(op.table, op.group) };
-          }),
-        );
+        return json(200, {ok:true,cart:await dining.mutate(input)});
       }
       if (url.pathname === "/api/order" && req.method === "POST") {
-        const order = cleanOrder(input),
-          ids = cleanCartOpIds(input.cartOpIds);
-        return json(
-          200,
-          await transaction(() => {
-            const existing = db.events.find((e) => e.id === order.id);
-            if (existing) {
-              if (
-                existing.type !== "order" ||
-                existing.table !== order.table ||
-                existing.group !== order.group
-              )
-                throw new RequestError("Request ID conflict", 409);
-              return {
-                ok: true,
-                order: existing,
-                cart: getCart(order.table, order.group),
-              };
-            }
-            const key = scope(order.table, order.group),
-              ops = db.scopes[key] || [];
-            if (ids.some((id) => !ops.some((op) => op.id === id)))
-              throw new RequestError(
-                "同桌已经提交了这份菜单，请查看已下单。",
-                409,
-              );
-            const selected = reduceCartOperations(
-              ops.filter((op) => ids.includes(op.id)),
-            );
-            if (ops.some((op) => currentOperation(op) && !ids.includes(op.id) && (op.kind === "note" || (op.kind === "delta" && op.delta < 0))))
-              throw new RequestError("同桌修改了菜品或备注，请重新确认订单。", 409);
-            const canon = (items) =>
-              JSON.stringify(
-                items
-                  .map((i) => [i.id, i.style || null, i.qty])
-                  .sort((a, b) =>
-                    JSON.stringify(a).localeCompare(JSON.stringify(b)),
-                  ),
-              );
-            if (canon(selected.items) !== canon(order.items))
-              throw new RequestError("购物车已更新，请重新确认。", 409);
-            order.cartOpIds = ids;
-            order.contributors = contributorsFor(
-              ops.filter((op) => ids.includes(op.id)),
-            );
-            order.actorName = cleanNickname(input.actorName);
-            db.events.push(order);
-            db.scopes[key] = ops.filter((op) => !ids.includes(op.id));
-            return { ok: true, order, cart: getCart(order.table, order.group) };
-          }),
-        );
+        throw new RequestError('请先完成付款；付款成功后自动下单。',402);
       }
       if (url.pathname === "/api/call" && req.method === "POST") {
         const call = cleanCall(input);
@@ -258,7 +187,7 @@ createServer(async (req, res) => {
       }
       if (url.pathname === "/api/feed" && req.method === "GET") {
         await queue;
-        const events=[...db.events.filter(e=>!e.resolvedAt),...await online.feed()];
+        const events=[...(await dining.feed()).events,...await online.feed()];
         return json(200, { events,activeIds:events.map(e=>e.id),cursor:Date.now() });
       }
       if (url.pathname === '/api/pickup' && req.method === 'POST') {
@@ -266,7 +195,7 @@ createServer(async (req, res) => {
         return json(200,{ok:true,order:await online.pickup(input.id,input.code,input.action==='collect')});
       }
       if (url.pathname === '/api/resolve' && req.method === 'POST') {
-        if (!await online.resolve(input.id)) await transaction(()=>{const e=db.events.find(e=>e.id===input.id);if(e)e.resolvedAt=new Date().toISOString();});
+        if (!await online.resolve(input.id)) await dining.resolve(input.id);
         return json(200,{ok:true});
       }
       if (url.pathname === '/api/order-status' && req.method === 'POST') {
@@ -289,6 +218,7 @@ createServer(async (req, res) => {
       "/cart-store.js",
       "/error-copy.js",
       "/fulfilment.js",
+      "/checkout-ui.js",
       "/table-scene.js",
       "/shared-table.css",
       "/shared-motion.js",
@@ -345,6 +275,6 @@ createServer(async (req, res) => {
   }
 }).listen(Number(process.env.PORT || 7898), "127.0.0.1", () =>
   console.log(
-    `Atelier local preview: http://127.0.0.1:${process.env.PORT || 7898}/?table=A1 — local orders only`,
+    `Atelier local preview: http://127.0.0.1:${server.address().port}/?table=A1 — local orders only`,
   ),
 );

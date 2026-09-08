@@ -17,7 +17,7 @@ const input={requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'
 const pending=await service.checkout(input);
 await assert.rejects(service.advance(input.requestId,'preparing'),e=>e.status===409);
 await assert.rejects(service.progress(input.requestId,'0'.repeat(32)),e=>e.status===404);
-const payment={id:'test-'+input.requestId,metadata:{order_id:input.requestId},currency:'sgd',amount_total:Math.round(pending.order.total*100),payment_status:'paid'};
+const payment={id:'test-'+input.requestId,metadata:{dumpling_order_id:input.requestId},currency:'sgd',amount_total:Math.round(pending.order.total*100),payment_status:'paid'};
 await service.paymentEvent(payment);
 const placed=await service.get(input.requestId,input.token),id=placed.id,code=placed.pickup.code;
 assert.equal(placed.preparationStatus,'received');

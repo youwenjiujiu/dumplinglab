@@ -213,29 +213,7 @@ const Fulfilment = (() => {
     $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('打包自取','Pickup')}</h2><p>${bi('付款后凭取餐号和取餐码领取。','Collect with your pickup number and QR code after payment.')}</p><form id="onlineForm">${config.locations.length ? `<label class="online-field"><span>${bi('自取门店','Pickup location')}</span><select name="pickupLocation" required>${config.locations.map(l=>`<option value="${escapeHTML(l.id)}" ${formDraft.pickupLocation === l.id ? "selected" : ""}>${escapeHTML(l.name)} — ${escapeHTML(l.address)}</option>`).join('')}</select></label>` : ''}<p id="onlineError" class="field-error" role="alert">${enabled ? '' : bi('线上付款尚未开放；请联系门店。选菜会保留。','Online payment is not available yet. Contact the restaurant; your selection is saved.')}</p><button class="primary" type="submit" ${enabled ? '' : 'disabled'}>${bi('核对订单','Review order')}</button></form></div>`;
   }
   async function checkout() {
-    quoted = null;
-    formDraft = readDraft(mode());
-    $('#toast').hidden = true;
-    clearTimeout(noteTimer); const note = $('#cartNote');
-    if (note && note.value !== store.note) store.mutate({kind:'note',note:note.value});
-    noteDraft = null;
-    if (store.order) {
-      openModal('online', '');
-      $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('等待付款确认','Awaiting payment')}</h2><p>${bi('付款成功后才会提交门店；未付款不会重复下单。','Your order reaches the restaurant after payment. Retrying will not duplicate it.')}</p><button class="primary" data-online-retry>${bi('继续付款 / 查询状态','Continue payment / Check status')}</button><p id="onlineError" class="field-error" role="alert"></p></div>`;
-      return;
-    }
-    if (!store.items.length) return showCart();
-    openModal('online', '');
-    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${escapeHTML(label())}</h2><p role="status">${bi('正在核对订单…','Checking your order…')}</p></div>`;
-    const isCurrent = currentCheckoutView();
-    let nextConfig;
-    try { nextConfig = await getConfig(); } catch (e) { if (isCurrent()) $('#sheetBody').innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${bi('暂时无法读取下单信息','Unable to load order details')}</h2><button class="secondary" data-online-start>${bi('重试','Retry')}</button></div>`; return; }
-    if (!isCurrent()) return;
-    config = nextConfig;
-    const delivery = mode() === 'delivery', enabled = delivery ? config.deliveryEnabled : config.takeawayEnabled;
-    if (!delivery) return pickupCheckout(enabled, isCurrent);
-    const options = (values, selected) => values.map(v => `<option value="${escapeHTML(v)}" ${v === selected ? 'selected' : ''}>${escapeHTML(v)}</option>`).join('');
-    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${escapeHTML(label())}</h2><p class="online-policy">${delivery ? bi('10 km 内 · 菜品未税满 $100 · 配送费 9%','Within 10 km · $100 food minimum before GST · 9% delivery fee') : bi('预约自取，无需桌号','Scheduled pickup. No table number needed.')}</p><form id="onlineForm"><div class="online-fields">${field('customerName', bi('姓名','Name'), 'required maxlength="60" autocomplete="name"')}${field('customerPhone', bi('手机号码','Phone'), 'type="tel" required maxlength="24" autocomplete="tel" placeholder="+65"')}${delivery ? `${field('postalCode',bi('邮编','Postal code'),'required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="postal-code"')}${field('address',bi('配送地址','Address'),'required maxlength="180" autocomplete="street-address"')}${field('unit',bi('楼层 / 单位号（选填）','Unit / floor (optional)'),'maxlength="40" autocomplete="address-line2"')}` : `<label class="online-field"><span>${bi('自取门店','Pickup location')}</span><select name="pickupLocation" required>${config.locations.map(l => `<option value="${escapeHTML(l.id)}" ${formDraft.pickupLocation === l.id ? 'selected' : ''}>${escapeHTML(l.name)} — ${escapeHTML(l.address)}</option>`).join('')}</select></label>`}<label class="online-field"><span>${bi('日期','Date')}</span><select name="date" required><option value="">${bi('选择日期','Select date')}</option>${options(config.dates,formDraft.date)}</select></label><label class="online-field"><span>${bi('时段','Time slot')}</span><select name="slot" required><option value="">${bi('选择时段','Select slot')}</option>${options(config.slots,formDraft.slot)}</select></label></div><p class="fineprint">${bi('提前一天预订，次日订单前晚 21:00 截止。时间以新加坡为准。','Order at least one day ahead; next-day cutoff is 9 pm Singapore time.')}</p>${summary({...OrderPricing.quote(total(store.items),mode()),mode:mode()})}<p class="field-error" id="onlineError" role="alert">${enabled ? '' : bi('线上付款尚未开放；请联系门店。选菜会保留。','Online payment is not available yet. Please contact the restaurant. Your selection is saved.')}</p><button class="primary" type="submit" ${enabled ? '' : 'disabled'}>${bi('核对订单','Review order')}</button></form></div>`;
+    return CheckoutUI.open();
   }
   async function quoteForm(form) {
     const button = form.querySelector('[type="submit"]');
@@ -256,6 +234,7 @@ const Fulfilment = (() => {
     $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('本地模拟付款','Local payment simulation')}</h2><p>${bi('仅用于测试，不会扣款或发送至真实厨房。','For testing only. No charge and no real kitchen order.')}</p>${summary(order)}<button class="primary" data-preview-pay>${bi('模拟支付成功','Simulate successful payment')}</button><p id="onlineError" role="alert" class="field-error"></p></div>`;
   }
   function paid() {
+    if (typeof CheckoutUI !== 'undefined') CheckoutUI.dispose();
     $('#toast').hidden = true;
     const order = store.orders.filter(o => o.mode === 'takeaway' && !o.collectedAt && !o.resolvedAt).at(-1) || store.orders.at(-1);
     if (order?.mode === 'takeaway' && order.pickup) {
@@ -276,8 +255,8 @@ const Fulfilment = (() => {
     chrome();
     // Payment returns recover their pending transaction; every normal page/QR
     // entry explicitly offers dine-in/takeaway, even with a saved preference.
-    if (q.get('online_order') && remote()) checkout();
-    else if (store.order) { if (remote()) checkout(); else showCart(); }
+    if (q.get('online_order')) checkout();
+    else if (store.order) checkout();
     else if (remote() && store.orders.some(o => o.mode === 'takeaway' && o.pickup)) paid();
     else select();
   }

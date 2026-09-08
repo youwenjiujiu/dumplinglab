@@ -17,6 +17,7 @@ export function createTableStore(storage, legacy) {
     contributors: contributorsFor(state.operations),
     activity: state.activity.slice(-40),
     version: `v2:${globalThis.MENU_VERSION}:${state.revision}`,
+    paymentPending: Boolean(state.paymentHold),
   });
   async function read(table, group) {
     const stored = await storage.read(pathFor(table, group));
@@ -61,6 +62,7 @@ export function createTableStore(storage, legacy) {
       op.actorName = cleanNickname(input.actorName);
       const { state } = await transact(op.table, op.group, state => {
         if (state.operations.some(o => o.id === op.id) || state.events.some(e => e.cartOpIds?.includes(op.id))) return { changed: false };
+        if (state.paymentHold) throw new RequestError("本组正在付款，请完成或取消付款后再修改菜品。", 409);
         if (op.kind === "note" && Object.hasOwn(input, "baseNote") && cleanNote(input.baseNote) !== cleanNote(reduceCartOperations(state.operations).note)) {
           const error = new RequestError("同桌修改了备注，请确认要保留的内容。", 409);
           error.code = "NOTE_CONFLICT"; error.cart = snapshot(state); throw error;
@@ -76,6 +78,7 @@ export function createTableStore(storage, legacy) {
     async order(input) {
       const order = cleanOrder(input), ids = cleanCartOpIds(input.cartOpIds), selectedIds = new Set(ids);
       const { state, event } = await transact(order.table, order.group, state => {
+        if (state.paymentHold) throw new RequestError("本组正在付款，请等待付款确认。", 409);
         const prior = state.events.find(e => e.id === order.id);
         if (prior) {
           if (prior.type !== "order" || canonical(prior.items) !== canonical(order.items) || cleanNote(prior.note) !== cleanNote(order.note)) throw new RequestError("请求编号已用于另一份订单。", 409);
@@ -96,6 +99,50 @@ export function createTableStore(storage, legacy) {
         return { changed: true, event: order };
       });
       return { order: event, cart: snapshot(state) };
+    },
+    async reservePayment(order) {
+      const ids = cleanCartOpIds(order.cartOpIds), selectedIds = new Set(ids);
+      await transact(order.table, order.group, state => {
+        if (state.paymentHold) {
+          if (state.paymentHold.id === order.id && state.paymentHold.tokenHash === order.tokenHash &&
+              canonical(state.paymentHold.items) === canonical(order.items) &&
+              JSON.stringify(state.paymentHold.cartOpIds) === JSON.stringify(ids) &&
+              cleanNote(state.paymentHold.note) === cleanNote(order.note)) return { changed: false };
+          throw new RequestError("同桌正在支付本单，请勿重复付款。", 409);
+        }
+        if (state.events.some(e => e.id === order.id)) throw new RequestError("此订单已提交，请查看已下单。", 409);
+        if (ids.some(id => !state.operations.some(op => op.id === id))) throw new RequestError("购物车已更新，请重新确认。", 409);
+        const selected = reduceCartOperations(state.operations.filter(op => selectedIds.has(op.id)));
+        if (canonical(selected.items) !== canonical(order.items) || cleanNote(selected.note) !== cleanNote(order.note) ||
+            state.operations.some(op => currentOperation(op) && !selectedIds.has(op.id) && (op.kind === 'note' || op.delta < 0)))
+          throw new RequestError("同桌修改了菜品或备注，请重新确认。", 409);
+        state.paymentHold = { ...order, cartOpIds: ids };
+        return { changed: true };
+      });
+    },
+    async finishPayment(order) {
+      await transact(order.table, order.group, state => {
+        if (state.events.some(e => e.id === order.id && e.status === 'paid')) return { changed: false };
+        const hold = state.paymentHold;
+        if (!hold || hold.id !== order.id || hold.tokenHash !== order.tokenHash || order.status !== 'paid')
+          throw new RequestError("付款订单与本桌不匹配。", 409);
+        const selected = new Set(hold.cartOpIds);
+        const { tokenHash, fingerprint, requestFingerprint, sessionId, clientSecret, paymentUrl, ...receipt } = order;
+        receipt.contributors = contributorsFor(state.operations.filter(op => selected.has(op.id)));
+        state.events.push(receipt);
+        state.operations = state.operations.filter(op => !selected.has(op.id));
+        delete state.paymentHold;
+        return { changed: true };
+      });
+    },
+    async releasePayment(order) {
+      await transact(order.table, order.group, state => {
+        if (!state.paymentHold || state.paymentHold.id !== order.id) return { changed: false };
+        if (state.paymentHold.id !== order.id || state.paymentHold.tokenHash !== order.tokenHash)
+          throw new RequestError("付款订单与本桌不匹配。", 409);
+        delete state.paymentHold;
+        return { changed: true };
+      });
     },
     async call(input) {
       const call = cleanCall(input);

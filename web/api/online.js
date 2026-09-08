@@ -13,7 +13,9 @@ export default async function handler(req, res) {
     }
     if (req.method !== 'POST') return method(res, 'GET, POST');
     const input = bodyOf(req);
+    if (input.action === 'cancel') return json(res, 200, { ok: true, ...await onlineService.cancel(input) });
     if (!['quote','checkout'].includes(input.action)) throw new RequestError('操作无效');
+    if (input.mode === 'delivery') throw new RequestError('目前仅支持堂食和打包自取', 409);
     return json(res, 200, { ok: true, ...(input.action === 'quote' ? { order: await onlineService.quote(input) } : await onlineService.checkout(input)) });
   } catch (error) { return fail(res, error); }
 }

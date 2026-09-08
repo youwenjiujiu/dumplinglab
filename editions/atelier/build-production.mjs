@@ -10,7 +10,7 @@ async function copy(source, target) {
   await mkdir(dirname(resolve(output, target)), { recursive: true });
   await copyFile(source, resolve(output, target));
 }
-for (const file of ["atelier.css", "shared-table.css", "app.js", "error-copy.js", "cart-store.js", "fulfilment.js", "shared-table.js", "lunch-ui.js", "bilingual-fit.js"]) await copy(resolve(here, file), file);
+for (const file of ["atelier.css", "shared-table.css", "app.js", "error-copy.js", "cart-store.js", "fulfilment.js", "checkout-ui.js", "shared-table.js", "lunch-ui.js", "bilingual-fit.js"]) await copy(resolve(here, file), file);
 await copy(resolve(here, "generated/table-view-motion/developer/web-component/table-layout.js"), "shared-motion.js");
 await copy(resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js"), "micro-motion.js");
 await copy(resolve(here, "generated/receipt-print/developer/web-component/receipt-print.js"), "receipt-motion.js");

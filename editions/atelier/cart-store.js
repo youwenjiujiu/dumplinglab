@@ -241,7 +241,7 @@ class TableCart extends EventTarget {
         !out.cart.unchanged
       )
         this.remote = out.cart;
-      if (this.order && this.orders.some((o) => o.id === this.order.requestId))
+      if (this.order && !this.order.token && this.orders.some((o) => o.id === this.order.requestId))
         this.order = null;
       if (this.noteConflict) this.noteConflict.remote = this.remote.note || "";
       this.status = this.pending.length ? "syncing" : "synced";
