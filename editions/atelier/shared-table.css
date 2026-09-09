@@ -128,7 +128,7 @@ body.search-open .filters button { border: 0; border-radius: 4px; padding: 4px 1
   bottom: var(--added-toast-bottom, 108px);
   min-height: 40px;
   padding: 8px 15px 8px 11px;
-  border: 1px solid #e8d9d4;
+  border: 1px solid #e8d1cf;
   border-radius: 999px;
   background: #fff;
   color: var(--red);
@@ -143,7 +143,7 @@ body.search-open .filters button { border: 0; border-radius: 4px; padding: 4px 1
   flex: none;
   padding: 2px;
   border-radius: 50%;
-  background: #983f320b;
+  background: #952f2b0b;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -978,7 +978,7 @@ html[lang="en"] .sheet-content h1, html[lang="en"] .sheet-content h2 {
 .sharing-option:hover, .sharing-option:focus-visible { border-color: var(--red); }
 @media(max-width:360px) { .sharing-options { gap: 10px; } .sharing-option { padding-inline: 4px; } }
 .receipt-success-title:focus { outline: none; }
-.receipt-printer { --paper: #fffefa; --ink: #302f2b; --muted: #6c6a61; --red: #983f32; --line: #d9d7ce; margin-bottom: 10px; }
+.receipt-printer { --paper: #fffefa; --ink: #302f2b; --muted: #6c6a61; --red: #952f2b; --line: #d9d7ce; margin-bottom: 10px; }
 .receipt-printer .paper-receipt {
   background: var(--paper);
   color: var(--ink);
@@ -1335,7 +1335,7 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
   height: 30px;
   font-size: 18px;
   font-weight: 400;
-  border-color: #a04b3e65;
+  border-color: #e8d1cf;
 }
 /* The absolute containing block excludes the 1px button border: -8px gives
    a real 44px hit box around the unchanged 30px visual circle. */
@@ -1540,13 +1540,13 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
 #sheet[data-mode="dish"] .lunch-options-pieces .chip { padding-inline: 8px; }
 
 /* Ordering controls are isolated from menu-card geometry. */
-.fulfilment-switch { display: inline-flex; align-items: center; justify-content: center; flex: none; gap: 8px; min-height: 44px; padding: 0 13px; border: 1px solid #e8d9d4; border-radius: 999px; background: #faf7f5; color: var(--red); font: 400 13px/1.2 var(--sans); white-space: nowrap; }
+.fulfilment-switch { display: inline-flex; align-items: center; justify-content: center; flex: none; gap: 8px; min-height: 44px; padding: 0 13px; border: 1px solid #e8d1cf; border-radius: 999px; background: #fcf7f6; color: var(--red); font: 400 13px/1.2 var(--sans); white-space: nowrap; }
 .fulfilment-switch svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .fulfilment-mode-icon { display: block; flex: none; width: 32px; height: 28px; object-fit: contain; }
 .fulfilment-chevron { width: 14px; height: 14px; }
 .fulfilment-switch:hover { border-color: var(--red); }
 .fulfilment-switch { position: relative; isolation: isolate; min-height: 44px; padding-inline: 10px; gap: 5px; border: 0; background: transparent; font-size: 12px; }
-.fulfilment-switch::before { content: ''; position: absolute; inset: 4px 0; z-index: -1; border: 1px solid #e8d9d4; border-radius: 999px; background: #faf7f5; }
+.fulfilment-switch::before { content: ''; position: absolute; inset: 4px 0; z-index: -1; border: 1px solid #e8d1cf; border-radius: 999px; background: #fcf7f6; }
 .fulfilment-switch:hover::before { border-color: var(--red); }
 .fulfilment-mode-icon { width: 24px; height: 24px; }
 .fulfilment-chevron { width: 12px; height: 12px; }
@@ -1717,7 +1717,7 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
 /* A single order journey: fixed navigation, independently scrolling content,
    and a payment dock that never covers the last field. Menu geometry is untouched. */
 #sheet[data-mode="online"], #sheet[data-mode="pickup"], #sheet[data-mode="success"]:has(.order-result) {
-  --order-accent: #983f32;
+  --order-accent: #952f2b;
   position: fixed; inset: 0; margin: auto;
   width: min(560px, calc(100% - 32px)); max-width: calc(100% - 32px);
   height: min(880px, 94dvh); max-height: 94dvh;
