@@ -36,12 +36,14 @@ export class DumplingStorefrontInk extends Base {
              adjacent cream wall. Keep the awning's small natural overhang. -->
         <clipPath id="facade"><path d="M236 265H1057V666H236Z"/></clipPath>
         <clipPath id="awning"><path d="M198 102H1080L1090 255L1076 265H236L200 254Z"/></clipPath>
-        <mask id="pavement-lines" maskUnits="userSpaceOnUse" x="192" y="666" width="904" height="94" style="mask-type:luminance">
-          <image href="/brand/footer-storefront-v1.webp" width="1600" height="800" style="filter:grayscale(1) invert(1) contrast(1.2)"/>
-        </mask>
+        <!-- Same desktop ink extraction, written directly into alpha. Avoid
+             CSS-filtered luminance masks, which can expose the floor on iOS. -->
+        <filter id="pavement-alpha" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" x="192" y="666" width="904" height="94">
+          <feColorMatrix type="matrix" values="0 0 0 0 .94117647  0 0 0 0 .77647059  0 0 0 0 .64313725  -.25512 -.85824 -.08664 0 1.1"/>
+        </filter>
         <radialGradient id="warm"><stop stop-color="#ffe3b8" stop-opacity=".07"/><stop offset="1" stop-color="#ffe3b8" stop-opacity="0"/></radialGradient>
       </defs>
-      <g class="layer ground"><rect x="192" y="666" width="904" height="94" fill="#f0c6a4" opacity=".5" mask="url(#pavement-lines)"/></g>
+      <g class="layer ground" clip-path="url(#ground)"><image href="/brand/footer-storefront-v1.webp" width="1600" height="800" opacity=".5" filter="url(#pavement-alpha)"/></g>
       <g class="building">
       <g class="layer facade"><g clip-path="url(#facade)">${art}</g></g>
       <g class="layer awning"><g clip-path="url(#awning)">${art}</g>
