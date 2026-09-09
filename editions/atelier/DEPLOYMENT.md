@@ -2,6 +2,15 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
+## Selected B deep red palette — 2026-09-09
+
+- User explicitly selected the B palette and requested committing/deploying the mobile ordering site only. Runtime commit `5a444046b4cbfd42a2d9350b4cfd808e142cb04a`.
+- Background `#9c3d39`, interface accent `#952f2b`, pale border `#e8d1cf`, tint `#fcf7f6`. The two CSS files are identical to their previous versions after stripping hexadecimal color values; no geometry, behavior, logo or illustration edits.
+- 17 non-browser suites passed with `sourceUnchanged:true`: `test-output/qa-2026-09-09T15-12-02.669Z/report.json`. Exact package passed `lunch-build-test.mjs`.
+- Package `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumplinglab-release-pC8S7d` excludes `site/`, `order.html`, and the parked editorial experiments. The new restaurant homepage was not published.
+- Deployment `dpl_HUo4kkftx8UzoG3guUhsXt2r44DK`, `https://dumplinglab-menu-3g5v8rvs1-youwenjiujius-projects.vercel.app`, promoted to `https://dumplinglab-menu.vercel.app` after protected read-only verification.
+- Protected and public checks both matched exact HTML plus 39 runtime/asset files and passed staff-auth/config gates. No production data writes, no new browser visual acceptance or merchant charge. The prior WeChat cart report remains unresolved.
+
 ## Mobile language spacing — 2026-09-09
 
 - Explicit deployment approval; runtime commit `56f5d9b`, deployment `dpl_AGjwbQDGxVeHnzNva7JpQssmjQhh` (`https://dumplinglab-menu-kutov2ox4-youwenjiujius-projects.vercel.app`) promoted to the existing public URL.
