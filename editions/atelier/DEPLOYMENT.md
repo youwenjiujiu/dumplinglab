@@ -2,7 +2,13 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
-## Latest UI hotfix — 2026-09-09
+## Latest tray refinement — 2026-09-09
+
+- Runtime commit `771284b`, deployment `dpl_uVZXhdkquqZiyEKVWPhFaPK94Ku8` (`https://dumplinglab-menu-cja2qx6ho-youwenjiujius-projects.vercel.app`), promoted to the existing public URL.
+- Removed dish-removal Undo toast and visible view-order label. Count now sits beside content-width thumbnails; empty state has no image spacer.
+- 17 service/VM suites, six bilingual responsive removal/spacing cases, four mode-switch cases and exact release package checks passed. Protected and public read-only verification both matched HTML + 39 runtime/assets and auth/config gates. No production cart/order/payment writes.
+
+## Previous UI hotfix — 2026-09-09
 
 - Runtime commit: `b22738c` (compact header/tray, transparent thumbnails, optional early add-ons, safe cancel-and-continue, category spacing and success copy).
 - Deployment: `dpl_9Cqgs4xCXHPqaUpfy8Ch7WHXS973`, `https://dumplinglab-menu-q1w6j40j8-youwenjiujius-projects.vercel.app`.
