@@ -46,7 +46,7 @@ const SharedTable = (() => {
   }
   function emptyTicket(pending) {
     const hasSelection = !pending && store.items.length > 0;
-    return `<div class="table-empty empty-ticket"><div class="empty-ticket-heading"><span>${bi(pending ? "选菜清单" : "订单记录", pending ? "SELECTION" : "ORDER HISTORY")}</span><span class="empty-ticket-rule" aria-hidden="true"></span></div><div class="empty-ticket-body"><span class="empty-ticket-zero" aria-hidden="true">00</span><div class="empty-ticket-copy"><h3>${pending ? bi("尚未选菜", "No dishes selected") : bi("暂无订单", "No orders yet")}</h3><button class="empty-ticket-action" ${hasSelection ? 'data-cart-tab="pending"' : 'data-action="close"'}>${hasSelection ? bi("查看待下单", "View selected dishes") : bi("去选菜", "Browse menu")}<span aria-hidden="true">↗</span></button></div></div></div>`;
+    return `<div class="table-empty empty-ticket"><div class="empty-ticket-copy"><h3>${pending ? bi("还没有选菜", "No dishes selected") : bi("暂无订单", "No orders yet")}</h3><p>${pending ? bi("选好喜欢的菜，再回来确认。", "Choose your dishes, then review them here.") : bi("下单后，可以在这里查看。", "Your placed orders will appear here.")}</p><button class="primary empty-ticket-action" ${hasSelection ? 'data-cart-tab="pending"' : 'data-action="close"'}>${hasSelection ? bi("查看待下单", "View selected dishes") : bi("去选菜", "Browse menu")}</button></div></div>`;
   }
   function render(before = null) {
     if (modal !== "cart") return;
@@ -65,6 +65,11 @@ const SharedTable = (() => {
     $("#sheet").classList.toggle("is-empty-cart", pending ? !items.length && !store.order : !store.orders.length);
     $("#sheetBody").innerHTML =
       `<div class="cart-page"><div class="cart-scroll"><header class="our-table-head"><div><p class="eyebrow">DUMPLING LAB · ${bi("点单", "ORDER")}</p><h2 id="sheetTitle">${remote ? escapeHTML(Fulfilment.label()) : bi("本桌点单", "Table order")}</h2></div>${remote ? "" : `<div class="table-number"><small>${bi("桌号", "TABLE")}</small><strong>${escapeHTML(table || "—")}</strong></div>`}</header><div class="table-members"><span>${bilingualText(statusCopy())}${remote ? "" : ` · ${bi("点餐组", "Group")} ${escapeHTML(group)}`}</span><button data-action="nickname">${store.nickname ? escapeHTML(store.nickname) : bi("设置称呼", "Set name")} <span aria-hidden="true">↗</span></button></div><div class="cart-viewbar"><div class="receipt-tabs"><button data-cart-tab="pending" class="${pending ? "active" : ""}" aria-pressed="${pending}">${bi("待下单", "Selected")} ${count()}</button><button data-cart-tab="ordered" class="${pending ? "" : "active"}" aria-pressed="${!pending}">${bi("已下单", "Placed")} ${store.orders.length}</button></div>${pending && items.length ? `<button class="layout-switch" data-table-layout="${layout === "table" ? "list" : "table"}" aria-label="${tr("切换摆盘或清单", "Switch table and list views")}"><dl-table-view-motion layout="${layout}" aria-hidden="true"></dl-table-view-motion><span>${layout === "table" ? bi("看清单", "List") : bi("看摆盘", "Table")}</span></button>` : ""}</div>${pending ? `${store.order ? `<p class="drawer-note">${bi("上一笔订单仍待确认，请先查询或安全重试。", "Your last order awaits confirmation. Safely check it below.")}</p>` : ""}<div class="cart-dishes" data-layout="${layout}">${items.map(itemHTML).join("")}</div>${!items.length ? emptyTicket(true) : `<label class="note-label table-note">${bi("备注", "Note")}<textarea id="cartNote" maxlength="240" placeholder="${tr("例如：不要香菜", "e.g. No coriander")}" ${store.order ? "disabled" : ""}>${escapeHTML(noteDraft ?? store.noteConflict?.local ?? store.note)}</textarea></label><div id="noteConflict" class="note-conflict" role="status" aria-live="polite" hidden></div>`}` : `<div class="placed-receipts">${store.orders.length ? store.orders.map((o) => receipt(o, true)).join("") : emptyTicket(false)}</div>`}${remote ? "" : `<button class="table-invite" data-action="table">${bi("邀请同桌 / 拼桌独立点餐", "Invite companions / separate group")} ↗</button>`}</div><footer class="cart-checkout">${pending && (items.length || store.order) ? `<span><small>${bi("本次待下单", "Not placed yet")}</small><strong>${cartMoney(items)}</strong></span><button class="primary" data-action="review" ${submitting ? "disabled" : ""}>${store.order ? bi("确认上一笔订单", "Check last order") : bi("确认订单", "Review order")} ↗</button>` : `<button class="primary" data-action="close">${bi("继续选菜", "Keep exploring")} ↗</button>`}</footer></div>`;
+    // Only a genuinely empty cart is simplified. Never hide existing history or
+    // an unresolved payment, and keep shared-table identity/sync controls intact.
+    const pristine = !items.length && !store.orders.length && !store.order;
+    $('.cart-viewbar').hidden = pristine;
+    $('.table-members').hidden = pristine && remote;
     if (pending && store.order?.token) $('.drawer-note')?.insertAdjacentHTML('afterend', `<button type="button" class="checkout-continue" data-checkout-cancel>${bi('取消本次付款，继续点餐', 'Cancel payment & keep ordering')}</button>`);
     $(".cart-scroll").scrollTop = scrollPosition;
     updateNoteConflict();
@@ -83,7 +88,7 @@ const SharedTable = (() => {
       else if (focus.data.tableLayout) target = $('[data-table-layout]');
       else if (focus.data.action) target = [...document.querySelectorAll('.cart-page [data-action]')].find(b => b.dataset.action === focus.data.action && !b.disabled);
       else if (focus.empty) target = $('.empty-ticket-copy h3');
-      target ||= $('.receipt-tabs [aria-pressed="true"]');
+      target ||= pristine ? $('.empty-ticket-copy h3') : $('.receipt-tabs [aria-pressed="true"]');
       if (target?.matches('.cart-quantity, .empty-ticket-copy h3')) target.tabIndex = -1;
       target?.focus({ preventScroll: true });
     }
