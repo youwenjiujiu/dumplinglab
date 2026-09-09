@@ -58,7 +58,7 @@
     simple("kampong-chicken-soup", "甘榜鸡汤拉面", "Kampong Chicken Noodle Soup", "noodles", 13.8, generated("kampong-chicken-soup"), "", "chicken"),
     simple("shaanxi-hot-oil-noodles", "陕西油泼面", "Shaanxi Hot Oil Noodles", "noodles", 11.8, imageFor("xian-hot-oil-noodles")),
     simple("century-egg-noodles", "销魂皮蛋面", "Century Egg Noodles", "noodles", 12.8, "lunch-v2-century-egg-noodles-generated-v1.png", "", null, true),
-    simple("mince-red-oil-noodles", "肉末红油燃面", "Minced Meat & Chilli Oil Noodles", "noodles", 10.8, generated("mince-chilli-noodles")),
+    simple("mince-red-oil-noodles", "肉末红油燃面", "Minced Meat & Chilli Oil Noodles", "noodles", 10.8, generated("mince-red-oil-noodles")),
     simple("pork-rice", "卤肉饭", "Braised Pork Rice", "sides", 5.8, generated("mini-pork-rice"), "", "pork"),
     simple("braised-tofu", "卤豆腐", "Braised Tofu", "sides", 5.2, generated("braised-tofu")),
     simple("braised-pork-belly", "卤五花肉", "Braised Pork Belly", "sides", 6.2, generated("braised-pork-belly"), "", "pork"),
@@ -161,12 +161,16 @@
     ]));
     d.img = d.preparationImages.boiled;
   }
+  // The clear-broth shortcut and every soup variant use the same photograph.
+  // Keep the dry plated filling photo for tossed preparation only.
+  const porkWonton = MENU.find(d => d.id === "lunch-v2-pork-wonton");
+  porkWonton.preparationImages = { soup: imageFor("hk-crab-roe-wonton"), tossed: porkWonton.img };
   // Shortcuts, not duplicate SKUs. Unknown-price combinations remain non-orderable.
   globalThis.LUNCH_RECOMMENDATIONS = [
     { id: "chive-fried", cn: "韭菜虾仁猪肉煎饺", name: "Pork, Shrimp & Chive Potstickers", dishId: "lunch-v2-pork-chive-shrimp", prep: "fried", img: friedPhotos["lunch-v2-pork-chive-shrimp"] },
     { id: "chicken-fried", cn: "鸡肉包菜煎饺", name: "Chicken & Cabbage Potstickers", dishId: "lunch-v2-chicken-cabbage", prep: "fried", img: friedPhotos["lunch-v2-chicken-cabbage"] },
     { id: "red-oil-chaoshou", cn: chaoshou.cn, name: chaoshou.name, dishId: chaoshou.id, prep: "red-oil", img: chaoshou.img },
-    { id: "pork-soup", cn: "清汤鲜肉云吞", name: "Pork Wontons in Clear Broth", dishId: "lunch-v2-pork-wonton", prep: "soup", img: imageFor("hk-crab-roe-wonton") },
+    { id: "pork-soup", cn: "清汤鲜肉云吞", name: "Pork Wontons in Clear Broth", dishId: "lunch-v2-pork-wonton", prep: "soup", img: porkWonton.preparationImages.soup },
     { id: "roe-wonton-noodles", cn: "鲜虾蟹籽云吞面", name: "Prawn & Crab Roe Wonton Noodles", dishId: "lunch-v2-prawn-roe-wonton", prep: "soup", noodles: true, img: imageFor("wonton-soup-noodles") },
     { id: "boiled-dumplings", cn: "白灼饺子", name: "Boiled Dumplings", chooseFilling: true, prep: "boiled", img: boiledPhoto },
   ];

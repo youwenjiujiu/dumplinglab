@@ -35,6 +35,7 @@ const CheckoutUI = (() => {
     }
   }
   function dispose() {
+    active?.picker?.close();
     const email = active?.node.querySelector('[data-checkout-email]');
     if (typeof email?.value === 'string') contactEmail = email.value.slice(0, 254);
     active?.element?.destroy();
@@ -52,9 +53,24 @@ const CheckoutUI = (() => {
     await stripeScript;
   }
   function addons(order) {
-    const preferred = ['lunch-v2-barley', 'lunch-v2-sour-plum', 'lunch-v2-soft-egg', 'lunch-v2-cucumber'];
-    return preferred.map(id => dish(id)).filter(d => d && !d.soldOut && !d.styles &&
-      !order.items.some(i => i.id === d.id)).map(d => `<article class="checkout-addon"><div class="checkout-addon-photo"><img src="${escapeHTML(photo(d, 's'))}" alt="" width="120" height="104" loading="lazy"></div><strong>${escapeHTML(name(d))}</strong><div><span>${money(itemPrice(d))}</span><button type="button" data-checkout-addon="${escapeHTML(d.id)}" aria-label="${escapeHTML(tr('加一份', 'Add one') + ' ' + name(d))}">+</button></div></article>`).join('');
+    return AddonUI.section(order);
+  }
+  function chooseAddons(view, preselect = null) {
+    if (view.picker || view.confirmed || !current(view)) return;
+    view.picker = AddonUI.show(view.order, {host:view.node, preselect,
+      onClose:() => { view.picker = null; },
+      onApply: async items => {
+        if (!current(view) || view.busy || view.confirmed) throw new Error(tr('请重新确认订单', 'Please check your order again'));
+        view.busy = true;
+        try { await change(view, items); }
+        catch (e) {
+          // Once a cancelled payment's basket has changed, don't let a retry
+          // add the same selection twice. Recover through the authoritative cart.
+          if (view.changed) { view.picker?.close(); recovery(view, e); }
+          throw e;
+        } finally { view.busy = false; }
+      },
+    });
   }
   function itemsHTML(order) {
     return order.items.map(i => `<article>${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="80" height="80">` : ''}<div><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}<small>× ${i.qty}</small></div><b>${money(i.price * i.qty)}</b></article>`).join('');
@@ -64,7 +80,7 @@ const CheckoutUI = (() => {
     view.node.innerHTML = `<h2 id="sheetTitle" class="sr-only">${bi('确认订单', 'Your order')}</h2><div class="checkout-scroll">
       <section class="checkout-location"><img src="/brand/header-${dining ? 'dinein' : 'takeaway'}-v1.svg" width="44" height="40" alt=""><div><p class="eyebrow">DUMPLING LAB</p><h3>${dining ? `${bi('堂食', 'Dine-in')} · ${escapeHTML(order.table)}` : bi('打包自取', 'Pickup')}</h3><p>${dining ? `${bi('点餐组', 'Group')} ${escapeHTML(order.group)} · ${bi('请确认桌号后付款', 'Check your table before paying')}` : `${escapeHTML(order.fulfilment.pickupName || '')}<br>${escapeHTML(order.fulfilment.pickupAddress || '')}`}</p></div></section>
       <section class="checkout-block"><h3>${bi('本次点单', 'Order summary')}<button class="checkout-text-action" type="button" data-checkout-edit>${bi('修改', 'Edit')}</button></h3><div class="checkout-lines">${itemsHTML(order)}</div>${order.note ? `<p class="checkout-note">${bi('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}</section>
-      ${extras ? `<section class="checkout-block checkout-addons"><h3>${bi('搭配加点', 'Add-ons')}<small>${bi('再来一点，刚刚好', 'A little extra')}</small></h3><div class="checkout-addon-list" tabindex="0" role="region" aria-label="${tr('可选加购菜品', 'Optional add-ons')}">${extras}</div></section>` : ''}
+      ${extras}
       <section class="checkout-block checkout-totals"><h3>${bi('费用明细', 'Order total')}<small>${order.items.reduce((n,i) => n + i.qty, 0)} ${bi('份', 'items')}</small></h3>${Fulfilment.summary(order)}</section>
       <section class="checkout-block checkout-payment"><h3>${bi('支付方式', 'Payment methods')}<small>Stripe</small></h3><div data-payment-element><p class="fineprint" role="status">${config.preview ? bi('本地流程演示，不会扣款。', 'Local demonstration. No charge.') : view.enabled ? bi('正在加载安全支付…', 'Loading secure payment…') : bi('线上付款尚未开放，选菜会保留。', 'Online payments are not open yet. Your selection is saved.')}</p></div>
       ${!config.preview ? `<label class="online-field checkout-email"><span>${bi('电子邮箱', 'Email')}</span><input data-checkout-email type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required maxlength="254" placeholder="you@example.com" value="${escapeHTML(contactEmail)}" aria-describedby="checkoutEmailHint"></label><p class="fineprint" id="checkoutEmailHint">${bi('用于完成付款，不会订阅营销邮件。', 'Required for payment. No marketing subscription.')}</p>` : ''}</section></div>
@@ -108,7 +124,7 @@ const CheckoutUI = (() => {
     view.element.on('ready', () => { if (current(view)) view.node.querySelector('[data-checkout-pay]').disabled = false; });
     view.element.on('loaderror', () => error(view, tr('安全支付加载失败，请返回后重试', 'Secure payment failed to load. Go back and retry.')));
   }
-  async function open() {
+  async function open({skipAddons = false} = {}) {
     dispose();
     const owner = store;
     clearTimeout(noteTimer);
@@ -116,7 +132,7 @@ const CheckoutUI = (() => {
     const editedNote = note?.value;
     openModal('online', tr('确认订单', 'Your order'));
     $('#sheetBody').innerHTML = `<div class="sheet-content checkout-page"><h2 id="sheetTitle" class="sr-only">${bi('确认订单', 'Your order')}</h2><div class="checkout-scroll checkout-loading"><span class="checkout-loader" aria-hidden="true"></span><p role="status">${bi('正在核对订单…', 'Checking your order…')}</p><p class="fineprint">${bi('确认菜品与金额后即可付款', 'Checking your dishes and total before payment')}</p><p class="field-error" data-checkout-error role="alert"></p></div></div>`;
-    const view = active = { owner, node: $('#sheetBody').firstElementChild, busy: true };
+    const view = active = { owner, node: $('#sheetBody').firstElementChild, busy: true, newPayment: !owner.order };
     try {
       const dining = Fulfilment.mode() === 'dinein';
       // Resume the exact owned payment BEFORE flushing drafts: its reservation
@@ -166,6 +182,7 @@ const CheckoutUI = (() => {
       }
     } catch (e) { recovery(view, e); }
     finally { view.busy = false; }
+    if (!skipAddons && view.newPayment && view.prepared && current(view)) chooseAddons(view);
   }
   async function readPayment(owner) {
     const pending = owner.order;
@@ -191,17 +208,22 @@ const CheckoutUI = (() => {
     } catch { /* Retain credentials and avoid duplicate orders during outages. */ }
     finally { owner.paymentPolling = false; }
   }
-  async function change(view, addon) {
+  async function change(view, additions) {
     if (view.owner.order) {
       // Never unlock a payable basket until the provider confirms expiration.
       await view.owner.api('/api/online', { ...view.owner.order, action: 'cancel' });
+      view.changed = true;
+      view.actions = null; view.element?.destroy(); view.element = null;
+      const pay = view.node.querySelector('[data-checkout-pay]'); if (pay) pay.disabled = true;
       view.owner.order = null; view.owner.emit();
       if (view.owner.table) await readCart(view.owner);
     }
     if (!current(view)) return;
-    if (addon) {
+    if (additions?.length) {
       const scroll = view.node.querySelector('.checkout-scroll')?.scrollTop || 0;
-      view.owner.mutate({ kind: 'delta', dishId: addon, delta: 1 }); await view.owner.flush(); await open();
+      view.changed = true;
+      for (const item of additions) view.owner.mutate({ kind: 'delta', dishId: item.id, delta: item.qty });
+      await view.owner.flush(); await open({skipAddons:true});
       if (active?.owner === view.owner && active.prepared && current(active)) {
         active.node.querySelector('.checkout-scroll').scrollTop = scroll;
         toast(tr('已加到本单，金额已更新', 'Added to your order. Total updated.'));
@@ -210,9 +232,10 @@ const CheckoutUI = (() => {
     else { dispose(); showCart(); }
   }
   document.addEventListener('click', async e => {
-    const button = e.target.closest('[data-checkout-pay], [data-checkout-edit], [data-checkout-addon], [data-checkout-retry], [data-checkout-back]');
+    const button = e.target.closest('[data-checkout-pay], [data-checkout-edit], [data-checkout-addon], [data-checkout-addons-open], [data-checkout-retry], [data-checkout-back]');
     const view = active;
     if (!button || !view || !current(view) || view.busy) return;
+    if (button.hasAttribute('data-checkout-addons-open') || button.hasAttribute('data-checkout-addon')) return chooseAddons(view, button.dataset.checkoutAddon);
     view.busy = true; button.disabled = true;
     error(view, '');
     try {

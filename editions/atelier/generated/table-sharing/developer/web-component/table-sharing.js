@@ -9,6 +9,7 @@
     connectedCallback() {
       const separate=this.getAttribute('mode')==='separate';
       const type=separate?'separate':'together';
+      const version=separate?'v7':'v5';
       const ticket=x=>`<g transform="translate(${x} 2)"><path class="ticket" d="M-11 0h22v24l-4-2-4 2-3-2-4 2-3-2-4 2z"/><path class="receipt-ink" d="M-6 6H6M-6 11H6M-6 16H1"/></g>`;
       this.shadowRoot.innerHTML=`<style>
         :host{display:block;width:100%;color:var(--red,#983f32)}
@@ -18,7 +19,7 @@
         .ticket{fill:#fff;stroke:currentColor;stroke-width:1;stroke-linejoin:round}
         .receipt-ink{fill:none;stroke:currentColor;stroke-width:1;stroke-linecap:round}
       </style><div class="scene" data-scene="${type}">
-        <img src="/img/s/dining-${type}-v4.webp" alt="" width="640" height="640">
+        <img src="/img/s/dining-${type}-${version}.webp" alt="" width="720" height="720" decoding="async">
       </div><svg viewBox="0 0 200 28" aria-hidden="true"><g class="tickets">${separate?ticket(58)+ticket(142):ticket(100)}</g></svg>`;
       this.button=this.closest('button');
       this.button?.addEventListener('pointerenter',this.activate);

@@ -4,6 +4,7 @@ const LunchMenu = (() => {
   let step = "preparation";
   let flavor = { spicy:false, sesame:false, noodles:false };
   const prep = id => LUNCH_PREPARATIONS.find(p => p.id === id);
+  const preparationDescription = id => ({ soup:tr("清汤鲜香", "In clear broth"), tossed:tr("酱汁拌匀", "Coated in sauce"), boiled:tr("清爽原味", "Plain, no sauce"), fried:tr("金黄脆底", "Golden crisp base") })[id] || "";
   const options = (d, style) => d.variants?.[style];
   const firstStyle = d => styleFor(d, preparation, 5, flavor) || d.styles?.[0] || null;
   const readyFor = d => Boolean(d.fixedPreparation) || step === "filling" && d.preparations.includes(preparation);
@@ -15,7 +16,7 @@ const LunchMenu = (() => {
   const recommendationPrice = r => r.chooseFilling ? Math.min(...MENU.filter(d=>d.kind==="dumpling").map(d=>d.price)) : dish(r.dishId).price + (r.noodles ? LUNCH_NOODLE_EXTRA : 0);
   function section() {
     if (step === "filling") return `<div class="lunch-steps"><div class="lunch-chosen-flavor"><img src="${photo(prep(preparation), "s")}" alt="" width="52" height="52"><div><strong>${bi(prep(preparation).cn, prep(preparation).en)}</strong></div><button class="edit-preparation" data-lunch-back aria-label="${tr("修改做法", "Edit preparation")}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15z"/></svg></button></div><div class="lunch-step-title lunch-fillings-title" tabindex="-1" id="fillingStepTitle"><h3>${bi("馅料", "Fillings")}</h3></div></div>`;
-    return `<div class="lunch-steps"><div class="lunch-preparations" role="group" aria-label="${tr("选择做法", "Preparation")}">${LUNCH_PREPARATIONS.map(p => `<button data-lunch-prep="${p.id}" aria-pressed="${preparation === p.id}"><span class="preparation-photo"><img src="${photo(p)}" alt="" loading="lazy"></span><span class="preparation-label"><strong>${bi(p.cn,p.en)}</strong><span class="preparation-state" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3.2 3.2L15 6.5"/></svg></span></span></button>`).join("")}</div></div>`;
+    return `<div class="lunch-steps"><div class="lunch-preparations" role="group" aria-label="${tr("选择做法", "Preparation")}">${LUNCH_PREPARATIONS.map(p => `<button data-lunch-prep="${p.id}" aria-pressed="${preparation === p.id}"><span class="preparation-photo"><img src="${photo(p)}" alt="" loading="lazy"></span><span class="preparation-label"><strong>${bi(p.cn,p.en)}</strong><small class="preparation-description">${preparationDescription(p.id)}</small><span class="preparation-state" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3.2 3.2L15 6.5"/></svg></span></span></button>`).join("")}</div></div>`;
   }
   const group = (label, key, values, selected, attribute = "lunch-option") => `<fieldset class="lunch-options lunch-options-${key}"><legend${key === "pieces" ? ' class="sr-only"' : ''}>${bilingualText(label)}</legend><div>${values.map(v => `<button class="chip ${String(selected) === String(v.value) ? "active" : ""}" data-${attribute}="${key}" data-value="${v.value}" aria-pressed="${String(selected) === String(v.value)}">${bilingualText(v.label)}</button>`).join("")}</div></fieldset>`;
   function preparationBadge(d, style) {

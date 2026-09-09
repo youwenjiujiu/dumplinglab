@@ -1,0 +1,7 @@
+# 干拌做法缩略图
+
+Mode: built-in image_gen. Project asset: preparation-tossed-generated-v3-appetite-v3.png.
+
+Use case: ads-marketing. Asset type: square menu preparation thumbnail for dry-tossed Chinese crescent dumplings, clearly distinct from plain boiled dumplings on a plate. Premium photorealistic mouthwatering food photograph on clean pure white background. A shallow WHITE ceramic bowl filled with plump pleated crescent jiaozi, every wrapper visibly coated in glossy deep amber-brown savory dressing; sauce clings to folds, small amount glistens at bottom, NOT soup. A pair of dark wood chopsticks enters diagonally from upper right and lifts ONE sauce-coated dumpling just above the bowl, giving the clear action of tossing and serving. No hand in frame. Bowl and lifted dumpling together fill about 85 percent of a square image; entire bowl visible, realistic 35-degree three-quarter camera, low soft contact shadow. Moist translucent dough folds with rich brown sauce, delicate wisp of steam, soft natural studio light, appetizing but realistic. No chili peppers/flakes, no sesame seeds/paste, no scallion garnish or unconfirmed toppings. No text, no logo, no utensils besides the single chopstick pair. Do not make a plain white dumpling plate, do not make fried dumplings or wontons. Background white, not cream. This is a cooking-method illustration, not a literal portion promise.
+
+Intent: distinguish sauce-coated, lifted dumplings in a shallow bowl from plain white boiled dumplings on a plate at small menu size. Do not imply optional chilli/sesame are included.

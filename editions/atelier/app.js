@@ -78,7 +78,8 @@ const presentedDish = (d, style) => {
 const photo = (d, size = "s", style = null) => {
   const preparation = d.variants?.[style]?.prep;
   const img = combinationPresentation(d, style)?.img || d.preparationImages?.[preparation] || (d.kind === "dumpling" && style ? LUNCH_PREPARATIONS.find(p=>p.id===preparation)?.img || d.img : d.img);
-  return img ? `/img/${size}/${img.replace(/\.(png|jpe?g|webp)$/i, ".webp")}` : "";
+  const artwork = globalThis.DL_MENU_ART?.[img] || img;
+  return artwork ? `/img/${size}/${artwork.replace(/\.(png|jpe?g|webp)$/i, ".webp")}` : "";
 };
 const description = (d) => I18N.dishes[d.id]?.flavor || d.flavor;
 const culinaryPhrases = ["手工宽面", "酱香微辣", "配辣椒", "蒜末", "与热油", "细面", "拌葱油", "与甜酱油", "底部", "煎至金黄", "卷心菜", "猪肉", "鸡肉", "牛肉", "土豆", "番茄", "鸡汤", "拉面", "葱油", "芝麻", "黑芝麻", "糯米汤圆", "薄皮煎制", "鲜虾", "韭菜", "香菇", "咸蛋黄"].sort((a, b) => b.length - a.length);
@@ -601,6 +602,10 @@ function renderChrome() {
     "Dumpling Lab",
     "Dumpling Lab",
   ));
+  setBilingual($("#footerTopLabel"), tr("再看看菜单", "Back to the menu"));
+  setBilingual($("#footerFarewell"), tr("好好吃饭，下次见。", "Eat well. See you soon."));
+  $("#footerNavigation").ariaLabel = tr("门店与菜单", "Visit and menu");
+  $("#footerStorefront").alt = tr("Dumpling Lab 红色门店的线描插画", "Ink illustration of the red Dumpling Lab storefront");
   renderNavigation();
   renderFilters();
   Fulfilment.chrome();
@@ -726,11 +731,17 @@ function openDish(d, selectedStyle = null, lockedPrep = null) {
   openModal("dish", categoryName(combinationPresentation(d, detailStyle) ? "noodles" : d.section));
   renderDetail();
 }
+function detailIsHot(d, style) {
+  return d.section === "noodles" || style === "soup" || d.variants?.[style]?.prep === "soup" || d.id === "lunch-v2-fishball-soup";
+}
 function renderDetail() {
   $(".detail-image")?.stopPlateMotion?.();
   const d = presentedDish(detail, detailStyle);
   $("#sheetBody").innerHTML =
-    `${d.img ? `<div class="detail-image"><img draggable="false" src="${photo(d, "l", detailStyle)}" alt="${escapeHTML(name(d))}"></div>` : ""}<div class="sheet-content"><div class="detail-top"><div class="detail-title"><h1 id="sheetTitle">${dishNameHTML(d)}</h1>${LunchMenu.preparationBadge(detail, detailStyle)}</div><span class="detail-price">${foodMoney(itemPrice(d, detailStyle))}</span></div>${LunchMenu.ingredients(detail, detailStyle)}${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${bi("每份", "Per portion")} · ${bi(d.portion, d.portion.replace("块"," piece").replace("个"," pieces"))}</p>` : ""}<p class="ingredient-advisory">${bi("如有食物过敏，请先告知店员。", "Please tell staff about any food allergies.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? bi("暂时售罄", "Sold out") : (Fulfilment.remote() ? bi("加入订单", "Add to order") : bi("加入本桌", "Add to our table"))}<strong>${foodMoney(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
+    `${d.img ? `<div class="detail-image" data-heat="${detailIsHot(d, detailStyle) ? 'hot' : 'none'}"><img draggable="false" src="${photo(d, "l", detailStyle)}" alt="${escapeHTML(name(d))}"><span class="detail-steam" aria-hidden="true"><i></i><i></i><i></i></span></div>` : ""}<div class="sheet-content"><div class="detail-top"><div class="detail-title"><h1 id="sheetTitle">${dishNameHTML(d)}</h1>${LunchMenu.preparationBadge(detail, detailStyle)}</div><span class="detail-price">${foodMoney(itemPrice(d, detailStyle))}</span></div>${LunchMenu.ingredients(detail, detailStyle)}${description(d) ? `<p class="detail-description">${descriptionHTML(d)}</p>` : ""}${d.variants ? LunchMenu.controls(d) : d.portion ? `<p class="detail-portion">${bi("每份", "Per portion")} · ${bi(d.portion, d.portion.replace("块"," piece").replace("个"," pieces"))}</p>` : ""}<p class="ingredient-advisory">${bi("如有食物过敏，请先告知店员。", "Please tell staff about any food allergies.")}</p></div><div class="dish-action"><div class="quantity" role="group" aria-label="${tr("份数", "Portions")}"><button data-detail-delta="-1" aria-label="${tr("减少份数", "Fewer portions")}" ${detailQty <= 1 ? "disabled" : ""}>−</button><b>${detailQty}</b><button data-detail-delta="1" aria-label="${tr("增加份数", "More portions")}" ${detailQty >= 20 ? "disabled" : ""}>+</button></div><button class="primary" data-action="add-detail" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? bi("暂时售罄", "Sold out") : (Fulfilment.remote() ? bi("加入订单", "Add to order") : bi("加入本桌", "Add to our table"))}<strong>${foodMoney(itemPrice(d, detailStyle) * detailQty)}</strong></button></div>`;
+  const image = $(".detail-image img");
+  if (image) image.parentElement.append(document.createElement("dl-dish-serving"));
+  if (image?.complete && image.naturalWidth) image.parentElement.classList.add("is-served");
 }
 function updateDetailSelection() {
   if ($("#detailPreparation")) $("#detailPreparation").outerHTML = LunchMenu.preparationBadge(detail, detailStyle);
@@ -742,7 +753,11 @@ function updateDetailSelection() {
   const presentation = presentedDish(detail, detailStyle);
   if (image && detail?.img) {
     const nextPhoto = photo(detail, "l", detailStyle);
-    if (image.getAttribute("src") !== nextPhoto) image.src = nextPhoto;
+    if (image.getAttribute("src") !== nextPhoto) {
+      image.parentElement.classList.remove("is-served");
+      image.src = nextPhoto;
+    }
+    image.parentElement.dataset.heat = detailIsHot(presentation, detailStyle) ? "hot" : "none";
     image.alt = name(presentation);
   }
   if ($("#sheetTitle")) $("#sheetTitle").innerHTML = dishNameHTML(presentation);
@@ -916,7 +931,7 @@ function showTable(forReview = false) {
     return;
   }
   $("#sheetBody").innerHTML =
-    `<div class="sheet-content"><h2 id="sheetTitle">${bi("同桌与拼桌", "Table & groups")}</h2><p class="sheet-intro">${bi("桌号", "Table")} ${escapeHTML(table)} · ${bi("点餐组", "Group")} ${escapeHTML(group)}</p><div class="table-options sharing-options"><button class="sharing-option" data-action="share" aria-label="${tr("邀请同桌一起点餐", "Invite companions to share this order")}"><dl-sharing-motion mode="shared" aria-hidden="true"></dl-sharing-motion><strong>${bi("一起点", "Together")}</strong></button><button class="sharing-option" data-action="separate" aria-label="${tr("创建独立点餐组", "Create a separate ordering group")}"><dl-sharing-motion mode="separate" aria-hidden="true"></dl-sharing-motion><strong>${bi("独立点", "Separately")}</strong></button></div>${store.status === "rejected" ? `<p class="drawer-note">${escapeHTML(store.lastError)}</p><button class="secondary" data-action="discard-rejected">${bi("撤回未同步操作，重新选菜", "Discard unsynced edits and retry")}</button>` : ""}</div>`;
+    `<div class="sheet-content"><h2 id="sheetTitle">${bi("同桌与拼桌", "Table & groups")}</h2><p class="sheet-intro">${bi("桌号", "Table")} ${escapeHTML(table)} · ${bi("点餐组", "Group")} ${escapeHTML(group)}</p><div class="table-options sharing-options"><button class="sharing-option" data-action="share" aria-label="${tr("邀请同桌一起点餐", "Invite companions to share this order")}"><dl-sharing-motion mode="shared" aria-hidden="true"></dl-sharing-motion><strong>${bi("一起点", "Together")}</strong><small>${bi("共用一份订单", "One shared order")}</small></button><button class="sharing-option" data-action="separate" aria-label="${tr("创建独立点餐组", "Create a separate ordering group")}"><dl-sharing-motion mode="separate" aria-hidden="true"></dl-sharing-motion><strong>${bi("独立点", "Separately")}</strong><small>${bi("各自一份订单", "Your own order")}</small></button></div><p class="sharing-note">${bi("朋友、同事或拼桌，都可以各自下单。", "Friends, colleagues or people sharing a table can all order separately.")}</p>${store.status === "rejected" ? `<p class="drawer-note">${escapeHTML(store.lastError)}</p><button class="secondary" data-action="discard-rejected">${bi("撤回未同步操作，重新选菜", "Discard unsynced edits and retry")}</button>` : ""}</div>`;
 }
 document.addEventListener("submit", async (event) => {
   if (event.target.id !== "tableEntryForm") return;
@@ -1259,6 +1274,7 @@ function restoreFoodPhoto(img) {
   host.classList.remove("image-unavailable");
   host.querySelector(".image-fallback")?.remove();
   if (host.classList.contains("detail-image")) {
+    host.classList.add("is-served");
     for (const attr of ["role", "tabindex", "aria-label", "aria-valuemin", "aria-valuemax", "aria-valuenow", "aria-orientation"]) host.removeAttribute(attr);
     if (hadFocus) $("#closeSheet").focus({ preventScroll: true });
   }

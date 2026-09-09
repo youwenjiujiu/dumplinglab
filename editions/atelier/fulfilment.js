@@ -112,7 +112,7 @@ const Fulfilment = (() => {
   const entryText = (zh, en) => `<span class="entry-copy"><span lang="zh-CN">${escapeHTML(zh)}</span><span lang="en" class="entry-en">${escapeHTML(en)}</span></span>`;
   function select() {
     openModal('fulfilment', '');
-    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><img class="entry-art" src="/brand/entry-dinein-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><img class="entry-art" src="/brand/entry-takeaway-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('打包外带','Takeaway')}</strong></button></div></div>`;
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><dl-dinein-serving class="entry-art" aria-hidden="true"><img src="/brand/entry-dinein-v3.svg" width="260" height="220" alt="" draggable="false" style="width:100%;height:auto"></dl-dinein-serving><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><dl-takeaway-pickup class="entry-art" aria-hidden="true"><img src="/brand/entry-takeaway-v5.svg" width="260" height="220" alt="" draggable="false" style="width:100%;height:auto"></dl-takeaway-pickup><strong>${entryText('打包外带','Takeaway')}</strong></button></div></div>`;
     $('#closeSheet').ariaLabel = '关闭 / Close';
     const heading = $('#sheetTitle'); heading.tabIndex = -1; heading.focus({preventScroll:true});
   }
@@ -161,15 +161,9 @@ const Fulfilment = (() => {
     const stage = order.collectedAt || order.resolvedAt ? 'collected' : order.readyAt ? 'ready' : order.preparingAt ? 'preparing' : 'received';
     const stages = ['received','preparing','ready','collected'];
     const labels = [['已下单','Ordered'],['制作中','Preparing'],['待取餐','Ready'],['已取餐','Collected']];
-    // Original brand marks + the user's preferred steaming dumpling pot.
-    // Paper and bag silhouettes are CSS containers for the original marks.
+    // Generated transparent progress artwork; text and server-driven states remain authoritative.
     // Progress remains server-driven; there is no simulated timing or advancement.
-    const illustrations = [
-      '<i class="progress-order-slip"><em class="progress-slip-logo"></em><em class="progress-slip-items"></em><em class="progress-slip-stamp"></em></i>',
-      '<i class="progress-steam"></i><i class="progress-pot"><em></em><em></em><em></em></i>',
-      '<i class="progress-brand-bag"><em class="progress-bag-lockup"></em><em class="progress-bag-fold"></em></i>',
-      '<i class="progress-seal"></i>',
-    ];
+    const illustrations = stages.map(s => `<img class="progress-generated-icon" src="/img/s/progress-${s}-${['preparing','collected'].includes(s) ? 'v3' : 'v2'}.webp" alt="" width="80" height="80" decoding="async">`);
     const sync = store.progressSync?.[order.id];
     const note = sync === 'synced' ? bi('状态已更新 · 页面打开时自动刷新','Up to date · Refreshes while this page is open')
       : sync === 'offline' ? bi('暂时无法更新，显示上次记录。请向店员确认。','Unable to refresh. Showing the last saved status; check with staff.')
@@ -179,14 +173,22 @@ const Fulfilment = (() => {
       <div class="pickup-number"><span lang="zh-CN">取餐号</span><small lang="en">PICKUP NUMBER</small><strong>${escapeHTML(p.number)}</strong></div>
       <ol class="pickup-progress" aria-label="${tr('取餐进度','Order progress')}">${stages.map((s,i)=>`<li class="${i<stages.indexOf(stage)?'is-complete':''}" ${s===stage?'aria-current="step"':''}><span class="progress-art progress-art--${s}" aria-hidden="true">${illustrations[i]}</span><span class="progress-label" lang="zh-CN">${labels[i][0]}</span><small lang="en">${labels[i][1]}</small></li>`).join('')}</ol>
       <p class="pickup-status" role="status"><b>${stage === 'ready' ? bi('餐已备好，请到柜台取餐','Your order is ready. Please collect at the counter.') : stage === 'preparing' ? bi('正在为您制作，请稍候','We are preparing your order.') : stage === 'collected' ? bi('已取餐，祝您用餐愉快','Collected. Enjoy your meal!') : bi('订单已收到，等待制作','Order received. Waiting to be prepared.')}</b><small>${note}</small></p>
-      ${stage === 'collected' ? `<div class="pickup-code pickup-code--collected"><span>${bi('本单已完成','Order completed')}</span><small>${escapeHTML(p.date)}</small></div>` : `<div class="pickup-code"><img class="pickup-qr" src="${escapeHTML(p.qr)}" width="140" height="140" alt="${tr('向店员出示此取餐二维码','Show this pickup QR code to staff')}"><div><span>${bi('取餐时出示','Show at collection')}</span><small>${bi('取餐号或二维码','Pickup number or QR code')}</small><small>${escapeHTML(p.date)}</small></div></div>`}
+      ${stage === 'collected' ? `<div class="pickup-code pickup-code--collected"><span>${bi('本单已完成','Order completed')}</span><small>${escapeHTML(p.date)}</small></div>` : `<dl-pickup-slip lang="${tr('zh','en')}"><div class="pickup-code"><img class="pickup-qr" src="${escapeHTML(p.qr)}" width="140" height="140" alt="${tr('向店员出示此取餐二维码','Show this pickup QR code to staff')}"><div><span>${bi('取餐时出示','Show at collection')}</span><small>${bi('取餐号或二维码','Pickup number or QR code')}</small><small>${escapeHTML(p.date)}</small></div></div></dl-pickup-slip>`}
     </section>`;
   }
   function refreshTicket() {
     if (modal !== 'pickup') return;
     const node = $('#sheetBody .pickup-ticket');
     const order = store.orders.find(o => o.id === node?.dataset.pickupId);
-    if (node && order) node.outerHTML = pickupTicket(order);
+    if (node && order) {
+      const previousStage = node.dataset.stage;
+      const unfolded = node.querySelector('dl-pickup-slip')?.detached;
+      node.outerHTML = pickupTicket(order);
+      const updated = $('#sheetBody .pickup-ticket');
+      // Polling unchanged progress must not repeatedly replay the same animation.
+      if (updated?.dataset.stage === previousStage) updated.setAttribute('data-motion-settled', '');
+      if (unfolded) updated?.querySelector('dl-pickup-slip')?.setDetached?.(true);
+    }
   }
   function renderOnlineReview(input, order) {
     const pickup = order.mode === 'takeaway';
@@ -251,6 +253,7 @@ const Fulfilment = (() => {
     const time = Number.isNaN(when.getTime()) ? '' : when.toLocaleString(language === 'zh' ? 'zh-CN' : 'en-SG', {timeZone:'Asia/Singapore',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     $('#sheetBody').innerHTML = `<div class="order-result ${pickup ? 'pickup-success' : 'dinein-success'}"><h2 id="sheetTitle" class="sr-only" tabindex="-1">${bi('订单详情', 'Order details')}</h2><div class="order-result-scroll">
       ${pickup ? pickupTicket(order) : `<section class="dinein-paid"><img src="/brand/order-complete-seal.svg" alt="" width="42" height="42"><p class="eyebrow">${bi('已付款 · 堂食桌号', 'PAID · TABLE')}</p><strong>${escapeHTML(order.table || '')}</strong><p>${bi('订单已发送至门店，请在座位稍候', 'Your order has been sent. Please wait at your table.')}</p></section>`}
+      <div class="order-brand-banner"><img src="/brand/pairing-banner-backdrop-v6.webp" alt="" width="1200" height="400" loading="lazy"><span class="order-banner-pattern" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><img class="order-banner-dish" src="/img/l/potstickers-pork-shrimp-chive-cutaway-v1.webp" alt="${tr('韭菜虾仁猪肉煎饺', 'Pork, Shrimp & Chive Potstickers')}" width="1280" height="1280" loading="lazy"><img class="order-banner-logo" src="/brand/order-packaging-lockup.svg" alt="Dumpling Lab"></div>
       <section class="checkout-block"><h3>${pickup ? escapeHTML(order.fulfilment?.pickupName || 'Dumpling Lab') : 'Dumpling Lab'}</h3>${pickup ? `<p class="pickup-location">${escapeHTML(order.fulfilment?.pickupAddress || '')}</p>` : ''}<div class="checkout-lines">${CheckoutUI.itemsHTML(order)}</div>${order.note ? `<p class="checkout-note">${bi('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}</section>
       <section class="checkout-block checkout-totals"><h3>${bi('付款明细', 'Payment details')}</h3>${summary(order, true)}</section>
       <section class="checkout-block"><dl class="order-result-meta">${time ? `<div><dt>${bi('付款时间', 'Payment time')}</dt><dd>${escapeHTML(time)}</dd></div>` : ''}<div><dt>${bi('订单编号', 'Order number')}</dt><dd>${escapeHTML(order.no || order.id)}</dd></div><div><dt>${bi('用餐方式', 'Order type')}</dt><dd>${escapeHTML(label(order.mode))}${pickup ? '' : ` · ${escapeHTML(order.table)} / ${escapeHTML(order.group)}`}</dd></div></dl></section>

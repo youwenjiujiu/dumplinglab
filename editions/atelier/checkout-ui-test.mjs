@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const source=await readFile(new URL('checkout-ui.js',import.meta.url),'utf8');
+const addons=await readFile(new URL('addons-ui.js',import.meta.url),'utf8');
 const listeners={};let root, paid=false, confirmed=0, cancelled=0, created=0, apiCalls=[], decline=true;
 class Node {
   constructor(){this.isConnected=true;this.nodes=new Map();this.textContent='';this.disabled=false;this.dataset={};this.value='guest@example.test';}
@@ -13,7 +14,7 @@ class Node {
 }
 const body={set innerHTML(s){if(root)root.isConnected=false;root=new Node();root.innerHTML=s;},get firstElementChild(){return root;}};
 const catalog=[{id:'lunch-v2-barley',cn:'薏米水',name:'Barley',price:3.5,img:'barley.webp'},{id:'lunch-v2-sour-plum',cn:'酸梅汁',name:'Plum',price:4.2,img:'plum.webp'}];
-let saved;
+let saved, picker;
 const owner={table:'A1',group:'A',nickname:'Test',remote:{opIds:['op']},items:[{id:catalog[0].id,qty:1}],note:'',order:null,storageAvailable:true,
   async flush(){},async poll(){},persist(){},emit(){},
   mutate(op){this.items.push({id:op.dishId,qty:1});},
@@ -43,16 +44,23 @@ const ctx={console,crypto,URLSearchParams,URL,AbortSignal,structuredClone,store:
     };
   }}),
 };
-vm.createContext(ctx);vm.runInContext(source,ctx);
+ctx.showAddonPicker=(order,options)=>{const handle={close(){options.onClose();}};picker={order,options,handle};return handle;};
+vm.createContext(ctx);vm.runInContext(addons+'\nAddonUI.show = showAddonPicker;\n'+source,ctx);
 await vm.runInContext('CheckoutUI.open()',ctx);
 assert(root.innerHTML.includes('搭配加点'));assert(root.innerHTML.includes('酸梅汁'));assert(!root.innerHTML.includes('data-checkout-addon="lunch-v2-barley"'));
 assert.equal(root.querySelector('[data-stripe-total]').textContent,'SGD 3.50');
 assert.equal(root.querySelector('[data-checkout-pay]').disabled,false);
 assert.equal(created,1);
 const add=new Node();add.dataset.checkoutAddon='lunch-v2-sour-plum';
+add.attr='data-checkout-addon';
+assert(picker,'A fresh checkout offers the optional picker');
+picker.handle.close();
 root.querySelector('.checkout-scroll').scrollTop=280;
 root.querySelector('[data-checkout-email]').value='guest@example.test';
 await listeners.click({target:{closest:()=>add}});
+assert.equal(cancelled,0,'Opening the add-on selector does not alter a payable order');
+assert.equal(picker.options.preselect,'lunch-v2-sour-plum');
+await picker.options.onApply([{id:'lunch-v2-sour-plum',qty:1}]);
 assert.equal(cancelled,1,'Cancel the previous Session before changing its amount');
 assert.equal(created,2);assert.equal(owner.items.length,2);
 assert.equal(root.querySelector('.checkout-scroll').scrollTop,280,'Adding a dish preserves the review scroll position');

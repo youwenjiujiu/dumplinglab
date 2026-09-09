@@ -26,6 +26,4 @@
   <use href="#dumpling" x="116" y="104" width="9" height="12" transform="rotate(85 120 110)"/>
 </g>
 <path d="m160 91 15 25m-10-26 15 25" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-<ellipse cx="99" cy="87" rx="9" ry="4" fill="#fff"/>
-<ellipse cx="99" cy="87" rx="5" ry="2" fill="#7f3024"/>
 </svg>

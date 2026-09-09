@@ -1,0 +1,5 @@
+# 制作中图标局部修订（待确认）
+
+Mode: built-in image_gen edit. Input: web/img/progress-preparing-v2.png. Intended output: web/img/progress-preparing-v3.png.
+
+Use case: precise-object-edit. Image 1 is the edit target. Small local correction ONLY to the THREE white dumplings INSIDE the red cooking pot. Currently they look like round bao buns with a pointed knot. Replace with THREE elongated Chinese jiaozi: each a plump long half-moon/crescent, twice as wide as tall, curved crimped seam running ALONG ONE SIDE, five small folded pleats along that arc, gently convex smooth belly and flatter base, pointed ends. NO central peaked top, NO gathering/knot at center, NO round pouch or bao bun. Keep simple red fold lines on white dough, readable at small icon size. Maintain exact pot, two handles, three steam wisps, red-white color palette, illustration style, position, framing and transparent background. Change only dumpling geometry, no other objects or lettering. IMPORTANT output genuine transparent alpha PNG, not a painted checkerboard; preserve original empty transparent pixels.

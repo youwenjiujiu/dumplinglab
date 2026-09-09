@@ -26,6 +26,14 @@
     <script src="/error-copy.js" defer></script>
     <script src="/cart-store.js" defer></script>
     <script src="/fulfilment.js" defer></script>
+    <script src="/brand/serving-motion-v1.js" defer></script>
+<script src="/brand/takeaway-pickup-v5.js" defer></script>
+<script src="/brand/dinein-serving-v3.js" defer></script>
+    <script src="/brand/menu-depth-v1.js" defer></script>
+    <script src="/brand/menu-appetite-v1.js" defer></script>
+    <script src="/brand/dish-serving-v2.js" defer></script>
+    <script src="/brand/pickup-slip-v1.js" defer></script>
+    <script src="/addons-ui.js" defer></script>
     <script src="/checkout-ui.js" defer></script>
     <script src="/shared-motion.js" defer></script>
     <script src="/micro-motion.js" defer></script>
@@ -118,8 +126,20 @@
           ><span aria-hidden="true">↗</span>
         </button>
         <div id="menuList"></div>
-        <footer class="colophon">
-          <span>DUMPLING LAB</span><span id="footerCopy"></span><b>饺</b>
+        <footer class="colophon restaurant-footer" id="brandFooter" aria-label="Dumpling Lab">
+          <dumpling-storefront-ink class="footer-storefront" role="img" aria-label="Dumpling Lab 店铺插画 / Dumpling Lab storefront illustration">
+            <div class="footer-storefront-fallback">
+              <img src="/brand/footer-storefront-v1.webp" alt="Dumpling Lab 红色门店的线描插画" id="footerStorefront" loading="lazy" decoding="async" width="1774" height="887" />
+              <span class="footer-awning-logo" aria-hidden="true"></span>
+            </div>
+          </dumpling-storefront-ink>
+          <div class="footer-visit">
+            <span id="footerFarewell">好好吃饭，下次见。</span>
+            <nav class="footer-links" aria-label="门店与菜单" id="footerNavigation">
+              <a href="#main"><span id="footerTopLabel" class="sr-only">再看看菜单</span><span aria-hidden="true">↑</span></a>
+            </nav>
+          </div>
+          <div class="footer-signoff"><span>© <span id="footerCopy">Dumpling Lab</span></span><address><a href="https://www.google.com/maps/search/?api=1&amp;query=Dumpling%20Lab%2049%20Circular%20Rd%20Singapore%20049404" target="_blank" rel="noopener noreferrer">49 Circular Rd · Singapore 049404 <span aria-hidden="true">↗</span></a></address></div>
         </footer>
       </main>
       <aside class="desktop-ticket" id="desktopTicket"></aside>
@@ -152,5 +172,6 @@
       aria-live="polite"
       hidden
     ></div>
+    <script type="module" src="/brand/storefront-ink-v1.js"></script>
   </body>
 </html>

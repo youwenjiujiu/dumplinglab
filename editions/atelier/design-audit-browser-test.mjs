@@ -30,7 +30,7 @@ try {
     await page.locator('#closeSheet').click();
     await page.locator('#tableButton').click();
     await page.waitForFunction(()=>[...document.querySelectorAll('dl-sharing-motion')].every(e=>[...e.shadowRoot.querySelectorAll('img')].every(i=>i.complete&&i.naturalWidth>0)));
-    for(const src of await page.locator('dl-sharing-motion img').evaluateAll(es=>es.map(e=>e.src)))assert(src.includes('-v4.webp'));
+    assert.deepEqual(await page.locator('dl-sharing-motion img').evaluateAll(es=>es.map(e=>e.src.split('/').pop())),['dining-together-v5.webp','dining-separate-v7.webp']);
     await page.screenshot({path:join(output,`sharing-${width}.png`)});
     await page.locator('#closeSheet').click();
     await page.locator('#tray').click();

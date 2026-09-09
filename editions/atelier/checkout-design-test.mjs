@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 const read = file => readFile(new URL(file, import.meta.url), 'utf8');
-const [ui, fulfilment, css, app] = await Promise.all(['checkout-ui.js','fulfilment.js','shared-table.css','app.js'].map(read));
+const [ui, fulfilment, css, app, addons] = await Promise.all(['checkout-ui.js','fulfilment.js','shared-table.css','app.js','addons-ui.js'].map(read));
 const escapeHTML = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const catalog = [
   {id:'noodles', cn:'肉末葱油面', name:'Minced pork & scallion noodles', img:'noodles.webp'},
@@ -23,6 +23,7 @@ for (const language of ['zh','en']) {
     $:selector=>selector==='#sheetBody'?body:{focus(){}},view:{node:{},config:{preview:false},enabled:true,order},order,
   };
   vm.createContext(ctx);
+  vm.runInContext(addons,ctx);
   vm.runInContext(ui.replace('return { open, refresh, dispose, itemsHTML };', 'return { open, refresh, dispose, itemsHTML, draw };'),ctx);
   vm.runInContext(fulfilment,ctx);
   for (const mode of ['takeaway','dinein']) {
@@ -48,6 +49,10 @@ for (const language of ['zh','en']) {
     assert.equal(opened.mode,'pickup');
     assert(body.innerHTML.includes(`data-stage="${stage}"`));
     assert(body.innerHTML.indexOf('pickup-number')<body.innerHTML.indexOf('checkout-lines'));
+    assert(body.innerHTML.indexOf('order-brand-banner')>body.innerHTML.indexOf('pickup-number'));
+    assert(body.innerHTML.indexOf('order-brand-banner')<body.innerHTML.indexOf('checkout-lines'));
+    assert(body.innerHTML.includes('/brand/pairing-banner-backdrop-v6.webp')&&body.innerHTML.includes('class="order-banner-logo" src="/brand/order-packaging-lockup.svg"'),'Campaign banner uses the original vector brand lockup');
+    assert(body.innerHTML.includes('class="order-banner-dish" src="/img/l/potstickers-pork-shrimp-chive-cutaway-v1.webp"'),'Campaign dumplings use the unmodified menu asset');
     assert(body.innerHTML.includes(language==='zh'?'实付金额':'Total paid'));
     assert(!body.innerHTML.includes(language==='zh'?'应付总额':'Total to pay'));
     assert(!body.innerHTML.includes('<script>'));
@@ -67,6 +72,10 @@ assert(css.includes('height: 100dvh; max-height: 100dvh; margin: 0; border-radiu
 assert(css.includes('.checkout-scroll, .order-result-scroll { flex: 1; min-height: 0; overflow-y: auto;'));
 assert(css.includes('.checkout-paybar { flex: none;'),'Dock is outside the scrolling content');
 assert(css.includes('env(safe-area-inset-bottom)')&&css.includes('prefers-reduced-motion'));
-assert(css.includes('.checkout-addon button { flex: none; width: 44px; height: 44px;'));
+assert(css.includes('.checkout-addon button { position: relative; flex: none; width: 44px; height: 44px;'));
+assert(css.includes("inset: 9px; border-radius: 3px; background: var(--order-accent)"),'26px visible square inside 44px hit target');
+assert(css.includes('center / 12px 1px no-repeat'),'Fine one-pixel plus, not a heavy text glyph');
+assert(css.includes('.checkout-addon-list::-webkit-scrollbar { display: none; }'));
+assert(!css.includes('min-height: 39px;'),'No forced two-line gap for single-line Chinese dish names');
 assert(app.includes('input.closest(".cart-scroll, .checkout-scroll")'));
 console.log('PASS checkout design: bilingual ordering, safe snapshot rendering, single payment dock, full-height small-screen contract, real progress stages and no fictional estimates. Not browser QA.');

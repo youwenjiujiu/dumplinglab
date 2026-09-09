@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { fail } from '../../web/server/http.js';
 import { RequestError } from '../../web/server/order-core.js';
 const ui = await readFile(new URL('checkout-ui.js', import.meta.url), 'utf8');
+const addons = await readFile(new URL('addons-ui.js', import.meta.url), 'utf8');
 const copy = await readFile(new URL('error-copy.js', import.meta.url), 'utf8');
 const cartSource = await readFile(new URL('cart-store.js', import.meta.url), 'utf8');
 const lock = () => Object.assign(new Error('本组正在付款，请完成或取消付款后再修改菜品。'), {status:409,code:'PAYMENT_PENDING'});
@@ -45,7 +46,7 @@ function fixture(options = {}) {
     async fetch(){if(state.offline)throw Error('Failed to fetch');return {ok:true,json:async()=>({ok:true,order:order()})};},
     Stripe:()=>({initCheckoutElementsSdk:()=>({loadActions:async()=>({type:'success',actions:{getSession:()=>({total:{total:{amount:'SGD 3.50'}}}),confirm:async()=>{throw Error('No real or simulated payment in this test');}}}),createPaymentElement:()=>({mount(){},destroy(){},on(event,fn){if(event==='ready')fn();}})})}),
   };
-  vm.createContext(context);vm.runInContext(copy,context);vm.runInContext('const errorText = e => OrderErrors.message(e, language);',context);vm.runInContext(ui,context);
+  vm.createContext(context);vm.runInContext(copy,context);vm.runInContext('const errorText = e => OrderErrors.message(e, language);',context);vm.runInContext(addons+'\nAddonUI.show = () => ({close(){}});\n'+ui,context);
   return {state,owner,calls,original,get root(){return root;},open:()=>vm.runInContext('CheckoutUI.open()',context),click:async attr=>{const button=new Node();button.attr=attr;await handlers.click({target:{closest:()=>button}});}};
 }
 

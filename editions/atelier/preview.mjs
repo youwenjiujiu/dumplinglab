@@ -219,6 +219,7 @@ const server = createServer(async (req, res) => {
       "/error-copy.js",
       "/fulfilment.js",
       "/checkout-ui.js",
+      "/addons-ui.js",
       "/table-scene.js",
       "/shared-table.css",
       "/shared-motion.js",

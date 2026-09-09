@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import vm from "node:vm";
 import { randomUUID } from "node:crypto";
 import { cleanOrder } from "../../web/server/order-core.js";
 import { cleanCartOperation, reduceCartOperations } from "../../web/server/cart-core.js";
@@ -16,6 +18,17 @@ const expected = [
 assert.deepEqual(MENU.map(d => [d.cn,d.price]), expected);
 assert.deepEqual(SECTIONS, ["recommended","dumplings","noodles","sides","drinks"]);
 assert.equal(MENU_SERVICE, "lunch");
+// Execute the application's photo resolver: list, detail and cart must agree.
+const appSource = await readFile(new URL('app.js', import.meta.url), 'utf8');
+const resolvePhoto = vm.runInNewContext(appSource.slice(appSource.indexOf('const combinationPresentation ='), appSource.indexOf('const description =')) + '\nphoto;', {LUNCH_RECOMMENDATIONS, LUNCH_PREPARATIONS});
+for (const r of LUNCH_RECOMMENDATIONS.filter(r => r.dishId)) {
+  const d = MENU.find(d => d.id === r.dishId);
+  for (const style of d.styles.filter(s => d.variants[s].prep === r.prep && Boolean(d.variants[s].noodles) === Boolean(r.noodles))) {
+    assert.equal(resolvePhoto(d, 'l', style), resolvePhoto(r, 'l'), `${r.cn}: selected preparation photo matches recommendation`);
+  }
+}
+const porkWonton = MENU.find(d => d.id === 'lunch-v2-pork-wonton');
+assert.notEqual(porkWonton.preparationImages.soup, porkWonton.preparationImages.tossed, 'Soup does not fall back to a dry plate');
 assert.equal(new Set(MENU.map(d=>d.id)).size,35);
 assert.deepEqual(MENU.filter(d=>d.portion).map(d=>[d.cn,d.portion]), [["秘制猪排","1块"],["秘制鸡翅","3个"]]);
 assert.deepEqual(MENU.filter(d=>d.best).map(d=>d.cn), ["肉末辣椒拌面","销魂皮蛋面"]);

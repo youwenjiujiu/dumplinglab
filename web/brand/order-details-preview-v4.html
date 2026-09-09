@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Dumpling Lab · 取餐联预览</title>
+<link rel="stylesheet" href="/atelier.css"><link rel="stylesheet" href="/shared-table.css">
+<style>
+body{margin:0;display:block;background:#efefed;font-family:var(--sans);color:#302a24}.preview-note{font-size:11px;text-align:center;color:#777;padding:10px;margin:0}.preview-phone{max-width:440px;margin:auto;background:white;--order-accent:#983f32}.preview-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #eee}.preview-header h1{font:500 19px var(--sans);margin:0}.preview-header a{color:#983f32;font-size:12px}.preview-controls{display:flex;align-items:center;justify-content:space-between;padding:8px 20px;font-size:12px;background:#fef6e6}.preview-controls select{font:inherit;min-height:36px;border:1px solid #dfd3c4;background:white;padding:6px}.order-result-scroll{overflow:visible}.order-result{font-family:var(--sans)}.order-result-footer{display:none}.preview-footer{padding:20px;text-align:center;font-size:12px}.preview-footer a{color:#983f32}
+</style></head><body>
+<p class="preview-note">设计示例 · 非真实订单，不会付款、打印或核销</p>
+<main class="preview-phone"><header class="preview-header"><a href="/brand/addons-preview-v2.html">← 加购预览</a><h1 id="previewTitle">订单详情</h1><a href="/?table=A1#menu">菜单</a></header>
+<label class="preview-controls">预览状态（仅示例）<select id="previewStage"><option value="received">已下单 · 小票出纸</option><option value="preparing">制作中 · 热气上升</option><option value="ready" selected>待取餐 · 轻提纸袋</option><option value="collected">已取餐 · 印章落下</option></select></label>
+<div id="sheetBody"></div><footer class="preview-footer">取餐联可向右拖动，也可直接点开。<br>这里只预览交互，不改变任何实际订单。</footer></main>
+<script src="/menu-data.js"></script><script src="/lunch-archive.js"></script><script src="/lunch-menu.js"></script>
+<script>
+const language=new URLSearchParams(location.search).get('lang')==='en'?'en':'zh';
+const tr=(zh,en)=>language==='zh'?zh:en;
+const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const bi=(zh,en)=>escapeHTML(tr(zh,en));const dish=id=>MENU.find(d=>d.id===id);const name=d=>tr(d.cn,d.name);
+const photo=d=>'/img/s/'+d.img.replace(/\.(png|jpe?g|webp)$/i,'.webp');const money=n=>'$'+Number(n).toFixed(2);const styleName=s=>s;
+const $=s=>document.querySelector(s);const store={progressSync:{'artwork-preview':'synced'}};class TableCart{}
+const openModal=(mode,title)=>$('#previewTitle').textContent=title;
+</script><script src="/brand/pickup-slip-v1.js"></script><script src="/brand/menu-depth-v1.js"></script><script src="/checkout-ui.js"></script><script src="/fulfilment.js"></script>
+<script>
+const items=['lunch-v2-mince-scallion-noodles','lunch-v2-barley'].map(id=>{const d=dish(id);return{id,name:d.cn,englishName:d.name,price:d.price,qty:1};});
+const total=items.reduce((sum,i)=>sum+i.price,0),subtotal=Math.round(total/1.09*100)/100;
+const placeholder='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><rect x="1" y="1" width="138" height="138" fill="white" stroke="#b9ada2" stroke-dasharray="4 4"/><text x="70" y="68" font-size="12" fill="#8c8178" text-anchor="middle">QR PREVIEW</text><text x="70" y="88" font-size="10" fill="#8c8178" text-anchor="middle">NOT VALID</text></svg>');
+function render(){const stage=$('#previewStage').value;Fulfilment.showPaidOrder({id:'artwork-preview',no:'PREVIEW-0061',mode:'takeaway',status:'paid',paidAt:'2026-09-09T05:00:00Z',items,subtotal,gst:Math.round((total-subtotal)*100)/100,total,pricingVersion:'sg-inclusive-gst9-delivery9-v2',fulfilment:{pickupName:'Dumpling Lab',pickupAddress:'49 Circular Rd, Singapore 049404'},pickup:{number:'T0061',date:'09 / 09 / 2026',qr:placeholder},...(stage!=='received'?{preparingAt:1}:{}),...(['ready','collected'].includes(stage)?{readyAt:2}:{}),...(stage==='collected'?{collectedAt:3}:{})});}
+$('#previewStage').onchange=render;render();
+</script></body></html>

@@ -19,8 +19,8 @@ for (const language of ['zh','en']) for (const [stage, times] of variants) {
   assert.equal((html.match(/class="progress-label"/g)||[]).length,4);
   assert(html.includes(`data-stage="${stage}"`));
   assert(!/progress-docket|progress-check|progress-receipt|entry-takeaway-v1|order-dumpling-plate/.test(html),'Retired alternatives stay removed');
-  assert(html.includes('progress-order-slip') && html.includes('progress-slip-stamp') && html.includes('progress-brand-bag'));
-  assert(html.includes('progress-steam') && html.includes('progress-pot'), 'Restore the preferred steaming dumpling pot');
+  assert.equal((html.match(/class="progress-generated-icon"/g)||[]).length,4);
+  for(const s of ['received','preparing','ready','collected']) assert(html.includes(`/img/s/progress-${s}-${['preparing','collected'].includes(s)?'v3':'v2'}.webp`),'Each real stage uses its reviewed generated icon');
   assert(html.includes('lang="zh-CN"') && html.includes('lang="en"'));
   assert.equal(html.includes('class="pickup-qr"'),stage!=='collected');
   assert(html.indexOf('class="pickup-number"')<html.indexOf('class="pickup-progress"'));

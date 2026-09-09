@@ -10,7 +10,7 @@ const config=await fetch(`${origin}/api/online`,{signal:AbortSignal.timeout(5000
 if(config.config?.preview!==true)throw Error('Refusing QA: local simulated preview is required.');
 const suites=process.argv.includes('--no-browser')?[
   'gst-inclusive-test.mjs','error-copy-test.mjs','lunch-test.mjs','online-service-test.mjs','table-entry-test.mjs','production-test.mjs',
-  'stripe-setup-test.mjs','paid-checkout-test.mjs','checkout-http-test.mjs','checkout-ui-test.mjs','checkout-recovery-test.mjs','checkout-design-test.mjs','pickup-progress-test.mjs','two-mode-entry-test.mjs','order-progress-design-test.mjs',
+  'stripe-setup-test.mjs','paid-checkout-test.mjs','checkout-http-test.mjs','checkout-ui-test.mjs','checkout-recovery-test.mjs','checkout-design-test.mjs','addons-ui-test.mjs','brand-motion-test.mjs','pickup-progress-test.mjs','two-mode-entry-test.mjs','order-progress-design-test.mjs',
 ]:browserEngine==='webkit'?[
   'menu-layout-restoration-test.mjs','entry-brand-browser-test.mjs','form-layout-browser-test.mjs',
   'navigation-draft-browser-test.mjs','cart-input-browser-test.mjs','fulfilment-browser-test.mjs',
@@ -23,7 +23,9 @@ const suites=process.argv.includes('--no-browser')?[
   'order-mode-copy-browser-test.mjs','undo-scope-browser-test.mjs','add-confirmation-browser-test.mjs','cart-input-browser-test.mjs','checkout-race-browser-test.mjs',
   'payment-error-browser-test.mjs','navigation-draft-browser-test.mjs','fulfilment-browser-test.mjs','pickup-staff-browser-test.mjs','mode-menu-position-browser-test.mjs','surface-paint-browser-test.mjs',
 ];
-const runtime=['index.html','atelier.css','shared-table.css','app.js','error-copy.js','cart-store.js','fulfilment.js','checkout-ui.js','shared-table.js','lunch-ui.js','bilingual-fit.js','preview.mjs'];
+const runtime=['index.html','atelier.css','shared-table.css','app.js','error-copy.js','cart-store.js','fulfilment.js','addons-ui.js','checkout-ui.js','shared-table.js','lunch-ui.js','bilingual-fit.js','preview.mjs'];
+runtime.push('../../web/brand/serving-motion-v1.js','../../web/brand/menu-depth-v1.js','../../web/brand/pickup-slip-v1.js');
+runtime.push('../../web/brand/takeaway-pickup-v3.js','../../web/brand/entry-takeaway-bag-v3.svg','../../web/brand/entry-takeaway-box-v3.svg');
 for(const dir of ['../../web/server/','../../web/api/'])for(const file of await readdir(new URL(dir,here)))if(file.endsWith('.js'))runtime.push(dir+file);
 runtime.push('../../web/menu-data.js','../../web/lunch-menu.js','../../web/lunch-archive.js','../../web/i18n.js','../../web/order-pricing.js','../../web/staff.html');
 runtime.push('generated/table-view-motion/developer/web-component/table-layout.js','generated/order-feedback/developer/web-component/order-feedback.js','generated/receipt-print/developer/web-component/receipt-print.js','generated/table-sharing/developer/web-component/table-sharing.js');
