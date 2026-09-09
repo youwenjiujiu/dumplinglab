@@ -2,7 +2,15 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
-## Latest tray refinement — 2026-09-09
+## Title and iOS pavement hotfix — 2026-09-09
+
+- Runtime commit `3c0530b`, deployment `dpl_BRyTzuLL6DvfyS15VGECaG7q8dSm` (`https://dumplinglab-menu-i5j4ta3yb-youwenjiujius-projects.vercel.app`), promoted to `https://dumplinglab-menu.vercel.app` after explicit user approval.
+- Title is now exactly `Dumpling Lab`. The storefront floor uses direct alpha extraction instead of a CSS-filtered luminance mask; original building artwork, color and motion are unchanged.
+- Chrome/WebKit pavement regression at 390/724px and existing storefront animation tests passed. The release package passed `lunch-build-test.mjs`; 17 service/VM suites passed with `sourceUnchanged:true` in `test-output/qa-2026-09-09T12-55-38.931Z/report.json`.
+- Protected deployment and public URL both matched the exact built HTML plus 39 runtime/assets, with staff auth/config checks. Release directory: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumplinglab-release-LwKI68`.
+- No production cart, order, payment or staff event writes. The reported WeChat one-item entry issue remains unresolved and was not included as a fix. Physical iPhone verification of the newly published floor remains pending.
+
+## Previous tray refinement — 2026-09-09
 
 - Runtime commit `771284b`, deployment `dpl_uVZXhdkquqZiyEKVWPhFaPK94Ku8` (`https://dumplinglab-menu-cja2qx6ho-youwenjiujius-projects.vercel.app`), promoted to the existing public URL.
 - Removed dish-removal Undo toast and visible view-order label. Count now sits beside content-width thumbnails; empty state has no image spacer.
