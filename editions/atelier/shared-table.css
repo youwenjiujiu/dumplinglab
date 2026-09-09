@@ -1565,10 +1565,11 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
   .header-actions { gap: 0; }
   .header-actions .fulfilment-switch { padding-inline: 8px; gap: 5px; font-size: 12px; }
   .header-actions .fulfilment-mode-icon { width: 24px; height: 24px; }
-  .header-actions .language-button { inset-inline-start: 0; padding-inline: 4px; }
+  .header-actions .language-button { inset-inline-start: 8px; padding-inline: 4px; }
 }
 @media (max-width: 360px) {
   .masthead { padding-inline: 10px; gap: 4px; }
+  .header-actions .language-button { inset-inline-start: 6px; }
   .masthead .brand img { width: 76px; }
   .header-actions .fulfilment-switch { padding-inline: 6px; gap: 4px; font-size: 11px; }
 }
