@@ -1,5 +1,15 @@
 # 2026-09-09 approved visual release
 
+## Published
+
+- Runtime source commit: `7ae2674`; read-only verifier: `f06243a`.
+- Production deployment: `dpl_2n8UdvVpUBmyLgcpvrF968uZoxP3`, Ready and promoted.
+- Public URL: https://dumplinglab-menu.vercel.app/
+- Deployment URL: https://dumplinglab-menu-3rnso2w13-youwenjiujius-projects.vercel.app
+- Exact checked package: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumplinglab-release-RuMnYt`.
+- Protected and public verification both passed: exact HTML and 36 script/style/critical-art byte comparisons, no preview banner, anonymous `/api/feed` returns 401, `/staff` loads, read-only online configuration is not simulated.
+- No live orders, cart writes, staff events or payments were created; no secrets were exported or protection disabled.
+
 User authorized commit and production deployment after reviewing the corrected dumpling silhouettes. Earlier pause is superseded by that explicit authorization.
 
 Approved: received-v2, preparing-v3, ready-v2, collected-v3; genuine alpha checked. Original dinein-serving-v3 and takeaway-pickup-v5 restored, transparent entry card surfaces retained. Original light header pill and table icon restored. Updated food artwork, distinct dry-tossed preparation thumbnail, normalized noodle-bowl framing, sharing semantics and approved colored 2D storefront retained.

@@ -1,5 +1,7 @@
 # 餐品进度图标 v2
 
+Current release: received-v2 / preparing-v3 / ready-v2 / collected-v3 approved and published on 2026-09-09 in deployment dpl_2n8UdvVpUBmyLgcpvrF968uZoxP3. The earlier deployment pause noted below is historical and was superseded by explicit user confirmation.
+
 Generated with the built-in image_gen tool; exact model identifier is not exposed. Prompts: [prompts.json](prompts.json).
 
 Project source assets:
