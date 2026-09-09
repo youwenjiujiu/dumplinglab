@@ -2,6 +2,14 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
+## Simplified empty cart — 2026-09-09
+
+- Explicit user deployment approval; runtime commit `f06f068`, deployment `dpl_5Setbq2Fiw7iMRSAycgzE5UNbifU` (`https://dumplinglab-menu-rdvs70ruf-youwenjiujius-projects.vercel.app`) promoted to the existing public URL.
+- Removed decorative empty receipt/00 and redundant zero-count tabs; empty takeaway hides saved-selection/name controls and offers one primary browse action. Existing selections, history, shared-table identity and unresolved payment controls remain accessible.
+- Prior Chrome/WebKit testing passed 24 bilingual/responsive dine-in/takeaway cases. Release-time 17 non-browser suites passed with `sourceUnchanged:true` in `test-output/qa-2026-09-09T13-57-36.551Z/report.json`; exact release package passed `lunch-build-test.mjs`.
+- Protected deployment and public URL both matched exact HTML plus 39 runtime/assets and staff/config gates. Package: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumplinglab-release-RRKR5F`.
+- No production cart, order or payment writes. Broader visual redesign is discussion only, not included in this release; D30 preselected serving remains unresolved.
+
 ## Initial order-mode entry positioning — 2026-09-09
 
 - Runtime commit `67c6a20`, deployment `dpl_W5U1fAKEhVbu3hVpfaHK6Xmngp7Q` (`https://dumplinglab-menu-9efxv030b-youwenjiujius-projects.vercel.app`) promoted to the existing public URL after explicit deployment approval.
