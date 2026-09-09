@@ -2,6 +2,14 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
+## Latest UI hotfix — 2026-09-09
+
+- Runtime commit: `b22738c` (compact header/tray, transparent thumbnails, optional early add-ons, safe cancel-and-continue, category spacing and success copy).
+- Deployment: `dpl_9Cqgs4xCXHPqaUpfy8Ch7WHXS973`, `https://dumplinglab-menu-q1w6j40j8-youwenjiujius-projects.vercel.app`.
+- Promoted to `https://dumplinglab-menu.vercel.app` after protected read-only verification. Public verification passed again: exact HTML + 39 runtime/assets, staff auth and production configuration.
+- Exact package: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumplinglab-release-1Q2q0N`; package test passed. Local 320/390/768px browser tests use mocked payment endpoints; 17 VM/service suites and 50-thumbnail audit passed.
+- No live orders, payments, cancellations or staff events were created by deployment acceptance. Actual wallet/payment-provider rendering is not end-to-end merchant-payment verification. The current Checkout Sessions email requirement and paid-order refund workflow were not changed.
+
 ## Build and publish
 
 Deployment requires an explicit publishing request. Local polishing or QA alone does not authorize publishing or cloud test orders.
