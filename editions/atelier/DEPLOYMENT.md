@@ -2,6 +2,14 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
+## Initial order-mode entry positioning — 2026-09-09
+
+- Runtime commit `67c6a20`, deployment `dpl_W5U1fAKEhVbu3hVpfaHK6Xmngp7Q` (`https://dumplinglab-menu-9efxv030b-youwenjiujius-projects.vercel.app`) promoted to the existing public URL after explicit deployment approval.
+- The automatic entry chooser does not push/consume browser history. Selecting a mode resets both page and category rail immediately and at the next frame; manually opened sheets retain Back/Forward behavior and cancellation preserves reading position. No cart/payment behavior changes.
+- Chrome/WebKit at 390/430px passed first/reloaded entry, mode changes from Sides, cancel, Back/Forward and saved-draft preservation. 17 non-browser suites passed with unchanged source in `test-output/qa-2026-09-09T13-04-38.550Z/report.json`; exact package passed `lunch-build-test.mjs`.
+- Protected and public read-only checks matched HTML plus 39 runtime/assets, staff auth and production config. Package: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumplinglab-release-cJOMKA`.
+- Fresh production mobile-context checks in Chrome/WebKit also passed with zero API writes. These are not actual WeChat-device verification; the reported preselected single serving remains unproven/unresolved.
+
 ## Title and iOS pavement hotfix — 2026-09-09
 
 - Runtime commit `3c0530b`, deployment `dpl_BRyTzuLL6DvfyS15VGECaG7q8dSm` (`https://dumplinglab-menu-i5j4ta3yb-youwenjiujius-projects.vercel.app`), promoted to `https://dumplinglab-menu.vercel.app` after explicit user approval.
