@@ -103,9 +103,10 @@ const Fulfilment = (() => {
   const summary = (order, paid = false) => `<dl class="payment-breakdown"><div><dt>${bi('菜品金额（未税）','Food (before GST)')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}<div><dt>${order.pricingVersion === 'sg-inclusive-gst9-delivery9-v2' ? bi('内含 GST 9%','Included GST 9%') : 'GST 9%'}</dt><dd>${money(order.gst)}</dd></div><div class="payment-total"><dt>${paid ? bi('实付金额','Total paid') : bi('应付总额','Total to pay')}</dt><dd>${money(order.total)}</dd></div></dl>`;
   function chrome() {
     const button = $('#fulfilmentButton');
-    button.innerHTML = `<img class="fulfilment-mode-icon" src="/brand/header-${mode()}-v1.svg" alt="" width="32" height="28"><span>${escapeHTML(label())}</span><svg class="fulfilment-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>`;
-    button.ariaLabel = tr(`用餐方式：${label()}，点击切换`, `Order type: ${label()}. Change order type`);
-    $('#dineinControls').hidden = remote();
+    const tableLabel = !remote() ? ` · ${table || tr('选桌号', 'Table')}` : '';
+    button.innerHTML = `<img class="fulfilment-mode-icon" src="/brand/header-${mode()}-v1.svg" alt="" width="32" height="28"><span>${escapeHTML(label() + tableLabel)}</span><svg class="fulfilment-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>`;
+    button.ariaLabel = tr(`用餐方式：${label() + tableLabel}，更改桌号或用餐方式`, `Order type: ${label() + tableLabel}. Change table or order type`);
+    $('#dineinControls').hidden = true;
     $('#tableButton').hidden = remote(); $('#serviceButton').hidden = remote();
   }
   // Entry is bilingual before the guest has chosen the app language.
@@ -113,6 +114,7 @@ const Fulfilment = (() => {
   function select() {
     openModal('fulfilment', '');
     $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><dl-dinein-serving class="entry-art" aria-hidden="true"><img src="/brand/entry-dinein-v3.svg" width="260" height="220" alt="" draggable="false" style="width:100%;height:auto"></dl-dinein-serving><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><dl-takeaway-pickup class="entry-art" aria-hidden="true"><img src="/brand/entry-takeaway-v5.svg" width="260" height="220" alt="" draggable="false" style="width:100%;height:auto"></dl-takeaway-pickup><strong>${entryText('打包外带','Takeaway')}</strong></button></div></div>`;
+    if (!remote()) $('#sheetBody .fulfilment-entry')?.insertAdjacentHTML('beforeend', `<button type="button" class="entry-change-table" data-action="table">${bi('桌号', 'Table')} ${escapeHTML(table || '—')}<span>${bi('更改桌号', 'Change table')} ↗</span></button>`);
     $('#closeSheet').ariaLabel = '关闭 / Close';
     const heading = $('#sheetTitle'); heading.tabIndex = -1; heading.focus({preventScroll:true});
   }
@@ -252,7 +254,7 @@ const Fulfilment = (() => {
     const when = new Date(order.paidAt || order.at || order.createdAt);
     const time = Number.isNaN(when.getTime()) ? '' : when.toLocaleString(language === 'zh' ? 'zh-CN' : 'en-SG', {timeZone:'Asia/Singapore',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     $('#sheetBody').innerHTML = `<div class="order-result ${pickup ? 'pickup-success' : 'dinein-success'}"><h2 id="sheetTitle" class="sr-only" tabindex="-1">${bi('订单详情', 'Order details')}</h2><div class="order-result-scroll">
-      ${pickup ? pickupTicket(order) : `<section class="dinein-paid"><img src="/brand/order-complete-seal.svg" alt="" width="42" height="42"><p class="eyebrow">${bi('已付款 · 堂食桌号', 'PAID · TABLE')}</p><strong>${escapeHTML(order.table || '')}</strong><p>${bi('订单已发送至门店，请在座位稍候', 'Your order has been sent. Please wait at your table.')}</p></section>`}
+      ${pickup ? pickupTicket(order) : `<section class="dinein-paid"><img src="/brand/order-complete-seal.svg" alt="" width="42" height="42"><p class="eyebrow">${bi('已付款 · 堂食桌号', 'PAID · TABLE')}</p><strong>${escapeHTML(order.table || '')}</strong><p>${bi('下单成功，请在座位稍候。', 'Order placed. Please wait at your table.')}</p></section>`}
       <div class="order-brand-banner"><img src="/brand/pairing-banner-backdrop-v6.webp" alt="" width="1200" height="400" loading="lazy"><span class="order-banner-pattern" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><img class="order-banner-dish" src="/img/l/potstickers-pork-shrimp-chive-cutaway-v1.webp" alt="${tr('韭菜虾仁猪肉煎饺', 'Pork, Shrimp & Chive Potstickers')}" width="1280" height="1280" loading="lazy"><img class="order-banner-logo" src="/brand/order-packaging-lockup.svg" alt="Dumpling Lab"></div>
       <section class="checkout-block"><h3>${pickup ? escapeHTML(order.fulfilment?.pickupName || 'Dumpling Lab') : 'Dumpling Lab'}</h3>${pickup ? `<p class="pickup-location">${escapeHTML(order.fulfilment?.pickupAddress || '')}</p>` : ''}<div class="checkout-lines">${CheckoutUI.itemsHTML(order)}</div>${order.note ? `<p class="checkout-note">${bi('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}</section>
       <section class="checkout-block checkout-totals"><h3>${bi('付款明细', 'Payment details')}</h3>${summary(order, true)}</section>

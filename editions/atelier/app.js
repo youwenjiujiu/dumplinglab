@@ -75,10 +75,10 @@ const presentedDish = (d, style) => {
   const combination = combinationPresentation(d, style);
   return combination ? { ...d, cn: combination.cn, name: combination.name, img: combination.img } : d;
 };
-const photo = (d, size = "s", style = null) => {
+const photo = (d, size = "s", style = null, transparent = false) => {
   const preparation = d.variants?.[style]?.prep;
   const img = combinationPresentation(d, style)?.img || d.preparationImages?.[preparation] || (d.kind === "dumpling" && style ? LUNCH_PREPARATIONS.find(p=>p.id===preparation)?.img || d.img : d.img);
-  const artwork = globalThis.DL_MENU_ART?.[img] || img;
+  const artwork = transparent ? globalThis.DL_TRAY_ART?.[img] || img : globalThis.DL_MENU_ART?.[img] || img;
   return artwork ? `/img/${size}/${artwork.replace(/\.(png|jpe?g|webp)$/i, ".webp")}` : "";
 };
 const description = (d) => I18N.dishes[d.id]?.flavor || d.flavor;
@@ -629,7 +629,7 @@ function renderTray() {
     for (const id of visible) {
       const img = existing.get(id) || document.createElement(dish(id)?.img ? "img" : "span");
       if (!existing.has(id)) {
-        if (dish(id)?.img) img.src = photo(dish(id), "s", items.find(i=>i.id===id)?.style);
+        if (dish(id)?.img) img.src = photo(dish(id), "s", items.find(i=>i.id===id)?.style, true);
         else img.textContent = name(dish(id));
         img.dataset.id = id;
         img.className = "just-added";
@@ -639,7 +639,7 @@ function renderTray() {
           { once: true },
         );
       }
-      if (dish(id)?.img) img.src = photo(dish(id), "s", items.find(i=>i.id===id)?.style);
+      if (dish(id)?.img) img.src = photo(dish(id), "s", items.find(i=>i.id===id)?.style, true);
       img.setAttribute("role", "listitem");
       img.setAttribute("aria-label", name(dish(id)));
       img.title = name(dish(id));
@@ -649,8 +649,8 @@ function renderTray() {
     rack.replaceChildren(next);
     rack.hidden = !pictures.length;
     rack.setAttribute("aria-label", remoteOrder
-      ? tr("已选菜品，可横向滚动，按回车查看订单", "Selected dishes. Scroll horizontally or press Enter to view order")
-      : tr("已选菜品，可横向滚动，按回车查看本桌", "Selected dishes. Scroll horizontally or press Enter to view table"));
+      ? tr("已选菜品，可横向滚动", "Selected dishes. Scroll horizontally")
+      : tr("本桌已选菜品，可横向滚动", "Selected table dishes. Scroll horizontally"));
     rack.dataset.signature = signature;
   }
   updateText($("#trayLabel"), n
@@ -711,7 +711,7 @@ function add(d, style = null, amount = 1) {
       [...document.querySelectorAll("#trayPictures img")].find(
         (img) => img.dataset.id === d.id,
       ) || $("#trayPictures");
-    globalThis.TableMotion?.fly(photo(d, "s", style), origin, target);
+    globalThis.TableMotion?.fly(photo(d, "s", style, true), origin, target);
   });
   toast(tr('已加入', 'Added'), { kind:'added', announcement:tr(`：${name(d)}，${amount} 份`, `: ${name(d)}, ${amount} ${amount === 1 ? 'portion' : 'portions'}`) });
   return true;

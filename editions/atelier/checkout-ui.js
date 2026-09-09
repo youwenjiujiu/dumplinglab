@@ -8,6 +8,7 @@ const CheckoutUI = (() => {
   const pendingError = () => Object.assign(new Error('本组有未完成的付款。请在发起付款的原设备和浏览器继续，或在那里取消付款后再试。'), { code: 'PAYMENT_PENDING' });
   function recovery(view, problem) {
     if (!current(view)) return;
+    view.picker?.close();
     view.element?.destroy(); view.element = null; view.actions = null;
     const own = Boolean(view.owner.order?.token), blocked = locked(problem);
     const message = blocked ? errorText(pendingError()) : errorText(problem);
@@ -60,6 +61,9 @@ const CheckoutUI = (() => {
     view.picker = AddonUI.show(view.order, {host:view.node, preselect,
       onClose:() => { view.picker = null; },
       onApply: async items => {
+        // The picker can be used while Stripe starts. Serialize basket changes
+        // behind session creation so a late response cannot lock the old basket.
+        await view.preparation;
         if (!current(view) || view.busy || view.confirmed) throw new Error(tr('请重新确认订单', 'Please check your order again'));
         view.busy = true;
         try { await change(view, items); }
@@ -110,7 +114,12 @@ const CheckoutUI = (() => {
     if (!current(view)) return;
     const stripe = Stripe(view.config.publishableKey, { locale: language === 'zh' ? 'zh' : 'en' });
     view.checkout = stripe.initCheckoutElementsSdk({ clientSecret: out.clientSecret, elementsOptions: { appearance: {
-      theme: 'stripe', variables: { colorPrimary: '#983f32', colorText: '#302a24', borderRadius: '8px', fontFamily: 'Arial, sans-serif' },
+      theme: 'flat', variables: { colorPrimary: '#983f32', colorText: '#302a24', colorBackground: '#ffffff', borderRadius: '4px', fontFamily: 'Arial, sans-serif', fontSizeBase: '14px', spacingUnit: '3px' },
+      rules: {
+        '.AccordionItem': { border: '0', borderBottom: '1px solid #ece9e6', boxShadow: 'none', borderRadius: '0' },
+        '.AccordionItem--selected': { boxShadow: 'none' },
+        '.Block': { boxShadow: 'none', border: '0' },
+      },
     } } });
     const loaded = await view.checkout.loadActions();
     if (!current(view)) return;
@@ -118,7 +127,7 @@ const CheckoutUI = (() => {
     view.actions = loaded.actions;
     const session = view.actions.getSession();
     view.node.querySelector('[data-stripe-total]').textContent = session.total.total.amount;
-    view.element = view.checkout.createPaymentElement({ layout: { type: 'accordion', radios: 'always', spacedAccordionItems: false, visibleAccordionItemsCount: 0 }, paymentMethodOrder: ['apple_pay', 'paynow', 'card'] });
+    view.element = view.checkout.createPaymentElement({ layout: { type: 'accordion', defaultCollapsed: true, radios: 'always', spacedAccordionItems: false, visibleAccordionItemsCount: 0 }, paymentMethodOrder: ['apple_pay', 'paynow', 'card'] });
     const mount = view.node.querySelector('[data-payment-element]'); mount.replaceChildren();
     view.element.mount(mount);
     view.element.on('ready', () => { if (current(view)) view.node.querySelector('[data-checkout-pay]').disabled = false; });
@@ -145,7 +154,9 @@ const CheckoutUI = (() => {
         await owner.flush();
         if (dining && (await readCart(owner)).paymentPending) throw pendingError();
         if (!current(view)) return;
-        if (owner.pending?.length) throw new Error('订单同步未完成，请重新检查。');
+        // OnlineCart keeps local draft operations; only shared dine-in carts
+        // need every operation acknowledged by the table server.
+        if (dining && owner.pending?.length) throw new Error('订单同步未完成，请重新检查。');
         if (owner.noteConflict) throw new Error(tr('请先处理备注冲突', 'Resolve the note conflict first'));
       }
       view.config = (await owner.api('/api/online')).config;
@@ -176,13 +187,15 @@ const CheckoutUI = (() => {
       }
       view.input.expectedTotal = view.order.total;
       draw(view);
+      view.node.querySelector('.checkout-payment')?.insertAdjacentHTML?.('afterend', `<button type="button" class="checkout-continue" data-checkout-cancel>${bi('取消本次付款，继续点餐', 'Cancel payment & keep ordering')}</button>`);
       if (view.enabled) {
         view.busy = true;
-        try { await prepare(view); } finally { view.busy = false; }
+        view.preparation = prepare(view).finally(() => { view.busy = false; });
+        if (!skipAddons && view.newPayment && current(view)) chooseAddons(view);
+        await view.preparation;
       }
     } catch (e) { recovery(view, e); }
     finally { view.busy = false; }
-    if (!skipAddons && view.newPayment && view.prepared && current(view)) chooseAddons(view);
   }
   async function readPayment(owner) {
     const pending = owner.order;
@@ -231,7 +244,50 @@ const CheckoutUI = (() => {
     }
     else { dispose(); showCart(); }
   }
+  const cancelling = new WeakSet();
+  function confirmCancellation(button) {
+    return new Promise(resolve => {
+      const dialog = document.createElement('dialog');
+      dialog.className = 'cancel-payment-dialog';
+      dialog.setAttribute('aria-labelledby', 'cancelPaymentTitle');
+      dialog.innerHTML = `<h2 id="cancelPaymentTitle">${bi('取消待付款订单？', 'Cancel unpaid order?')}</h2><p>${bi('已选菜品会保留，取消后可继续点餐。', 'Your selected dishes will be kept so you can continue ordering.')}</p><div><button type="button" data-cancel-confirm>${bi('确认取消', 'Cancel order')}</button><button type="button" class="primary" data-cancel-keep autofocus>${bi('保留订单', 'Keep order')}</button></div>`;
+      const finish = accepted => { dialog.close(); dialog.remove(); if (button.isConnected) button.focus({preventScroll:true}); resolve(accepted); };
+      dialog.querySelector('[data-cancel-confirm]').onclick = () => finish(true);
+      dialog.querySelector('[data-cancel-keep]').onclick = () => finish(false);
+      dialog.addEventListener('cancel', e => { e.preventDefault(); e.stopPropagation(); finish(false); });
+      document.body.append(dialog); dialog.showModal();
+    });
+  }
+  async function cancelPending(button) {
+    const owner = store, view = active;
+    if (cancelling.has(owner)) return;
+    cancelling.add(owner); button.disabled = true;
+    try {
+      if (!await confirmCancellation(button)) return;
+      if (store !== owner) return;
+      // Resolve in-flight creation before asking the provider to expire it.
+      if (view?.owner === owner) await view.preparation?.catch(() => {});
+      const pending = owner.order;
+      if (pending) {
+        if (!pending.token) throw new Error(tr('请联系店员核实这笔付款', 'Ask staff to check this payment'));
+        await owner.api('/api/online', { ...pending, action: 'cancel' });
+        if (owner.order !== pending) return;
+        if (view?.owner === owner) { view.actions = null; view.element?.destroy(); view.element = null; const pay = view.node.querySelector('[data-checkout-pay]'); if (pay) pay.disabled = true; }
+        owner.order = null; owner.emit();
+        if (owner.table) await readCart(owner);
+      }
+      if (store === owner) {
+        dispose(); closeModal();
+        toast(tr('本次付款已取消，已选菜品保留，可继续点餐', 'Payment cancelled. Your dishes are saved; keep ordering.'));
+      }
+    } catch (e) {
+      // Never clear a paid, processing, or unverified payment locally.
+      if (store === owner) toast(errorText(e));
+    } finally { cancelling.delete(owner); if (button.isConnected) button.disabled = false; }
+  }
   document.addEventListener('click', async e => {
+    const cancel = e.target.closest('[data-checkout-cancel]');
+    if (cancel?.hasAttribute('data-checkout-cancel')) { await cancelPending(cancel); return; }
     const button = e.target.closest('[data-checkout-pay], [data-checkout-edit], [data-checkout-addon], [data-checkout-addons-open], [data-checkout-retry], [data-checkout-back]');
     const view = active;
     if (!button || !view || !current(view) || view.busy) return;

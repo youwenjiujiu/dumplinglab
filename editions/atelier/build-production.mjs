@@ -31,6 +31,7 @@ for(const file of ['takeaway-pickup-v5.js','entry-dinein-v3.svg','entry-takeaway
 await copy(resolve(web,'brand/dinein-serving-v3.js'),'brand/dinein-serving-v3.js');
 await copy(resolve(web, "brand/menu-depth-v1.js"), "brand/menu-depth-v1.js");
 await copy(resolve(web, "brand/menu-appetite-v1.js"), "brand/menu-appetite-v1.js");
+for (const file of ['tray-noodle-silhouette-v1.svg','tray-lettuce-silhouette-v1.svg']) await copy(resolve(web,'brand',file),`brand/${file}`);
 await copy(resolve(web, "brand/footer-storefront-v1.webp"), "brand/footer-storefront-v1.webp");
 await copy(resolve(web,'brand/storefront-ink-v1.js'),'brand/storefront-ink-v1.js');
 await copy(resolve(web,'vendor/three.module.js'),'vendor/three.module.js');

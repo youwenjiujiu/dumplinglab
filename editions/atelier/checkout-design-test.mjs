@@ -73,7 +73,7 @@ assert(css.includes('.checkout-scroll, .order-result-scroll { flex: 1; min-heigh
 assert(css.includes('.checkout-paybar { flex: none;'),'Dock is outside the scrolling content');
 assert(css.includes('env(safe-area-inset-bottom)')&&css.includes('prefers-reduced-motion'));
 assert(css.includes('.checkout-addon button { position: relative; flex: none; width: 44px; height: 44px;'));
-assert(css.includes("inset: 9px; border-radius: 3px; background: var(--order-accent)"),'26px visible square inside 44px hit target');
+assert(css.includes("inset: 7px; border-radius: 50%; border: 1px solid #d9b7b0; background: transparent"),'Fine outlined circle inside 44px hit target');
 assert(css.includes('center / 12px 1px no-repeat'),'Fine one-pixel plus, not a heavy text glyph');
 assert(css.includes('.checkout-addon-list::-webkit-scrollbar { display: none; }'));
 assert(!css.includes('min-height: 39px;'),'No forced two-line gap for single-line Chinese dish names');

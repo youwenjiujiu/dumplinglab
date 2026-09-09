@@ -65,7 +65,7 @@
     let endX = rect.left + rect.width / 2 - size / 2;
     if (rack?.width) endX = Math.max(rack.left, Math.min(endX, rack.left + rack.width - size));
     const dx = endX - startX, dy = rect.top + rect.height / 2 - size / 2 - startY;
-    const image = new Image(); image.src = src; image.alt = ""; image.setAttribute("aria-hidden", "true");
+    const image = new Image(); image.src = src; image.className = "tray-flight"; image.alt = ""; image.setAttribute("aria-hidden", "true");
     Object.assign(image.style, { position: "fixed", left: `${startX}px`, top: `${startY}px`, width: `${size}px`, height: `${size}px`, objectFit: "contain", pointerEvents: "none", zIndex: "80" });
     document.body.append(image);
     const animation = image.animate?.([

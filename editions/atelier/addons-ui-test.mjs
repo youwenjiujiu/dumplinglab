@@ -9,6 +9,7 @@ class Node {
   constructor(){this.listeners={};this.nodes=new Map();this.disabled=false;this.open=false;this.isConnected=true;this.textContent='';}
   setAttribute(){} focus(){} showModal(){this.open=true;} close(){this.open=false;} remove(){this.isConnected=false;}
   addEventListener(name,fn){this.listeners[name]=fn;}
+  insertAdjacentHTML(position,html){this.insertedHTML=html;}
   querySelector(key){if(!this.nodes.has(key))this.nodes.set(key,new Node());return this.nodes.get(key);}
   querySelectorAll(){return [this.querySelector('input'),this.querySelector('.addon-dismiss')];}
 }
@@ -29,6 +30,11 @@ assert.equal(dialog.querySelector('.addon-popup-list').scrollTop,0,'Opening star
 const css=await readFile(new URL('shared-table.css',import.meta.url),'utf8');
 assert.match(css,/\.addon-popup-list \{[^}]*padding: 14px 20px 12px/,'Top inset separates the first image from the clipping boundary');
 assert.equal(dialog.querySelector('.addon-apply').disabled,true);
+assert(dialog.querySelector('.addon-apply').insertedHTML.includes('不用了，继续结算'));
+dialog.querySelector('.addon-skip').onclick();
+assert.equal(applied.length,0,'Skip without selection never mutates the order');
+assert.equal(closed,1);
+closed=0;open();
 toggle(0,true);toggle(1,true);
 assert.match(dialog.querySelector('.addon-apply').textContent,/2.*\$3.00/);
 assert.equal(applied.length,0,'Selection alone does not mutate the cart');

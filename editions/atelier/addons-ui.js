@@ -27,6 +27,7 @@ const AddonUI = (() => {
     dialog.innerHTML = `<div class="addon-popup-card"><header class="addon-popup-head"><h2 id="addonDialogTitle" tabindex="-1" autofocus><dl-serving-motion aria-hidden="true"></dl-serving-motion>${bi('搭配加点','Add-ons')}</h2><img src="${hero}" alt="" width="180" height="120"></header><div class="addon-popup-list">${dishes.map(d => `<article class="addon-popup-row">${imageHTML(d)}<div class="addon-popup-copy"><h3>${escapeHTML(name(d))}</h3><span class="addon-category">${d.section === 'drinks' ? bi('配一杯清爽','Something refreshing') : bi('添一份小食','A little on the side')}</span><div class="addon-popup-price"><strong>${money(itemPrice(d))}</strong><label class="addon-select"><input type="checkbox" value="${escapeHTML(d.id)}" ${selected.has(d.id) ? 'checked' : ''} aria-label="${escapeHTML(tr('选择 ', 'Select ') + name(d))}"><span aria-hidden="true"></span></label></div></div></article>`).join('')}</div><footer class="addon-popup-footer"><p class="addon-popup-error" role="alert"></p><button class="addon-apply" type="button" disabled>${bi('加入已选','Add selected')}</button></footer></div><button type="button" class="addon-dismiss" aria-label="${tr('跳过加购，返回订单','Skip add-ons and return to order')}">×</button>`;
     let busy = false, closed = false;
     const apply = dialog.querySelector('.addon-apply');
+    apply.insertAdjacentHTML('afterend', `<button type="button" class="addon-skip">${bi('不用了，继续结算', 'No thanks, continue')}</button>`);
     function update() {
       const items = dishes.filter(d => selected.has(d.id));
       apply.disabled = !items.length || busy;
@@ -45,16 +46,17 @@ const AddonUI = (() => {
     });
     dialog.addEventListener('cancel', e => { e.preventDefault(); e.stopPropagation(); if (!busy) close(); });
     dialog.querySelector('.addon-dismiss').onclick = () => { if (!busy) close(); };
+    dialog.querySelector('.addon-skip').onclick = () => { if (!busy) close(); };
     apply.onclick = async () => {
       if (busy || !selected.size) return;
       busy = true; update();
-      dialog.querySelectorAll('input, .addon-dismiss').forEach(node => node.disabled = true);
+      dialog.querySelectorAll('input, .addon-dismiss, .addon-skip').forEach(node => node.disabled = true);
       try { await onApply(dishes.filter(d => selected.has(d.id)).map(d => ({id:d.id,qty:1}))); close(); }
       catch (e) {
         if (!closed) dialog.querySelector('.addon-popup-error').textContent = errorText(e);
       } finally {
         busy = false;
-        if (!closed) { dialog.querySelectorAll('input, .addon-dismiss').forEach(node => node.disabled = false); update(); }
+        if (!closed) { dialog.querySelectorAll('input, .addon-dismiss, .addon-skip').forEach(node => node.disabled = false); update(); }
       }
     };
     host.append(dialog); update(); dialog.showModal();

@@ -320,10 +320,10 @@ body:after {
 }
 .masthead {
   background: var(--paper);
-  height: 100px;
+  height: 72px;
   max-width: 1400px;
   margin: auto;
-  padding: 22px 42px;
+  padding: 12px 42px;
   display: flex;
   align-items: center;
   gap: 32px;
@@ -1683,8 +1683,8 @@ html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
 }
 @media (max-width: 760px) {
   .masthead {
-    height: 78px;
-    padding: 16px 20px;
+    height: 60px;
+    padding: 8px 20px;
     gap: 10px;
     position: sticky;
     top: 0;
@@ -1727,7 +1727,7 @@ html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
     padding-inline: 20px;
   }
   .menu-toolbar {
-    top: 78px;
+    top: 60px;
     height: 56px;
     margin: 0 -8px;
     padding: 0 12px 0 20px;

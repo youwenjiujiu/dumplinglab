@@ -19,6 +19,7 @@ const html=root.body.toString();assert(html.includes('data-environment="producti
 assert.equal(hash(root.body),hash(await readFile(release+'/index.html')),'Exact built HTML');
 const paths=[...new Set([...html.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))(?:\?[^" ]*)?"/g)].map(m=>m[1]))];
 paths.push('/img/s/progress-received-v2.webp','/img/s/progress-preparing-v3.webp','/img/s/progress-ready-v2.webp','/img/s/progress-collected-v3.webp','/img/s/preparation-tossed-generated-v3-appetite-v3.webp','/img/s/lunch-mince-red-oil-noodles-generated-v1-appetite-v1.webp','/img/s/dining-separate-v7.webp','/brand/footer-storefront-v1.webp');
+paths.push('/brand/tray-noodle-silhouette-v1.svg','/brand/tray-lettuce-silhouette-v1.svg','/img/s/potstickers-chicken-cabbage-cutaway-v1.webp');
 let cursor=0;await Promise.all(Array.from({length:3},async()=>{while(cursor<paths.length){const p=paths[cursor++],r=await request(p);assert.equal(r.status,200,p);assert.equal(hash(r.body),hash(await readFile(release+p)),`Exact bytes: ${p}`);console.log('MATCH',p);}}));
 const feed=await request('/api/feed');assert.equal(feed.status,401,'Anonymous staff feed is protected');
 const staff=await request('/staff');assert.equal(staff.status,200,'Staff sign-in page loads');

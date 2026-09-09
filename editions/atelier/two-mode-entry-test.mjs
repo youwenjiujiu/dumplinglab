@@ -13,9 +13,9 @@ for(const selected of [null,'dinein','takeaway','delivery']) {
     document:{addEventListener:(name,handler)=>handlers.set(name,handler)},
     localStorage:{getItem:key=>data.get(key),setItem:(key,value)=>data.set(key,value)},
     sessionStorage:{getItem:()=>null},q:new URLSearchParams(),
-    tr:zh=>zh,escapeHTML:text=>text,openModal(){},onCartChange(){},
+    tr:zh=>zh,bi:zh=>zh,escapeHTML:text=>text,openModal(){},onCartChange(){},
     renderChrome(){},renderMenu(){},renderTray(){},closeModal(){},
-    $:selector=>{if(!elements.has(selector))elements.set(selector,{focus(){}});return elements.get(selector);},
+    $:selector=>{if(!elements.has(selector))elements.set(selector,{focus(){},insertAdjacentHTML(){}});return elements.get(selector);},
     store:{removeEventListener(){},pending:[],persist(){}},
     TableCart:class {
       constructor(table){this.table=table;this.items=[];this.orders=[];this.pending=[];}

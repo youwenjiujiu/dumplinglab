@@ -1,5 +1,9 @@
 // Approved AI-assisted menu visuals; originals remain available as fallbacks.
-// One mapping is shared by recommendation cards, details and cart photos.
+// Recommendation/detail photos use the new artwork. The red tray has its own transparent presentation.
+globalThis.DL_TRAY_ART = Object.freeze({
+  "lunch-mince-red-oil-noodles-generated-v1.png": "lunch-mince-red-oil-noodles-generated-v1-appetite-v1.png",
+  "oyster-lettuce-clean-v2.png": "oyster-lettuce-clean-v2-appetite-v1.png"
+});
 globalThis.DL_MENU_ART = Object.freeze({
   "filling-pork-chive-shrimp-boiled-cutaway-v1.png": "filling-pork-chive-shrimp-boiled-cutaway-v1-appetite-v1.png",
   "filling-pork-chive-shrimp-tossed-cutaway-v1.png": "filling-pork-chive-shrimp-tossed-cutaway-v1-appetite-v2.png",
