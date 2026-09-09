@@ -214,7 +214,13 @@ const sheetNavigation = (() => {
     else history.pushState(state, "");
   }
   function closed(action = null) {
-    if (!ownsEntry() || restoring) { action?.(); return; }
+    if (!ownsEntry() || restoring) {
+      // A fresh entry has no history to traverse, but native dialog focus and
+      // restored horizontal scroll still settle after close(). Reassert the
+      // requested starting position at the next frame, not an arbitrary timer.
+      if (action) requestAnimationFrame(() => { if (!$("#sheet").open) action(); });
+      return;
+    }
     afterClose = action;
     waitingForClose = true;
     history.back();
@@ -275,9 +281,12 @@ function unlockPageScroll() {
   }
   window.scrollTo?.({left:saved.x, top:saved.y, behavior:"instant"});
 }
-function openModal(type, eyebrow) {
+function openModal(type, eyebrow, options = {}) {
   $(".detail-image")?.stopPlateMotion?.();
-  sheetNavigation.remember(type);
+  // The automatic entry chooser is part of entering this page, not a new
+  // navigation. Closing it must not ask an embedded browser to go Back and
+  // restore a previous menu scroll offset. User-opened sheets still own history.
+  if (!options.initialEntry) sheetNavigation.remember(type);
   disposeTableScene();
   if (!$("#sheet").open) lastFocus = document.activeElement;
   modal = type;

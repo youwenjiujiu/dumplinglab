@@ -111,8 +111,8 @@ const Fulfilment = (() => {
   }
   // Entry is bilingual before the guest has chosen the app language.
   const entryText = (zh, en) => `<span class="entry-copy"><span lang="zh-CN">${escapeHTML(zh)}</span><span lang="en" class="entry-en">${escapeHTML(en)}</span></span>`;
-  function select() {
-    openModal('fulfilment', '');
+  function select(options = {}) {
+    openModal('fulfilment', '', {initialEntry: options.initialEntry === true});
     $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><dl-dinein-serving class="entry-art" aria-hidden="true"><img src="/brand/entry-dinein-v3.svg" width="260" height="220" alt="" draggable="false" style="width:100%;height:auto"></dl-dinein-serving><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><dl-takeaway-pickup class="entry-art" aria-hidden="true"><img src="/brand/entry-takeaway-v5.svg" width="260" height="220" alt="" draggable="false" style="width:100%;height:auto"></dl-takeaway-pickup><strong>${entryText('打包外带','Takeaway')}</strong></button></div></div>`;
     if (!remote()) $('#sheetBody .fulfilment-entry')?.insertAdjacentHTML('beforeend', `<button type="button" class="entry-change-table" data-action="table">${bi('桌号', 'Table')} ${escapeHTML(table || '—')}<span>${bi('更改桌号', 'Change table')} ↗</span></button>`);
     $('#closeSheet').ariaLabel = '关闭 / Close';
@@ -277,7 +277,7 @@ const Fulfilment = (() => {
     if (q.get('online_order')) checkout();
     else if (store.order) checkout();
     else if (remote() && store.orders.some(o => o.mode === 'takeaway' && o.pickup)) paid();
-    else select();
+    else select({initialEntry:true});
   }
   for (const event of ['input','change']) document.addEventListener(event, e => {
     const form = e.target.closest?.('#onlineForm');
