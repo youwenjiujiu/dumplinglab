@@ -231,9 +231,9 @@ try {
   click('[data-cart-delta="-1"][data-id="jp-chicken-gyoza"]');
   await store.flush();
   assert.equal(store.items.some((i) => i.id === "jp-chicken-gyoza"), false);
-  click('[data-action="undo-remove"]');
+  assert.equal(document.querySelector('[data-action="undo-remove"]'), null);
+  run('add(dish("jp-chicken-gyoza"), null, 1)');
   await store.flush();
-  assert.equal(store.items.find((i) => i.id === "jp-chicken-gyoza").qty, 1);
   const photo = document.querySelector(".cart-photo img");
   click("[data-table-layout]");
   assert.equal(document.querySelector(".cart-dishes").dataset.layout, "list");

@@ -30,16 +30,25 @@ try {
     assert.equal(geometry.pointer,'none');
     await page.screenshot({path:`${output}added-${lang}-${width}.png`});
     await page.locator('#toast').waitFor({state:'hidden',timeout:3000});
+    const spacing=await page.locator('.table-tray').evaluate(el=>{
+      const rack=el.querySelector('#trayPictures').getBoundingClientRect(),copy=el.querySelector('.tray-copy').getBoundingClientRect();
+      return {rack:rack.width,gap:copy.left-rack.right};
+    });
+    assert(spacing.rack<=37 && spacing.gap>=4 && spacing.gap<=12,'Single item uses only its image width; count sits immediately beside it');
+    await page.locator('.table-tray').screenshot({path:`${output}single-${lang}-${width}.png`});
     await page.locator('#tray').click();
     await page.locator('[data-cart-delta="-1"]').click();
-    await page.locator('#toast [data-action="undo-remove"]').waitFor();
-    assert.equal(await page.locator('#toast').getAttribute('data-kind'),'undo');
-    assert.notEqual(await page.locator('#toast').evaluate(el=>getComputedStyle(el).pointerEvents),'none','undo is still interactive');
-    await page.locator('[data-action="undo-remove"]').click();
-    assert.equal(await page.locator('.shared-dish').count(),1,'undo restores the removed item');
+    assert.equal(await page.locator('.shared-dish').count(),0,'Removal still works');
+    assert(await page.locator('#toast').isHidden(),'Removal does not display a toast');
+    assert.equal(await page.locator('[data-action="undo-remove"]').count(),0,'Removed Undo entry does not exist');
+    assert(await page.locator('#trayActionLabel').isHidden(),'No redundant view-order label');
+    assert(await page.locator('#trayPictures').isHidden(),'Empty cart has no photo spacer');
+    await page.locator('#closeSheet').click();
+    const empty=await page.locator('.table-tray').evaluate(el=>({left:el.getBoundingClientRect().left,copy:el.querySelector('.tray-copy').getBoundingClientRect().left}));
+    assert(empty.copy-empty.left<=16,'Empty label starts at the normal left padding');
     assert.deepEqual(errors,[]);
     await context.close();
-    console.log(`PASS add confirmation ${width} ${lang}: compact white pill, survives detail close, expires, undo intact`);
+    console.log(`PASS ${width} ${lang}: add confirmation intact, quiet removal, no redundant tray label`);
   }
 } finally { await browser.close(); }
 console.log(output);

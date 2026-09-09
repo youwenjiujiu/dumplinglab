@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 const browser=await chromium.launch({channel:'chrome'});
 try {
-  for(const lang of ['zh','en']) for(const [from,to] of [['takeaway','delivery'],['delivery','takeaway'],['takeaway','dinein'],['dinein','takeaway']]) {
+  for(const lang of ['zh','en']) for(const [from,to] of [['takeaway','dinein'],['dinein','takeaway']]) {
     const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
@@ -13,7 +13,7 @@ try {
     await page.locator('[data-action="add-detail"]').click();
     await page.locator('#tray').click();
     await page.locator('[data-cart-delta="-1"]').click();
-    await page.locator('[data-action="undo-remove"]').waitFor();
+    assert.equal(await page.locator('[data-action="undo-remove"]').count(),0);
     await page.locator('#closeSheet').click();
     await page.locator('#fulfilmentButton').click();
     await page.locator(`[data-fulfilment="${to}"]`).click();

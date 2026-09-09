@@ -199,28 +199,6 @@ function toast(text, options = {}) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => ($("#toast").hidden = true), options.kind === 'added' ? 1800 : 3200);
 }
-let removedDish = null;
-function undoMatchesCart() {
-  return removedDish?.owner === store && removedDish.scope === store.key;
-}
-function discardUndo() {
-  removedDish = null;
-  if ($('#toast').dataset.kind === 'undo') {
-    clearTimeout(toast.timer);
-    $('#toast').hidden = true;
-    $('#toast').replaceChildren();
-  }
-}
-function offerUndo(item) {
-  removedDish = { id: item.id, style: item.style || null, owner:store, scope:store.key };
-  clearTimeout(toast.timer);
-  const surface = $("#sheet").open ? $("#sheet") : document.body;
-  surface.append($("#toast"));
-  $("#toast").dataset.kind = 'undo';
-  $("#toast").innerHTML = `<span>${escapeHTML(tr("已移除 ", "Removed ") + name(dish(item.id)))}</span><button data-action="undo-remove">${bi("撤销", "Undo")}</button>`;
-  $("#toast").hidden = false;
-  toast.timer = setTimeout(() => { $("#toast").hidden = true; removedDish = null; }, 8000);
-}
 // A dialog owns one native history entry. Back closes it before leaving the menu.
 // The cart's detail view returns to the cart and retains an entry for a second Back.
 const sheetNavigation = (() => {
@@ -612,7 +590,6 @@ function renderChrome() {
   Fulfilment.refreshTicket();
 }
 function renderTray() {
-  if (removedDish && !undoMatchesCart()) discardUndo();
   const remoteOrder = Fulfilment.remote();
   const viewOrder = remoteOrder ? tr('查看订单', 'View order') : tr('查看本桌点单', 'View our table');
   const items = store.items,
@@ -1094,14 +1071,12 @@ document.addEventListener("click", async (e) => {
   }
   if (b.dataset.cartDelta) {
     try {
-      const removed = store.items.find((i) => i.id === b.dataset.id && (i.style || "") === (b.dataset.style || ""));
       store.mutate({
         kind: "delta",
         dishId: b.dataset.id,
         style: b.dataset.style || null,
         delta: Number(b.dataset.cartDelta),
       });
-      if (Number(b.dataset.cartDelta) === -1 && removed?.qty === 1) offerUndo(removed);
     } catch (err) {
       toast(errorText(err));
     }
@@ -1144,20 +1119,6 @@ document.addEventListener("click", async (e) => {
     return;
   }
   switch (b.dataset.action) {
-    case "undo-remove": {
-      if (!removedDish) break;
-      if (!undoMatchesCart()) { discardUndo(); break; }
-      if (store.order || submitting) {
-        toast(tr("请先确认上一笔订单", "Check your pending order first"));
-        break;
-      }
-      const item = removedDish;
-      if (add(dish(item.id), item.style, 1)) {
-        removedDish = null;
-        toast(tr("已恢复 1 份", "Restored one portion"));
-      }
-      break;
-    }
     case "close":
       closeModal();
       break;
