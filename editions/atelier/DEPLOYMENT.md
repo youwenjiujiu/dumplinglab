@@ -2,6 +2,14 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
+## Mobile language spacing — 2026-09-09
+
+- Explicit deployment approval; runtime commit `56f5d9b`, deployment `dpl_AGjwbQDGxVeHnzNva7JpQssmjQhh` (`https://dumplinglab-menu-kutov2ox4-youwenjiujius-projects.vercel.app`) promoted to the existing public URL.
+- EN moves right 8px on regular mobile widths, 6px at <=360px. The 44px target is retained, without moving the order-mode button. Prior Chrome/WebKit tests passed 20 mode/width cases with both language toggles, no overlaps or overflow.
+- 17 release-time suites passed with `sourceUnchanged:true` in `test-output/qa-2026-09-09T14-50-10.838Z/report.json`; the exact release package passed `lunch-build-test.mjs`.
+- Protected and public URLs both matched HTML plus 39 runtime/assets and staff/config gates. Package: `/var/folders/9g/vrhfqq3x41ndv5_1b4x2_14c0000gp/T/dumplinglab-release-3D0QVs`.
+- No production data writes. Editorial layout and A/B palette studies stay local and are excluded. Footer spacing has only been diagnosed, not changed in this release.
+
 ## Simplified empty cart — 2026-09-09
 
 - Explicit user deployment approval; runtime commit `f06f068`, deployment `dpl_5Setbq2Fiw7iMRSAycgzE5UNbifU` (`https://dumplinglab-menu-rdvs70ruf-youwenjiujius-projects.vercel.app`) promoted to the existing public URL.
