@@ -15,7 +15,7 @@ await copy(resolve(here, "generated/table-view-motion/developer/web-component/ta
 await copy(resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js"), "micro-motion.js");
 await copy(resolve(here, "generated/receipt-print/developer/web-component/receipt-print.js"), "receipt-motion.js");
 await copy(resolve(here, "generated/table-sharing/developer/web-component/table-sharing.js"), "sharing-motion.js");
-for (const file of ["menu-data.js", "lunch-archive.js", "lunch-menu.js", "catalog-client.js", "catalog-admin.html", "catalog-admin.js", "catalog-admin.css", "order-pricing.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
+for (const file of ["member.html", "member.js", "member.css", "menu-data.js", "lunch-archive.js", "lunch-menu.js", "catalog-client.js", "catalog-admin.html", "catalog-admin.js", "catalog-admin.css", "order-pricing.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
 for (const dir of ["api", "server", "img/s", "img/l"]) {
   for (const file of await readdir(resolve(web, dir))) {
     // Photographer shoot is archived locally, not part of the active menu.

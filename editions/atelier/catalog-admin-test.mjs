@@ -26,7 +26,7 @@ fields.section.options=Object.keys({dumplings:1,noodles:1,sides:1,drinks:1,recom
 nodes.get('#editForm').elements=fields;
 nodes.set('.metrics',new Element('.metrics')); nodes.set('.editor-scroll',new Element('.editor-scroll'));
 nodes.get('#workspace').hidden=true;
-const nav=['catalog','history'].map(view=>{const e=new Element(view);e.dataset.view=view;return e;});
+const nav=['catalog','history','inventory'].map(view=>{const e=new Element(view);e.dataset.view=view;return e;});
 const metrics=['','available','low','sold'].map(filter=>{const e=new Element(filter);e.dataset.filter=filter;return e;});
 const items=[
   {id:'a',cn:'招牌饺子',name:'House dumpling',flavor:'',section:'dumplings',sort:0,active:true,soldOut:false,manualSoldOut:false,stock:17,reserved:3,available:14,stockUnit:'颗',price:5.8,variants:{five:{pieces:5},nine:{pieces:9}},portionPrices:{5:5.8,9:9.8},img:'a.png'},
@@ -37,7 +37,7 @@ const items=[
 let state={revision:1,items,audit:[{at:'2026-09-10T02:00:00Z',action:'edit',id:'b',details:{price:5.2,stock:null}}]},writes=[],failSave=false,unauthorized=false,pending=null;
 const win={listeners:{},addEventListener(k,fn){this.listeners[k]=fn;}};
 const ctx=vm.createContext({structuredClone,TextEncoder,Date,window:win,
-  document:{querySelector(s){assert(nodes.has(s),'known HTML selector '+s);return nodes.get(s)},querySelectorAll(s){if(s==='[data-view]')return nav;if(s==='[data-filter]')return metrics;throw Error(s)}},
+  document:{body:{dataset:{}},querySelector(s){assert(nodes.has(s),'known HTML selector '+s);return nodes.get(s)},querySelectorAll(s){if(s==='[data-editor-section]')return [];if(s==='[data-view]')return nav;if(s==='[data-filter]')return metrics;throw Error(s)}},
   sessionStorage:{getItem(){return ''},setItem(){},removeItem(){}},btoa:s=>Buffer.from(s,'binary').toString('base64'),
   FormData:class{get(){return 'preview-only'}},
   fetch:async(url,options)=>{
@@ -59,6 +59,7 @@ metrics[2].onclick();assert.match(node('list').innerHTML,/招牌饺子/);assert.
 node('search').value='NO MATCH';node('search').listeners.input();assert.equal(node('emptyState').hidden,false);
 node('clearEmpty').onclick();assert.equal(node('emptyState').hidden,true);assert.equal(node('status').value,'');
 nav[1].onclick();assert.equal(node('historyPanel').hidden,false);assert.equal(node('catalogPanel').hidden,true);assert.equal(nav[1].attrs['aria-current'],'page');nav[0].onclick();
+nav[2].onclick();assert.equal(node('catalogPanel').hidden,false);assert.equal(node('pageTitle').textContent,'库存管理');metrics[2].onclick();assert.equal(node('pageTitle').textContent,'库存管理');node('clearEmpty').onclick();nav[0].onclick();
 function edit(id){const b=new Element('edit');b.dataset.edit=id;node('list').onclick({target:{closest:()=>b}});}
 edit('a');assert.equal(node('editor').open,true);assert.equal(fields.section.disabled,true);assert.equal(fields.stock.disabled,false);assert.equal(fields.price_5.value,'5.8');
 fields.cn.value='新版饺子';node('editForm').listeners.input();node('closeEditor').onclick();assert.equal(node('discardPrompt').hidden,false);assert.equal(node('editor').open,true);node('keepEditing').onclick();assert.equal(node('discardPrompt').hidden,true);

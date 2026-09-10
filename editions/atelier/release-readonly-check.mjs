@@ -20,10 +20,12 @@ assert.equal(hash(root.body),hash(await readFile(release+'/index.html')),'Exact 
 const paths=[...new Set([...html.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))(?:\?[^" ]*)?"/g)].map(m=>m[1]))];
 paths.push('/img/s/progress-received-v2.webp','/img/s/progress-preparing-v3.webp','/img/s/progress-ready-v2.webp','/img/s/progress-collected-v3.webp','/img/s/preparation-tossed-generated-v3-appetite-v3.webp','/img/s/lunch-mince-red-oil-noodles-generated-v1-appetite-v1.webp','/img/s/dining-separate-v7.webp','/brand/footer-storefront-v1.webp');
 paths.push('/brand/tray-noodle-silhouette-v1.svg','/brand/tray-lettuce-silhouette-v1.svg','/img/s/potstickers-chicken-cabbage-cutaway-v1.webp');
-paths.push('/catalog-admin.js','/catalog-admin.css');
+paths.push('/catalog-admin.js','/catalog-admin.css','/member.js','/member.css');
 let cursor=0;await Promise.all(Array.from({length:3},async()=>{while(cursor<paths.length){const p=paths[cursor++],r=await request(p);assert.equal(r.status,200,p);assert.equal(hash(r.body),hash(await readFile(release+p)),`Exact bytes: ${p}`);console.log('MATCH',p);}}));
+const memberPage=await request('/member');assert.equal(memberPage.status,200,'Member entry page');assert.equal(hash(memberPage.body),hash(await readFile(release+'/member.html')),'Exact member HTML');
+const memberState=await request('/api/member');assert.equal(memberState.status,200,'Member capability endpoint');const memberData=JSON.parse(memberState.body.toString());assert.equal(memberData.member,null);assert.equal(memberData.balance,null);assert.equal(memberData.points,null);assert.deepEqual(memberData.capabilities,{topup:false,points:false,vouchers:false});
 const feed=await request('/api/feed');assert.equal(feed.status,401,'Anonymous staff feed is protected');
-const staff=await request('/staff');assert.equal(staff.status,200,'Staff sign-in page loads');
+const staff=await request('/staff');assert.equal(staff.status,200,'Staff sign-in page loads');assert.equal(hash(staff.body),hash(await readFile(release+'/staff.html')),'Exact staff HTML');
 const online=await request('/api/online');assert.equal(online.status,200,'Read-only online config');assert.notEqual(JSON.parse(online.body.toString()).config?.preview,true,'No simulated production checkout');
 const admin=await request('/catalog-admin');assert.equal(admin.status,200,'Catalogue admin sign-in page');assert.equal(hash(admin.body),hash(await readFile(release+'/catalog-admin.html')),'Exact admin HTML');
 const catalogue=await request('/api/catalog');assert.equal(catalogue.status,200,'Live catalogue storage readable');const catalogueData=JSON.parse(catalogue.body.toString());assert.equal(catalogueData.items.length,35,'Current product IDs retained');assert.equal(catalogueData.audit,undefined,'Audit not public');assert(catalogueData.items.every(d=>!('stock' in d)&&!('reserved' in d)),'Private stock details not public');

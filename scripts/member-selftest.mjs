@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {createMemberService} from '../web/server/member-core.js';
+let calls=[];const user={id:'synthetic-member',email:'member@example.test',email_confirmed_at:'2026-09-10T00:00:00Z'};
+let status=200;const service=createMemberService({origin:'https://shop.example.test',authUrl:'https://auth.example.test',anonKey:'public-test-key',fetcher:async(url,options)=>{calls.push({url,options});return {ok:status===200,status,json:async()=>url.endsWith('/user')?user:url.endsWith('/verify')?{user,access_token:'signed.test.token',expires_in:7200,refresh_token:'must-not-leak'}:{}}}});
+const headers={origin:'https://shop.example.test','content-type':'application/json'};
+const post=body=>service.handle({method:'POST',headers,body});
+const unavailable=await createMemberService({}).handle({method:'GET'});assert.equal(unavailable.body.loginReady,false);assert.equal(unavailable.body.balance,null);assert.equal(unavailable.body.member,null);
+await assert.rejects(service.handle({method:'POST',headers:{...headers,origin:'https://attacker.test'},body:{action:'send-code'}}),e=>e.status===403);assert.equal(calls.length,0);
+await assert.rejects(post({action:'send-code',email:'member@example.test',consent:false}),e=>e.status===400);assert.equal(calls.length,0);
+await post({action:'send-code',email:' Member@Example.test ',consent:true});assert.equal(JSON.parse(calls.at(-1).options.body).email,'member@example.test');
+const login=await post({action:'verify',email:'member@example.test',consent:true,code:'123456'});assert.match(login.cookie,/HttpOnly; SameSite=Lax; Max-Age=3600; Secure/);assert(!JSON.stringify(login.body).includes('token'));assert(!JSON.stringify(login).includes('must-not-leak'));
+const profile=await service.handle({method:'GET',headers:{cookie:'dl-member=signed.test.token'}});assert.equal(profile.body.member.id,user.id);assert.equal(calls.at(-1).options.headers.authorization,'Bearer signed.test.token');assert.equal(profile.body.points,null);assert.deepEqual(profile.body.capabilities,{topup:false,points:false,vouchers:false});
+status=401;const expired=await service.handle({method:'GET',headers:{cookie:'dl-member=expired.token'}});assert.equal(expired.body.member,null);assert.match(expired.cookie,/Max-Age=0/);
+status=429;await assert.rejects(post({action:'send-code',email:'member@example.test',consent:true}),e=>e.status===429);
+status=200;user.email_confirmed_at=null;await assert.rejects(post({action:'verify',email:'member@example.test',consent:true,code:'123456'}),e=>e.status===401);
+const count=calls.length;const logout=await post({action:'logout'});assert.match(logout.cookie,/Max-Age=0/);assert.equal(calls.length,count);
+console.log('PASS member auth: consent, origin validation, provider identity, cookie flags/expiry, no client tokens, rate limits, unverified email rejection, logout; no live calls.');

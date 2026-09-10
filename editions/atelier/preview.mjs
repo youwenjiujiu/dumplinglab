@@ -140,6 +140,11 @@ const server = createServer(async (req, res) => {
   };
   try {
     const url = new URL(req.url, "http://localhost");
+    if(url.pathname==='/api/member'){
+      // The ordinary menu preview never sends email or registers real accounts.
+      if(req.method==='GET')return json(200,{ok:true,loginReady:false,member:null,capabilities:{topup:false,points:false,vouchers:false},balance:null,points:null,vouchers:null});
+      return json(503,{ok:false,error:'本地预览未连接会员服务，不会发送邮件或创建真实账号'});
+    }
     if(url.pathname==='/api/catalog-image'){
       if(req.method==='POST'){
         requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');const chunks=[];let size=0;for await(const c of req){size+=c.length;if(size>2*1024*1024)throw new RequestError('图片须小于 2 MB',413);chunks.push(c)}const bytes=Buffer.concat(chunks),type=imageType(bytes),id=randomUUID()+'.'+type.ext;const directory=resolve(dirname(stateFile),'catalog-images');await mkdir(directory,{recursive:true});await writeFile(resolve(directory,id),bytes);return json(200,{ok:true,url:'/api/catalog-image?id='+id});
@@ -252,7 +257,7 @@ const server = createServer(async (req, res) => {
     ]);
     const allowedAsset =
       /^\/(img|brand|fonts)\//.test(path) ||
-      ["/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/catalog-client.js", "/catalog-admin.html", "/catalog-admin.js", "/catalog-admin.css", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
+      ["/member.html", "/member.js", "/member.css", "/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/catalog-client.js", "/catalog-admin.html", "/catalog-admin.js", "/catalog-admin.css", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
     if (!localFiles.has(path) && !allowedAsset)
       return json(404, { error: "Not found" });
     const data = await readFile(
