@@ -9,7 +9,7 @@ const here=new URL('./',import.meta.url), origin='http://127.0.0.1:7898';
 const config=await fetch(`${origin}/api/online`,{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
 if(config.config?.preview!==true)throw Error('Refusing QA: local simulated preview is required.');
 const suites=process.argv.includes('--no-browser')?[
-  'gst-inclusive-test.mjs','error-copy-test.mjs','lunch-test.mjs','online-service-test.mjs','table-entry-test.mjs','production-test.mjs',
+  'catalog-test.mjs','catalog-client-test.mjs','catalog-admin-test.mjs','gst-inclusive-test.mjs','error-copy-test.mjs','lunch-test.mjs','online-service-test.mjs','table-entry-test.mjs','production-test.mjs',
   'stripe-setup-test.mjs','paid-checkout-test.mjs','checkout-http-test.mjs','checkout-ui-test.mjs','checkout-recovery-test.mjs','checkout-design-test.mjs','addons-ui-test.mjs','brand-motion-test.mjs','pickup-progress-test.mjs','two-mode-entry-test.mjs','order-progress-design-test.mjs',
 ]:browserEngine==='webkit'?[
   'menu-layout-restoration-test.mjs','entry-brand-browser-test.mjs','form-layout-browser-test.mjs',
@@ -28,6 +28,7 @@ runtime.push('../../web/brand/serving-motion-v1.js','../../web/brand/menu-depth-
 runtime.push('../../web/brand/takeaway-pickup-v3.js','../../web/brand/entry-takeaway-bag-v3.svg','../../web/brand/entry-takeaway-box-v3.svg');
 for(const dir of ['../../web/server/','../../web/api/'])for(const file of await readdir(new URL(dir,here)))if(file.endsWith('.js'))runtime.push(dir+file);
 runtime.push('../../web/menu-data.js','../../web/lunch-menu.js','../../web/lunch-archive.js','../../web/i18n.js','../../web/order-pricing.js','../../web/staff.html');
+runtime.push('../../web/catalog-client.js','../../web/catalog-admin.js','../../web/catalog-admin.css','../../web/catalog-admin.html');
 runtime.push('generated/table-view-motion/developer/web-component/table-layout.js','generated/order-feedback/developer/web-component/order-feedback.js','generated/receipt-print/developer/web-component/receipt-print.js','generated/table-sharing/developer/web-component/table-sharing.js');
 async function fingerprint(){const hash=createHash('sha256');for(const file of runtime.sort())hash.update(file).update(await readFile(new URL(file,here)));return hash.digest('hex');}
 const startedAt=new Date().toISOString(), before=await fingerprint();

@@ -8,12 +8,12 @@ const LunchMenu = (() => {
   const options = (d, style) => d.variants?.[style];
   const firstStyle = d => styleFor(d, preparation, 5, flavor) || d.styles?.[0] || null;
   const readyFor = d => Boolean(d.fixedPreparation) || step === "filling" && d.preparations.includes(preparation);
-  const visible = d => d.section !== "dumplings" || readyFor(d);
+  const visible = d => d.active!==false && (d.section !== "dumplings" || readyFor(d));
   const styleFor = (d, id, pieces = 5, extras = {}) => d.styles?.find(key => {
     const v=d.variants[key];
     return !v.legacy && v.prep===id && v.pieces===pieces && ["spicy","sesame","noodles"].every(k=>v[k]===Boolean(extras[k]));
   });
-  const recommendationPrice = r => r.chooseFilling ? Math.min(...MENU.filter(d=>d.kind==="dumpling").map(d=>d.price)) : dish(r.dishId).price + (r.noodles ? LUNCH_NOODLE_EXTRA : 0);
+const recommendationPrice = r => r.chooseFilling ? Math.min(...MENU.filter(d=>d.kind==="dumpling"&&d.active!==false).map(d=>d.price)) : dish(r.dishId).price + (r.noodles ? LUNCH_NOODLE_EXTRA : 0);
   function section() {
     if (step === "filling") return `<div class="lunch-steps"><div class="lunch-chosen-flavor"><img src="${photo(prep(preparation), "s")}" alt="" width="52" height="52"><div><strong>${bi(prep(preparation).cn, prep(preparation).en)}</strong></div><button class="edit-preparation" data-lunch-back aria-label="${tr("修改做法", "Edit preparation")}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1 12-12a2.8 2.8 0 0 0-4-4L4 15z"/></svg></button></div><div class="lunch-step-title lunch-fillings-title" tabindex="-1" id="fillingStepTitle"><h3>${bi("馅料", "Fillings")}</h3></div></div>`;
     return `<div class="lunch-steps"><div class="lunch-preparations" role="group" aria-label="${tr("选择做法", "Preparation")}">${LUNCH_PREPARATIONS.map(p => `<button data-lunch-prep="${p.id}" aria-pressed="${preparation === p.id}"><span class="preparation-photo"><img src="${photo(p)}" alt="" loading="lazy"></span><span class="preparation-label"><strong>${bi(p.cn,p.en)}</strong><small class="preparation-description">${preparationDescription(p.id)}</small><span class="preparation-state" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3.2 3.2L15 6.5"/></svg></span></span></button>`).join("")}</div></div>`;
@@ -54,7 +54,7 @@ return `<section class="menu-section" id="section-recommended" data-section="rec
   }
   function openBoiledFillings() {
     openModal("filling", "");
-    $("#sheetBody").innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${bi("白灼饺子", "Boiled Dumplings")}</h2><p class="detail-other">${bi("选馅儿", "Choose your filling")}</p><div class="filling-picker">${MENU.filter(d=>d.kind==="dumpling" && d.preparations.includes("boiled")).map(d=>`<button data-boiled-filling="${d.id}"><img src="${photo(d)}" alt=""><span><strong>${dishNameHTML(d)}</strong><small>${otherName(d)}</small></span><span class="filling-price">${fromPrice(d.price)}</span><span aria-hidden="true">+</span></button>`).join("")}</div></div>`;
+    $("#sheetBody").innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${bi("白灼饺子", "Boiled Dumplings")}</h2><p class="detail-other">${bi("选馅儿", "Choose your filling")}</p><div class="filling-picker">${MENU.filter(d=>d.kind==="dumpling" && d.active!==false && d.preparations.includes("boiled")).map(d=>`<button ${d.soldOut?'disabled':''} data-boiled-filling="${d.id}"><img src="${photo(d)}" alt=""><span><strong>${dishNameHTML(d)}</strong><small>${otherName(d)}</small></span><span class="filling-price">${fromPrice(d.price)}</span><span aria-hidden="true">+</span></button>`).join("")}</div></div>`;
   }
   function handle(button) {
     if (button.dataset.recommendation) {

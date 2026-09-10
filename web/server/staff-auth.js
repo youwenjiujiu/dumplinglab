@@ -6,8 +6,7 @@ export class StaffAuthError extends Error {
     this.status = status;
   }
 }
-export function requireStaff(req) {
-  const secret = process.env.DL_STAFF_PASSWORD;
+export function requireStaff(req, secret = process.env.DL_STAFF_PASSWORD) {
   if (!secret) throw new StaffAuthError("线上店员端密码尚未配置", 503);
   const [scheme, encoded] = String(req.headers.authorization || "").split(" ");
   let given = "";

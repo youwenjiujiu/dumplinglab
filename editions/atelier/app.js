@@ -76,6 +76,7 @@ const presentedDish = (d, style) => {
   return combination ? { ...d, cn: combination.cn, name: combination.name, img: combination.img } : d;
 };
 const photo = (d, size = "s", style = null, transparent = false) => {
+  if(d.imageUrl)return d.imageUrl;
   const preparation = d.variants?.[style]?.prep;
   const img = combinationPresentation(d, style)?.img || d.preparationImages?.[preparation] || (d.kind === "dumpling" && style ? LUNCH_PREPARATIONS.find(p=>p.id===preparation)?.img || d.img : d.img);
   const artwork = transparent ? globalThis.DL_TRAY_ART?.[img] || img : globalThis.DL_MENU_ART?.[img] || img;
@@ -458,6 +459,7 @@ function renderFilters() {
     .join("");
 }
 function matches(d) {
+  if(d.active===false)return false;
   const normalise = (value) => String(value || "").normalize("NFKC").toLowerCase().replace(/[‐‑–—-]/g, " ");
   const terms = normalise(search).split(/\s+/).filter(Boolean);
   const text = normalise([
@@ -1415,6 +1417,7 @@ function onCartChange() {
   Fulfilment.refreshTicket();
 }
 store.addEventListener("change", onCartChange);
+window.addEventListener('catalog-updated',()=>{renderMenu();renderTray();});
 $("#languageButton").onclick = () => {
   language = language === "zh" ? "en" : "zh";
   try { localStorage.setItem("atelier-language",language); } catch { /* Works without persistence. */ }

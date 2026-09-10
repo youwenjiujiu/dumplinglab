@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const ctx=vm.createContext({structuredClone,CustomEvent:class{constructor(type){this.type=type}},document:{hidden:false,addEventListener(){}},setInterval(){}});
+for(const p of ['menu-data.js','lunch-archive.js','lunch-menu.js'])vm.runInContext(await readFile(new URL('../../web/'+p,import.meta.url),'utf8'),ctx);
+const initial=structuredClone(ctx.MENU),chosen=initial[0].id;let version=1,fail=false;const events=[];
+ctx.dispatchEvent=e=>events.push(e.type);
+ctx.fetch=async()=>({ok:!fail,json:async()=>({revision:version,items:initial.map(d=>({...d,active:d.id!==chosen,price:d.id===initial[1].id?12:d.price}))})});
+vm.runInContext(await readFile(new URL('../../web/catalog-client.js',import.meta.url),'utf8'),ctx);
+await ctx.CatalogClient.ready;
+assert.equal(ctx.MENU.find(d=>d.id===chosen).active,false);assert.equal(ctx.MENU.find(d=>d.id===initial[1].id).price,12);
+assert(!ctx.LUNCH_RECOMMENDATIONS.some(r=>r.dishId===chosen));assert.equal(events.at(-1),'catalog-updated');
+assert.equal(ctx.MENU.length,35,'inactive IDs remain available for existing receipts and drafts');
+const count=events.length;await ctx.CatalogClient.refresh();assert.equal(events.length,count,'same version is not rerendered');
+version++;await ctx.CatalogClient.refresh();assert.equal(events.length,count+1);
+fail=true;await ctx.CatalogClient.refresh();assert.equal(events.at(-1),'catalog-unavailable');assert.equal(ctx.MENU.find(d=>d.id===initial[1].id).price,12,'outage does not replace last known catalogue');
+console.log('PASS live catalogue client: shared prices, inactive recommendations, retained receipt IDs, revision gating, network failure');

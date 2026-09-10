@@ -38,22 +38,23 @@ function baseEvent(input) {
   };
 }
 
-export function cleanOrder(input) {
+export function cleanOrder(input, catalog) {
   const event = baseEvent(input);
-  const items = cleanItems(input.items);
+  const items = cleanItems(input.items, catalog);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
   const note = typeof input.note === "string" ? input.note.trim().slice(0, 240) : "";
   const no = requiredText(input.no, /^\d{4}$/, "订单号无效");
   return { ...event, type: "order", mode: "dinein", no, items, note: note || null, ...globalThis.OrderPricing.quote(subtotal) };
 }
 
-export function cleanItems(inputItems) {
+export function cleanItems(inputItems, catalog) {
+  const currentCatalog = catalog ? new Map(catalog.map(d=>[d.id,d])) : CATALOG;
   const input = { items: inputItems };
   if (!Array.isArray(input.items) || !input.items.length || input.items.length > 50) throw new RequestError("订单菜品数量无效");
   const items = input.items.map(item => {
-    const dish = CATALOG.get(item?.id);
+    const dish = currentCatalog.get(item?.id);
     if (!dish) throw new RequestError(`菜单里没有 ${item?.id || "该菜品"}`);
-    if (dish.soldOut) throw new RequestError(`「${dish.cn}」已售罄，请返回菜单修改`);
+    if (dish.active === false || dish.soldOut) throw new RequestError(`「${dish.cn}」已下架或售罄，请返回菜单修改`);
     const qty = Number(item.qty);
     if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new RequestError(`「${dish.cn}」的数量无效`);
     const style = dish.styles ? requiredText(item.style, /^.{1,100}$/u, `请选择「${dish.cn}」的做法和份量`) : null;

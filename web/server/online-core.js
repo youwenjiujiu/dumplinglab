@@ -27,15 +27,15 @@ const text = (value, max, label) => {
   if (!out || out.length > max || /[\u0000-\u001f<>]/.test(out)) throw new RequestError(`请填写有效的${label}`);
   return out;
 };
-export function cleanOnline(input, config, now = new Date()) {
+export function cleanOnline(input, config, now = new Date(), catalog) {
   if (!input || !['dinein', 'takeaway', 'delivery'].includes(input.mode)) throw new RequestError('请选择用餐方式');
   if (!validId(input.requestId)) throw new RequestError('订单编号无效');
   if (input.mode === 'dinein') {
-    const order = cleanOrder({ ...input, no: String(parseInt(input.requestId.replace(/-/g, '').slice(0, 6), 16) % 9000 + 1000) });
+    const order = cleanOrder({ ...input, no: String(parseInt(input.requestId.replace(/-/g, '').slice(0, 6), 16) % 9000 + 1000) }, catalog);
     return { ...order, table: order.table.toUpperCase(), tokenHash: tokenHash(input.token),
       cartOpIds: cleanCartOpIds(input.cartOpIds), actorName: cleanNickname(input.actorName), customer: {}, fulfilment: {} };
   }
-  const items = cleanItems(input.items);
+  const items = cleanItems(input.items, catalog);
   const pricing = globalThis.OrderPricing.quote(items.reduce((sum, i) => sum + i.price * i.qty, 0), input.mode);
   const c = input.customer || {};
   const customer = {};
@@ -70,7 +70,7 @@ export const publicOrder = order => {
   const { tokenHash: secret, fingerprint, requestFingerprint, sessionId, clientSecret, ...view } = order;
   return { ...view, ...(order.mode === 'takeaway' && order.status === 'paid' ? { preparationStatus: preparationState(order) } : {}) };
 };
-export function createOnlineService({ storage, payment, checkAddress, config, dining, now = () => new Date() }) {
+export function createOnlineService({ storage, payment, checkAddress, config, dining, inventory, now = () => new Date() }) {
   const requestFingerprint = input => createHash('sha256').update(JSON.stringify({
     mode:input.mode,items:input.items?.map(i=>[i.id,i.style||null,Number(i.qty)]),
     customer:input.customer,date:input.date,slot:input.slot,pickupLocation:input.pickupLocation||null,note:input.note||'',
@@ -86,7 +86,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     throw new RequestError('订单正在更新，请稍后重试', 409);
   }
   async function checked(input) {
-    const order = cleanOnline(input, config, now());
+    const order = cleanOnline(input, config, now(), inventory ? await inventory.menu() : undefined);
     if (order.mode === 'delivery') {
       const result = await checkAddress(order.customer.postalCode);
       if (!result || !Number.isFinite(result.distanceKm)) throw new RequestError('暂时无法核实配送地址，请稍后重试', 503);
@@ -139,8 +139,19 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       const fingerprint = createHash('sha256').update(JSON.stringify(data)).digest('hex');
       let order = saved || await mutate(data.id, prior => {
         if (prior) { authorize(prior, input.token); if (prior.fingerprint !== fingerprint) throw new RequestError('订单内容已更改，请重新确认', 409); return prior; }
-        return { ...data, fingerprint, requestFingerprint:requestFingerprint(input), at: now().toISOString(), no: data.no || `W${data.id.slice(0, 8).toUpperCase()}`, status: 'awaiting_payment' };
+        return { ...data, ...(inventory?{inventoryManaged:true}:{}), fingerprint, requestFingerprint:requestFingerprint(input), at: now().toISOString(), no: data.no || `W${data.id.slice(0, 8).toUpperCase()}`, status: 'awaiting_payment' };
       });
+      if(order.inventoryManaged){
+        try{await inventory.reserve(order)}catch(e){
+          // An order/table hold already exists. Keep the client's credentials so
+          // it can cancel/retry instead of treating this as pre-creation validation.
+          if([400,422].includes(e.status))throw new RequestError(e.message,409);
+          throw e;
+        }
+        order=(await storage.read(order.id))?.value||order;
+        if(order.status==='expired'){await inventory.settle(order,'expired');throw new RequestError('付款已取消，请重新确认',410)}
+        if(order.status==='paid'){await inventory.settle(order,'paid');return {order:publicOrder(order)}}
+      }
       if (!order.sessionId) {
         // Don't reissue an uncertain payment after Stripe's key-retention window.
         if (now().getTime()-Date.parse(order.at)>23*3600000) throw new RequestError('原付款状态需门店核实，请勿重新付款', 503);
@@ -165,6 +176,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
         });
       }
       if (order.mode === 'dinein') await dining.releasePayment(order);
+      if (order.inventoryManaged) await inventory.settle(order,'expired');
       return { cancelled: true };
     },
     async get(id, token) {
@@ -183,6 +195,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
         if (session.status === 'expired' && order.status !== 'paid') return { ...order, status: 'expired' };
         return order;
       });
+      if(updated.inventoryManaged) await inventory.settle(updated,updated.status);
       if (updated.mode === 'dinein') {
         if (updated.status === 'paid') {
           await dining.finishPayment(updated);

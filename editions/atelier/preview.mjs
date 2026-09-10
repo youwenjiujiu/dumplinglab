@@ -1,6 +1,6 @@
 // Local-only preview. Reuses catalogue validation; never forwards orders to production.
 import { createServer } from "node:http";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readFile, mkdir, writeFile, rename } from "node:fs/promises";
 import { dirname, resolve, extname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,6 +20,9 @@ import {
 } from "../../web/server/order-core.js";
 import { createOnlineService, bookingDates, SLOTS } from '../../web/server/online-core.js';
 import { createTableStore } from '../../web/server/table-state.js';
+import {createCatalogService} from '../../web/server/catalog-core.js';
+import {imageType,imageId} from '../../web/server/catalog-image-core.js';
+import {requireStaff} from '../../web/server/staff-auth.js';
 
 const here = dirname(fileURLToPath(import.meta.url)),
   root = resolve(here, "../..");
@@ -78,6 +81,11 @@ function transaction(fn) {
 // Local fixtures are explicitly labelled and never sent to external providers.
 db.online ||= {};
 db.tableStates ||= {};
+const catalog=createCatalogService({
+ async read(){await queue;return db.catalog?{value:structuredClone(db.catalog),etag:String(db.catalog.revision)}:null},
+ async write(value,etag){return transaction(()=>{if((db.catalog?String(db.catalog.revision):undefined)!==etag)throw Object.assign(new Error('Conflict'),{conflict:true});db.catalog=structuredClone(value)})},
+ isConflict:e=>e.conflict,
+});
 const dining = createTableStore({
   async read(path) { await queue; return structuredClone(db.tableStates[path] || null); },
   async write(path, value, etag) { return transaction(() => {
@@ -110,7 +118,7 @@ const online = createOnlineService({
     if (postal !== '059911') throw new RequestError('本地测试请使用邮编 059911；999999 用于测试超区');
     return {distanceKm:1,address:'本地配送测试地址 · 059911（非真实配送）'};
   },
-  config: { locations: previewLocations, origin:'http://127.0.0.1:7898' },
+  config: { locations: previewLocations, origin:'http://127.0.0.1:7898' }, inventory:catalog,
 });
 const mime = {
   ".html": "text/html; charset=utf-8",
@@ -132,6 +140,13 @@ const server = createServer(async (req, res) => {
   };
   try {
     const url = new URL(req.url, "http://localhost");
+    if(url.pathname==='/api/catalog-image'){
+      if(req.method==='POST'){
+        requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');const chunks=[];let size=0;for await(const c of req){size+=c.length;if(size>2*1024*1024)throw new RequestError('图片须小于 2 MB',413);chunks.push(c)}const bytes=Buffer.concat(chunks),type=imageType(bytes),id=randomUUID()+'.'+type.ext;const directory=resolve(dirname(stateFile),'catalog-images');await mkdir(directory,{recursive:true});await writeFile(resolve(directory,id),bytes);return json(200,{ok:true,url:'/api/catalog-image?id='+id});
+      }
+      if(req.method==='GET'){const id=imageId(url.searchParams.get('id')),bytes=await readFile(resolve(dirname(stateFile),'catalog-images',id));res.writeHead(200,{'content-type':imageType(bytes).mime,'x-content-type-options':'nosniff'});return res.end(bytes)}
+      return json(405,{error:'Method not allowed'});
+    }
     if (url.pathname.startsWith("/api/")) {
       let input;
       if (req.method === "POST") {
@@ -146,6 +161,11 @@ const server = createServer(async (req, res) => {
         } catch {
           throw new RequestError("Invalid JSON");
         }
+      }
+      if(url.pathname==='/api/catalog'){
+        if(req.method==='GET'){if(url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await catalog.admin()})}return json(200,{ok:true,...await catalog.public()})}
+        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await catalog.save(input)})}
+        return json(405,{error:'Method not allowed'});
       }
       if (url.pathname === '/api/online') {
         if (req.method === 'GET') {
@@ -232,7 +252,7 @@ const server = createServer(async (req, res) => {
     ]);
     const allowedAsset =
       /^\/(img|brand|fonts)\//.test(path) ||
-      ["/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
+      ["/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/catalog-client.js", "/catalog-admin.html", "/catalog-admin.js", "/catalog-admin.css", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
     if (!localFiles.has(path) && !allowedAsset)
       return json(404, { error: "Not found" });
     const data = await readFile(

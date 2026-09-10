@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import vm from "node:vm";
@@ -25,6 +25,10 @@ for (const file of ["menu-data.js","i18n.js","lunch-archive.js","lunch-menu.js"]
 assert.equal(ctx.MENU.length,35);
 assert.equal(vm.runInContext("I18N.sections.dumplings",ctx),"自选口味");
 for (const path of scripts) execFileSync(process.execPath,["--check",resolve(release,"."+path)]);
+for (const dir of ['api','server']) for (const file of await readdir(resolve(release,dir))) {
+  if (file.endsWith('.js')) execFileSync(process.execPath,['--check',resolve(release,dir,file)]);
+}
+execFileSync(process.execPath,['--check',resolve(release,'catalog-admin.js')]);
 for (const path of [...html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^"]*)?"/g)].map(m=>m[1])) {
   assert((await stat(resolve(release,"."+path))).isFile(),path);
 }
