@@ -2,6 +2,23 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
+## Catalogue and inventory workspace — 2026-09-10
+
+- Explicit user request to commit and deploy the redesigned admin and its catalogue/inventory capability. Runtime commit `921d0dc57e9bb425c66218cb43bd167d140b781c`.
+- Production admin: `https://dumplinglab-menu.vercel.app/catalog-admin` (also linked from `/staff`). Existing Production staff password and storage bindings retained; no password read/reset, no initial stock values seeded.
+- Exact package `dumplinglab-release-PovUiT`; 20 non-browser suites passed with unchanged source in `test-output/qa-2026-09-10T04-11-31.226Z/report.json`, isolated 7905 HTTP tests and complete package checks passed.
+- Deployment `dpl_45BU5ViVeroq3z4oAFJvtvTDDvAr`, `https://dumplinglab-menu-oao4x1490-youwenjiujius-projects.vercel.app`, reached READY; promoted after protected checks. Public verification then passed: exact customer and admin HTML, 42 runtime/asset matches, public 35-item catalogue, private catalogue/feed auth 401, anonymous image upload rejected 401 before any write, production payment configuration.
+- No real orders, stock edits, uploaded photos, staff events, or payment transactions were created during acceptance. Browser visual acceptance and real staff-password login were not performed.
+- The separate website homepage, local data, photography/design experiments and legacy admin are excluded. The public homepage is still the current ordering menu.
+- Once live catalogue edits or reservations exist, do not roll back to a backend that ignores the catalogue ledger. See `CATALOG-MANAGEMENT.md` for stock units, reservation semantics, and operational limitations.
+
+## Production environment refresh — 2026-09-10
+
+- User requested redeployment after saving a new staff password. Confirmed `DL_STAFF_PASSWORD` exists as a Production Secret; no secret was retrieved, displayed or written locally, and no successful-password login was attempted.
+- Reused the exact currently deployed release package `dumplinglab-release-pC8S7d` and runtime commit `5a444046b4cbfd42a2d9350b4cfd808e142cb04a`; forced a fresh build using current Production configuration. No website edition or local source changes included.
+- Deployment `dpl_899BSuF8KZzmGe9iMsMSEqbZiCsq`, `https://dumplinglab-menu-7dh58an7w-youwenjiujius-projects.vercel.app`, reached READY and was promoted to `https://dumplinglab-menu.vercel.app`.
+- Protected and public read-only checks passed: exact HTML + 39 runtime/asset matches, staff sign-in page, anonymous feed 401, production online configuration. No production order/cart/payment writes. The user must verify their newly saved password by logging in.
+
 ## Selected B deep red palette — 2026-09-09
 
 - User explicitly selected the B palette and requested committing/deploying the mobile ordering site only. Runtime commit `5a444046b4cbfd42a2d9350b4cfd808e142cb04a`.
