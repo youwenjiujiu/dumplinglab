@@ -2,6 +2,13 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
+## Withdraw unfinished membership — 2026-09-10
+
+- User explicitly requested removing the member page. Runtime commit `11c5722` removes its menu entry and excludes member HTML/CSS/JS, API and auth adapter from release; unfinished source retained locally.
+- Exact package `dumplinglab-release-1IWId2` passed package checks. Compared to the preceding deployed package, only `index.html` changed; five membership files were removed. All other runtime files are byte-identical.
+- Deployment `dpl_726PkK6bAD4fowweiDTwsVMuq8Cv` / `https://dumplinglab-menu-eiiv0folb-youwenjiujius-projects.vercel.app` passed protected exact-homepage, removed-route and auth/config checks, then was promoted to the existing public URL.
+- Public acceptance passed: `/member`, `/member.js`, `/member.css`, `/api/member` return 404; no member entry; exact homepage/admin/staff HTML and 42 assets; catalogue and auth/config checks. No production data mutations.
+
 ## Unified admin and member entry — 2026-09-10
 
 - User explicitly requested commit and production deployment. Runtime commit `e9a8eb3` on `codex/admin-pages`; pushed to origin.

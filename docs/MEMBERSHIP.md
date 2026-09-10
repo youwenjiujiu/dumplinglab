@@ -1,6 +1,6 @@
 # Dumpling Lab membership integration
 
-Status: identity adapter + customer member page implemented; production identity connection and all money/points/voucher operations are NOT enabled or verified live.
+Status: WITHDRAWN from production at user request. Member page, menu entry, static assets and API are excluded from the release. Source is retained only as unfinished work; do not republish without a new request. Production identity and money/points/voucher operations were never enabled.
 
 ## Identity decision
 
