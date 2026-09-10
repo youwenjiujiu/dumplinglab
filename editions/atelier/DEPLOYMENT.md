@@ -2,6 +2,16 @@
 
 The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local port 7898 as a separate preview; its `.local/atelier/` data is never uploaded or migrated.
 
+## Unified admin and member entry — 2026-09-10
+
+- User explicitly requested commit and production deployment. Runtime commit `e9a8eb3` on `codex/admin-pages`; pushed to origin.
+- Standalone admin login, shared navigation across staff/catalogue pages, focused price/stock editors; two order-mode illustrations now use background red `#9c3d39`. Customer `/member` entry and CanCan email-OTP adapter included.
+- Member service is intentionally unconnected: public `/api/member` confirmed `loginReady:false`, null balances and all topup/points/voucher capabilities false. No actual identity registration, topup, rewards or redemption enabled. See `docs/MEMBERSHIP.md`.
+- Twenty existing non-browser suites plus `scripts/member-selftest.mjs` passed. QA report `qa-2026-09-10T14-02-19.089Z` records `sourceUnchanged:true`; exact package `dumplinglab-release-ofRvaH` passed package validation.
+- Deployment `dpl_9CnguWZYiYpEgE8s5UHrMUjtjtDT`, `https://dumplinglab-menu-91zzli3sg-youwenjiujius-projects.vercel.app`, reached READY, passed protected verification, and was promoted to `https://dumplinglab-menu.vercel.app`.
+- Protected and public checks both passed: exact customer/admin/staff/member HTML plus 44 runtime/assets, live 35-product public catalogue, protected staff/admin interfaces, production checkout configuration, disabled member money capabilities. No live cart/order/payment/stock writes or real emails/registrations during verification.
+- Existing production environment, storage and staff password retained. Separate editorial homepage and unrelated local experiments not published.
+
 ## Catalogue and inventory workspace — 2026-09-10
 
 - Explicit user request to commit and deploy the redesigned admin and its catalogue/inventory capability. Runtime commit `921d0dc57e9bb425c66218cb43bd167d140b781c`.
