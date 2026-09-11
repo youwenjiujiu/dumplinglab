@@ -128,13 +128,16 @@ export function createTableStore(storage, legacy) {
         if (!hold || hold.id !== order.id || hold.tokenHash !== order.tokenHash || order.status !== 'paid')
           throw new RequestError("付款订单与本桌不匹配。", 409);
         const selected = new Set(hold.cartOpIds);
-        const { tokenHash, fingerprint, requestFingerprint, sessionId, clientSecret, paymentUrl, ...receipt } = order;
+        const { tokenHash, memberId, paymentIntentId, refundRequests, localRefundCents, fingerprint, requestFingerprint, sessionId, clientSecret, paymentUrl, ...receipt } = order;
         receipt.contributors = contributorsFor(state.operations.filter(op => selected.has(op.id)));
         state.events.push(receipt);
         state.operations = state.operations.filter(op => !selected.has(op.id));
         delete state.paymentHold;
         return { changed: true };
       });
+    },
+    async syncRefund(order){
+      await transact(order.table,order.group,state=>{const receipt=state.events.find(e=>e.id===order.id&&e.status==='paid');if(!receipt||receipt.total!==order.total)throw new RequestError('退款订单与本桌不匹配',409);const amount=Math.max(receipt.refundedCents||0,order.refundedCents||0),free=Boolean(receipt.freeRewardRefunded||order.freeRewardRefunded);if((receipt.refundedCents||0)===amount&&Boolean(receipt.freeRewardRefunded)===free)return {changed:false};receipt.refundedCents=amount;if(free)receipt.freeRewardRefunded=true;if(free||(amount>0&&amount>=globalThis.OrderPricing.cents(order.total)))receipt.resolvedAt||=new Date().toISOString();return {changed:true};});
     },
     async releasePayment(order) {
       await transact(order.table, order.group, state => {

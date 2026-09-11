@@ -5,6 +5,8 @@ import { ensureStorage } from './order-store.js';
 import { createOnlineService, bookingDates, SLOTS, validId } from './online-core.js';
 import { tableStore } from './table-production.js';
 import {catalogService} from './catalog-production.js';
+import {walletService} from './wallet-production.js';
+import {rewardsService} from './rewards-production.js';
 
 const PREFIX = 'dumplinglab-online/v1/';
 const path = id => { if (!validId(id)) throw new RequestError('订单编号无效'); return `${PREFIX}${id}.json`; };
@@ -105,7 +107,7 @@ async function checkAddress(postal) {
   const h = Math.sin(rad(b.lat-a.lat)/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(rad(b.lng-a.lng)/2)**2;
   return { distanceKm: 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h))), address: target.formatted_address };
 }
-export const onlineService = createOnlineService({ storage, payment, checkAddress, config: settings(), dining: tableStore, inventory:catalogService });
+export const onlineService = createOnlineService({ storage, payment, checkAddress, config: settings(), dining: tableStore, inventory:catalogService, rewards:rewardsService, wallet:walletService });
 export function verifyStripeWebhook(raw, signature, secret = process.env.STRIPE_WEBHOOK_SECRET, now = Date.now()) {
   if (!secret) throw new RequestError('付款回调尚未配置', 503);
   const parts = String(signature || '').split(',').map(p => p.split('='));

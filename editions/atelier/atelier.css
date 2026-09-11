@@ -14,8 +14,8 @@
   --paper: #ffffff;
   --ink: #302a24;
   --muted: #746a5f;
-  --red: #952f2b;
-  --backdrop: #9c3d39;
+  --red: #b5232b;
+  --backdrop: #b5232b;
   --line: #e2e0dc;
   --sans: Scto, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", system-ui, sans-serif;
   /* Compatibility for older components: the ordering UI uses one font stack. */
@@ -1206,7 +1206,7 @@ html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
 .category-choice.active {
   border-color: var(--red);
   color: var(--red);
-  background: #952f2b09;
+  background: #b5232b09;
 }
 .category-choice .translation {
   font-size: 8px;
@@ -1526,7 +1526,7 @@ html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
 }
 .drawer-note {
   padding: 14px;
-  background: #952f2b09;
+  background: #b5232b09;
   font-size: 12px;
   line-height: 1.8;
   border-left: 2px solid var(--red);
@@ -1552,7 +1552,7 @@ html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
 .service-grid .active {
   border-color: var(--red);
   color: var(--red);
-  background: #952f2b09;
+  background: #b5232b09;
 }
 .paper-menu {
   background: linear-gradient(

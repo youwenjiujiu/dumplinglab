@@ -40,18 +40,37 @@
   #flash{position:fixed;inset:0;background:var(--red);opacity:0;pointer-events:none;z-index:1;transition:opacity .15s;}
   #flash.on{opacity:.25;}
 </style>
+<link rel="stylesheet" href="/catalog-admin.css">
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--line:#e7e8eb;--sesame:#952f2b;--ink:#25282d}
+.order-shell header{position:static;flex-wrap:wrap;background:white;gap:14px;padding:22px 28px}.order-shell header h1{font-size:22px}.order-shell #list{max-width:1100px;margin:auto;padding:24px}.order-shell .pickup-check{padding:24px 28px;background:white}.order-shell .pickup-check form{max-width:680px}.order-shell .pickup-check button,.order-shell #enable{background:#952f2b;color:white;border-radius:7px;min-height:44px}.order-shell .item .lines{color:#444950}.order-shell .item .done{background:#fbefee;color:#952f2b;min-height:44px}.order-shell .empty{color:#72767d}.order-shell .item .time{color:#72767d}.order-shell .item .note{color:#72767d}.order-shell .pickup-check input{background:white}.order-shell #pickupResult{max-width:680px}
+@media(max-width:600px){.order-shell header,.order-shell .pickup-check{padding:18px 16px}.order-shell #list{padding:16px}.order-shell .pickup-check form{flex-wrap:wrap}.order-shell .pickup-check input{flex-basis:100%}}
+</style>
 </head>
 <body>
+<a class="skip-link" href="#ordersMain">跳至订单工作区</a>
+<aside class="sidebar">
+  <a class="brand" href="/staff.html"><img src="/brand/dumpling-lab-primary.png" alt="Dumpling Lab"><span>商家工作台</span></a>
+  <p class="nav-label">日常运营</p>
+  <nav aria-label="后台导航">
+    <a href="/staff.html" aria-current="page"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z M9 7h6 M9 11h6 M9 15h3"/></svg>订单工作台<span class="nav-arrow" aria-hidden="true">↗</span></a>
+    <a href="/catalog-admin.html"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>菜品管理</a>
+    <a href="/catalog-admin.html#inventory"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Z M3 7l9 4 9-4 M12 11v10"/></svg>库存管理</a>
+    <a href="/catalog-admin.html#wallet">充值与余额 <span aria-hidden="true">↗</span></a><a href="/catalog-admin.html#rewards">积分与兑换 <span aria-hidden="true">↗</span></a><a href="/catalog-admin.html#history"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8 M3 4v6h6 M12 7v5l3 2"/></svg>操作记录</a>
+  </nav>
+  <div class="sidebar-bottom"><a href="/" target="_blank" rel="noopener">查看顾客菜单 <span aria-hidden="true">↗</span></a><p>49 Circular Road · Singapore</p></div>
+</aside>
+<div class="shell order-shell" id="ordersMain" tabindex="-1">
 <div id="flash"></div>
 <header>
-  <h1>🧺 Dumpling Lab · 店员端</h1>
-  <a href="/catalog-admin.html" style="color:inherit;display:inline-block;padding:12px 0">菜品与库存管理 →</a>
+  <h1>订单工作台</h1>
   <div class="st"><span class="dot" id="dot"></span><span id="stTxt">连接中…</span></div>
   <button id="enable">开启响铃</button>
 </header>
 <section class="pickup-check"><label for="pickupInput">核验取餐码</label><form id="pickupForm"><input id="pickupInput" autocomplete="off" placeholder="扫描顾客二维码，或粘贴取餐码链接"><button>核验</button></form><div id="pickupResult" role="status" aria-live="polite"></div></section>
 <div id="list"><div class="empty" id="empty">等待顾客呼叫与下单…<br><small>把这个页面开在收银台的手机或平板上</small></div></div>
 
+</div>
 <script>
 const list=document.getElementById("list");
 const dot=document.getElementById("dot"), stTxt=document.getElementById("stTxt");

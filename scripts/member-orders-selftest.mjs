@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {createOnlineService} from '../web/server/online-core.js';
+const own = Array.from({length:23},(_,i)=>({id:`own-${String(i).padStart(2,'0')}`,at:'2026-09-11T01:00:00.000Z',type:'order',memberId:'alice',status:'paid',mode:'takeaway',total:8,items:[{id:'dish',name:'水饺',englishName:'Dumplings',qty:1,price:8}],tokenHash:'secret',customer:{email:'private'},sessionId:'secret',paymentIntentId:'secret',pickup:{code:'secret'},refundRequests:{secret:true},refundedCents:i===22?400:0}));
+const service = createOnlineService({storage:{all:async()=>[...own,{...own[0],id:'bob-order',memberId:'bob'},{...own[0],id:'guest',memberId:null},{id:'counter',type:'pickup-counter',memberId:'alice'}]}});
+await assert.rejects(service.memberOrders(null),e=>e.status===401||e.statusCode===401);
+const first = await service.memberOrders('alice');
+assert.equal(first.orders.length,20);assert.equal(first.orders[0].id,'own-22');assert.equal(first.orders[0].refundedCents,400);
+const second = await service.memberOrders('alice',first.next);assert.equal(second.orders.length,3);assert.equal(second.next,null);
+assert.equal(new Set([...first.orders,...second.orders].map(o=>o.id)).size,23);
+assert.equal((await service.memberOrders('bob')).orders.length,1);
+assert.equal((await service.memberOrders('nobody')).orders.length,0);
+for(const o of first.orders)for(const field of ['memberId','tokenHash','customer','sessionId','paymentIntentId','pickup','refundRequests'])assert.equal(o[field],undefined);
+await assert.rejects(service.memberOrders('alice','x'.repeat(201)));
+console.log('PASS member orders: auth, ownership, guest exclusion, private fields, pagination, refunds');

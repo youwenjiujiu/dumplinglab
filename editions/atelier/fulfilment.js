@@ -100,14 +100,14 @@ const Fulfilment = (() => {
   }
   const label = (value = mode()) => ({ dinein: tr('堂食', 'Dine-in'), takeaway: tr('打包自取', 'Pickup'), delivery: tr('外送', 'Delivery') })[value];
   const credentials = () => ({ requestId: crypto.randomUUID(), token: [...crypto.getRandomValues(new Uint8Array(32))].map(v => v.toString(16).padStart(2,'0')).join('') });
-  const summary = (order, paid = false) => `<dl class="payment-breakdown"><div><dt>${bi('菜品金额（未税）','Food (before GST)')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}<div><dt>${order.pricingVersion === 'sg-inclusive-gst9-delivery9-v2' ? bi('内含 GST 9%','Included GST 9%') : 'GST 9%'}</dt><dd>${money(order.gst)}</dd></div><div class="payment-total"><dt>${paid ? bi('实付金额','Total paid') : bi('应付总额','Total to pay')}</dt><dd>${money(order.total)}</dd></div></dl>`;
+  const summary = (order, paid = false) => `<dl class="payment-breakdown">${paid&&order.paymentMethod==='wallet'?`<div><dt>${bi('支付方式','Payment method')}</dt><dd>${bi('余额','Balance')}</dd></div>`:''}${paid&&order.walletAllocation?`<div><dt>${bi('本金 / 赠金','Principal / bonus')}</dt><dd>${money(order.walletAllocation.principalCents/100)} / ${money(order.walletAllocation.bonusCents/100)}</dd></div>`:''}${order.refundedCents?`<div><dt>${bi('已退款','Refunded')}</dt><dd>${money(order.refundedCents/100)}</dd></div>`:''}${order.loyalty?.discountCents ? `<div><dt>${bi('菜品原价（含税）','Food before reward (incl. GST)')}</dt><dd>${money(order.loyalty.grossFoodCents/100)}</dd></div><div><dt>${bi('兑换优惠','Reward')}</dt><dd>−${money(order.loyalty.discountCents/100)}</dd></div>` : ''}<div><dt>${bi('菜品金额（未税）','Food (before GST)')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}<div><dt>${order.pricingVersion === 'sg-inclusive-gst9-delivery9-v2' ? bi('内含 GST 9%','Included GST 9%') : 'GST 9%'}</dt><dd>${money(order.gst)}</dd></div><div class="payment-total"><dt>${paid ? bi('实付金额','Total paid') : bi('应付总额','Total to pay')}</dt><dd>${money(order.total)}</dd></div></dl>`;
   function chrome() {
     const button = $('#fulfilmentButton');
     const tableLabel = !remote() ? ` · ${table || tr('选桌号', 'Table')}` : '';
     button.innerHTML = `<img class="fulfilment-mode-icon" src="/brand/header-${mode()}-v1.svg" alt="" width="32" height="28"><span>${escapeHTML(label() + tableLabel)}</span><svg class="fulfilment-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg>`;
     button.ariaLabel = tr(`用餐方式：${label() + tableLabel}，更改桌号或用餐方式`, `Order type: ${label() + tableLabel}. Change table or order type`);
     $('#dineinControls').hidden = true;
-    $('#tableButton').hidden = remote(); $('#serviceButton').hidden = remote();
+    $('#tableButton').hidden = remote();
   }
   // Entry is bilingual before the guest has chosen the app language.
   const entryText = (zh, en) => `<span class="entry-copy"><span lang="zh-CN">${escapeHTML(zh)}</span><span lang="en" class="entry-en">${escapeHTML(en)}</span></span>`;
@@ -193,6 +193,7 @@ const Fulfilment = (() => {
     }
   }
   function renderOnlineReview(input, order) {
+    globalThis.RewardsUI?.onPaid();
     const pickup = order.mode === 'takeaway';
     $('#sheet').scrollTop = 0;
     $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${pickup ? bi('核对自取订单','Review pickup order') : bi('确认订单','Review order')}</h2><p class="online-policy">${escapeHTML(label(order.mode))}${pickup ? '' : ` · ${escapeHTML(input.date)} · ${escapeHTML(input.slot)}`}</p><p>${escapeHTML(pickup ? order.fulfilment.pickupName : order.customer.address)}<small class="pickup-location">${escapeHTML(pickup ? order.fulfilment.pickupAddress : order.customer.unit || '')}</small></p><div class="online-review-items">${order.items.map(i => `<div><span>${escapeHTML(language === 'zh' ? i.name : i.englishName)}<small>${i.style ? escapeHTML(styleName(i.style)) : ''} × ${i.qty}</small></span><b>${money(i.price*i.qty)}</b></div>`).join('')}</div>${summary(order)}<p class="fineprint">${pickup ? bi('付款后生成取餐号和取餐码，请留意门店叫号。','Your pickup number and QR code appear after payment. Listen for your number at the store.') : bi('支持信用卡及 PayNow。支付成功后提交门店。','Card and PayNow. Sent to the restaurant after successful payment.')}</p><p id="onlineError" class="field-error" role="alert"></p><button class="primary" data-online-pay>${bi('付款','Pay')} ${money(order.total)}</button><button class="online-back" ${pickup ? 'data-action="cart"' : 'data-online-start'}>${pickup ? bi('返回修改菜品','Edit selected items') : bi('修改资料','Edit details')}</button></div>`;
@@ -249,15 +250,16 @@ const Fulfilment = (() => {
     // A presentation of the verified snapshot, never a client-side payment or
     // preparation state. Legacy/unpaid receipts retain their existing renderer.
     if (order.status !== 'paid') return;
+    globalThis.RewardsUI?.onPaid();
     const pickup = order.mode === 'takeaway';
     openModal(pickup ? 'pickup' : 'success', tr('订单详情', 'Order details'));
     const when = new Date(order.paidAt || order.at || order.createdAt);
     const time = Number.isNaN(when.getTime()) ? '' : when.toLocaleString(language === 'zh' ? 'zh-CN' : 'en-SG', {timeZone:'Asia/Singapore',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     $('#sheetBody').innerHTML = `<div class="order-result ${pickup ? 'pickup-success' : 'dinein-success'}"><h2 id="sheetTitle" class="sr-only" tabindex="-1">${bi('订单详情', 'Order details')}</h2><div class="order-result-scroll">
-      ${pickup ? pickupTicket(order) : `<section class="dinein-paid"><img src="/brand/order-complete-seal.svg" alt="" width="42" height="42"><p class="eyebrow">${bi('已付款 · 堂食桌号', 'PAID · TABLE')}</p><strong>${escapeHTML(order.table || '')}</strong><p>${bi('下单成功，请在座位稍候。', 'Order placed. Please wait at your table.')}</p></section>`}
+      ${order.freeRewardRefunded ? `<section class="dinein-paid"><h3>${bi('兑换已退还','Reward returned')}</h3><p>${bi('本单兑换券或积分已退回账户。','This order’s voucher or points have been returned.')}</p></section>` : pickup ? pickupTicket(order) : `<section class="dinein-paid"><img src="/brand/order-complete-seal.svg" alt="" width="42" height="42"><p class="eyebrow">${bi('已付款 · 堂食桌号', 'PAID · TABLE')}</p><strong>${escapeHTML(order.table || '')}</strong><p>${bi('下单成功，请在座位稍候。', 'Order placed. Please wait at your table.')}</p></section>`}
       <div class="order-brand-banner"><img src="/brand/pairing-banner-backdrop-v6.webp" alt="" width="1200" height="400" loading="lazy"><span class="order-banner-pattern" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><img class="order-banner-dish" src="/img/l/potstickers-pork-shrimp-chive-cutaway-v1.webp" alt="${tr('韭菜虾仁猪肉煎饺', 'Pork, Shrimp & Chive Potstickers')}" width="1280" height="1280" loading="lazy"><img class="order-banner-logo" src="/brand/order-packaging-lockup.svg" alt="Dumpling Lab"></div>
       <section class="checkout-block"><h3>${pickup ? escapeHTML(order.fulfilment?.pickupName || 'Dumpling Lab') : 'Dumpling Lab'}</h3>${pickup ? `<p class="pickup-location">${escapeHTML(order.fulfilment?.pickupAddress || '')}</p>` : ''}<div class="checkout-lines">${CheckoutUI.itemsHTML(order)}</div>${order.note ? `<p class="checkout-note">${bi('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}</section>
-      <section class="checkout-block checkout-totals"><h3>${bi('付款明细', 'Payment details')}</h3>${summary(order, true)}</section>
+      <section class="checkout-block checkout-totals"><h3>${bi('付款明细', 'Payment details')}</h3>${summary(order, true)}</section>${globalThis.RewardsUI?.receiptHTML(order)||''}
       <section class="checkout-block"><dl class="order-result-meta">${time ? `<div><dt>${bi('付款时间', 'Payment time')}</dt><dd>${escapeHTML(time)}</dd></div>` : ''}<div><dt>${bi('订单编号', 'Order number')}</dt><dd>${escapeHTML(order.no || order.id)}</dd></div><div><dt>${bi('用餐方式', 'Order type')}</dt><dd>${escapeHTML(label(order.mode))}${pickup ? '' : ` · ${escapeHTML(order.table)} / ${escapeHTML(order.group)}`}</dd></div></dl></section>
       </div><footer class="order-result-footer"><button class="primary" data-action="ordered">${bi('查看全部订单', 'View all orders')}</button></footer></div>`;
     $('#sheetTitle').focus({preventScroll:true});

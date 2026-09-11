@@ -5,7 +5,7 @@ import {readFile,readdir,mkdir,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {browserEngine} from './browser-test-runtime.mjs';
-const here=new URL('./',import.meta.url), origin='http://127.0.0.1:7898';
+const here=new URL('./',import.meta.url), origin=process.env.ATELIER_TEST_URL?.replace(/\/$/,'')||'http://127.0.0.1:7898';
 const config=await fetch(`${origin}/api/online`,{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
 if(config.config?.preview!==true)throw Error('Refusing QA: local simulated preview is required.');
 const suites=process.argv.includes('--no-browser')?[
@@ -23,7 +23,7 @@ const suites=process.argv.includes('--no-browser')?[
   'order-mode-copy-browser-test.mjs','undo-scope-browser-test.mjs','add-confirmation-browser-test.mjs','cart-input-browser-test.mjs','checkout-race-browser-test.mjs',
   'payment-error-browser-test.mjs','navigation-draft-browser-test.mjs','fulfilment-browser-test.mjs','pickup-staff-browser-test.mjs','mode-menu-position-browser-test.mjs','surface-paint-browser-test.mjs',
 ];
-const runtime=['index.html','atelier.css','shared-table.css','app.js','error-copy.js','cart-store.js','fulfilment.js','addons-ui.js','checkout-ui.js','shared-table.js','lunch-ui.js','bilingual-fit.js','preview.mjs'];
+const runtime=['rewards-ui.js','rewards-ui.css','../../web/rewards-admin.js','index.html','atelier.css','shared-table.css','app.js','error-copy.js','cart-store.js','fulfilment.js','addons-ui.js','checkout-ui.js','shared-table.js','lunch-ui.js','bilingual-fit.js','preview.mjs'];
 runtime.push('../../web/brand/serving-motion-v1.js','../../web/brand/menu-depth-v1.js','../../web/brand/pickup-slip-v1.js');
 runtime.push('../../web/brand/takeaway-pickup-v3.js','../../web/brand/entry-takeaway-bag-v3.svg','../../web/brand/entry-takeaway-box-v3.svg');
 for(const dir of ['../../web/server/','../../web/api/'])for(const file of await readdir(new URL(dir,here)))if(file.endsWith('.js'))runtime.push(dir+file);

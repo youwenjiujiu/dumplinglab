@@ -116,7 +116,6 @@ const icons = {
   close: '<path d="m4 4 16 16M20 4 4 20"/>',
   search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
   grid: '<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/>',
-  bell: '<path d="M5 17h14M7 17v-6a5 5 0 0 1 10 0v6M10 21h4M12 3v3"/>',
   plate:
     '<ellipse cx="12" cy="13" rx="9" ry="6"/><ellipse cx="12" cy="12" rx="5" ry="3"/>',
   dumpling:
@@ -518,7 +517,7 @@ function renderMenu() {
         return `<section class="menu-section ${["noodles", "rice", "soup"].includes(c) ? "chapter-mains" : ["sides", "fried", "veg", "tangzi", "dessert"].includes(c) ? "chapter-small" : ""}" id="section-${c}" data-section="${c}"><div class="section-heading"><h2>${categoryName(c)}</h2><span class="translation">${categoryOther(c)}</span></div>${c === "dumplings" ? LunchMenu.section() : ""}<div class="dish-grid">${items
           .map((d, i) => {
             const feature = browsing && c === "signature" && i === 0;
-            return `<article class="dish-card ${feature ? "featured" : ""} ${d.img ? "" : "text-dish"} ${d.soldOut ? "sold" : ""}"><button class="dish-open" data-dish="${d.id}" aria-label="${escapeHTML(name(d))}"><div class="dish-image">${d.img ? `<img src="${photo(d, "s", LunchMenu.firstStyle(d))}" alt="" ${feature ? 'fetchpriority="high"' : 'loading="lazy"'}>` : `<span class="dish-placeholder">${icon(c === "dumplings" ? "dumpling" : "plate")}</span>`}</div><div class="dish-info"><span class="dish-number">${feature ? bi("招牌", "Signature") : String(i + 1).padStart(2, "0")}</span><h3 class="dish-name">${dishNameHTML(d)}</h3><span class="dish-english">${otherName(d)}</span>${description(d) && (feature || ["noodles", "rice", "soup"].includes(c)) ? `<p class="dish-flavor">${descriptionHTML(d)}</p>` : ""}<span class="dish-price">${LunchMenu.menuPrice(d)}</span><span class="dish-table-count" data-table-count="${d.id}" ${qty(d.id) ? "" : "hidden"}>${bi(`本桌已有 ${qty(d.id)} 份`, `${qty(d.id)} already selected`)}</span></div></button><button class="dish-add ${qty(d.id) ? "selected" : ""}" data-add="${d.id}" aria-label="${escapeHTML(tr("加一份", "Add") + " " + name(d))}" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? bi("售罄", "Sold") : qty(d.id) || "+"}</button></article>`;
+            return `<article class="dish-card ${feature ? "featured" : ""} ${d.img ? "" : "text-dish"} ${d.soldOut ? "sold" : ""}"><button class="dish-open" data-dish="${d.id}" aria-label="${escapeHTML(name(d))}"><div class="dish-image">${d.img ? `<img src="${photo(d, "s", LunchMenu.firstStyle(d))}" alt="" ${feature ? 'fetchpriority="high"' : 'loading="lazy"'}>` : `<span class="dish-placeholder">${icon(c === "dumplings" ? "dumpling" : "plate")}</span>`}</div><div class="dish-info"><span class="dish-number">${feature ? bi("招牌", "Signature") : String(i + 1).padStart(2, "0")}</span><h3 class="dish-name">${dishNameHTML(d)}</h3><span class="dish-english">${otherName(d)}</span>${description(d) && (feature || ["noodles", "rice", "soup"].includes(c)) ? `<p class="dish-flavor">${descriptionHTML(d)}</p>` : ""}<span class="dish-price">${LunchMenu.menuPrice(d)}</span><span class="dish-table-count" data-table-count="${d.id}" ${qty(d.id) ? "" : "hidden"}>${bi(`本桌已有 ${qty(d.id)} 份`, `${qty(d.id)} already selected`)}</span></div></button><button class="dish-add ${qty(d.id) ? "selected" : ""}" data-add="${d.id}" aria-label="${escapeHTML(tr("加一份", "Add") + " " + name(d))}" ${d.soldOut ? "disabled" : ""}>${d.soldOut ? bi("售罄", "Sold") : qty(d.id) || "+"}</button>${globalThis.RewardsUI?.dishBadge(d)||''}</article>`;
           })
           .join("")}</div></section>`;
       })
@@ -568,8 +567,6 @@ function renderChrome() {
   $("#planButton").innerHTML =
     `<span lang="en">Suggestions</span>`;
   $("#planButton").ariaLabel = tr("推荐搭配", "Suggested dishes");
-  $("#serviceButton").innerHTML = icon("bell");
-  $("#serviceButton").ariaLabel = tr("呼叫服务员", "Call staff");
   $("#categoryButton").innerHTML = icon("grid");
   $("#categoryButton").ariaLabel = tr("全部分类", "All categories");
   $("#searchButton").innerHTML = icon("search");
@@ -695,7 +692,10 @@ function add(d, style = null, amount = 1) {
     return false;
   }
   requestAnimationFrame(() => {
-    const target =
+    // Send desktop feedback to the visible order summary, never the hidden
+    // mobile tray's zero-sized rectangle. Order data and mobile flow stay shared.
+    const desktopTarget = $("#desktopTicket .ticket-summary");
+    const target = desktopTarget?.getClientRects().length ? desktopTarget :
       [...document.querySelectorAll("#trayPictures img")].find(
         (img) => img.dataset.id === d.id,
       ) || $("#trayPictures");
@@ -1338,7 +1338,6 @@ $("#trayPictures").addEventListener("keydown", (event) => {
 $("#tableButton").onclick = () => showTable();
 $("#connectionButton").onclick = () => showTable();
 $("#planButton").onclick = showPlanner;
-$("#serviceButton").onclick = showService;
 $("#searchButton").onclick = () => {
   if (!$("#searchPanel").hidden) { cancelSearch(); return; }
   lockPageScroll();
@@ -1349,6 +1348,34 @@ $("#searchButton").onclick = () => {
   $("#main").scrollTop = 0;
   $("#searchInput").focus({ preventScroll: true });
 };
+// Reuse one search button (and its state/handlers) across both layouts.
+// Reparent only at the breakpoint, including when resizing an open page.
+const desktopSearchLayout = matchMedia("(min-width: 1151px)");
+function placeSearchControl() {
+  const button = $("#searchButton");
+  const parent = desktopSearchLayout.matches ? $(".header-actions") : $(".menu-toolbar");
+  if (button.parentElement === parent) return;
+  const focused = document.activeElement === button;
+  if (desktopSearchLayout.matches) parent.prepend(button);
+  else parent.append(button);
+  if (focused) button.focus({ preventScroll: true });
+}
+desktopSearchLayout.addEventListener("change", placeSearchControl);
+placeSearchControl();
+// Desktop footer closes the complete workspace; mobile keeps its illustrated
+// ending inside the menu. Move the original node so links and artwork survive.
+function placeOrderFooter() {
+  const footer = $("#brandFooter");
+  const desktop = desktopSearchLayout.matches;
+  const parent = desktop ? document.body : $("#main");
+  if (footer.parentElement === parent) return;
+  const focused = footer.contains(document.activeElement) ? document.activeElement : null;
+  if (desktop) $(".workspace").after(footer);
+  else parent.append(footer);
+  focused?.focus({ preventScroll: true });
+}
+desktopSearchLayout.addEventListener("change", placeOrderFooter);
+placeOrderFooter();
 function cancelSearch() {
   clearTimeout(searchTimer);
   searchComposing = false;

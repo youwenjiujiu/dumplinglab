@@ -17,6 +17,7 @@ const CheckoutUI = (() => {
       <p class="fineprint">${bi('已选菜品与付款凭证会保留，请勿重复付款。', 'Your selection and payment access are retained. Please do not pay twice.')}</p>
       <button class="primary" type="button" data-checkout-retry>${own ? bi('检查并继续原付款', 'Check & resume payment') : bi('重新检查', 'Check again')}</button>
       ${own && !view.confirmed ? `<button class="online-back" type="button" data-checkout-edit>${bi('取消原付款并修改菜品', 'Cancel payment & edit order')}</button>` : ''}
+      ${view.owner.order?.paymentMethod==='wallet'||globalThis.WalletUI?.input(view.owner).paymentMethod==='wallet'?`<button class="online-back" type="button" data-checkout-wallet>${bi('改用其他支付方式','Use another payment method')}</button>`:''}
       <button class="online-back" type="button" data-checkout-back>${bi('返回菜单', 'Back to menu')}</button></div>`;
   }
   async function readCart(owner) {
@@ -84,9 +85,10 @@ const CheckoutUI = (() => {
     view.node.innerHTML = `<h2 id="sheetTitle" class="sr-only">${bi('确认订单', 'Your order')}</h2><div class="checkout-scroll">
       <section class="checkout-location"><img src="/brand/header-${dining ? 'dinein' : 'takeaway'}-v1.svg" width="44" height="40" alt=""><div><p class="eyebrow">DUMPLING LAB</p><h3>${dining ? `${bi('堂食', 'Dine-in')} · ${escapeHTML(order.table)}` : bi('打包自取', 'Pickup')}</h3><p>${dining ? `${bi('点餐组', 'Group')} ${escapeHTML(order.group)} · ${bi('请确认桌号后付款', 'Check your table before paying')}` : `${escapeHTML(order.fulfilment.pickupName || '')}<br>${escapeHTML(order.fulfilment.pickupAddress || '')}`}</p></div></section>
       <section class="checkout-block"><h3>${bi('本次点单', 'Order summary')}<button class="checkout-text-action" type="button" data-checkout-edit>${bi('修改', 'Edit')}</button></h3><div class="checkout-lines">${itemsHTML(order)}</div>${order.note ? `<p class="checkout-note">${bi('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}</section>
+      ${globalThis.RewardsUI?.checkoutHTML(order)||''}
       ${extras}
       <section class="checkout-block checkout-totals"><h3>${bi('费用明细', 'Order total')}<small>${order.items.reduce((n,i) => n + i.qty, 0)} ${bi('份', 'items')}</small></h3>${Fulfilment.summary(order)}</section>
-      <section class="checkout-block checkout-payment"><h3>${bi('支付方式', 'Payment methods')}<small>Stripe</small></h3><div data-payment-element><p class="fineprint" role="status">${config.preview ? bi('本地流程演示，不会扣款。', 'Local demonstration. No charge.') : view.enabled ? bi('正在加载安全支付…', 'Loading secure payment…') : bi('线上付款尚未开放，选菜会保留。', 'Online payments are not open yet. Your selection is saved.')}</p></div>
+      <section class="checkout-block checkout-payment"><h3>${bi('支付方式', 'Payment methods')}<small>${order.paymentMethod==='wallet'?bi('余额','Balance'):order.total===0?bi('兑换','Reward'):bi('银行卡 / PayNow','Card / PayNow')}</small></h3>${globalThis.WalletUI?.paymentHTML(order)||''}<div data-payment-element><p class="fineprint" role="status">${config.preview ? bi('本地流程演示，不会扣款。', 'Local demonstration. No charge.') : view.enabled ? bi('正在加载安全支付…', 'Loading secure payment…') : bi('线上付款尚未开放，选菜会保留。', 'Online payments are not open yet. Your selection is saved.')}</p></div>
       ${!config.preview ? `<label class="online-field checkout-email"><span>${bi('电子邮箱', 'Email')}</span><input data-checkout-email type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required maxlength="254" placeholder="you@example.com" value="${escapeHTML(contactEmail)}" aria-describedby="checkoutEmailHint"></label><p class="fineprint" id="checkoutEmailHint">${bi('用于完成付款，不会订阅营销邮件。', 'Required for payment. No marketing subscription.')}</p>` : ''}</section></div>
       <footer class="checkout-paybar"><p class="field-error" data-checkout-error role="alert"></p><p class="checkout-pay-note">${bi('支付成功后，订单才会发送至门店', 'Your order is sent only after successful payment')}</p><button class="primary" type="button" data-checkout-pay disabled><span>${config.preview ? bi('模拟付款', 'Simulate payment') : bi('付款并下单', 'Pay & order')}</span><span data-stripe-total>${money(order.total)}</span></button></footer>`;
   }
@@ -104,6 +106,12 @@ const CheckoutUI = (() => {
     if (out.order.status === 'paid') { await refresh(owner); return; }
     if (!current(view)) return;
     view.prepared = true;
+    if(out.walletPayment){view.walletPayment=true;view.node.querySelector('[data-payment-element]').textContent=tr('确认下单后从余额扣款。','Your balance is charged when you confirm.')+(view.order.walletAllocation?tr(` 本金 ${money(view.order.walletAllocation.principalCents/100)}，赠金 ${money(view.order.walletAllocation.bonusCents/100)}。`,` Principal ${money(view.order.walletAllocation.principalCents/100)}, bonus ${money(view.order.walletAllocation.bonusCents/100)}.`):'');view.node.querySelector('.checkout-email')?.remove();view.node.querySelector('#checkoutEmailHint')?.remove();const pay=view.node.querySelector('[data-checkout-pay]');pay.innerHTML=`<span>${bi('余额支付并下单','Pay with balance & order')}</span><span>${money(view.order.total)}</span>`;pay.disabled=false;return;}
+    if(out.freeRedemption){
+      view.freeRedemption=true;view.node.querySelector('[data-payment-element]').textContent=tr('本单已全额兑换，无需支付。确认后发送至门店。','Fully covered by your reward. Confirm to send to the store.');
+      view.node.querySelector('.checkout-email')?.remove();view.node.querySelector('#checkoutEmailHint')?.remove();
+      const pay=view.node.querySelector('[data-checkout-pay]');pay.textContent=tr('确认兑换并下单','Confirm reward & order');pay.disabled=false;return;
+    }
     if (view.config.preview) {
       view.node.querySelector('[data-payment-element]').innerHTML = `<p class="checkout-demo">${bi('本地模拟支付 · 非真实支付方式', 'Local simulation · Not a real payment method')}</p>`;
       view.node.querySelector('[data-checkout-pay]').disabled = false;
@@ -166,7 +174,8 @@ const CheckoutUI = (() => {
       if (!owner.order && !owner.items.length) return showCart();
       if (!dining && !view.config.locations?.length) throw new Error(tr('自取门店尚未配置，选菜已保留', 'Pickup location is not configured. Your selection is saved.'));
       if (!dining && view.config.locations.length > 1 && !owner.order) throw new Error(tr('请先确认自取门店', 'Please confirm the pickup location first'));
-      view.input = owner.order || { ...freshCredentials(), mode: dining ? 'dinein' : 'takeaway',
+      try { await globalThis.RewardsUI?.refresh(); } catch(e) { if(!owner.order&&globalThis.RewardsUI?.input(owner).memberExpected)throw e; }
+      view.input = owner.order || { ...freshCredentials(), ...globalThis.RewardsUI?.input(owner), ...globalThis.WalletUI?.input(owner), mode: dining ? 'dinein' : 'takeaway',
         items: structuredClone(owner.items), note: owner.note,
         ...(dining ? { table: owner.table, group: owner.group, cartOpIds: [...owner.remote.opIds], actorName: owner.nickname } : { pickupLocation: view.config.locations[0].id }) };
       let result;
@@ -288,17 +297,35 @@ const CheckoutUI = (() => {
   document.addEventListener('click', async e => {
     const cancel = e.target.closest('[data-checkout-cancel]');
     if (cancel?.hasAttribute('data-checkout-cancel')) { await cancelPending(cancel); return; }
-    const button = e.target.closest('[data-checkout-pay], [data-checkout-edit], [data-checkout-addon], [data-checkout-addons-open], [data-checkout-retry], [data-checkout-back]');
+    const button = e.target.closest('[data-checkout-wallet], [data-checkout-rewards], [data-checkout-pay], [data-checkout-edit], [data-checkout-addon], [data-checkout-addons-open], [data-checkout-retry], [data-checkout-back]');
     const view = active;
     if (!button || !view || !current(view) || view.busy) return;
     if (button.hasAttribute('data-checkout-addons-open') || button.hasAttribute('data-checkout-addon')) return chooseAddons(view, button.dataset.checkoutAddon);
+    if(button.hasAttribute('data-checkout-wallet')){
+      view.busy=true;button.disabled=true;const priorPay=view.node.querySelector('[data-checkout-pay]');if(priorPay)priorPay.disabled=true;
+      try{if(view.owner.order){await view.owner.api('/api/online',{...view.owner.order,action:'cancel'});view.owner.order=null;view.owner.emit();view.element?.destroy();view.actions=null;if(view.owner.table)await readCart(view.owner);}WalletUI.setMethod(view.owner,(view.order?.paymentMethod||view.owner.order?.paymentMethod||WalletUI.input(view.owner).paymentMethod)==='wallet'?'stripe':'wallet');await open({skipAddons:true});}catch(e){error(view,errorText(e));if(priorPay&&view.owner.order)priorPay.disabled=false;}finally{view.busy=false;button.disabled=false;}return;
+    }
+    if(button.hasAttribute('data-checkout-rewards')) {
+      try { await RewardsUI.choose(view.owner,async(selection,reward)=>{
+        await view.preparation;if(!current(view)||view.busy||view.confirmed)throw new Error(tr('请重新确认订单','Please check your order again'));
+        view.busy=true;
+        try {
+          if(view.owner.order){await view.owner.api('/api/online',{...view.owner.order,action:'cancel'});view.owner.order=null;view.owner.emit();view.element?.destroy();view.actions=null;view.changed=true;if(view.owner.table)await readCart(view.owner);}
+          RewardsUI.setSelection(view.owner,selection);
+          if(reward&&!view.owner.items.some(i=>i.id===reward.dishId&&(i.style||null)===(reward.style||null)))view.owner.mutate({kind:'delta',dishId:reward.dishId,style:reward.style||undefined,delta:1});
+          await view.owner.flush();await open({skipAddons:true});
+        } finally {view.busy=false;}
+      }); } catch(e){error(view,errorText(e));}return;
+    }
     view.busy = true; button.disabled = true;
     error(view, '');
     try {
       if (button.hasAttribute('data-checkout-back')) { closeModal(); return; }
       if (button.hasAttribute('data-checkout-retry')) { await open(); return; }
       if (button.hasAttribute('data-checkout-pay')) {
-        if (view.config.preview && !production) {
+        if(view.walletPayment){await view.owner.api('/api/online',{...view.owner.order,action:'confirm-wallet'});
+        } else if(view.freeRedemption){await view.owner.api('/api/online',{...view.owner.order,action:'confirm-reward'});
+        } else if (view.config.preview && !production) {
           await view.owner.api('/api/online', { ...view.owner.order, action: 'preview-pay' });
         } else {
           if (!view.actions) throw new Error(tr('支付方式尚未加载', 'Payment methods are still loading'));

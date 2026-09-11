@@ -143,7 +143,7 @@ body.search-open .filters button { border: 0; border-radius: 4px; padding: 4px 1
   flex: none;
   padding: 2px;
   border-radius: 50%;
-  background: #952f2b0b;
+  background: #b5232b0b;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -978,7 +978,7 @@ html[lang="en"] .sheet-content h1, html[lang="en"] .sheet-content h2 {
 .sharing-option:hover, .sharing-option:focus-visible { border-color: var(--red); }
 @media(max-width:360px) { .sharing-options { gap: 10px; } .sharing-option { padding-inline: 4px; } }
 .receipt-success-title:focus { outline: none; }
-.receipt-printer { --paper: #fffefa; --ink: #302f2b; --muted: #6c6a61; --red: #952f2b; --line: #d9d7ce; margin-bottom: 10px; }
+.receipt-printer { --paper: #fffefa; --ink: #302f2b; --muted: #6c6a61; --red: #b5232b; --line: #d9d7ce; margin-bottom: 10px; }
 .receipt-printer .paper-receipt {
   background: var(--paper);
   color: var(--ink);
@@ -1717,7 +1717,7 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
 /* A single order journey: fixed navigation, independently scrolling content,
    and a payment dock that never covers the last field. Menu geometry is untouched. */
 #sheet[data-mode="online"], #sheet[data-mode="pickup"], #sheet[data-mode="success"]:has(.order-result) {
-  --order-accent: #952f2b;
+  --order-accent: #b5232b;
   position: fixed; inset: 0; margin: auto;
   width: min(560px, calc(100% - 32px)); max-width: calc(100% - 32px);
   height: min(880px, 94dvh); max-height: 94dvh;
@@ -1962,5 +1962,224 @@ img[src*="-appetite-v"] { filter: none !important; }
   .checkout-lines article { gap: 10px; }
   .checkout-lines strong { font-size: 14px; }
   .checkout-addon { flex-basis: 124px; }
-  .checkout-block h3 small { font-size: 10px; }
+.checkout-block h3 small { font-size: 10px; }
+}
+
+/* Desktop ordering is a three-column workspace, not the mobile page enlarged.
+   Keep this breakpoint paired with atelier.css's desktop-ticket visibility. */
+.desktop-ticket-frame { display: none; }
+@media (min-width: 1151px) {
+  body {
+    background: #fff;
+  }
+  .preview-notice { background: transparent; }
+  .masthead {
+    max-width: 1600px;
+    height: 68px;
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    margin-inline: auto;
+    padding: 12px 32px;
+    background: #fff;
+    border-bottom: 1px solid #ecebea;
+  }
+  .masthead .brand img { width: 130px; }
+  .header-actions { gap: 18px; }
+  .fulfilment-switch { font-size: 14px; padding-inline: 14px; }
+  .fulfilment-switch::before {
+    background: #fff;
+    border-color: #e8d1cf;
+  }
+  .language-button { min-width: 44px; min-height: 44px; }
+  .dinein-controls {
+    max-width: 1536px;
+    padding: 4px 0;
+    margin-inline: max(32px, calc((100vw - 1536px) / 2));
+    background: transparent;
+  }
+  .workspace {
+    max-width: 1600px;
+    grid-template-columns: 176px minmax(0, 1fr) 296px;
+    gap: 24px;
+    padding: 28px 32px 48px;
+    align-items: start;
+  }
+  #main { min-width: 0; }
+  .desktop-index {
+    top: 92px;
+    padding: 16px 0 0;
+    max-height: calc(100dvh - 116px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    color: var(--ink);
+  }
+  .desktop-index .eyebrow { color: var(--muted); margin: 0 12px; }
+  .desktop-index nav { gap: 6px; margin-top: 24px; }
+  .desktop-index .side-category {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px;
+    gap: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--ink);
+    transition: background 150ms, color 150ms;
+  }
+  .desktop-index .side-category small { font-size: 10px; opacity: .65; flex: none; }
+  .desktop-index .side-category:hover { background: #f5f5f5; }
+  .desktop-index .side-category.active { background: var(--red); color: #fff8eb; }
+  .desktop-index .side-category.active::after { content: none; }
+  .desktop-index button:focus-visible { outline-color: var(--red); outline-offset: -2px; }
+  .desktop-index .side-note { margin: 28px 12px 0; padding-top: 20px; border-color: #e6ddd0; }
+  .desktop-index .tiny-seal { background: transparent; }
+
+  /* Desktop categories live in the left rail; the same search control moves
+     into the sticky header. The original toolbar is retained for mobile. */
+  .menu-toolbar { display: none; }
+  .header-actions > .search-button {
+    display: flex;
+    gap: 10px;
+    width: auto;
+    min-width: 160px;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid #e0d5c8;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .header-actions > .search-button::after { content: attr(aria-label); font-size: 13px; }
+  .header-actions > .search-button:hover { border-color: var(--red); color: var(--red); }
+  #menuList {
+    margin-top: 0;
+    border: 1px solid #ecebea;
+    border-radius: 20px;
+    background: #fff;
+  }
+  .menu-section { padding: 24px; scroll-margin-top: 80px; }
+  .menu-section + .menu-section { padding-top: 28px; border-top: 1px solid #eee7dd; }
+  .section-heading { margin-bottom: 16px; }
+  .section-heading h2, html[lang="en"] .section-heading h2 { font-size: 26px; }
+  .dish-grid { column-gap: 24px; }
+  .menu-section .dish-image { aspect-ratio: 1.35; mix-blend-mode: multiply; }
+  .menu-section .dish-image img { width: 90%; height: 90%; }
+  .menu-section .dish-name {
+    font-size: 17px !important;
+    line-height: 1.45;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    letter-spacing: 0;
+  }
+  .menu-section .dish-number { color: #9a8e80; }
+  .menu-section .dish-price { font-size: 14px; }
+  .menu-section .dish-add {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    background: #fff;
+    border-color: #d9b7ae;
+  }
+  .menu-section .dish-add::after { inset: -3px; }
+  .menu-section .dish-add:hover, .menu-section .dish-add.selected {
+    background: var(--red);
+    color: #fff8eb;
+    border-color: var(--red);
+  }
+  .menu-section .dish-add.selected { font-size: 15px; }
+  .menu-section.chapter-small .dish-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chapter-mains .dish-open { grid-template-columns: 42% minmax(0, 1fr); }
+  .chapter-mains .dish-info { padding-right: 48px; }
+  .chapter-mains .dish-flavor { max-width: none; }
+  .colophon { margin-bottom: 0; color: var(--muted); }
+  .colophon b { color: var(--red); }
+
+  /* Shadow belongs to the wrapper so the paper's existing zigzag clip does
+     not cut it off. This keeps the torn edge visible on a pure-white page. */
+  .desktop-ticket-frame {
+    display: block;
+    position: sticky;
+    top: 92px;
+    align-self: start;
+    min-width: 0;
+    filter: drop-shadow(0 2px 2px #302a2426);
+  }
+  .desktop-ticket {
+    position: relative;
+    top: 0;
+    margin-top: 0;
+    max-height: calc(100dvh - 116px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 22px;
+    border: 1px solid #ecebea;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+  }
+  .ticket-title { padding-bottom: 18px; border-bottom: 0; margin-bottom: 8px; color: var(--ink); }
+  .ticket-title h3 { font-size: 22px; }
+  .ticket-empty { height: 168px; }
+  .ticket-empty p { font-size: 16px; }
+  .ticket-empty small { font-size: 12px; }
+  .ticket-line { font-size: 13px; line-height: 1.5; gap: 16px; }
+  .ticket-line span:first-child { max-width: none; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+  .ticket-line span:last-child { flex: none; white-space: nowrap; }
+  .ticket-summary { align-items: center; border-top: 1px solid #eee7dd; padding-top: 18px; margin-top: 18px; font-size: 13px; }
+  .ticket-summary strong { font-size: 25px; }
+  .desktop-ticket .primary { min-height: 48px; border-radius: 8px; font-size: 14px; }
+  .ticket-foot { font-size: 10px; line-height: 1.5; letter-spacing: 0; }
+  .table-tray { display: none; }
+  /* Full-width desktop ending, in normal flow after both navigation rails.
+     No fixed overlay and no giant illustration inside the menu column. */
+  body > .colophon.restaurant-footer {
+    display: grid;
+    grid-template-columns: 176px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 4px 32px;
+    width: 100%;
+    max-width: 1600px;
+    margin: 12px auto 0;
+    padding: 28px 32px 32px;
+    border-top: 1px solid #e5e5e5;
+    background: #fff;
+    color: var(--ink);
+  }
+  body > .restaurant-footer .footer-storefront {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 176px;
+    height: 126px;
+    margin: 0;
+    align-self: center;
+  }
+  body > .restaurant-footer .footer-visit {
+    grid-column: 2;
+    margin: 0;
+    padding: 0;
+    justify-content: space-between;
+  }
+  body > .restaurant-footer #footerFarewell { color: var(--ink); font-size: 15px; }
+  body > .restaurant-footer .footer-links { position: static; }
+  body > .restaurant-footer .footer-links a { color: var(--red); }
+  body > .restaurant-footer .footer-links a:focus-visible { outline-color: var(--red); }
+  body > .restaurant-footer .footer-signoff {
+    grid-column: 2;
+    align-self: start;
+    margin: 0;
+    padding-top: 12px;
+    border-color: #e5e5e5;
+    color: #655c55;
+    font-size: 12px;
+  }
+  body > .restaurant-footer .footer-signoff address { font-size: 12px; }
+  body.search-open > .colophon.restaurant-footer { display: none; }
+}
+@media (min-width: 1151px) and (max-width: 1279px) {
+  .workspace { grid-template-columns: 152px minmax(0, 1fr) 264px; gap: 20px; padding-inline: 24px; }
+  .masthead { padding-inline: 24px; }
+  .desktop-index .side-category { font-size: 13px; padding-inline: 10px; }
+  .menu-section { padding: 20px; }
+  .desktop-ticket { padding: 18px; }
 }

@@ -16,7 +16,7 @@
       crossorigin
     />
     <link rel="stylesheet" href="/atelier.css?v=9" />
-    <link rel="stylesheet" href="/shared-table.css?v=3" />
+    <link rel="stylesheet" href="/shared-table.css?v=desktop-receipt-footer-7" />
     <script src="/menu-data.js" defer></script>
     <script src="/i18n.js" defer></script>
     <script src="/lunch-archive.js" defer></script>
@@ -35,6 +35,9 @@
     <script src="/brand/dish-serving-v2.js" defer></script>
     <script src="/brand/pickup-slip-v1.js" defer></script>
     <script src="/addons-ui.js" defer></script>
+    <link rel="stylesheet" href="/rewards-ui.css?v=20260911-3">
+    <script src="/wallet-ui.js" defer></script>
+    <script src="/rewards-ui.js?v=20260911-3" defer></script>
     <script src="/checkout-ui.js" defer></script>
     <script src="/shared-motion.js" defer></script>
     <script src="/micro-motion.js" defer></script>
@@ -54,7 +57,7 @@
       /></a>
       <div class="header-actions">
         <button id="fulfilmentButton" class="fulfilment-switch" aria-haspopup="dialog"></button>
-        <button id="serviceButton" class="icon-button" aria-label="呼叫服务员"></button>
+        <div id="rewardsBar" class="rewards-bar" hidden></div>
         <button id="languageButton" class="language-button" aria-label="Switch to English">EN</button>
       </div>
     </header>
@@ -139,7 +142,7 @@
           <div class="footer-signoff"><span>© <span id="footerCopy">Dumpling Lab</span></span><address><a href="https://www.google.com/maps/search/?api=1&amp;query=Dumpling%20Lab%2049%20Circular%20Rd%20Singapore%20049404" target="_blank" rel="noopener noreferrer">49 Circular Rd · Singapore 049404 <span aria-hidden="true">↗</span></a></address></div>
         </footer>
       </main>
-      <aside class="desktop-ticket" id="desktopTicket"></aside>
+      <div class="desktop-ticket-frame"><aside class="desktop-ticket" id="desktopTicket"></aside></div>
     </div>
     <div class="table-tray">
       <div id="trayPictures" class="tray-pictures" role="list"></div>
