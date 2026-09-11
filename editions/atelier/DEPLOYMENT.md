@@ -5,11 +5,11 @@ The restaurant's existing project is `dumplinglab-menu` on Vercel. Keep local po
 ## Membership, rewards and wallet — 2026-09-11
 
 - User requested merging to `main`, committing and deploying the completed membership experience. Runtime commit `29f8b35`; exact package `dumplinglab-release-WDD4JU`.
-- Added email/password registration and sign-in, password reset, Google and Apple sign-in, member account/orders, five reward cards at every point balance, wallet history, coupons and rewards administration. Phone sign-in remains hidden because the shared authentication provider does not currently enable SMS.
+- Added email/password registration and sign-in, password reset, Google, Apple and phone OTP sign-in, member account/orders, five reward cards at every point balance, wallet history, coupons and rewards administration.
 - Production uses the existing CanCan Supabase URL and public anonymous key; no service-role credential was copied. The public member endpoint reports email, password, Google and Apple as ready.
 - All 20 non-browser suites passed in `test-output/qa-2026-09-11T10-49-12.675Z/report.json`; the exact production package passed `lunch-build-test.mjs` with the 35-item client/server catalogue agreement.
-- Deployment `dpl_4nSZwdLFq8yL6zvgPDc7GpRVJMua` (`https://dumplinglab-menu-3kemaupeb-youwenjiujius-projects.vercel.app`) was promoted to `https://dumplinglab-menu.vercel.app`. Public verification matched exact HTML plus 46 runtime/assets and passed staff-auth and production-config gates.
-- Verification was read-only. No real account, OTP, order, wallet transaction, reward redemption, payment or staff event was created.
+- Final deployment `dpl_DYCzLZQuWKH39PqUy7qiUKZEXV6H` (`https://dumplinglab-menu-dh7qb4ihz-youwenjiujius-projects.vercel.app`) was promoted to `https://dumplinglab-menu.vercel.app`. It reuses Comedy's Twilio account and sender through a dedicated `Dumpling Lab Auth` Messaging Service; the shared Supabase provider and public member endpoint report phone, email, password, Google and Apple as ready.
+- Verification was read-only. No real account, OTP, SMS, order, wallet transaction, reward redemption, payment or staff event was created.
 
 ## Catalogue and inventory workspace — 2026-09-10
 
