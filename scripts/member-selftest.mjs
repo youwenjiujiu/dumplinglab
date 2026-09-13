@@ -15,10 +15,12 @@ const fetcher = async (url, options) => {
   if (url.endsWith("/verify")) output = makeSession(user);
   if (url.includes("/token?grant_type=password")) output = makeSession(emailUser, "password.signed.token");
   if (url.includes("/token?grant_type=pkce")) output = makeSession(emailUser, "oauth.signed.token");
+  if (url.includes("/token?grant_type=id_token")) output = makeSession(emailUser, "onetap.signed.token");
   return { ok: forcedStatus === 200, status: forcedStatus, json: async () => output };
 };
 const service = createMemberService({
   origin: "https://shop.example.test", authUrl: "https://auth.example.test", anonKey: "public-test-key",
+  googleClientId: "test-client.apps.googleusercontent.com",
   googleEnabled: true, appleEnabled: true, phoneEnabled: true, fetcher,
 });
 const headers = { origin: "https://shop.example.test", "content-type": "application/json" };
@@ -30,6 +32,13 @@ assert.equal(unavailable.body.member, null);
 assert.deepEqual(unavailable.body.authMethods, { email: false, password: false, phone: false, google: false, apple: false });
 const capability = await service.handle({ method: "GET" });
 assert.deepEqual(capability.body.authMethods, { email: true, password: true, phone: true, google: true, apple: true });
+assert.equal(capability.body.googleClientId, "test-client.apps.googleusercontent.com");
+assert.equal(unavailable.body.googleClientId, null, "No client id is published while login is unconfigured");
+const withoutClientId = await createMemberService({
+  origin: "https://shop.example.test", authUrl: "https://auth.example.test", anonKey: "public-test-key",
+  googleEnabled: true, fetcher,
+}).handle({ method: "GET" });
+assert.equal(withoutClientId.body.googleClientId, null, "Redirect sign-in stays available without a client id");
 
 await assert.rejects(service.handle({ method: "POST", headers: { ...headers, origin: "https://attacker.test" }, body: { action: "send-code" } }), (error) => error.status === 403);
 assert.equal(calls.length, 0);
@@ -77,12 +86,31 @@ assert.match(oauth.cookie, /^dl-member-oauth=google:[\w-]+; Path=\/api\/member; 
 const verifier = oauth.cookie.match(/^dl-member-oauth=google:([\w-]+)/)[1];
 assert.equal(authorize.searchParams.get("code_challenge"), createHash("sha256").update(verifier).digest("base64url"));
 const callback = await service.handle({ method: "GET", headers: { cookie: `dl-member-oauth=google:${verifier}` }, query: { action: "oauth-callback", code: "provider-auth-code" } });
-assert.equal(callback.redirect, "https://shop.example.test/order?member=1");
+assert.equal(callback.redirect, "https://shop.example.test/?member=1", "Ordering lives at the root of its own domain since the split");
 assert.equal(callback.cookies.length, 2);
 assert.match(callback.cookies[0], /^dl-member=oauth\.signed\.token;/);
 assert.match(callback.cookies[1], /^dl-member-oauth=; Path=\/api\/member;.*Max-Age=0/);
 assert.deepEqual(JSON.parse(calls.at(-1).options.body), { auth_code: "provider-auth-code", code_verifier: verifier });
 assert(!JSON.stringify(callback).includes("must-not-leak"));
+
+// Google One Tap: the browser gets the digest, the raw nonce never leaves us.
+const nonceStart = await post({ action: "google-nonce", consent: true });
+assert.equal(nonceStart.body.clientId, "test-client.apps.googleusercontent.com");
+const rawNonce = nonceStart.cookie.match(/^dl-member-google=([\w-]+)/)[1];
+assert.equal(nonceStart.body.nonce, createHash("sha256").update(rawNonce).digest("hex"));
+assert.match(nonceStart.cookie, /Path=\/api\/member; HttpOnly; SameSite=Lax; Max-Age=600; Secure/);
+assert.notEqual(nonceStart.body.nonce, rawNonce, "The browser never sees the raw nonce");
+const credential = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxIn0.c2ln";
+const oneTap = await service.handle({ method: "POST", headers: { ...headers, cookie: `dl-member-google=${rawNonce}` }, body: { action: "google-token", credential, consent: true } });
+assert.deepEqual(JSON.parse(calls.at(-1).options.body), { provider: "google", id_token: credential, nonce: rawNonce });
+assert.equal(oneTap.body.member.email, emailUser.email);
+assert.match(oneTap.cookies[0], /^dl-member=onetap\.signed\.token;/);
+assert.match(oneTap.cookies[1], /^dl-member-google=; Path=\/api\/member;.*Max-Age=0/);
+assert(!JSON.stringify(oneTap).includes("must-not-leak"));
+const beforeReplay = calls.length;
+await assert.rejects(post({ action: "google-token", credential, consent: true }), (error) => error.status === 400, "A credential without our nonce cookie is refused");
+await assert.rejects(service.handle({ method: "POST", headers: { ...headers, cookie: `dl-member-google=${rawNonce}` }, body: { action: "google-token", credential: "not-a-jwt", consent: true } }), (error) => error.status === 400);
+assert.equal(calls.length, beforeReplay, "Neither rejection reaches the identity provider");
 
 const profile = await service.handle({ method: "GET", headers: { cookie: "dl-member=signed.test.token" } });
 assert.equal(profile.body.member.id, emailUser.id);
