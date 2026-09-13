@@ -107,7 +107,17 @@ const rewards=createRewardsService({
 });
 // Explicit opt-in test identity, only in this loopback-only development server.
 const testMembers=process.env.DL_PREVIEW_TEST_MEMBER==='1';
-function memberAuth(req){return createMemberService({origin:process.env.DL_MEMBER_ORIGIN||`http://${req.headers.host}`,authUrl:process.env.CANCAN_APP_SUPABASE_URL,anonKey:process.env.CANCAN_APP_SUPABASE_ANON})}
+// Same variable names as production, so a local look at the login panel shows
+// the same entrances the guest gets.
+function memberAuth(req){return createMemberService({
+ origin:process.env.DL_MEMBER_ORIGIN||`http://${req.headers.host}`,
+ authUrl:process.env.DL_SUPABASE_URL||process.env.CANCAN_APP_SUPABASE_URL,
+ anonKey:process.env.DL_SUPABASE_ANON||process.env.CANCAN_APP_SUPABASE_ANON,
+ googleClientId:process.env.DL_GOOGLE_CLIENT_ID,
+ googleEnabled:process.env.DL_AUTH_GOOGLE_ENABLED==='true',
+ appleEnabled:process.env.DL_AUTH_APPLE_ENABLED==='true',
+ phoneEnabled:process.env.DL_AUTH_PHONE_ENABLED==='true',
+})}
 async function memberIdentity(req){return testMembers&&String(req.headers.cookie||'').split(';').some(c=>c.trim()==='dl-preview-member=fixture')?{id:'preview-member',email:'preview@example.test'}:memberAuth(req).identity(req.headers)}
 
 const wallet=createWalletService({

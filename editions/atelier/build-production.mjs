@@ -26,12 +26,20 @@ for (const dir of ["api", "server", "img/s", "img/l"]) {
 }
 for (const file of ["scto-grotesk-a-regular.woff2", "scto-grotesk-a-medium.woff2"]) await copy(resolve(web, "fonts", file), `fonts/${file}`);
 await copy(resolve(web, "brand/dumpling-lab-primary.png"), "brand/dumpling-lab-primary.png");
+// Browsers, link previews and services like Resend fetch these from the root.
+for (const file of ["favicon.ico", "apple-touch-icon.png"]) await copy(resolve(web, file), file);
+// Referenced by the Supabase verification emails, so it must stay publicly reachable.
+await copy(resolve(web, "brand/email-logo.png"), "brand/email-logo.png");
 await copy(resolve(web, "brand/serving-motion-v1.js"), "brand/serving-motion-v1.js");
 for(const file of ['takeaway-pickup-v5.js','entry-dinein-v3.svg','entry-takeaway-v5.svg']) await copy(resolve(web,'brand',file),`brand/${file}`);
 await copy(resolve(web,'brand/dinein-serving-v3.js'),'brand/dinein-serving-v3.js');
 await copy(resolve(web, "brand/menu-depth-v1.js"), "brand/menu-depth-v1.js");
 await copy(resolve(web, "brand/menu-appetite-v1.js"), "brand/menu-appetite-v1.js");
 for (const file of ['tray-noodle-silhouette-v1.svg','tray-lettuce-silhouette-v1.svg']) await copy(resolve(web,'brand',file),`brand/${file}`);
+// Chopsticks lifting a dumpling: the website's own pick-up photography, now
+// the face of the membership panel.
+for (const file of ['pick-dumpling-v1.webp','pick-chopstick-far-v1.webp','pick-chopstick-near-v1.webp']) await copy(resolve(web,'brand',file),`brand/${file}`);
+for (const file of ['dumpling-crimp-v1.svg','dumpling-base-v1.svg']) await copy(resolve(web,'brand',file),`brand/${file}`);
 await copy(resolve(web, "brand/footer-storefront-v1.webp"), "brand/footer-storefront-v1.webp");
 await copy(resolve(web,'brand/storefront-ink-v1.js'),'brand/storefront-ink-v1.js');
 await copy(resolve(web,'vendor/three.module.js'),'vendor/three.module.js');
@@ -51,6 +59,15 @@ await writeFile(resolve(output, "index.html"), html);
 await writeFile(resolve(output, "vercel.json"), JSON.stringify({
   regions: ["sin1"], cleanUrls: true,
   functions: { "api/*.js": { maxDuration: 30 } },
+  redirects: [
+    // menu.dumplinglab.sg is kept for guests who type it; order.dumplinglab.sg
+    // is the address on the table cards and the one the APIs are configured for.
+    { source: "/(.*)", has: [{ type: "host", value: "menu.dumplinglab.sg" }], destination: "https://order.dumplinglab.sg/$1", permanent: true },
+    { source: "/(.*)", has: [{ type: "host", value: "dumplinglab-menu.vercel.app" }], destination: "https://order.dumplinglab.sg/$1", permanent: false },
+    // Ordering used to live under /order when the website shared this project.
+    { source: "/order", destination: "/", permanent: false },
+    { source: "/order/(.*)", destination: "/$1", permanent: false },
+  ],
   headers: [
     { source: "/(.*)", headers: [
       { key: "X-Content-Type-Options", value: "nosniff" },
