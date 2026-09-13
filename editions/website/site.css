@@ -1,0 +1,218 @@
+@font-face{font-family:Scto;src:url('/fonts/scto-grotesk-a-regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Scto;src:url('/fonts/scto-grotesk-a-medium.woff2') format('woff2');font-weight:500;font-display:swap}
+:root{--brand:#952f2b;--red:#9c3d39;--ink:#292824;--paper:#fff;--line:#d9d7d4;--quiet:#746f68;--gutter:clamp(20px,5vw,88px);--sans:Scto,'PingFang SC','Microsoft YaHei',sans-serif;--serif:Georgia,'Songti SC',serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:106px}body{color:var(--ink);background:var(--paper);font:400 16px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+/* Sections fill the viewport; gutters never become a fixed-width outer canvas. */
+body{width:100%;max-width:none;margin:0}
+a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}a,button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}a:focus-visible,button:focus-visible{outline:2px solid var(--brand);outline-offset:5px}img{display:block;max-width:100%}figure,p,h1,h2,h3{margin:0}h1,h2,h3{font-weight:400}h1,h2,h3,p{overflow-wrap:break-word}h2{font-size:clamp(2rem,3.7vw,4rem);line-height:1.15;letter-spacing:-.045em}button,a{min-height:44px}[hidden]{display:none!important}.skip{position:fixed;z-index:100;top:-100px;left:16px;padding:12px;background:white}.skip:focus{top:12px}
+.site-header{min-height:80px;padding:10px var(--gutter);display:flex;align-items:center;border-bottom:1px solid var(--line);gap:36px;background:white;position:sticky;top:0;z-index:20}.logo{flex:none}.logo img{width:130px;height:52px;object-fit:contain}.site-header nav{margin-left:auto;display:flex;align-items:center;gap:30px}.site-header nav a{display:flex;align-items:center;padding:10px 0;font-size:.875rem}.site-header nav a:hover{color:var(--brand)}.header-actions{display:flex;align-items:center;gap:16px}#language{min-width:44px;min-height:44px;font-size:.875rem}.order-link{display:flex;align-items:center;justify-content:space-between;gap:28px;background:var(--brand);color:white;padding:12px 18px;font-size:.875rem}.order-link:hover{background:#7e2522}.nav-toggle{display:none}.eyebrow{font-size:.75rem;letter-spacing:.12em;font-weight:500}
+.brand-masthead{display:grid;grid-template-columns:1fr minmax(0,3fr) 1fr;align-items:end;gap:40px;padding:36px var(--gutter) 40px}.brand-masthead h1{width:100%;max-width:820px;justify-self:center}.brand-masthead h1 img{width:100%;height:auto}.masthead-location{font-size:.75rem;letter-spacing:.08em;line-height:1.5;color:var(--brand);padding-bottom:8px}.masthead-location>span{display:block;font-size:clamp(2.4rem,4vw,4rem);letter-spacing:-.06em;line-height:1.1;margin-bottom:10px}.masthead-menu{justify-self:end;padding-bottom:8px;font-size:clamp(1.125rem,2.1vw,2rem);line-height:1.25;color:var(--brand)}.masthead-menu span{display:block}
+.entry-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}.entry-room{display:grid;grid-template-rows:minmax(0,1fr) auto;min-width:0;background:#e7e5e1}.entry-room>img{width:100%;height:100%;min-height:0;object-fit:cover;object-position:45% center}.entry-room figcaption{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 28px;background:#ececea}.entry-room figcaption>span{font-size:1.25rem}.entry-room figcaption a{display:flex;align-items:center;font-size:.875rem}.entry-menu{background:var(--red);color:white;padding:20px clamp(24px,3.5vw,64px) 16px;min-width:0}.entry-menu a:focus-visible{outline-color:white}.entry-menu-top{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #ffffff40;font-size:.875rem}.entry-menu-top p{font-size:.75rem;letter-spacing:.12em}.entry-menu-top a{display:flex;align-items:center}.hero-dish{min-width:0}.hero-dish>a{display:block;max-width:440px;margin:auto}.hero-dish img{width:100%;height:auto;aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 14px 16px #43161020)}.hero-dish figcaption{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid #ffffff40;padding-top:4px;font-size:.875rem}.hero-dish figcaption>a{display:grid;place-items:center;min-width:44px;font-size:1.5rem}.hero-dish.space-fallback>a{padding-block:24px}.hero-dish.space-fallback img{filter:none;object-fit:cover}.entry-foot{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px var(--gutter);border-bottom:1px solid var(--line);font-size:.875rem}.entry-foot a{display:flex;align-items:center;gap:20px;color:var(--brand)}
+.food-section{padding:64px var(--gutter) 48px}.section-intro{display:grid;grid-template-columns:1fr auto;gap:18px 36px;align-items:end;margin-bottom:32px}.section-intro .eyebrow{grid-column:1/-1;color:var(--brand)}.text-link{display:inline-flex;justify-content:space-between;align-items:center;gap:24px;font-size:.875rem;border-bottom:1px solid currentColor;padding:7px 0}.text-link>span:last-child{font-size:1.25rem}.text-link:hover{color:var(--brand)}.food-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:0 48px}.food-item{min-width:0;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;align-items:center;border-bottom:1px solid var(--line);padding:16px 0}.food-item:first-child{grid-row:span 2;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0 0 20px}.food-image{display:block;aspect-ratio:1;min-width:0}.food-image img{width:100%;height:100%;object-fit:contain;transition:transform .3s ease}.food-item:first-child .food-image{aspect-ratio:1.1}.food-item a:hover img{transform:translateY(-4px)}.food-caption{display:flex;flex-direction:column;gap:16px}.food-item:first-child .food-caption{flex-direction:row;justify-content:space-between;gap:24px;padding-top:16px}.food-caption h3{font-size:clamp(1.125rem,1.55vw,1.5rem);line-height:1.35}.food-caption h3 a{display:inline-flex;align-items:center}.food-sub{font-size:.8125rem;color:var(--quiet);margin-top:4px}.food-price{font-size:1.125rem;white-space:nowrap;font-variant-numeric:tabular-nums}.food-price small{font-size:.75rem;display:block;color:var(--quiet)}.food-stock{display:block;color:var(--brand);font-size:.8125rem;margin-top:8px}.menu-empty{grid-column:1/-1;padding:32px 0;color:var(--quiet)}.menu-end{display:flex;justify-content:space-between;align-items:center;gap:24px;margin-top:20px;font-size:.875rem}.menu-end>span{color:var(--quiet)}.menu-end a{display:flex;align-items:center;color:var(--brand)}.catalog-note{font-size:.875rem;color:var(--quiet);margin-top:20px}
+.space-section{padding:48px var(--gutter) 64px;border-top:1px solid var(--line)}.space-heading{display:grid;grid-template-columns:1fr 1.7fr;gap:30px;margin-bottom:32px}.space-heading .eyebrow{color:var(--brand);padding-top:10px}.space-heading h2 span,.space-heading h2 em{display:block}.space-heading h2 em{color:var(--brand);font-family:var(--serif);font-weight:400}.space-layout{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr);gap:44px;align-items:end}.space-layout figure{overflow:hidden}.space-layout figure>img{width:100%;height:auto;aspect-ratio:1.5;object-fit:cover;object-position:left center}.space-layout figcaption{font-size:.8125rem;color:var(--quiet);padding-top:14px}.space-copy{padding:0 0 34px}.space-copy p{font-size:1.1875rem;line-height:1.65;margin-bottom:24px;max-width:360px}.space-copy .text-link{color:var(--brand)}
+.visit-section{background:#ececea;padding:52px var(--gutter);display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:64px;align-items:center}.visit-copy .eyebrow{color:var(--brand);margin-bottom:24px}.visit-copy address{font-style:normal;font-size:1.125rem;line-height:1.65;margin:22px 0 12px}.visit-order{border-left:1px solid #c5c3bf;padding-left:clamp(24px,5vw,80px)}.visit-illustrations{display:flex;align-items:center;gap:24px;margin-bottom:22px}.visit-illustrations img{height:84px;width:auto;max-width:40%;object-fit:contain}.visit-illustrations>span{font:400 2rem var(--serif);color:#a5a19b}.visit-order h3{font-size:clamp(1.5rem,2.5vw,2.25rem);line-height:1.3;margin-bottom:20px}.visit-order .text-link{color:var(--brand)}
+.site-footer{background:var(--red);color:white;padding:32px var(--gutter) 16px}.footer-line,.footer-bottom{display:flex;justify-content:space-between;align-items:center;gap:24px}.footer-line p{font-size:clamp(1.5rem,2.5vw,2.25rem);font-family:var(--serif)}.footer-line>a{display:flex;align-items:center;font-size:.875rem;white-space:nowrap}.footer-bottom{border-top:1px solid #ffffff40;margin-top:24px;padding-top:12px;font-size:.75rem;color:#f1d9d5}.footer-bottom>a{color:white;display:flex;align-items:center;font-size:.875rem}.site-footer a:focus-visible{outline-color:white}html[lang=zh] h2{font-family:'Songti SC',serif;letter-spacing:-.02em;line-height:1.25}html[lang=zh] .space-heading h2>em{font-style:normal}
+@media(min-width:1800px){.entry-room>img{max-height:580px}.entry-menu{display:flex;flex-direction:column;justify-content:space-between}.hero-dish{width:100%}.hero-dish>a{max-width:460px}}
+@media(max-width:1050px){.site-header{gap:20px}.site-header nav{gap:20px}.header-actions{gap:10px}.brand-masthead{gap:24px;grid-template-columns:1fr 3.5fr 1fr}.entry-grid{grid-template-columns:1.15fr 1fr}.entry-room figcaption{padding-inline:20px}.food-grid{gap:0 28px}.food-item{gap:16px;grid-template-columns:1fr 1fr}.food-sub{font-size:.75rem}.space-layout{gap:28px}.space-copy p{font-size:1.0625rem}.visit-section{gap:36px}}
+@media(max-width:760px){html{scroll-padding-top:88px}.site-header{min-height:70px;padding-block:9px;gap:10px}.logo img{width:108px;height:48px}.header-actions{margin-left:auto;gap:6px}.order-link{padding:10px 12px;gap:14px}.nav-toggle{display:flex;flex-direction:column;gap:5px;width:44px;height:44px;align-items:center;justify-content:center}.nav-toggle span{width:20px;height:1px;background:var(--ink)}.site-header nav{display:none;position:absolute;top:100%;left:0;right:0;padding:14px var(--gutter) 20px;background:white;border-bottom:1px solid var(--line);flex-direction:column;align-items:stretch;gap:0}.site-header nav[data-open=true]{display:flex}.site-header nav a{padding:12px 0;font-size:1rem}.brand-masthead{grid-template-columns:1fr 1fr;gap:20px;padding-block:26px 24px}.brand-masthead h1{grid-column:1/-1;grid-row:1;width:min(88%,460px)}.masthead-location{padding:0;font-size:.625rem;display:flex;gap:8px;align-items:center}.masthead-location>span{font-size:2rem;margin:0}.masthead-menu{padding:0;font-size:1rem;align-self:center}.masthead-menu span{display:inline}.entry-grid{grid-template-columns:1fr}.entry-room>img{height:auto;aspect-ratio:1.5;object-position:center}.entry-room figcaption{padding:8px var(--gutter)}.entry-room figcaption>span{font-size:1.125rem}.entry-menu{padding:12px var(--gutter)}.hero-dish>a{max-width:330px}.hero-dish figcaption{font-size:.875rem}.entry-foot{font-size:.8125rem;gap:8px;flex-wrap:wrap;padding-block:10px}.entry-foot a{min-height:36px}.food-section{padding-block:44px 32px}.section-intro{grid-template-columns:1fr;gap:14px;margin-bottom:20px}.section-intro>.text-link{justify-self:start}.food-grid{grid-template-columns:1fr;gap:0}.food-item{grid-template-columns:1fr 1.1fr;padding:18px 0;gap:20px}.food-item:first-child{grid-row:auto;padding-bottom:20px}.food-item:first-child .food-image{aspect-ratio:1.2}.food-caption h3{font-size:1.125rem}.food-item:first-child h3{font-size:1.4rem}.food-sub{font-size:.8125rem}.menu-end{display:block;margin-top:14px}.menu-end a{margin-top:8px}.space-section{padding-block:36px 44px}.space-heading{grid-template-columns:1fr;gap:18px;margin-bottom:24px}.space-layout{grid-template-columns:1fr;gap:24px}.space-layout figure>img{aspect-ratio:1.35}.space-copy{padding:0}.space-copy p{max-width:none;font-size:1rem;margin-bottom:12px}.visit-section{padding-block:40px;grid-template-columns:1fr;gap:32px}.visit-order{border-left:0;border-top:1px solid #c5c3bf;padding:28px 0 0}.visit-illustrations{margin-bottom:16px}.visit-illustrations img{height:70px}.visit-order h3{margin-bottom:12px}.site-footer{padding-block:26px 12px}.footer-line{align-items:flex-start;gap:16px}.footer-line p{font-size:1.4rem}.footer-line>a{font-size:.8125rem}.footer-bottom{flex-wrap:wrap;gap:12px;margin-top:18px;padding-top:10px}.footer-bottom>span:nth-child(2){display:none}}
+@media(max-width:380px){.site-header{padding-inline:12px}.logo img{width:92px}.header-actions{gap:0}.order-link{padding-inline:10px;gap:8px}.brand-masthead{gap:16px}.masthead-menu{font-size:.875rem}.food-item{gap:14px}.footer-line{flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
+.visit-copy .address-link{display:inline-flex;align-items:flex-start;gap:22px;max-width:100%;min-height:44px;color:inherit;text-decoration:none}
+.visit-copy .address-link:hover>span:first-child{text-decoration:underline;text-underline-offset:5px}
+.visit-copy .address-link:focus-visible{outline:2px solid currentColor;outline-offset:6px;border-radius:2px}
+.kitchen-section{padding:76px var(--gutter) 80px;background:#fff4e3;color:#79232b}
+.kitchen-heading{margin-bottom:32px}.kitchen-heading .eyebrow{margin-bottom:16px}
+.kitchen-heading h2{font:400 clamp(2.75rem,5vw,5.5rem)/1.05 Lilita,var(--sans);letter-spacing:-.025em}
+.kitchen-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:36px 28px}
+.kitchen-grid figure{min-width:0;margin:0}.kitchen-grid img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain;border-radius:22px;background:#e5c4a7}
+.kitchen-grid figcaption{display:flex;justify-content:space-between;gap:16px;padding-top:16px;font-size:1rem;line-height:1.5}.kitchen-grid figcaption>span:last-child{opacity:.65;font-size:.8125rem}
+.food-item .food-caption{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:10px}
+.food-item .food-caption h3 a{display:block;overflow:visible;-webkit-line-clamp:unset;overflow-wrap:normal;word-break:normal;text-wrap:balance}
+.food-item .food-price{justify-self:start;white-space:nowrap}
+@media(max-width:760px){.kitchen-section{padding-block:48px}.kitchen-heading{margin-bottom:24px}.kitchen-grid{grid-template-columns:1fr;gap:28px}.kitchen-grid img{border-radius:16px}.kitchen-grid figcaption{padding-top:12px}}
+
+/* Brand-book chapters: white paper, red ink, generous margins. Deliberately
+   scoped below the locked Hero; no global tokens or campaign rules change. */
+.brand-chapters{--chapter-paper:#fffaf5;--chapter-red:#dd3735;--chapter-ink:#38211e;--chapter-line:#eadfd7;background:var(--chapter-paper);color:var(--chapter-ink)}
+.brand-chapters>section{padding:clamp(56px,6.5vw,112px) var(--gutter);background:transparent;color:var(--chapter-ink)}
+.brand-chapters .eyebrow{font-size:.8125rem;letter-spacing:.12em;color:#96332e;font-weight:500}
+.brand-chapters h2{font:400 clamp(2.25rem,4.2vw,4.5rem)/1.08 Lilita,var(--sans);letter-spacing:-.025em;color:var(--chapter-ink);text-shadow:none;max-width:100%;text-wrap:balance}
+.brand-chapters .text-link{background:transparent;border:0;border-bottom:1px solid #96332e80;border-radius:0;padding:8px 0;gap:28px;color:var(--chapter-ink);font-size:1rem}
+.brand-chapters .text-link:hover{color:#a22b29;border-color:currentColor}
+.brand-chapters a:focus-visible{outline-color:#96332e}
+.brand-chapters .section-intro{margin-bottom:36px;gap:18px 28px}
+.brand-chapters .section-intro h2{font:400 clamp(2.25rem,4.2vw,4.5rem)/1.08 Lilita,var(--sans);letter-spacing:-.025em;max-width:100%;text-wrap:balance}
+.brand-chapters .section-intro .eyebrow{display:flex;align-items:center;gap:10px}
+.brand-chapters .brand-bite{width:15px;height:20px;object-fit:contain}
+.brand-chapters .section-intro>.text-link{align-self:end;justify-self:end;background:transparent;color:var(--chapter-ink);border:0;border-bottom:1px solid #96332e80;border-radius:0;padding:8px 0;gap:28px}
+.brand-chapters .section-intro>.text-link:hover{background:transparent;color:#a22b29;border-color:currentColor}
+.brand-chapters .food-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}
+.brand-chapters .food-item,.brand-chapters .food-item:first-child{display:flex;flex-direction:column;gap:0;grid-row:auto;padding:0 0 24px;border-bottom:1px solid var(--chapter-line)}
+.brand-chapters .food-item::before{display:none}
+.brand-chapters .food-image,.brand-chapters .food-item:first-child .food-image{aspect-ratio:1.22;background:var(--chapter-paper);mix-blend-mode:normal;perspective:none;z-index:auto;border-radius:4px;overflow:hidden}
+.brand-chapters .food-image img,.brand-chapters .food-item:nth-child(2) .food-image img{object-fit:contain;mix-blend-mode:multiply;width:91%;height:91%;margin:auto;transition:transform .4s ease}
+@media(hover:hover){.brand-chapters .food-item a:hover img,.brand-chapters .food-item a:focus-visible img{transform:scale(1.045)}}
+.brand-chapters .food-item .food-caption{display:grid;grid-template-columns:1fr;gap:10px;padding-top:22px}
+.brand-chapters .food-caption h3,.brand-chapters .food-item:first-child h3{font-size:clamp(1.125rem,1.65vw,1.5rem);font-weight:400;line-height:1.35}
+.brand-chapters .food-caption h3 a{display:block;overflow:visible;-webkit-line-clamp:unset;word-break:normal;overflow-wrap:normal;text-wrap:pretty}
+.brand-chapters .food-price{font-size:1rem;color:#96332e;font-weight:400}
+.brand-chapters .food-section{padding-bottom:clamp(28px,3vw,44px)}
+.brand-chapters .kitchen-section{padding-top:0;padding-bottom:clamp(60px,7vw,112px)}
+.brand-chapters .kitchen-heading{display:flex;align-items:end;justify-content:space-between;gap:24px;border-top:0;padding-top:0;margin-bottom:clamp(32px,4vw,64px)}
+.brand-chapters .kitchen-heading .eyebrow{margin-bottom:16px}
+.brand-chapters .kitchen-heading h2{font-size:clamp(2.75rem,4.8vw,5.25rem);line-height:.96}
+.brand-chapters .kitchen-note{font-size:1rem;line-height:1.5;color:#725d50;max-width:20rem}
+.brand-chapters .kitchen-grid{grid-template-columns:repeat(12,minmax(0,1fr));gap:18px;align-items:start;max-width:1440px;margin-inline:auto}
+.brand-chapters .kitchen-grid figure:nth-child(1){grid-column:1/span 3}
+.brand-chapters .kitchen-grid figure:nth-child(2){grid-column:4/span 2;margin-top:44px}
+.brand-chapters .kitchen-grid figure:nth-child(3){grid-column:6/span 3;margin-top:12px}
+.brand-chapters .kitchen-grid figure:nth-child(4){grid-column:9/span 2;margin-top:52px}
+.brand-chapters .kitchen-grid figure:nth-child(5){grid-column:11/span 2;margin-top:20px}
+.brand-chapters .kitchen-grid img{border-radius:4px;aspect-ratio:4/3;object-fit:cover;clip-path:inset(0 round 4px);transition:transform .65s cubic-bezier(.18,.75,.25,1)}
+.brand-chapters .kitchen-grid figure:nth-child(2) img,.brand-chapters .kitchen-grid figure:nth-child(4) img{aspect-ratio:4/5}
+.brand-chapters .kitchen-grid figure:hover img{transform:scale(1.012)}
+.brand-chapters .kitchen-grid figcaption{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid var(--chapter-line);color:var(--chapter-ink)}
+.brand-chapters .kitchen-grid figcaption>span:first-child{display:flex;align-items:center;gap:10px}
+.brand-chapters .kitchen-grid figcaption>span:first-child::before{content:"";width:7px;height:7px;border-radius:50%;background:#c83d36;flex:0 0 auto}
+.brand-chapters .kitchen-grid figcaption>span:last-child{color:#96332e;opacity:1;font-size:.8125rem}
+.brand-chapters .process-disclosure{font-size:.75rem;color:#725d50;margin-top:16px}
+.brand-chapters .space-section{display:grid;grid-template-columns:1fr 1.65fr;column-gap:clamp(32px,5vw,80px);row-gap:28px;min-height:0;border:0;border-top:1px solid var(--chapter-line);overflow:visible;isolation:auto}
+.brand-chapters .space-heading{position:static;grid-column:1;grid-row:1;margin:0;max-width:none;align-self:end;display:block}
+.brand-chapters .space-heading .eyebrow{margin:0 0 24px;color:#96332e;padding:0}
+.brand-chapters .space-heading h2{font-size:clamp(2.5rem,4vw,4rem);text-shadow:none}
+.brand-chapters .space-layout{display:contents}
+.brand-chapters .space-layout figure{grid-column:2;grid-row:1/3;height:auto;position:relative;overflow:hidden}
+.brand-chapters .space-layout figure>img{width:100%;height:auto;aspect-ratio:1.35;object-fit:cover;object-position:50% center;transform:none;will-change:auto;border-radius:4px}
+.brand-chapters .space-layout figure::after{display:none}
+.brand-chapters .space-layout figcaption{position:static;padding-top:14px;color:#725d50;font-size:.8125rem;max-width:none;letter-spacing:.04em}
+.brand-chapters .space-copy{position:static;grid-column:1;grid-row:2;width:auto;padding:0;align-self:start}
+.brand-chapters .space-copy p{font-size:1.125rem;line-height:1.7;color:#725d50;text-shadow:none;max-width:17rem;margin:0 0 28px}
+.brand-chapters .space-copy .text-link{color:var(--chapter-ink)}
+.brand-chapters .visit-section{border-top:1px solid var(--chapter-line);grid-template-columns:1.15fr 1fr;column-gap:clamp(36px,7vw,112px);row-gap:32px;padding-bottom:80px}
+.brand-chapters .visit-front{grid-column:1;grid-row:1/3;display:block;align-self:center}
+.brand-chapters .visit-front img{width:100%;height:auto;min-height:0;aspect-ratio:1.3;object-fit:cover;object-position:38% center;border-radius:4px}
+.brand-chapters .visit-copy{grid-column:2;align-self:end;min-width:0}
+.brand-chapters .visit-copy .eyebrow{margin-bottom:20px}
+.brand-chapters .visit-copy h2{font-size:clamp(2.5rem,4vw,4rem)}
+.brand-chapters .visit-copy address{font-size:clamp(1.125rem,1.8vw,1.5rem);margin:24px 0 0;line-height:1.6}
+.brand-chapters .visit-copy .address-link{justify-content:space-between;gap:24px;width:100%}
+.brand-chapters .visit-copy .address-link>span:last-child{color:#a22b29}
+.brand-chapters .visit-order{grid-column:2;display:block;padding-top:24px;border-top:1px solid #cfa79a;min-width:0}
+.brand-chapters .visit-illustrations{display:flex;flex-direction:row;gap:18px;align-items:center;margin:0 0 16px}
+.brand-chapters .visit-illustrations img{height:60px;width:auto;max-width:40%}
+.brand-chapters .visit-illustrations>span{display:block}
+.brand-chapters .visit-order h3{font:400 clamp(1.75rem,2.5vw,2.75rem)/1.05 Lilita,var(--sans);margin-bottom:16px;letter-spacing:normal;color:#2c080d}
+.brand-chapters .visit-order .text-link{font-size:1rem;background:#2c080d;color:#fff3dd;border:0;padding:12px 24px;border-radius:40px;gap:32px}
+.brand-chapters .visit-order .text-link:hover{background:#51191e}
+@media(max-width:1000px){
+ .brand-chapters .food-grid{gap:22px}.brand-chapters .kitchen-grid{column-gap:22px}
+ .brand-chapters .space-section{grid-template-columns:1fr 1.4fr;column-gap:32px}
+ .brand-chapters .visit-order{grid-template-columns:64px minmax(0,1fr);gap:20px}
+}
+@media(max-width:760px){
+ .brand-chapters>section{padding-block:52px}
+ .brand-chapters .section-intro{grid-template-columns:1fr auto;gap:16px;margin-bottom:24px}
+ .brand-chapters .section-intro h2{grid-column:1/-1;font-size:2.5rem;max-width:18rem;grid-row:2}
+ .brand-chapters .section-intro .eyebrow{grid-column:1;grid-row:1;font-size:.75rem}
+ .brand-chapters .section-intro>.text-link{grid-column:2;grid-row:1;font-size:.875rem;gap:14px}
+ .brand-chapters .food-grid{grid-template-columns:1fr;gap:0}
+ .brand-chapters .food-item,.brand-chapters .food-item:first-child{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;padding:20px 0;align-items:center}
+ .brand-chapters .food-image,.brand-chapters .food-item:first-child .food-image{aspect-ratio:1}
+ .brand-chapters .food-item .food-caption{padding:0;gap:10px}
+ .brand-chapters .food-caption h3,.brand-chapters .food-item:first-child h3{font-size:1.125rem}
+ .brand-chapters .food-price{font-size:.9375rem}
+ .brand-chapters .kitchen-section{padding-top:0}
+ .brand-chapters .kitchen-heading{padding-top:0;display:block;margin-bottom:24px}
+ .brand-chapters .kitchen-note{margin-top:14px;font-size:1rem}
+ .brand-chapters .kitchen-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 14px}
+ .brand-chapters .kitchen-grid figure:nth-child(n){grid-column:auto;margin-top:0}
+ .brand-chapters .kitchen-grid figure:first-child{grid-column:1/-1}
+ .brand-chapters .kitchen-grid figure:nth-child(n) img{aspect-ratio:1;object-fit:cover}
+ .brand-chapters .kitchen-grid figure:first-child img{aspect-ratio:16/9}
+ .brand-chapters .kitchen-grid figcaption{padding:11px 0}
+ .brand-chapters .space-section{grid-template-columns:1fr;gap:24px}
+ .brand-chapters .space-heading{grid-column:1;grid-row:1}.brand-chapters .space-heading .eyebrow{margin-bottom:16px}
+ .brand-chapters .space-layout figure{grid-column:1;grid-row:2;height:auto}
+ .brand-chapters .space-layout figure>img{aspect-ratio:1.2;object-position:48% center}
+ .brand-chapters .space-copy{grid-column:1;grid-row:3;display:flex;justify-content:space-between;align-items:center;gap:20px}
+ .brand-chapters .space-copy p{margin:0;max-width:12rem;font-size:1rem}
+ .brand-chapters .space-copy .text-link{flex-shrink:0;font-size:.875rem;gap:18px}
+ .brand-chapters .visit-section{grid-template-columns:1fr;gap:28px;padding-bottom:48px}
+ .brand-chapters .visit-copy{grid-column:1;grid-row:1}
+ .brand-chapters .visit-front{grid-column:1;grid-row:2}
+ .brand-chapters .visit-front img{aspect-ratio:1.55;object-fit:cover}
+ .brand-chapters .visit-copy address{margin-top:20px;font-size:1.125rem}
+ .brand-chapters .visit-order{grid-column:1;grid-row:3;grid-template-columns:72px minmax(0,1fr);gap:24px}
+ .brand-chapters .visit-order h3{font-size:2rem}
+}
+@media(max-width:360px){.brand-chapters .food-item,.brand-chapters .food-item:first-child{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:14px}.brand-chapters .space-copy{align-items:start;flex-direction:column}}
+@media(prefers-reduced-motion:reduce){.brand-chapters .food-image img,.brand-chapters .food-item:nth-child(2) .food-image img,.brand-chapters .food-item a:hover img,.brand-chapters .food-item a:focus-visible img{transform:none}}
+
+/* Raster layers only: this is a photo-cutout vignette, not a GLB/3D scene. */
+/* Header and Hero already share --scene-bg. Fade the atmospheric overlays at
+   the join so they do not paint a visibly lighter strip directly below it. */
+.product-story > .product-stage::before{mask-image:linear-gradient(to bottom,transparent 0 24px,#000 24%);-webkit-mask-image:linear-gradient(to bottom,transparent 0 24px,#000 24%)}
+.product-story > .product-stage::after{mask-image:linear-gradient(to bottom,transparent 0 18%,#000 38%);-webkit-mask-image:linear-gradient(to bottom,transparent 0 18%,#000 38%)}
+.brand-chapters .play-section{border-top:1px solid var(--chapter-line);padding-top:clamp(40px,5vw,72px);padding-bottom:clamp(36px,4vw,64px)}
+.brand-chapters .pick-feedback{min-height:112px}
+.brand-chapters .pick-replay{display:inline-flex;gap:24px;align-items:center;padding:8px 0;min-height:44px;border:0;border-bottom:1px solid #96332e80;background:none;color:var(--chapter-ink);font:inherit;font-size:1rem;cursor:pointer}
+.brand-chapters .pick-replay[hidden],.brand-chapters .pick-piece[hidden]{display:none}
+.brand-chapters .pick-replay:focus-visible{outline:2px solid #96332e;outline-offset:5px}
+.brand-chapters .pick-layout{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.7fr);align-items:center;gap:12px;min-width:0}
+.brand-chapters .pick-copy{min-width:0;overflow-wrap:anywhere}
+.brand-chapters .pick-sauce.pick-sauce-lip{z-index:6;clip-path:inset(65% 0 0 0);filter:none}
+.brand-chapters .pick-copy .eyebrow{margin-bottom:22px}
+.brand-chapters .pick-copy h2{font-size:clamp(2.75rem,5.5vw,6rem);line-height:1.02;text-wrap:initial}
+.brand-chapters #pickHint{margin-top:24px;color:#725d50;font-size:1rem}
+.brand-chapters .pick-status{font-size:.875rem;min-height:2.8em;margin-top:14px;color:#96332e;max-width:24rem}
+.brand-chapters .pick-scene{position:relative;aspect-ratio:1.5;isolation:isolate;min-width:0;overflow:hidden}
+.brand-chapters .pick-affordance{position:absolute;z-index:8;left:8%;top:11%;display:flex;align-items:center;gap:14px;padding:10px 14px;border:1px solid #a9504780;border-radius:999px;background:#fffaf3;color:#96332e;font-size:.72rem;font-weight:600;letter-spacing:.13em;box-shadow:0 10px 28px #70352b14;opacity:0;translate:0 8px;rotate:-3deg;transition:opacity .25s ease,translate .25s ease;pointer-events:none}
+.brand-chapters .pick-affordance b{font-size:1.25rem;font-weight:400;line-height:1;letter-spacing:0}
+.brand-chapters .pick-scene[data-state=ready]:not([data-discovered=true]) .pick-affordance{opacity:1;translate:0 0}
+.brand-chapters .pick-plate{position:absolute;left:4%;top:25%;width:77%;height:62%;object-fit:contain;filter:drop-shadow(0 18px 12px #47291b16);pointer-events:none}
+.brand-chapters .pick-sauce{position:absolute;left:72%;top:61%;width:25%;height:27%;object-fit:contain;filter:drop-shadow(0 12px 8px #47291b20);pointer-events:none}
+.brand-chapters .pick-piece{position:absolute;left:var(--x);top:var(--y);width:17.2%;min-width:44px;min-height:44px;padding:0;border:0;border-radius:40%;background:none;transform:translate(-50%,-50%) rotate(var(--tilt));cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.brand-chapters .pick-food{position:relative;z-index:1;display:block;width:100%;height:auto;filter:drop-shadow(2px 8px 5px #50382029);transition:filter .2s ease,transform .24s cubic-bezier(.2,.75,.25,1)}
+.brand-chapters .pick-piece:disabled{cursor:default}
+.brand-chapters .pick-piece[aria-disabled=true]{cursor:wait}
+.brand-chapters .pick-piece:not(:disabled):not([aria-disabled=true]):is(:hover,:focus-visible) .pick-food{filter:drop-shadow(2px 14px 8px #5038203d) brightness(1.04);transform:translateY(-7%) scale(1.055)}
+.brand-chapters .pick-piece:focus-visible{outline:none}
+.brand-chapters .pick-piece[data-invite=true] .pick-food{animation:pick-invite 1.7s ease-in-out infinite}
+@keyframes pick-invite{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6%) scale(1.035)}}
+/* The tip is at (0, 0.934) of the chopstick cutout and the dumpling's top
+   contour at 0.45 of its width is 0.01 of its height down, so 44%/44% put the
+   tips on the right shoulder and the dumpling hung off to one side. At 0.45
+   the dumpling hangs under the tips. The far stick paints before the food and
+   disappears behind it, the near one after and lies across it. */
+.brand-chapters .pick-sticks{position:absolute;left:60%;bottom:76%;width:175%;max-width:none;height:auto;opacity:0;pointer-events:none;filter:drop-shadow(5px 8px 5px #3b1e141c)}
+.brand-chapters .pick-sticks-far{z-index:0}
+.brand-chapters .pick-sticks-near{z-index:2}
+.brand-chapters .pick-piece.is-picked{z-index:5}
+.brand-chapters .pick-scene[data-state=unavailable]{display:none}
+@media(max-width:760px){.brand-chapters .pick-layout{grid-template-columns:minmax(0,1fr);gap:0}.brand-chapters .pick-copy h2{font-size:clamp(2.75rem,10vw,4rem)}.brand-chapters .pick-copy h2 br{display:none}.brand-chapters .pick-copy{min-width:0;overflow-wrap:anywhere}
+.brand-chapters .pick-sauce-lip{z-index:6;clip-path:inset(65% 0 0 0)}
+.brand-chapters .pick-copy .eyebrow{margin-bottom:14px}.brand-chapters #pickHint{margin-top:16px}.brand-chapters .pick-status{min-height:1.5em;margin-top:8px}.brand-chapters .pick-scene{aspect-ratio:1.25}.brand-chapters .pick-copy{max-width:100%}}
+@media(prefers-reduced-motion:reduce){.brand-chapters .pick-food{transition:none}.brand-chapters .pick-piece[data-invite=true] .pick-food{animation:none}}
+.brand-chapters .play-section:focus{outline:none}
+
+/* Plain white surfaces below the Hero; no frosting or translucent effects. */
+.brand-chapters .visit-copy,.brand-chapters .visit-order{background:transparent;border:0;border-radius:0;box-shadow:none}
+.brand-chapters .food-item,.brand-chapters .food-item:first-child{padding:0 0 24px;border:0;border-radius:0;background:transparent;box-shadow:none}
+.brand-chapters .kitchen-grid figure{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.brand-chapters .visit-copy{padding:0}
+.brand-chapters .visit-order{padding:28px 0 0;border-top:1px solid var(--chapter-line)}
+.brand-chapters .visit-order .text-link{color:#fff}
+@media(max-width:760px){
+ .brand-chapters .food-grid{gap:14px}
+ .brand-chapters .food-item,.brand-chapters .food-item:first-child{padding:16px 0;gap:20px}
+ .brand-chapters .visit-copy,.brand-chapters .visit-order{padding:22px}
+}
+@media(max-width:760px){
+ .brand-chapters .pick-copy{display:contents}
+ .brand-chapters .pick-copy .eyebrow{order:0}
+ .brand-chapters .pick-copy h2{order:1}
+ .brand-chapters #pickHint{order:2}
+ .brand-chapters .pick-scene{order:3}
+ .brand-chapters .pick-feedback{order:4;min-height:88px}
+ .brand-chapters .pick-feedback .pick-status{margin-top:0;margin-bottom:8px}
+}

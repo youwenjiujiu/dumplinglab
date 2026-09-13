@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dumpling Lab · 本地设计检查点</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f8f1e6;color:#381519;font:16px/1.6 system-ui,-apple-system,sans-serif}a{color:inherit}header{padding:24px 5vw;border-bottom:1px solid #38151922;display:flex;align-items:center;justify-content:space-between;gap:24px}header img{width:150px;height:auto}header a{font-size:14px;text-underline-offset:5px}main{max-width:1440px;margin:auto;padding:52px 5vw 80px}.label{font-size:12px;letter-spacing:.12em;color:#84282d}h1{font-size:clamp(30px,4.5vw,58px);line-height:1.15;margin:16px 0}h2{font-size:24px;margin:0}p{max-width:760px;color:#73554f}.intro{margin-bottom:44px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}.actions a{padding:12px 22px;border-radius:30px;background:#84282d;color:#fff3dd;text-decoration:none}.actions a.secondary{background:transparent;color:#84282d;border:1px solid #84282d66}section{margin-top:48px}.section-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:18px}.section-head p{margin:0;font-size:14px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.card{margin:0;min-width:0}.card>a{display:block;background:#381519;border-radius:12px;overflow:hidden;line-height:0}.card img{width:100%;height:auto}.card figcaption{display:flex;justify-content:space-between;gap:12px;font-size:14px;margin-top:12px}.card figcaption a{text-underline-offset:4px}.phones .card>a{background:#eadfce;padding:18px;text-align:center}.phones img{max-width:250px;border-radius:6px}video{display:block;width:100%;background:#2c080d;border-radius:12px}.note{border-top:1px solid #38151922;margin-top:48px;padding-top:20px;font-size:14px}a:focus-visible{outline:3px solid #c94238;outline-offset:5px}@media(max-width:760px){header{padding:18px 20px}main{padding:32px 20px 60px}.grid{grid-template-columns:1fr}.section-head{display:block}.section-head p{margin-top:6px}.phones img{max-width:300px}.grid{gap:30px}}
+.review-languages{display:flex;gap:10px;flex-wrap:wrap}.review-languages button{font:inherit;min-height:44px;padding:9px 18px;background:transparent;border:1px solid #84282d66;border-radius:30px;color:#84282d;cursor:pointer}.review-languages button[aria-pressed=true]{background:#84282d;color:#fff3dd}.review-languages button:focus-visible{outline:3px solid #c94238;outline-offset:5px}#reviewLanguageStatus{font-size:14px}[hidden]{display:none!important}</style></head><body>
+<header><img src="/site/media/brand-wordmark-480.webp" alt="Dumpling Lab"><a href="/?lang=zh">打开正在打磨的网页 ↗</a></header>
+<main><div class="intro"><div class="label">D46 · 第 105 轮动态检查 · 仅本地，未发布</div><h1>看原图，也看它怎么动。</h1><p>下面是实际网页截图和浏览器录屏，不是生成的网页效果图。截图可打开原尺寸放大。静态截图保留第 100 轮的高清原图；下方实录已更新到第 105 轮，可看到更早衔接的近景文案。后续改动请看实时网页。</p><div class="actions"><a href="/?lang=zh">打开实时网页 ↗</a><a class="secondary" href="#film">看网页实录 ↓</a></div></div>
+<div id="reviewLanguages" class="review-languages" role="group" aria-label="首屏截图语言" hidden><button type="button" data-review-lang="zh" aria-pressed="true">中文截图</button><button type="button" data-review-lang="en" aria-pressed="false">English screenshots</button></div><p id="reviewLanguageStatus" role="status">当前显示中文首屏。下方页面各区与录屏为中文版。</p>
+<section><div class="section-head"><h2>桌面首屏</h2><p>每张 2880 × 1800 px · 点击查看原图</p></div><div class="grid">
+<figure class="card"><a href="/review-media/100/desktop-fried.png" target="_blank" rel="noopener"><img src="/review-media/100/desktop-fried.png" width="2880" height="1800" alt="品牌红煎饺首屏"></a><figcaption><span>01 · 焦香煎饺</span><a href="/review-media/100/desktop-fried.png" download>下载原图</a></figcaption></figure>
+<figure class="card"><a href="/review-media/100/desktop-chilli.png" target="_blank" rel="noopener"><img src="/review-media/100/desktop-chilli.png" width="2880" height="1800" alt="深色红油抄手首屏" loading="lazy"></a><figcaption><span>02 · 红油抄手</span><a href="/review-media/100/desktop-chilli.png" download>下载原图</a></figcaption></figure>
+<figure class="card"><a href="/review-media/100/desktop-broth.png" target="_blank" rel="noopener"><img src="/review-media/100/desktop-broth.png" width="2880" height="1800" alt="暖白汤面首屏" loading="lazy"></a><figcaption><span>03 · 热汤云吞面</span><a href="/review-media/100/desktop-broth.png" download>下载原图</a></figcaption></figure>
+</div></section>
+<section><div class="section-head"><h2>手机首屏</h2><p>每张 1170 × 2532 px · 浏览器模拟，非真机截图</p></div><div class="grid phones">
+<figure class="card"><a href="/review-media/100/phone-fried.png" target="_blank" rel="noopener"><img src="/review-media/100/phone-fried.png" width="1170" height="2532" alt="手机煎饺场景" loading="lazy"></a><figcaption><span>01 · 煎饺</span><a href="/review-media/100/phone-fried.png" download>下载原图</a></figcaption></figure>
+<figure class="card"><a href="/review-media/100/phone-chilli.png" target="_blank" rel="noopener"><img src="/review-media/100/phone-chilli.png" width="1170" height="2532" alt="手机红油场景" loading="lazy"></a><figcaption><span>02 · 红油</span><a href="/review-media/100/phone-chilli.png" download>下载原图</a></figcaption></figure>
+<figure class="card"><a href="/review-media/100/phone-broth.png" target="_blank" rel="noopener"><img src="/review-media/100/phone-broth.png" width="1170" height="2532" alt="手机汤面场景" loading="lazy"></a><figcaption><span>03 · 汤面</span><a href="/review-media/100/phone-broth.png" download>下载原图</a></figcaption></figure>
+</div></section>
+<section><div class="section-head"><h2>短片画框</h2><p>桌面与手机 · 真实网页截图，手机保留竖幅构图</p></div><div class="grid"><figure class="card"><a href="/review-media/100/desktop-film.png" target="_blank" rel="noopener"><img src="/review-media/100/desktop-film.png" alt="桌面短片画框" loading="lazy"></a><figcaption>桌面 · 横幅</figcaption></figure><figure class="card"><a href="/review-media/100/phone-film.png" target="_blank" rel="noopener"><img src="/review-media/100/phone-film.png" alt="手机短片画框" loading="lazy"></a><figcaption>手机 · 竖屏</figcaption></figure></div></section>
+<section><div class="section-head"><h2>桌面 · 菜单到店面</h2><p>2880 × 1800 px · 点击查看原图</p></div><div class="grid "><figure class="card"><a href="/review-media/100/desktop-food.png" target="_blank" rel="noopener"><img src="/review-media/100/desktop-food.png" alt="上桌了" loading="lazy"></a><figcaption><span>上桌了</span><a href="/review-media/100/desktop-food.png" download>下载原图</a></figcaption></figure><figure class="card"><a href="/review-media/100/desktop-space.png" target="_blank" rel="noopener"><img src="/review-media/100/desktop-space.png" alt="店内空间" loading="lazy"></a><figcaption><span>店内空间</span><a href="/review-media/100/desktop-space.png" download>下载原图</a></figcaption></figure><figure class="card"><a href="/review-media/100/desktop-visit.png" target="_blank" rel="noopener"><img src="/review-media/100/desktop-visit.png" alt="来找我们" loading="lazy"></a><figcaption><span>来找我们</span><a href="/review-media/100/desktop-visit.png" download>下载原图</a></figcaption></figure></div></section>
+<section><div class="section-head"><h2>手机 · 菜单到店面</h2><p>1170 × 2532 px · 点击查看原图</p></div><div class="grid phones"><figure class="card"><a href="/review-media/100/phone-food.png" target="_blank" rel="noopener"><img src="/review-media/100/phone-food.png" alt="上桌了" loading="lazy"></a><figcaption><span>上桌了</span><a href="/review-media/100/phone-food.png" download>下载原图</a></figcaption></figure><figure class="card"><a href="/review-media/100/phone-space.png" target="_blank" rel="noopener"><img src="/review-media/100/phone-space.png" alt="店内空间" loading="lazy"></a><figcaption><span>店内空间</span><a href="/review-media/100/phone-space.png" download>下载原图</a></figcaption></figure><figure class="card"><a href="/review-media/100/phone-visit.png" target="_blank" rel="noopener"><img src="/review-media/100/phone-visit.png" alt="来找我们" loading="lazy"></a><figcaption><span>来找我们</span><a href="/review-media/100/phone-visit.png" download>下载原图</a></figcaption></figure></div></section>
+<section><div class="section-head"><h2>品牌落款</h2><p>桌面与手机 · 实际页脚截图</p></div><div class="grid"><figure class="card"><a href="/review-media/100/desktop-footer.png" target="_blank" rel="noopener"><img src="/review-media/100/desktop-footer.png" alt="桌面品牌落款" loading="lazy"></a><figcaption>桌面 · 品牌落款</figcaption></figure><figure class="card"><a href="/review-media/100/phone-footer.png" target="_blank" rel="noopener"><img src="/review-media/100/phone-footer.png" alt="手机品牌落款" loading="lazy"></a><figcaption>手机 · 品牌落款</figcaption></figure></div></section>
+<section id="film"><div class="section-head"><h2>网页实录</h2><p>第 105 轮实际操作：切换菜品 → 滚动近景 → 页面各区</p></div><video controls playsinline preload="metadata" poster="/review-media/100/desktop-fried.png" src="/review-media/105/dumpling-lab-browser-motion.mp4"></video><p><a href="/review-media/105/dumpling-lab-browser-motion.mp4" download>下载完整录屏</a></p></section>
+<p><a href="/review/100">查看第 100 轮完整检查点 ↗</a> · <a href="/review/80">查看第 80 轮对照版本 ↗</a> · <a href="/review/61">查看第 61 轮对照版本 ↗</a> · <a href="/review/49">查看第 49 轮对照版本 ↗</a> · <a href="/review/35">查看第 35 轮对照版本 ↗</a></p>
+<p class="note">食物动效采用分层图片与透视变换，并非完整立体食物模型。页面内的短片由生成静帧制作镜头移动；此处播放器展示的是网页实录。线上点餐、支付和后台没有修改。</p>
+</main>
+<script>
+(()=>{
+ const group=document.getElementById('reviewLanguages'),status=document.getElementById('reviewLanguageStatus');
+ const cards=[...document.querySelectorAll('.card')].map(card=>{const img=card.querySelector('img'),match=img?.getAttribute('src').match(/\/(desktop|phone)-(fried|chilli|broth)\.png$/);return match?{card,device:match[1],scene:match[2],description:img.alt}:null}).filter(Boolean);
+ let request=0;
+ group.hidden=false;
+ group.addEventListener('click',async event=>{
+  const button=event.target.closest('button[data-review-lang]');if(!button)return;
+  if(button.getAttribute('aria-pressed')==='true'&&group.getAttribute('aria-busy')!=='true')return;
+  const language=button.dataset.reviewLang,token=++request;
+  group.setAttribute('aria-busy','true');status.textContent=language==='en'?'正在读取英文首屏原图…':'正在读取中文首屏原图…';
+  try{
+   const replacements=await Promise.all(cards.map(async item=>{
+    const path='/review-media/100/'+item.device+(language==='en'?'-en':'')+'-'+item.scene+'.png';
+    const img=new Image();img.src=path;await img.decode();return {...item,img,path};
+   }));
+   if(token!==request)return;
+   for(const item of replacements){
+    const old=item.card.querySelector('img');item.img.width=old.width;item.img.height=old.height;item.img.loading=old.loading||'eager';item.img.decoding='async';
+    item.img.alt=item.description+(language==='en'?'（英文版）':'');old.replaceWith(item.img);
+    item.card.querySelectorAll('a').forEach(a=>a.href=item.path);
+   }
+   group.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+   status.textContent=language==='en'?'当前显示英文首屏。下方页面各区与录屏仍为中文版。':'当前显示中文首屏。下方页面各区与录屏为中文版。';
+  }catch{if(token===request)status.textContent='原图暂未加载，已保留上一组。请再点一次重试。'}
+  finally{if(token===request)group.setAttribute('aria-busy','false')}
+ });
+})();
+</script>
+</body></html>

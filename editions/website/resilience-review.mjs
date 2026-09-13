@@ -1,0 +1,42 @@
+// Deterministic failure/slow-loading checks in a fresh isolated browser.
+import {chromium,webkit} from 'playwright';
+import assert from 'node:assert/strict';
+import {mkdir,writeFile} from 'node:fs/promises';
+const out=process.argv[2];assert(out);await mkdir(out,{recursive:true});
+const browser=await(process.argv.includes('--webkit')?webkit.launch({headless:true}):chromium.launch({channel:'chrome',headless:true}));
+const results=[];
+const base='http://127.0.0.1:7903';
+try{
+ const page=await browser.newPage({viewport:{width:390,height:844}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ let pending;const image='**/hero-chilli-wontons-v1*.webp';
+ await page.route(image,r=>{pending=r});
+ await page.goto(base+'/?lang=zh');await page.locator('#stageImage').evaluate(e=>e.decode());
+ await page.locator('#nextCourse').click();await page.waitForFunction(()=>document.querySelector('#courseControl').getAttribute('aria-busy')==='true');
+ assert.equal(await page.locator('#stageTaste').textContent(),'正在加载下一道…');assert.equal(await page.locator('[data-course-index="0"]').getAttribute('aria-pressed'),'true');
+ await page.screenshot({path:out+'/slow-loading.png'});while(!pending)await new Promise(setImmediate);await pending.abort();
+ await page.waitForFunction(()=>document.querySelector('#courseControl').getAttribute('aria-busy')==='false');
+ assert.match(await page.locator('#stageTaste').textContent(),/暂未加载/);assert(await page.locator('#stageImage').evaluate(e=>e.naturalWidth>0));
+ await page.screenshot({path:out+'/image-failed.png'});results.push({slowLoad:true,preservesCurrentImage:true,recoverableError:true});
+ await page.unroute(image);await page.locator('#nextCourse').click();await page.waitForFunction(()=>document.querySelector('[data-course-index="1"]').getAttribute('aria-pressed')==='true');
+ await page.waitForFunction(()=>!document.querySelector('.dish-ghost'));results.push({retryWorks:true});
+ await page.locator('#motionToggle').click();assert.equal(await page.locator('body').getAttribute('data-motion-paused'),'true');
+ assert.equal(await page.locator('.product-float').evaluate(e=>getComputedStyle(e).animationName),'none');
+ await page.locator('#previousCourse').click();await page.waitForFunction(()=>document.querySelector('[data-course-index="0"]').getAttribute('aria-pressed')==='true');
+ assert.equal(await page.locator('.dish-ghost').count(),0);results.push({pauseStopsMotion:true,pausedSelectionWorks:true});
+ await page.reload();await page.waitForFunction(()=>document.body.dataset.motionPaused==='true');assert.equal(await page.locator('#brandFilm').getAttribute('src'),null);results.push({motionPreferencePersists:true});
+ assert.deepEqual(errors,[]);await page.close();
+ const fallback=await browser.newPage({viewport:{width:390,height:844}});
+ await fallback.route('**/site/stage.js',r=>r.abort());await fallback.goto(base+'/?lang=zh');
+ await fallback.waitForFunction(()=>!document.documentElement.classList.contains('has-js'));
+ assert.equal(await fallback.locator('#courseControl').isVisible(),false);assert.equal(await fallback.locator('#filmToggle').isVisible(),false);assert(await fallback.locator('.stage-order').isVisible());
+ assert(await fallback.locator('#cinema').evaluate(e=>e.getBoundingClientRect().height<=innerHeight));
+ await fallback.screenshot({path:out+'/motion-module-unavailable.png'});results.push({failedModuleStaticFallback:true,noDeadSceneControls:true});await fallback.close();
+ const staticPage=await browser.newPage({viewport:{width:390,height:844},javaScriptEnabled:false});
+ await staticPage.goto(base+'/?lang=zh');assert.equal(await staticPage.locator('#stageImage').getAttribute('src'),'/site/media/hero-potstickers-v1.webp');
+ assert(await staticPage.locator('.stage-order').isVisible());assert.equal(await staticPage.locator('.product-float').evaluate(e=>getComputedStyle(e).animationName),'none');assert.equal(await staticPage.locator('#courseControl').isVisible(),false);await staticPage.screenshot({path:out+'/no-js.png'});results.push({noJsStaticHeroAndOrderLink:true,noUnpausableMotion:true});await staticPage.close();
+ const limited=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
+ await limited.addInitScript(()=>{Object.defineProperty(window,'localStorage',{get(){throw new Error('Storage blocked')}})});
+ await limited.goto(base+'/?lang=zh');await limited.locator('#language').click();assert.equal(await limited.locator('html').getAttribute('lang'),'en');assert.equal(await limited.locator('#brandFilm').getAttribute('src'),null);results.push({blockedStorageLanguageWorks:true,reducedMotionNoFilmRequest:true});await limited.close();
+}finally{await browser.close()}
+await writeFile(out+'/report.json',JSON.stringify(results,null,2));console.log(JSON.stringify({passed:true,cases:results.length,evidence:out}));
