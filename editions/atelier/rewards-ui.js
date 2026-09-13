@@ -135,6 +135,19 @@ globalThis.RewardsUI = (() => {
       mount.hidden = true;
       return;
     }
+    // renderButton injects an iframe that loads on its own; hiding the fallback
+    // straight away leaves a hole in the row for as long as that takes, which on
+    // a phone connection is seconds. Keep the fallback until the real button has
+    // painted, and keep it for good if it never does.
+    const painted = await new Promise((resolve) => {
+      const done = (ok) => { clearInterval(timer); clearTimeout(giveUp); resolve(ok); };
+      const timer = setInterval(() => {
+        if (!mount.isConnected) return done(false);
+        if (mount.firstElementChild && mount.getBoundingClientRect().height > 8) done(true);
+      }, 60);
+      const giveUp = setTimeout(() => done(false), 4000);
+    });
+    if (!painted) { mount.hidden = true; return; }
     if (fallback) fallback.hidden = true;
   }
   async function login(after) {

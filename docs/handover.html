@@ -1,0 +1,96 @@
+<!doctype html><meta charset="utf-8"><title>Dumpling Lab 交接文档</title>
+<style>
+@page{size:A4;margin:16mm 15mm}
+*{box-sizing:border-box}
+body{margin:0;font:11pt/1.65 -apple-system,"PingFang SC","Helvetica Neue",sans-serif;color:#26221e}
+h1{margin:0 0 2px;font-size:22pt;font-weight:600;letter-spacing:-.3px}
+.sub{color:#8a7d70;font-size:9pt;letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px}
+.meta{color:#8a7d70;font-size:9pt;margin:0 0 22px;padding-bottom:14px;border-bottom:2px solid #b5232b}
+h2{font-size:12pt;font-weight:600;margin:22px 0 8px;padding-left:9px;border-left:3px solid #b5232b;break-after:avoid}
+table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-bottom:4px}
+th{text-align:left;font-weight:600;color:#8a7d70;font-size:8.5pt;letter-spacing:.06em;
+   text-transform:uppercase;padding:5px 8px 5px 0;border-bottom:1px solid #e6ded6;white-space:nowrap}
+td{padding:6px 8px 6px 0;border-bottom:1px solid #f1ebe4;vertical-align:top}
+td:first-child{white-space:nowrap;color:#5e564e;width:30%}
+code,.m{font-family:"SF Mono",Menlo,monospace;font-size:9pt;color:#b5232b;word-break:break-all}
+.note{background:#fdf6ec;border-left:3px solid #d9a441;padding:9px 12px;font-size:9pt;
+      line-height:1.6;margin:8px 0 4px;break-inside:avoid}
+.note b{color:#8a6416}
+.warn{background:#fdeeee;border-left-color:#b5232b}
+.warn b{color:#b5232b}
+ul{margin:6px 0;padding-left:17px}li{margin:3px 0;font-size:9.5pt}
+.foot{margin-top:26px;padding-top:10px;border-top:1px solid #e6ded6;color:#9c9188;font-size:8.5pt}
+</style>
+<body>
+<p class="sub">Handover · 项目交接</p>
+<h1>Dumpling Lab</h1>
+<p class="meta">官网 · 扫码点餐 · 商家后台 &nbsp;|&nbsp; 整理日期 2026-09-13</p>
+
+<h2>1. 线上地址</h2>
+<table>
+<tr><th>用途</th><th>地址</th><th>说明</th></tr>
+<tr><td>品牌官网</td><td class="m">https://dumplinglab.sg</td><td>www 同样可用</td></tr>
+<tr><td>扫码点餐</td><td class="m">https://order.dumplinglab.sg</td><td>桌卡二维码指向此处</td></tr>
+<tr><td>旧地址（自动跳转）</td><td class="m">menu.dumplinglab.sg</td><td>308 → order</td></tr>
+<tr><td>旧地址（自动跳转）</td><td class="m">dumplinglab-menu.vercel.app</td><td>307 → order</td></tr>
+</table>
+<div class="note"><b>已印出去的二维码不会失效。</b>旧的 menu 与 vercel.app 地址都做了永久跳转，扫到哪个都会到点餐页。</div>
+
+<h2>2. 后台入口</h2>
+<table>
+<tr><th>后台</th><th>地址</th><th>做什么</th></tr>
+<tr><td>商家后台</td><td class="m">order.dumplinglab.sg/catalog-admin</td><td>菜品、库存、照片、积分兑换、余额</td></tr>
+<tr><td>店员端</td><td class="m">order.dumplinglab.sg/staff</td><td>订单工作台</td></tr>
+</table>
+<p style="font-size:9.5pt;margin:6px 0">从官网域名输入 <code>/staff</code>、<code>/catalog-admin</code>、<code>/admin</code> 也会自动跳到上面对应页面。</p>
+<div class="note warn"><b>密码不随本文档传递。</b>两个后台共用一个密码，存放在 Vercel 项目 <code>dumplinglab-menu</code> 的环境变量 <code>DL_STAFF_PASSWORD</code>。<br>
+Vercel 不允许把已加密的变量读回来 —— <b>忘记只能覆盖重设，无法找回</b>，请存进密码管理器。</div>
+
+<h2>3. 代码仓库</h2>
+<table>
+<tr><td>仓库</td><td class="m" colspan="2">git@github.com:youwenjiujiu/dumplinglab.git</td></tr>
+<tr><td>网页</td><td class="m" colspan="2">https://github.com/youwenjiujiu/dumplinglab</td></tr>
+<tr><td>主分支</td><td class="m" colspan="2">main</td></tr>
+</table>
+<p style="font-size:9.5pt;margin:6px 0">目录结构：</p>
+<ul>
+<li><code>editions/website/</code> — 品牌官网源码，发布用 <code>build-site.mjs</code></li>
+<li><code>editions/atelier/</code> — 扫码点餐源码，发布用 <code>build-production.mjs</code></li>
+<li><code>web/server/</code>、<code>web/api/</code> — 后端接口（会员、订单、菜品、支付）</li>
+<li><code>docs/</code> — 配置步骤文档（Apple 登录、短信、认证）</li>
+</ul>
+
+<h2>4. 托管与第三方服务</h2>
+<table>
+<tr><th>服务</th><th>用途</th><th>标识</th></tr>
+<tr><td>Vercel</td><td>官网托管</td><td class="m">项目 dumplinglab</td></tr>
+<tr><td>Vercel</td><td>点餐站与后端托管</td><td class="m">项目 dumplinglab-menu</td></tr>
+<tr><td>Vercel Blob</td><td>订单、积分、余额存储</td><td class="m">同上项目内</td></tr>
+<tr><td>Supabase</td><td>会员登录（新加坡区）</td><td class="m">nybhfkwotdmgwlaadpal</td></tr>
+<tr><td>Resend</td><td>验证码邮件发信</td><td class="m">noreply@dumplinglab.sg</td></tr>
+<tr><td>Google Cloud</td><td>Google 一键登录</td><td class="m">OAuth 客户端 824282402022-…</td></tr>
+<tr><td>Apple Developer</td><td>Apple 登录</td><td class="m">Team KSR6492V5F</td></tr>
+<tr><td>Stripe</td><td>在线支付</td><td class="m">密钥在 Vercel 环境变量</td></tr>
+<tr><td>GoDaddy</td><td>域名与 DNS</td><td class="m">ns29/ns30.domaincontrol.com</td></tr>
+</table>
+
+<h2>5. 会员登录现状</h2>
+<table>
+<tr><th>方式</th><th>状态</th><th>备注</th></tr>
+<tr><td>邮箱验证码</td><td>已开通</td><td>发件人 Dumpling Lab &lt;noreply@dumplinglab.sg&gt;</td></tr>
+<tr><td>Google</td><td>已开通</td><td>One Tap，授权页显示自有域名</td></tr>
+<tr><td>Apple</td><td>已开通</td><td>Services ID <span class="m">sg.dumplinglab.web</span></td></tr>
+<tr><td>手机短信</td><td>未开通</td><td>需先在 SSIR 登记发送方名称，见 docs/SMS-OTP-STEPS.md</td></tr>
+</table>
+
+<h2>6. 到期与待办</h2>
+<div class="note warn"><b>2027 年 3 月 11 日 —— Apple 登录密钥到期。</b>
+到期当天 Apple 登录会毫无预兆全部失效。用仓库里的 <code>scripts/apple-client-secret.mjs</code> 重新签发，填回 Supabase 即可，Apple 后台无需改动。签名用的 <code>.p8</code> 文件只能下载一次，务必留存。</div>
+<ul>
+<li>撤销并重新生成 Supabase 的 secret key（曾在沟通中外泄）</li>
+<li>如需短信验证码：先完成新加坡 SSIR 发送方名称登记，再接 Twilio</li>
+<li>可选：把 DMARC 报告地址改成自己的邮箱</li>
+</ul>
+
+<p class="foot">本文档不含任何密码、密钥或凭据。所有敏感值存放在 Vercel 环境变量与各服务后台。</p>
+</body>

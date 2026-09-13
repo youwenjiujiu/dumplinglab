@@ -136,7 +136,11 @@
 @media(prefers-reduced-motion:reduce){.auth-pick,.auth-pick-sticks img{animation:none}}
 /* A lone provider has to sit in the middle, not in the first of two columns. */
 .auth-providers{display:flex;justify-content:center;gap:12px;padding:12px 0 14px}
-.auth-google-mount{display:grid;place-items:center;width:32px;height:32px}
+/* Google injects an iframe that would otherwise sit on the text baseline and
+   ride a couple of pixels below the mark beside it. */
+.auth-google-mount{display:grid;place-items:center;width:32px;height:32px;line-height:0;font-size:0}
+.auth-google-mount>*{display:block}
+.auth-providers{align-items:center}
 /* These rows are hidden by setting .hidden, and their own display would win. */
 .auth-dialog [hidden]{display:none!important}
 /* Google draws its own ringed icon and we cannot restyle it, so the others
