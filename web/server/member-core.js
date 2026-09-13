@@ -1,16 +1,19 @@
-// Verified CanCan identity. Restaurant rewards live in their own server ledger.
+// Verified Dumpling Lab identity. Rewards live in their own server ledger.
 import { createHash, randomBytes } from "node:crypto";
 import { RequestError } from "./order-core.js";
+import { sameOrigin } from "./http.js";
 
 const sessionCookie = "dl-member";
 const oauthCookie = "dl-member-oauth";
 const signupCookie = "dl-member-signup";
 const recoveryCookie = "dl-member-recovery";
+const googleNonceCookie = "dl-member-google";
 
 export function createMemberService({
   origin,
   authUrl,
   anonKey,
+  googleClientId = "",
   googleEnabled = false,
   appleEnabled = false,
   phoneEnabled = false,
@@ -25,6 +28,11 @@ export function createMemberService({
     google: configured && googleEnabled,
     apple: configured && appleEnabled,
   };
+  // Redirecting to Supabase for Google puts its project host on the consent
+  // screen ("…share your details with nybhfkwotdmgwlaadpal.supabase.co"), which
+  // reads like a phishing page to a guest scanning a QR code at the table.
+  // Signing in with an ID token issued to this origin shows our own domain.
+  const oneTapReady = configured && googleEnabled && Boolean(googleClientId);
   const cookie = (name, value, age = 0, path = "/") =>
     `${name}=${value}; Path=${path}; HttpOnly; SameSite=Lax; Max-Age=${age}${secure ? "; Secure" : ""}`;
   const cookieOf = (headers, name) =>
@@ -63,6 +71,8 @@ export function createMemberService({
         throw new RequestError("验证码不正确或已过期，请重新获取", 400);
       if (path.startsWith("token?grant_type=password") && [400, 401].includes(response.status))
         throw new RequestError("邮箱或密码不正确", 400);
+      if (path.startsWith("token?grant_type=id_token"))
+        throw new RequestError("Google 登录未通过验证，请重新登录", 400);
       if (path === "user" && method === "GET" && [401, 403].includes(response.status)) return null;
       if (path === "user" && method === "PUT")
         throw new RequestError("密码未能更新，请检查密码要求", 400);
@@ -120,7 +130,7 @@ export function createMemberService({
           await provider("token?grant_type=pkce", { auth_code: code, code_verifier: verifier }),
         );
         return {
-          redirect: `${origin}/order?${isRecovery ? `lang=${recoveryFlow?.[1] || "zh"}&reset_password=1` : "member=1"}`,
+          redirect: `${origin}/?${isRecovery ? `lang=${recoveryFlow?.[1] || "zh"}&reset_password=1` : "member=1"}`,
           cookies: [result.cookie, cookie(flowCookie, "", 0, "/api/member")],
         };
       }
@@ -142,7 +152,7 @@ export function createMemberService({
           await provider("token?grant_type=pkce", { auth_code: code, code_verifier: verifier }),
         );
         return {
-          redirect: `${origin}/order?member=1`,
+          redirect: `${origin}/?member=1`,
           cookies: [result.cookie, cookie(oauthCookie, "", 0, "/api/member")],
         };
       }
@@ -150,14 +160,22 @@ export function createMemberService({
         const token = tokenOf(headers);
         const user = configured && token ? publicUser(await provider("user", null, token)) : null;
         return {
-          body: { ok: true, loginReady: configured, authMethods, member: user },
+          body: {
+            ok: true,
+            loginReady: configured,
+            authMethods,
+            googleClientId: oneTapReady ? googleClientId : null,
+            member: user,
+          },
           ...(token && !user ? { cookie: cookie(sessionCookie, "") } : {}),
         };
       }
       if (method !== "POST") throw new RequestError("Method not allowed", 405);
+      // sameOrigin already ties the request to the host it was served from, so
+      // a missing DL_MEMBER_ORIGIN (local preview) reports "not open yet" below
+      // rather than this guard.
       if (
-        !origin ||
-        headers.origin !== origin ||
+        !sameOrigin(headers, origin) ||
         !String(headers["content-type"] || "").startsWith("application/json")
       )
         throw new RequestError("请从本网站重新操作", 403);
@@ -166,7 +184,43 @@ export function createMemberService({
       if (!configured)
         throw new RequestError("会员登录尚未开放，请先以游客身份点餐", 503);
       if (body.consent !== true)
-        throw new RequestError("请确认使用 CanCan 账号登录或注册", 400);
+        throw new RequestError("请确认使用 Dumpling Lab 账号登录或注册", 400);
+      if (body.action === "google-nonce") {
+        if (!oneTapReady) throw new RequestError("该登录方式尚未开放", 409);
+        // Google is handed the digest and Supabase the raw value, so a token
+        // minted for some other sign-in attempt cannot be replayed against ours.
+        const nonce = randomBytes(32).toString("base64url");
+        return {
+          body: {
+            ok: true,
+            clientId: googleClientId,
+            nonce: createHash("sha256").update(nonce).digest("hex"),
+          },
+          cookie: cookie(googleNonceCookie, nonce, 600, "/api/member"),
+        };
+      }
+      if (body.action === "google-token") {
+        if (!oneTapReady) throw new RequestError("该登录方式尚未开放", 409);
+        const credential = String(body.credential || "");
+        const nonce = cookieOf(headers, googleNonceCookie) || "";
+        if (
+          credential.length > 8192 ||
+          !/^[\w-]+\.[\w-]+\.[\w-]+$/.test(credential) ||
+          !/^[\w-]{32,128}$/.test(nonce)
+        )
+          throw new RequestError("登录未完成，请重新登录", 400);
+        const result = sessionResult(
+          await provider("token?grant_type=id_token", {
+            provider: "google",
+            id_token: credential,
+            nonce,
+          }),
+        );
+        return {
+          body: { ok: true, member: result.user },
+          cookies: [result.cookie, cookie(googleNonceCookie, "", 0, "/api/member")],
+        };
+      }
       if (body.action === "oauth") {
         const providerName = String(body.provider || "");
         if (!authMethods[providerName] || !["google", "apple"].includes(providerName))

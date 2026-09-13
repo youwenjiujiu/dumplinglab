@@ -12,7 +12,7 @@ async function request(path,body){
     let out='',err='';p.stdout.on('data',d=>out+=d);p.stderr.on('data',d=>err+=d);p.on('error',reject);p.on('close',code=>code?reject(Error(`Request failed: ${path}: ${err.slice(-200)}`)):resolve(out));p.stdin.end(config.join('\n')+'\n');
   });const n=output.lastIndexOf('\n');return {status:Number(output.slice(n+1)),text:output.slice(0,n)};
 }
-const html=await request('/');assert.equal(html.status,200);assert.match(html.text,/data-environment="production"/);assert.doesNotMatch(html.text,/id="previewNotice"/);assert.match(html.text,/午晚餐菜单/);
+const html=await request('/');assert.equal(html.status,200);assert.match(html.text,/data-environment="production"/);assert.doesNotMatch(html.text,/id="previewNotice"/);assert.match(html.text,/<title>Dumpling Lab<\/title>/);
 for(const file of ['sharing-motion.js','receipt-motion.js','bilingual-fit.js'])assert(html.text.includes('/'+file));
 assert(!html.text.includes('/cooking-motion.js'),'rejected cooking artwork must not load');
 const files=await Promise.all(['/app.js','/lunch-ui.js','/sharing-motion.js','/shared-motion.js','/api/feed'].map(p=>request(p)));
@@ -47,7 +47,7 @@ assert(!files[0].text.includes('Rotate dish photo'));
 assert(!files[3].text.includes('attachPlate'));
 if(!protectedDeployment){
   const assets=[...html.text.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))(?:\?[^" ]*)?"/g)].map(m=>m[1]);
-  assets.push('/img/s/dining-together-v4.webp','/img/s/dining-separate-v4.webp','/img/s/oyster-lettuce-clean-v2.webp','/img/l/oyster-lettuce-clean-v2.webp');
+  assets.push('/img/s/dining-together-v5.webp','/img/s/dining-separate-v5.webp','/img/s/oyster-lettuce-clean-v2.webp','/img/l/oyster-lettuce-clean-v2.webp');
   for(const [path,r] of await Promise.all(assets.map(async p=>[p,await fetch(url+p)])))assert.equal(r.status,200,path);
 }
 const table=('QA'+crypto.randomUUID().replaceAll('-','').slice(0,8)).toUpperCase();

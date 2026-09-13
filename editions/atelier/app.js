@@ -10,8 +10,19 @@ const group = /^[a-z0-9-]{1,16}$/i.test(q.get("group") || "")
   ? q.get("group").toUpperCase()
   : "A";
 // Show one language at a time; keep selection and ordering state independent.
+// A guest who has chosen once keeps that choice. Otherwise follow the phone:
+// the restaurant is in Singapore, so anyone whose device is not set to Chinese
+// is served English rather than a menu they have to translate first.
+const deviceLanguage = () =>
+  [navigator.language, ...(navigator.languages || [])].some((tag) => /^zh\b/i.test(tag || ""))
+    ? "zh"
+    : "en";
 let language = q.get("lang") === "en" ? "en" : q.get("lang") === "zh" ? "zh" : (() => {
-  try { return localStorage.getItem("atelier-language") === "en" ? "en" : "zh"; } catch { return "zh"; }
+  try {
+    const chosen = localStorage.getItem("atelier-language");
+    if (chosen === "en" || chosen === "zh") return chosen;
+  } catch { /* Works without persistence. */ }
+  return deviceLanguage();
 })();
 const tr = (zh, en) => String(language === "en" && en ? en : zh ?? "");
 const errorText = error => OrderErrors.message(error, language);
@@ -371,8 +382,21 @@ $("#sheet").addEventListener("click", (e) => {
       e.clientX > r.right ||
       e.clientY < r.top ||
       e.clientY > r.bottom)
-  )
+  ) {
+    // The order-type sheet is the first thing a guest sees, and a modal puts the
+    // masthead out of reach: a tap on the language control lands on the backdrop
+    // and only dismisses the sheet, leaving the menu in the other language. Give
+    // that tap the effect it plainly looks like it has.
+    const control = $("#languageButton").getBoundingClientRect();
+    if (
+      e.clientX >= control.left &&
+      e.clientX <= control.right &&
+      e.clientY >= control.top &&
+      e.clientY <= control.bottom
+    )
+      toggleLanguage();
     closeModal();
+  }
 });
 
 function renderNavigation() {
@@ -1445,11 +1469,12 @@ function onCartChange() {
 }
 store.addEventListener("change", onCartChange);
 window.addEventListener('catalog-updated',()=>{renderMenu();renderTray();});
-$("#languageButton").onclick = () => {
+function toggleLanguage() {
   language = language === "zh" ? "en" : "zh";
   try { localStorage.setItem("atelier-language",language); } catch { /* Works without persistence. */ }
   renderChrome(); renderMenu(); renderTray();
-};
+}
+$("#languageButton").onclick = toggleLanguage;
 renderChrome();
 renderMenu();
 renderTray();

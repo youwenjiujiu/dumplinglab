@@ -1,0 +1,29 @@
+ASSET 1
+Use case: ads-marketing
+Asset type: standalone transparent PNG food cutout for a premium Dumpling Lab Singapore website hero.
+Scene/backdrop: genuinely transparent background with alpha channel; no backdrop, surface, ground shadow, plate, bowl or scene. Intended later placement on saturated deep red/burgundy, but DO NOT render that color or any background.
+Style/medium: photorealistic high-end commercial food photography, extraordinary appetizing natural texture, delicious restrained gloss, dimensional depth, realistic handmade food.
+Composition/framing: centered square canvas with expressive diagonal composition; all food edges fully in frame with generous clear transparent margin, close-up.
+Lighting/mood: consistent dramatic natural key and subtle rim light from upper left, warm highlights, soft dimensional shadows across the food, rich natural color.
+Constraints: no text, logo, watermark, garnish, plastic toy appearance, illustration or 3D-render appearance.
+Subject: exactly two Chinese crescent pan-fried pork, shrimp and chive potstickers hovering close together along a diagonal. One intact crescent presents its beautiful golden crunchy seared face toward the camera, with blistered crispness and realistic folded wrapper. The second crescent is cut open with its open face clearly visible, showing plausible juicy minced pork, pink shrimp pieces and fresh green chives contained inside its thin wrapper; show one opened potsticker, no extra severed piece. Strong beautiful silhouettes, warm golden sear and ivory wrappers.
+
+ASSET 2
+Use case: ads-marketing
+Asset type: standalone transparent PNG food cutout for a premium Dumpling Lab Singapore website hero.
+Scene/backdrop: genuinely transparent background with alpha channel; no backdrop, surface, ground shadow, plate, bowl or scene. Intended later placement on saturated deep red/burgundy, but DO NOT render that color or any background.
+Style/medium: photorealistic high-end commercial food photography, extraordinary appetizing natural texture, delicious restrained gloss, dimensional depth, realistic handmade food.
+Composition/framing: centered square canvas with expressive diagonal composition; all food edges fully in frame with generous clear transparent margin, close-up.
+Lighting/mood: consistent dramatic natural key and subtle rim light from upper left, warm highlights, soft dimensional shadows across the food, rich natural color.
+Constraints: no text, logo, watermark, garnish, plastic toy appearance, illustration or 3D-render appearance.
+Subject: exactly three delicate Chinese wontons coated in rich glossy red chilli oil, suspended closely in a graceful diagonal cluster. Each has thin naturally folded ivory wrappers with realistic softness and chili specks on the surface. Tiny attached or nearby oil droplets only, no huge splash. Whole closed wontons with no visible invented filling and no garnish. Delicious red oil sheen catches the upper-left key light.
+
+ASSET 3
+Use case: ads-marketing
+Asset type: standalone transparent PNG food cutout for a premium Dumpling Lab Singapore website hero.
+Scene/backdrop: genuinely transparent background with alpha channel; no backdrop, surface, ground shadow, plate, bowl or scene. Intended later placement on saturated deep red/burgundy, but DO NOT render that color or any background.
+Style/medium: photorealistic high-end commercial food photography, extraordinary appetizing natural texture, delicious restrained gloss, dimensional depth, realistic handmade food.
+Composition/framing: centered square canvas with expressive diagonal composition; all food edges fully in frame with generous clear transparent margin, close-up.
+Lighting/mood: consistent dramatic natural key and subtle rim light from upper left, warm highlights, soft dimensional shadows across the food, rich natural color.
+Constraints: no text, logo, watermark, garnish, plastic toy appearance, illustration or 3D-render appearance.
+Subject: a compact elegant lifted nest of thin golden egg noodles accompanied by exactly two plump prawn-and-crab-roe wontons. Delicate fine noodles softly coil and drape with controlled graceful movement; a minimal pair of chopsticks enters from the upper right, holding the compact lifted noodle nest. Two naturally folded ivory wontons nestle prominently alongside the noodles; realistic prawn-and-crab-roe wonton appearance without exposed invented stuffing or garnish. No hands and no bowl. All noodle strands and wontons fully in frame; chopsticks may enter from upper right edge. Elegant expressive diagonal food composition, not a giant chaotic noodle explosion.

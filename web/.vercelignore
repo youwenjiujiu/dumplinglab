@@ -13,3 +13,5 @@ vendor/three.core.js
 img/*-view-*.png
 img/*.jpg
 legacy/
+img/print/*.png
+img/*.png

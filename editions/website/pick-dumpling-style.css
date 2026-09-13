@@ -1,0 +1,39 @@
+/* Raster layers only: this is a photo-cutout vignette, not a GLB/3D scene. */
+.brand-chapters .play-section{border-top:1px solid var(--chapter-line);padding-top:clamp(40px,5vw,72px);padding-bottom:clamp(36px,4vw,64px)}
+.brand-chapters .pick-feedback{min-height:112px}
+.brand-chapters .pick-replay{display:inline-flex;gap:24px;align-items:center;padding:8px 0;min-height:44px;border:0;border-bottom:1px solid #96332e80;background:none;color:var(--chapter-ink);font:inherit;font-size:1rem;cursor:pointer}
+.brand-chapters .pick-replay[hidden],.brand-chapters .pick-piece[hidden]{display:none}
+.brand-chapters .pick-replay:focus-visible{outline:2px solid #96332e;outline-offset:5px}
+.brand-chapters .pick-layout{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.7fr);align-items:center;gap:12px;min-width:0}
+.brand-chapters .pick-copy{min-width:0;overflow-wrap:anywhere}
+.brand-chapters .pick-sauce.pick-sauce-lip{z-index:6;clip-path:inset(65% 0 0 0);filter:none}
+.brand-chapters .pick-copy .eyebrow{margin-bottom:22px}
+.brand-chapters .pick-copy h2{font-size:clamp(2.75rem,5.5vw,6rem);line-height:1.02;text-wrap:initial}
+.brand-chapters #pickHint{margin-top:24px;color:#725d50;font-size:1rem}
+.brand-chapters .pick-status{font-size:.875rem;min-height:2.8em;margin-top:14px;color:#96332e;max-width:24rem}
+.brand-chapters .pick-scene{position:relative;aspect-ratio:1.5;isolation:isolate;min-width:0;overflow:hidden}
+.brand-chapters .pick-plate{position:absolute;left:4%;top:25%;width:77%;height:62%;object-fit:contain;filter:drop-shadow(0 18px 12px #47291b16);pointer-events:none}
+.brand-chapters .pick-sauce{position:absolute;left:72%;top:61%;width:25%;height:27%;object-fit:contain;filter:drop-shadow(0 12px 8px #47291b20);pointer-events:none}
+.brand-chapters .pick-piece{position:absolute;left:var(--x);top:var(--y);width:17.2%;min-width:44px;min-height:44px;padding:0;border:0;border-radius:40%;background:none;transform:translate(-50%,-50%) rotate(var(--tilt));cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.brand-chapters .pick-food{display:block;width:100%;height:auto;filter:drop-shadow(2px 8px 5px #50382029);transition:filter .2s ease}
+.brand-chapters .pick-piece:disabled{cursor:default}
+.brand-chapters .pick-piece[aria-disabled=true]{cursor:wait}
+.brand-chapters .pick-piece:not(:disabled):hover .pick-food{filter:drop-shadow(2px 12px 7px #50382038) brightness(1.035)}
+.brand-chapters .pick-piece:focus-visible{outline:2px solid #96332e;outline-offset:7px}
+.brand-chapters .pick-sticks{position:absolute;left:44%;bottom:44%;width:205%;max-width:none;height:auto;opacity:0;pointer-events:none;filter:drop-shadow(5px 8px 5px #3b1e141c)}
+.brand-chapters .pick-piece.is-picked{z-index:5}
+.brand-chapters .pick-scene[data-state=unavailable]{display:none}
+@media(max-width:760px){.brand-chapters .pick-layout{grid-template-columns:minmax(0,1fr);gap:0}.brand-chapters .pick-copy h2{font-size:clamp(2.75rem,10vw,4rem)}.brand-chapters .pick-copy h2 br{display:none}.brand-chapters .pick-copy{min-width:0;overflow-wrap:anywhere}
+.brand-chapters .pick-sauce-lip{z-index:6;clip-path:inset(65% 0 0 0)}
+.brand-chapters .pick-copy .eyebrow{margin-bottom:14px}.brand-chapters #pickHint{margin-top:16px}.brand-chapters .pick-status{min-height:1.5em;margin-top:8px}.brand-chapters .pick-scene{aspect-ratio:1.25}.brand-chapters .pick-copy{max-width:100%}}
+@media(prefers-reduced-motion:reduce){.brand-chapters .pick-food{transition:none}}
+.brand-chapters .play-section:focus{outline:none}
+@media(max-width:760px){
+ .brand-chapters .pick-copy{display:contents}
+ .brand-chapters .pick-copy .eyebrow{order:0}
+ .brand-chapters .pick-copy h2{order:1}
+ .brand-chapters #pickHint{order:2}
+ .brand-chapters .pick-scene{order:3}
+ .brand-chapters .pick-feedback{order:4;min-height:88px}
+ .brand-chapters .pick-feedback .pick-status{margin-top:0;margin-bottom:8px}
+}

@@ -1,0 +1,100 @@
+// Original SVG geometry separated into chairs, serving plate and steam.
+// Custom semantic choreography; only the existing button's visual layer moves.
+(() => {
+  if (typeof customElements === 'undefined' || customElements.get('dl-dinein-serving')) return;
+  class DineinServing extends HTMLElement {
+    constructor() {
+      super(); this.animations = []; this.running = false; this.duration = 5200;
+      this.attachShadow({mode: 'open'}).innerHTML = `<style>
+        :host{display:block;width:100%;aspect-ratio:260/220;contain:layout style;pointer-events:none}
+        svg{display:block;width:100%;height:auto;overflow:hidden}
+        .chair-left,.chair-right,.plate,.steam{transform-box:view-box}
+        .plate{transform-origin:123px 106px}
+        .steam{opacity:0}
+      </style><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 220" aria-hidden="true">
+<defs><symbol id="dumpling" viewBox="42 24 58 76"><path fill="currentColor" fill-rule="nonzero" d="M86.1875 63.390625C85.746094 63.820312 85.136719 64.097656 84.46875 64.097656H81.59375C80.246094 64.097656 79.15625 63.015625 79.15625 61.671875C79.15625 60.992188 79.429688 60.382812 79.875 59.953125C80.304688 59.511719 80.914062 59.234375 81.59375 59.234375H84.46875C85.816406 59.234375 86.90625 60.324219 86.90625 61.671875C86.90625 62.347656 86.628906 62.945312 86.1875 63.390625M85.570312 83.070312V83.082031C85.15625 84.355469 83.78125 85.054688 82.503906 84.640625L79.058594 83.519531C77.78125 83.109375 77.085938 81.746094 77.496094 80.46875V80.457031C77.910156 79.179688 79.273438 78.484375 80.550781 78.894531L84.007812 80.015625C85.285156 80.429688 85.980469 81.792969 85.570312 83.070312M79.058594 39.820312L82.503906 38.699219C83.78125 38.277344 85.15625 38.984375 85.570312 40.261719V40.269531C85.980469 41.546875 85.285156 42.914062 84.007812 43.328125L80.550781 44.445312C79.273438 44.859375 77.910156 44.152344 77.496094 42.875C77.417969 42.628906 77.378906 42.375 77.378906 42.128906C77.378906 41.097656 78.027344 40.152344 79.058594 39.820312M96 80.09375C96.226562 75.871094 97.207031 73.042969 98.082031 70.546875C99.03125 67.769531 99.9375 65.148438 99.859375 61.101562C99.78125 56.878906 98.71875 54.355469 97.597656 51.683594C96.578125 49.179688 95.5 46.605469 95.351562 42.597656C95.222656 38.367188 96.226562 32.210938 98.335938 27.417969C98.660156 26.671875 98.589844 25.804688 98.140625 25.109375C97.699219 24.421875 96.933594 24 96.105469 24H79.980469C59.21875 24 42.320312 40.898438 42.320312 61.671875C42.320312 82.429688 59.21875 99.34375 79.980469 99.34375H96.734375C97.53125 99.34375 98.277344 98.941406 98.730469 98.292969C99.179688 97.632812 99.296875 96.816406 99.023438 96.0625C96.707031 89.738281 95.695312 85.417969 96 80.09375"/></symbol></defs>
+<!-- Dining in: a bistro table and two chairs, using the original brand mark. -->
+<ellipse cx="130" cy="195" rx="99" ry="7" fill="#28221b" opacity=".045"/>
+<!-- The chairs sit behind the table, not loose cutlery or an empty plate. -->
+<g stroke="#e51b00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><g class="chair-left"><path d="M33 138 28 81c-2-30 38-33 42-5l6 61" fill="#fff"/><path d="m38 118-2-38c-1-18 24-21 27-1l3 36" fill="none"/><path d="m33 143-5 43m42-39 8 41" fill="none"/><path d="m29 134 44-5 17 14-47 7-14-9z" fill="#e51b00"/></g><g class="chair-right"><path d="m227 138 5-57c2-30-38-33-42-5l-6 61" fill="#fff"/><path d="m222 118 2-38c1-18-24-21-27-1l-3 36" fill="none"/><path d="m227 143 5 43m-42-39-8 41" fill="none"/><path d="m231 134-44-5-17 14 47 7 14-9z" fill="#e51b00"/></g></g>
+<!-- A compact pedestal keeps the table silhouette immediately readable. -->
+<path d="M125 128h10v53l24 9c4 2 2 5-2 5h-54c-4 0-6-3-2-5l24-9z" fill="#e51b00"/>
+<path d="M58 105v8c0 18 32 32 72 32s72-14 72-32v-8z" fill="#e51b00" stroke="#e51b00" stroke-width="2"/>
+<ellipse cx="130" cy="105" rx="72" ry="31" fill="#fff" stroke="#e51b00" stroke-width="2"/>
+<ellipse cx="130" cy="105" rx="65" ry="25" fill="#e51b00"/>
+<g class="plate"><ellipse cx="123" cy="106" rx="29" ry="15" fill="#fff"/>
+<ellipse cx="123" cy="106" rx="24" ry="11" fill="none" stroke="#e51b00" stroke-width=".7"/>
+<g color="#e51b00">
+  <use href="#dumpling" x="106" y="97" width="9" height="12" transform="rotate(-35 110 103)"/>
+  <use href="#dumpling" x="122" y="96" width="9" height="12" transform="rotate(25 126 102)"/>
+  <use href="#dumpling" x="116" y="104" width="9" height="12" transform="rotate(85 120 110)"/>
+</g>
+</g><path d="m160 91 15 25m-10-26 15 25" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+<g fill="none" stroke="#e51b00" stroke-width="2.5" stroke-linecap="round"><path class="steam s1" d="M113 96c-10-12 7-18 0-29"/><path class="steam s2" d="M124 95c-10-12 7-18 0-29"/><path class="steam s3" d="M135 96c-10-12 7-18 0-29"/></g></svg>
+`;
+      this.reduced = matchMedia('(prefers-reduced-motion: reduce)');
+      this.onReduced = () => { if (this.reduced.matches) this.reset(); };
+      this.onReplay = () => { if (!this.running) this.restart(); };
+      this.onVisibility = () => {
+        if (document.hidden) { this.resume = this.running; this.pause(); }
+        else if (this.resume) { this.resume = false; this.play(); }
+      };
+    }
+    connectedCallback() {
+      this.owner = this.closest('button');
+      for (const event of ['pointerenter', 'focus']) this.owner?.addEventListener(event, this.onReplay);
+      this.reduced.addEventListener('change', this.onReduced);
+      document.addEventListener('visibilitychange', this.onVisibility);
+      this.visible = new IntersectionObserver(entries => {
+        if (entries.some(e => e.isIntersecting)) { this.visible.disconnect(); if(this.isConnected) this.restart(); }
+      }, {threshold: .4}); this.visible.observe(this);
+    }
+    reset() { this.animations.forEach(a => a.cancel()); this.animations = []; this.running = false; this.resume = false; }
+    track(selector, frames) {
+      this.animations.push(this.shadowRoot.querySelector(selector).animate(
+        frames.map(frame => ({...frame, easing: 'cubic-bezier(.22,.72,.18,1)'})),
+        {duration: this.duration, easing: 'linear', fill: 'both', iterations: 1}));
+    }
+    restart() {
+      this.reset(); if (this.reduced.matches || document.hidden) return; this.running = true;
+      for (const [selector, direction] of [['.chair-left', -1], ['.chair-right', 1]]) {
+        this.track(selector, [
+          {transform: 'none', offset: 0}, {transform: 'none', offset: .02},
+          {transform: `translate(${direction * 18}px,5px)`, offset: .19},
+          {transform: `translate(${direction * 18}px,5px)`, offset: .44},
+          {transform: 'none', offset: .57}, {transform: 'none', offset: 1}]);
+      }
+      this.track('.plate', [
+        {transform: 'translateY(-62px)', opacity: 0, offset: 0},
+        {transform: 'translateY(-62px)', opacity: 0, offset: .19},
+        {transform: 'translateY(-42px)', opacity: 1, offset: .24},
+        {transform: 'none', opacity: 1, offset: .4},
+        {transform: 'none', opacity: 1, offset: 1}]);
+      for (const [selector, stagger] of [['.s1', 0], ['.s2', .045], ['.s3', .09]]) {
+        this.track(selector, [
+          {transform: 'translateY(7px)', opacity: 0, offset: 0},
+          {transform: 'translateY(7px)', opacity: 0, offset: .4 + stagger},
+          {transform: 'translateY(0)', opacity: .72, offset: .47 + stagger},
+          {transform: 'translateY(-18px)', opacity: 0, offset: .60 + stagger},
+          {transform: 'translateY(7px)', opacity: 0, offset: .61 + stagger},
+          {transform: 'translateY(0)', opacity: .72, offset: .69 + stagger},
+          {transform: 'translateY(-18px)', opacity: 0, offset: .82 + stagger},
+          {transform: 'translateY(-18px)', opacity: 0, offset: 1}]);
+      }
+      const active = this.animations;
+      Promise.all(active.map(a => a.finished)).then(() => {
+        if (this.animations === active) { this.running = false; this.dispatchEvent(new CustomEvent('motion-complete', {bubbles: true, composed: true})); }
+      }).catch(() => {});
+    }
+    pause() { this.animations.forEach(a => a.pause()); this.running = false; }
+    play() { if (this.reduced.matches || document.hidden) return; if (!this.animations.length) { this.restart(); return; } this.animations.forEach(a => a.play()); this.running = true; }
+    seek(ms) { if (!this.animations.length) this.restart(); this.animations.forEach(a => { a.pause(); a.currentTime = Math.max(0, Math.min(this.duration, ms)); }); this.running = false; }
+    setProgress(progress) { this.seek(progress * this.duration); }
+    disconnectedCallback() {
+      this.reset(); this.visible?.disconnect();
+      this.reduced.removeEventListener('change', this.onReduced); document.removeEventListener('visibilitychange', this.onVisibility);
+      for (const event of ['pointerenter', 'focus']) this.owner?.removeEventListener(event, this.onReplay);
+    }
+  }
+  customElements.define('dl-dinein-serving', DineinServing);
+})();

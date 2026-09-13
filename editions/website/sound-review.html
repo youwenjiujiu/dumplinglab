@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dumpling Lab · 原片音效试听</title>
+  <style>
+    :root{color-scheme:light;--ink:#321d19;--muted:#746a64;--red:#9a3832;--coral:#f27660;--paper:#fffaf3;--line:#dfd2c3}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif}
+    button{font:inherit}
+    .page{width:min(1180px,calc(100% - 40px));margin:0 auto;padding:36px 0 56px}
+    header{display:flex;align-items:end;justify-content:space-between;gap:32px;margin-bottom:28px}
+    h1{margin:0;font-size:clamp(30px,4vw,56px);letter-spacing:-.04em}
+    header p{max-width:560px;margin:0;color:var(--muted);font-size:15px;line-height:1.7}
+    .workspace{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(330px,.65fr);gap:26px;align-items:start}
+    .player{position:sticky;top:20px}
+    video{display:block;width:100%;aspect-ratio:16/9;background:#210709;border-radius:20px;box-shadow:0 22px 70px rgba(55,24,18,.16)}
+    .now{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:54px;padding:13px 2px;color:var(--muted);font-size:14px}
+    .now strong{color:var(--red);font-size:16px}
+    .transport{display:flex;gap:10px}
+    .transport button,.cue{border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+    .transport button{border-radius:999px;padding:9px 15px}
+    .groups{display:grid;gap:14px}
+    .clean{margin-bottom:26px;border:1px solid #c99289;background:#fff;padding:18px;border-radius:20px}
+    .clean h2{margin:0 0 5px;font-size:22px}
+    .clean>p{margin:0 0 14px;color:var(--muted);font-size:14px;line-height:1.55}
+    .clean-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .clean-cue{min-height:84px;border:1px solid var(--line);border-radius:14px;background:var(--ink);color:#fff;padding:13px 16px;text-align:left;cursor:pointer}
+    .clean-cue:hover,.clean-cue.active{background:var(--red);border-color:var(--red)}
+    .clean-cue b,.clean-cue span{display:block}.clean-cue b{margin-bottom:7px}.clean-cue span{font-size:12px;opacity:.75;line-height:1.4}
+    section{border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.7);padding:18px}
+    h2{margin:0 0 5px;font-size:18px}
+    section>p{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.55}
+    .cues{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    .cue{min-height:78px;border-radius:14px;padding:12px;text-align:left;transition:.15s ease}
+    .cue:hover{border-color:#bd8179;transform:translateY(-1px)}
+    .cue.active{border-color:var(--red);background:var(--red);color:#fff;box-shadow:0 8px 24px rgba(154,56,50,.2)}
+    .cue b{display:block;margin-bottom:6px;font-size:16px}
+    .cue span{display:block;opacity:.72;font-size:12px;line-height:1.35}
+    .error{display:none;margin-top:10px;border-radius:12px;background:#ffe9e5;color:#822e29;padding:12px;font-size:14px}
+    .error.show{display:block}
+    @media(max-width:850px){header{display:block}header p{margin-top:12px}.workspace{grid-template-columns:1fr}.player{position:static}.cues{grid-template-columns:1fr 1fr}}
+    @media(max-width:480px){.page{width:min(100% - 24px,1180px);padding-top:22px}.cues,.clean-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <h1>原片音效试听</h1>
+      <p>点击编号，原片会从标记位置开始播放，并在区间结束时自动暂停。这里只播放 <b>Dumpling Lab.mp4</b> 的原画面与原音轨，没有裁音、滤镜或重新合成。</p>
+    </header>
+    <div class="clean">
+      <h2>原始 Motion FX Stem · 无背景音乐</h2>
+      <p>这两个片段直接来自制作视频时保存的 <b>motion-fx-stem-v2.wav</b>。没有降噪、滤波、变调或重新合成；背景音乐 stem 完全没有参与。</p>
+      <div class="clean-grid">
+        <button class="clean-cue" data-audio="/sound-review-media/a3-tail-exact-fx.wav"><b>A3 后半 · 原始动效轨</b><span>20.58–21.75 秒，只含原始 close-up glide 动效</span></button>
+        <button class="clean-cue" data-audio="/sound-review-media/c1-elements-exact-fx.wav"><b>C1 · 原始动效轨</b><span>0.32–1.05 秒，只含五个原始 callout pop</span></button>
+      </div>
+      <audio id="clean-audio" preload="none"></audio>
+    </div>
+    <div class="workspace">
+      <div class="player">
+        <video id="reference" controls preload="metadata" playsinline src="/sound-reference.mp4"></video>
+        <div class="now" aria-live="polite"><span id="status">请选择右侧编号</span><span id="clock">00:00.000</span></div>
+        <div class="transport">
+          <button type="button" id="full">播放完整原片</button>
+          <button type="button" id="stop">停止</button>
+        </div>
+        <div class="error" id="error">原片暂时无法载入。请确认桌面的 Dumpling Lab.mp4 仍在原位置。</div>
+      </div>
+      <div class="groups">
+        <section>
+          <h2>A · 进入特写 / 风感转场</h2>
+          <p>优先听这一组。找你说的“一阵风刮过去”的那一个。</p>
+          <div class="cues">
+            <button class="cue" data-code="A1" data-start="1.85" data-end="3.05"><b>A1</b><span>煎饺：进入特写</span></button>
+            <button class="cue" data-code="A2" data-start="10.65" data-end="11.85"><b>A2</b><span>红油抄手：进入特写</span></button>
+            <button class="cue" data-code="A3" data-start="19.65" data-end="20.85"><b>A3</b><span>皮蛋面：进入特写</span></button>
+          </div>
+        </section>
+        <section>
+          <h2>B · 返回 / 菜品切换</h2>
+          <p>用于分辨切换时的刷声、撞点或尾音。</p>
+          <div class="cues">
+            <button class="cue" data-code="B1" data-start="6.15" data-end="7.05"><b>B1</b><span>煎饺特写 → 主画面</span></button>
+            <button class="cue" data-code="B2" data-start="8.45" data-end="9.45"><b>B2</b><span>主画面 → 红油抄手</span></button>
+            <button class="cue" data-code="B3" data-start="15.10" data-end="15.95"><b>B3</b><span>红油特写 → 主画面</span></button>
+            <button class="cue" data-code="B4" data-start="17.35" data-end="18.35"><b>B4</b><span>主画面 → 皮蛋面</span></button>
+            <button class="cue" data-code="B5" data-start="24.00" data-end="24.75"><b>B5</b><span>皮蛋面特写 → 主画面</span></button>
+          </div>
+        </section>
+        <section>
+          <h2>C · 元素出现 / 活跃高音</h2>
+          <p>听标签、食材等小元素出现时，更明亮、更活跃的声音。</p>
+          <div class="cues">
+            <button class="cue" data-code="C1" data-start="0.00" data-end="1.85"><b>C1</b><span>煎饺主画面元素</span></button>
+            <button class="cue" data-code="C2" data-start="7.00" data-end="8.75"><b>C2</b><span>红油主画面元素</span></button>
+            <button class="cue" data-code="C3" data-start="16.00" data-end="17.70"><b>C3</b><span>皮蛋面主画面元素</span></button>
+            <button class="cue" data-code="C4" data-start="24.55" data-end="26.20"><b>C4</b><span>结尾主画面元素</span></button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script>
+    const video=document.querySelector('#reference');
+    const cleanAudio=document.querySelector('#clean-audio');
+    const status=document.querySelector('#status');
+    const clock=document.querySelector('#clock');
+    const error=document.querySelector('#error');
+    const cues=[...document.querySelectorAll('.cue')];
+    const cleanCues=[...document.querySelectorAll('.clean-cue')];
+    let active=null,endAt=null,frame=0;
+    const time=value=>{
+      const mins=Math.floor(value/60).toString().padStart(2,'0');
+      const secs=(value%60).toFixed(3).padStart(6,'0');
+      return `${mins}:${secs}`;
+    };
+    const clear=()=>{cancelAnimationFrame(frame);frame=0;endAt=null;cues.forEach(cue=>cue.classList.remove('active'));};
+    const watch=()=>{
+      clock.textContent=time(video.currentTime||0);
+      if(endAt!==null&&video.currentTime>=endAt-.025){video.pause();video.currentTime=endAt;clock.textContent=time(endAt);endAt=null;return;}
+      frame=requestAnimationFrame(watch);
+    };
+    const playRange=async cue=>{
+      clear();active=cue;cue.classList.add('active');
+      const start=Number(cue.dataset.start),end=Number(cue.dataset.end);
+      status.innerHTML=`正在试听 <strong>${cue.dataset.code}</strong> · ${start.toFixed(2)}–${end.toFixed(2)} 秒`;
+      video.pause();video.currentTime=start;endAt=end;
+      try{await video.play();watch()}catch{error.classList.add('show')}
+    };
+    cues.forEach(cue=>cue.addEventListener('click',()=>playRange(cue)));
+    cleanCues.forEach(cue=>cue.addEventListener('click',async()=>{
+      video.pause();clear();cleanAudio.pause();
+      cleanCues.forEach(item=>item.classList.remove('active'));cue.classList.add('active');
+      cleanAudio.src=cue.dataset.audio;cleanAudio.currentTime=0;
+      status.innerHTML=`正在试听 <strong>${cue.querySelector('b').textContent}</strong>`;
+      try{await cleanAudio.play()}catch{error.classList.add('show')}
+    }));
+    cleanAudio.addEventListener('ended',()=>cleanCues.forEach(item=>item.classList.remove('active')));
+    document.querySelector('#full').addEventListener('click',async()=>{clear();active=null;status.textContent='正在播放完整原片';video.currentTime=0;try{await video.play();watch()}catch{error.classList.add('show')}});
+    document.querySelector('#stop').addEventListener('click',()=>{video.pause();clear();status.textContent='已停止';clock.textContent=time(video.currentTime||0)});
+    video.addEventListener('timeupdate',()=>clock.textContent=time(video.currentTime||0));
+    video.addEventListener('error',()=>error.classList.add('show'));
+    video.addEventListener('ended',()=>{clear();status.textContent='播放结束'});
+  </script>
+</body>
+</html>

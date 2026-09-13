@@ -1,0 +1,15 @@
+Built-in image_gen; generated 2026-09-10. No explicit model selector exposed.
+Source: /Users/youwen/.codex/generated_images/01a06afd-3bf6-71a3-9ed7-aac11000ec00/exec-2904cef9-7502-46cd-8d16-e724ca05fb25.png
+Purpose: desktop-only circular ingredient accent attached to the chilli flavor label.
+Composition review: standalone floating placement rejected; compact label badge
+selected for the local homepage. Hidden at widths <=1200 or heights <=750.
+Not user acceptance or production deployment.
+
+Use case: ads-marketing
+Asset type: a small, photorealistic transparent ingredient cutout for Dumpling Lab's chilli-wonton website campaign, to be composited beside a much larger hero food image.
+Scene/backdrop: genuinely transparent background with a real alpha channel, no white or checkerboard painted into the image.
+Subject: exactly two slender fresh red chillies with short natural green stems, gently curved and loosely crossing as one compact floating cluster. Both complete chillies fully visible. No other ingredients.
+Style/medium: premium food-advertising macro photography, realistic glossy red skin with fine natural surface texture and restrained specular highlights; not cartoon, not plastic, not a flat illustration.
+Composition/framing: square canvas, the compact pair runs diagonally from lower left to upper right, centered, about 65 percent of the frame with generous clear transparent margins. Slight three-quarter viewpoint, crisp depth and recognizable silhouettes at small display sizes.
+Lighting/mood: soft key from upper left, warm rim light and gentle self-shadowing matching a dark burgundy food campaign. No ground plane or cast shadow on any background.
+Constraints: preserve genuine alpha; no plate, bowl, hands, utensils, splashes, lettering, logos, borders, extra objects or watermark.

@@ -1,0 +1,141 @@
+/* 纸上的菜 — after the Morsel reference, set in the restaurant's own face.
+   Warm paper, the food as clean cutouts floating with a soft contact
+   shadow, Scto Grotesk A (light for what you read, medium for the small
+   letter-spaced labels), hairline fact rows, blur-morph transitions.
+   Red is an accent, never a surface. Photographs untouched. */
+@font-face{font-family:"Scto Grotesk A";src:url("fonts/scto-grotesk-a-light.woff2") format("woff2");font-weight:300;font-style:normal;font-display:swap}
+@font-face{font-family:"Scto Grotesk A";src:url("fonts/scto-grotesk-a-regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Scto Grotesk A";src:url("fonts/scto-grotesk-a-medium.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Scto Grotesk A";src:url("fonts/scto-grotesk-a-bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+:root{
+  --paper:#F7F6F1;--bg:var(--paper);--bg-2:#EEEDE7;
+  --ink:#1D1D1B;--ink-2:rgba(29,29,27,.72);--mute:rgba(29,29,27,.42);--line:rgba(29,29,27,.13);
+  --red:#B8402C;--ui:#B8402C;
+  --sans:"Scto Grotesk A","PingFang SC","HarmonyOS Sans SC","Hiragino Sans GB","Noto Sans SC",-apple-system,sans-serif;
+  --display:var(--sans);
+  --serif:var(--sans);
+}
+body,.view{background:var(--paper);font-family:var(--sans)}
+.view{transition:opacity 300ms var(--ease-out),transform 300ms var(--ease-out),filter 300ms var(--ease-out)}
+@starting-style{.view:not([hidden]){opacity:0;transform:scale(.99) translateY(8px);filter:blur(12px)}}
+.m,.slab{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.pill{font-family:var(--sans);font-weight:600;letter-spacing:.02em}
+.pill.solid{background:var(--ui);border-color:var(--ui)}
+.pill.ghost{border-color:var(--line);color:var(--ink)}
+
+/* cover: one sentence, one dish, one action — after Lune, Din Tai Fung and can-can */
+#cover{background:var(--paper);display:flex;flex-direction:column}
+#cover .top{padding:calc(24px + env(safe-area-inset-top)) 22px 0}
+#cover .top img{width:min(54%,280px)}
+#cover .lead{display:block;position:relative;z-index:3;margin:22px 22px 0;font-family:var(--sans);font-weight:300;font-size:clamp(30px,8.6vw,38px);line-height:1.16;letter-spacing:-.035em;white-space:pre-line;color:var(--ink)}
+.scene{position:relative;flex:1;min-height:0;margin-top:2px;overflow:hidden}
+.scene .glow{display:none}
+.scene .plate{position:absolute;left:auto;right:auto;top:auto;bottom:auto;cursor:pointer}
+.scene .plate img{position:static;width:138%;height:auto;max-width:none;max-height:100%;filter:drop-shadow(0 26px 30px rgba(40,32,22,.20));transition:transform 140ms var(--ease-out)}
+.scene .plate:active img{transform:scale(.985)}
+.scene .fl-1{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;width:auto;transform:none}
+#cover .words{position:relative;z-index:3;padding:14px 22px calc(30px + env(safe-area-inset-bottom))}
+#cover .words .serif{font-family:var(--sans);font-weight:600;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+#cover .words .slab{margin-top:6px;font-size:10px;color:var(--mute)}
+#cover .cta{margin-top:18px;gap:10px}
+#cover .pill{height:48px;padding:0 26px;font-size:14px}
+
+/* shop */
+#shop .top,.kinds{background:rgba(247,246,241,.94)}
+.kinds::after{background:linear-gradient(to bottom,rgba(247,246,241,.94),rgba(247,246,241,0))}
+.kinds button{font-family:var(--sans);font-weight:600;font-size:12.5px;letter-spacing:.01em}
+.kinds button.on::after{background:var(--ui)}
+.section{padding:40px 20px 0}
+.section h2{display:block;font-family:var(--display);font-weight:300;font-size:30px;letter-spacing:-.03em;line-height:1.05;color:var(--ink)}
+.section h2 .en{display:block;margin-top:6px;font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+/* two to a row, no tiles: the cutout floats, the words sit under it */
+.grid.photos{display:grid;grid-template-columns:1fr 1fr;gap:34px 16px;margin-top:26px;align-items:end}
+.grid.photos .tile .art{aspect-ratio:1.05;background:none;border-radius:0;overflow:visible;display:grid;place-items:center}
+.grid.photos .tile .art img{width:88%;height:88%;object-fit:contain;filter:drop-shadow(0 16px 13px rgba(40,32,22,.20))}
+.grid.photos .tile .art .add,.grid.photos .tile .art .qty{right:2px;bottom:4px;width:28px;height:28px;font-size:16px;border-width:1.5px}
+.grid.photos .tile .cap{margin-top:10px;text-align:center}
+.grid.photos .tile .nm{font-family:var(--display);font-weight:500;font-size:14px;line-height:1.35;letter-spacing:-.005em;color:var(--ink)}
+.grid.photos .tile .en{display:none}
+.grid.photos .tile .pr{justify-content:center;margin-top:4px;font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.16em;color:var(--mute)}
+.grid.photos .tile .pr b{font-weight:600}
+.grid.photos .tile .pr span{display:none}
+.grid.photos .tile .art .ph{display:none}
+.grid.photos .tile.is-ph .cap .pr::after{content:" · 示意图";font-size:8.5px;letter-spacing:.14em;color:var(--mute)}
+
+/* the rest of the chapter: a quiet list */
+.section .no{display:none}   /* this look does not number the menu; the index still does */
+.rows{margin-top:16px}
+.row{display:flex;align-items:baseline;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .txt{flex:1;min-width:0}
+.row .nm{font-family:var(--display);font-weight:500;font-size:15px;line-height:1.3;letter-spacing:-.005em}
+.row .en{margin-top:3px;font-family:var(--sans);font-size:9.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.row .side{display:flex;align-items:center;gap:14px;flex:0 0 auto}
+.row .pr{margin:0;font-family:var(--display);font-size:14px;font-weight:400;color:var(--ink-2)}
+.row .pr span{display:none}
+.add{border-color:var(--ui);color:var(--ui);background:transparent}
+.qty{background:var(--ui);border-color:var(--ui)}
+#rail{background:var(--ui)}
+#rail .seal{color:var(--ui)}
+#rail .lab{font-family:var(--sans);font-weight:600}
+#rail .tot{font-family:var(--display);font-weight:500;font-size:17px}
+
+/* dish */
+#dish{background:var(--paper)}
+#dish .top button{background:rgba(29,29,27,.05)}
+.d-pic{aspect-ratio:.86;margin-top:-22px}
+.d-pic .dglow,.d-pic .ground{display:none}
+.d-art-object>img:first-child{filter:drop-shadow(0 22px 20px rgba(40,32,22,.20))}
+.d-art-object .mirror{display:none}
+.d-body{padding-top:6px}
+.d-strip{gap:6px 10px;margin-bottom:8px}
+.d-strip .m{color:var(--ui)}
+.d-strip .m.dim{color:var(--mute)}
+.d-name{font-family:var(--display);font-weight:300;font-size:36px;letter-spacing:-.032em;line-height:1.05;color:var(--ink)}
+.d-en{margin-top:8px}
+.d-price{margin-top:14px;font-family:var(--display);font-weight:300;font-size:50px;letter-spacing:-.04em;line-height:1;display:flex;align-items:baseline;gap:8px;color:var(--ink)}
+.d-price small{align-self:flex-start;margin-top:12px;font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.d-flavor{font-family:var(--sans);font-size:14px;line-height:1.75;color:var(--ink-2);margin-top:18px}
+.facts{margin-top:26px}
+.fact{position:relative;display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--line)}
+.fact .k{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.fact .v{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);text-align:right}
+.fact .v em{font-style:normal;font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-left:6px}
+.fact .prog{position:absolute;left:0;bottom:-1px;height:1px;background:var(--ui)}
+.d-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px}
+.d-foot .k{display:block;font-family:var(--sans);font-size:9.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.d-foot .v{display:block;margin-top:5px;font-family:var(--display);font-size:13px;font-weight:500;color:var(--ink-2)}
+.styles{margin-top:14px}
+.style-opt{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;height:34px;border-color:var(--line)}
+.style-opt.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.d-add{background:var(--ui);font-family:var(--sans);font-weight:600}
+.d-add strong{font-family:var(--display);font-weight:500;font-size:15px}
+.stepper{background:var(--bg-2)}
+.stepper b{font-family:var(--display);font-weight:400}
+
+/* ticket / done */
+#cart .t-head{background:var(--ui)}
+#cart .t-head h2,#waiterSheet h2,#doneTitle{font-family:var(--display);font-weight:300;letter-spacing:-.03em}
+#cart .close,.done-mark{color:var(--ui)}
+#cart .nm,.cart-line .nm{font-family:var(--display);font-weight:500;font-size:15px}
+#cartTotals .rowt b{font-family:var(--display);font-weight:300;font-size:26px;letter-spacing:-.03em;color:var(--ink)}
+#placeOrder,#waiterSend,.reason.on,.diet button.on{background:var(--ui);border-color:var(--ui)}
+#placeOrder strong{font-family:var(--display);font-weight:500;font-size:15px}
+#done{background:var(--ui)}
+.done-mark{border-color:var(--ui)}
+
+/* index */
+#indexView .ix-sec{display:block;padding:26px 20px 0}
+#indexView .ix-sec h2{writing-mode:horizontal-tb;position:static;display:flex;flex-direction:row;align-items:baseline;gap:10px}
+#indexView .ix-sec h2 .en{display:inline;margin-top:0}
+#indexView .ix-row{display:grid;grid-template-columns:26px 1fr auto;writing-mode:horizontal-tb}
+#indexView .ix-row .nm{writing-mode:horizontal-tb;font-size:15px;line-height:1.35}
+#indexView .ix-row .no{display:inline}
+#indexView .top{background:rgba(247,246,241,.96)}
+#indexView .top .m{font-size:10px}
+.ix-sec h2{font-family:var(--display);font-weight:300;font-size:22px;letter-spacing:-.02em;border-bottom:1px solid var(--line)}
+.ix-sec h2 .en{font-family:var(--sans);font-size:9.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.ix-row{border-bottom:1px solid var(--line)}
+.ix-row .no{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.1em;font-variant-numeric:tabular-nums}
+.ix-row .nm{font-family:var(--display);font-weight:500;font-size:15px}
+.ix-row .pr{font-family:var(--display);font-size:14px;font-weight:400;color:var(--ink-2);font-variant-numeric:tabular-nums}

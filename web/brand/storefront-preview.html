@@ -1,0 +1,10 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dumpling Lab — 3D 店铺</title>
+<style>*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#8d4e3c;color:#fff1db;font:13px system-ui}main{width:min(100%,760px);margin:auto;padding:24px 0}header{display:flex;justify-content:space-between;padding:0 28px}#stage{display:block;width:100%;aspect-ratio:1.35;position:relative;touch-action:pan-y;outline-offset:-4px}canvas{width:100%;height:100%;display:block}nav{display:flex;flex-wrap:wrap;gap:8px;padding:0 28px}a,button{color:inherit;background:transparent;border:1px solid #fff3;padding:8px;font:inherit;cursor:pointer;text-decoration:none}output{display:block;padding:16px 28px;font-size:11px;opacity:.75}footer{padding:12px 28px;border-top:1px solid #fff3;font-size:11px}</style>
+<main><header><span>49 Circular Rd · Singapore 049404 ↗</span><span>↑</span></header><div id="stage" tabindex="0" role="group" aria-label="店铺 3D"></div><footer>© Dumpling Lab</footer><nav><a href="?view=front&t=3">正面</a><a href="?view=left&t=3">左侧</a><a href="?view=right&t=3">右侧</a><a href="?view=hero">开店</a><button id="explode">结构检查</button></nav><output id="stats"></output></main>
+<script type="module">
+import {mountStorefront} from './storefront-stage-v1.js';
+const p=new URLSearchParams(location.search),stage=await mountStorefront(document.querySelector('#stage'),{review:true});
+stage.setView(p.get('view')||'hero');if(p.has('t'))stage.setTime(Number(p.get('t')));else stage.setActive(true);
+let exploded=false;document.querySelector('#explode').onclick=()=>{exploded=!exploded;stage.setExploded(exploded?.55:0);};
+document.querySelector('#stats').textContent=JSON.stringify(stage.inspect());document.body.dataset.ready='true';
+</script></html>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 28" preserveAspectRatio="none">
+<!-- The underside of a dumpling: the fold sweeps lowest right of centre and
+     tapers to a point at the left. Black keeps, used as the bottom band. -->
+<path fill="#000" d="M0 0 H360 V6
+ C338 17 296 25 236 27
+ C176 28 108 22 50 12
+ C33 9 16 4 0 2 Z"/>
+</svg>

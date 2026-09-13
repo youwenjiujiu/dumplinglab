@@ -82,10 +82,83 @@ globalThis.RewardsUI = (() => {
     d.showModal();
     return d;
   }
+  // Sending the guest to Supabase for Google puts the project's random host on
+  // the consent screen, which reads like a phishing page. Google's own button
+  // issues an ID token to this origin instead, so the screen names our domain.
+  // The redirect button stays in the markup and is only hidden once Google's
+  // script, the nonce and the render have all succeeded.
+  let googleScript = null;
+  function loadGoogle() {
+    if (globalThis.google?.accounts?.id) return Promise.resolve(true);
+    googleScript ||= new Promise((resolve) => {
+      const tag = document.createElement("script");
+      tag.src = "https://accounts.google.com/gsi/client";
+      tag.async = true;
+      tag.onload = () => resolve(Boolean(globalThis.google?.accounts?.id));
+      tag.onerror = () => resolve(false);
+      setTimeout(() => resolve(Boolean(globalThis.google?.accounts?.id)), 6000);
+      document.head.append(tag);
+    });
+    return googleScript;
+  }
+  async function mountGoogle(body, clientId, error, finish) {
+    const mount = body.querySelector("[data-google-mount]");
+    const fallback = body.querySelector('[data-oauth="google"]');
+    if (!mount || !(await loadGoogle()) || !mount.isConnected) return;
+    let start;
+    try {
+      start = await request("/api/member", { action: "google-nonce", consent: true });
+    } catch {
+      return;
+    }
+    if (!mount.isConnected) return;
+    try {
+      globalThis.google.accounts.id.initialize({
+        client_id: clientId,
+        nonce: start.nonce,
+        use_fedcm_for_prompt: true,
+        callback: async ({ credential }) => {
+          try {
+            await request("/api/member", { action: "google-token", credential, consent: true });
+            await finish();
+          } catch (e) {
+            error.textContent = e.message;
+          }
+        },
+      });
+      mount.hidden = false;
+      // Google renders this button itself and only honours its own three sizes:
+      // large 40px, medium 32px, small 20px. It ignores the container, so the
+      // others have to match whichever size is asked for here.
+      globalThis.google.accounts.id.renderButton(mount, { type: "icon", shape: "circle", theme: "outline", size: "medium" });
+    } catch {
+      mount.hidden = true;
+      return;
+    }
+    // renderButton injects an iframe that loads on its own; hiding the fallback
+    // straight away leaves a hole in the row for as long as that takes, which on
+    // a phone connection is seconds. Keep the fallback until the real button has
+    // painted, and keep it for good if it never does.
+    const painted = await new Promise((resolve) => {
+      const done = (ok) => { clearInterval(timer); clearTimeout(giveUp); resolve(ok); };
+      const timer = setInterval(() => {
+        if (!mount.isConnected) return done(false);
+        if (mount.firstElementChild && mount.getBoundingClientRect().height > 8) done(true);
+      }, 60);
+      const giveUp = setTimeout(() => done(false), 4000);
+    });
+    if (!painted) { mount.hidden = true; return; }
+    if (fallback) fallback.hidden = true;
+  }
   async function login(after) {
     const auth = await request("/api/member").catch(() => ({ authMethods: { email: true } }));
     const methods = auth.authMethods || { email: true };
+    const googleClientId = auth.googleClientId || "";
     const d = shell(text("会员账户", "Membership"));
+    // The same two cutouts, in the same relationship, the website uses when a
+    // guest picks a dumpling up.
+    d.querySelector("header").insertAdjacentHTML("afterbegin",
+      `<span class="auth-hero" aria-hidden="true"><span class="auth-hero-shape"></span><span class="auth-pick"><span class="auth-pick-sticks auth-pick-far"><img src="/brand/pick-chopstick-far-v1.webp" alt=""></span><img class="auth-pick-food" src="/brand/pick-dumpling-v1.webp" alt=""><span class="auth-pick-sticks auth-pick-near"><img src="/brand/pick-chopstick-near-v1.webp" alt=""></span></span>`);
     const body = d.querySelector(".rewards-content");
     d.classList.add("auth-dialog", "auth-methods");
     const finish = async () => {
@@ -98,10 +171,10 @@ globalThis.RewardsUI = (() => {
     const showMethods = () => {
       d.className = "rewards-dialog auth-dialog auth-methods";
       d.querySelector("h2").innerHTML = `<span>${text("登录 / 注册", "Sign in / Join")}</span><small>${text("Sign in / Join", "登录 / 注册")}</small>`;
-      const social = `${methods.google ? `<button type="button" class="auth-provider auth-google" data-oauth="google" aria-label="Google"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.6h3.3c1.9-1.8 2.9-4.4 2.9-7.5Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.7-2.3l-3.3-2.6c-.9.6-2.1 1-3.4 1a5.9 5.9 0 0 1-5.5-4.1H3.1v2.7A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.5 14a6 6 0 0 1 0-3.9V7.4H3.1a10 10 0 0 0 0 9.3L6.5 14Z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.1 7.4l3.4 2.7A5.9 5.9 0 0 1 12 6.1Z"/></svg></button>` : ""}${methods.apple ? `<button type="button" class="auth-provider auth-apple" data-oauth="apple" aria-label="Apple"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.8 12.8c0-2.7 2.2-4 2.3-4.1-1.3-1.9-3.3-2.1-4-2.1-1.7-.2-3.3 1-4.2 1-.9 0-2.2-1-3.7-1-1.9 0-3.7 1.1-4.7 2.8-2 3.5-.5 8.7 1.4 11.5.9 1.4 2.1 2.9 3.6 2.8 1.4-.1 2-1 3.7-1s2.2 1 3.7 1c1.5 0 2.5-1.4 3.5-2.8 1.1-1.6 1.6-3.2 1.6-3.3-.1 0-3.2-1.2-3.2-4.8ZM14 4.8c.8-1 1.4-2.5 1.2-3.9-1.2 0-2.7.8-3.6 1.8-.8.9-1.5 2.4-1.3 3.8 1.4.1 2.8-.7 3.7-1.7Z"/></svg></button>` : ""}`;
+      const social = `${methods.google ? `<div class="auth-google-mount" data-google-mount hidden></div><button type="button" class="auth-provider auth-google" data-oauth="google" aria-label="Google"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.6h3.3c1.9-1.8 2.9-4.4 2.9-7.5Z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.7-2.3l-3.3-2.6c-.9.6-2.1 1-3.4 1a5.9 5.9 0 0 1-5.5-4.1H3.1v2.7A10 10 0 0 0 12 22Z"/><path fill="#FBBC05" d="M6.5 14a6 6 0 0 1 0-3.9V7.4H3.1a10 10 0 0 0 0 9.3L6.5 14Z"/><path fill="#EA4335" d="M12 6.1c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.1 7.4l3.4 2.7A5.9 5.9 0 0 1 12 6.1Z"/></svg></button>` : ""}${methods.apple ? `<button type="button" class="auth-provider auth-apple" data-oauth="apple" aria-label="Apple"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.8 12.8c0-2.7 2.2-4 2.3-4.1-1.3-1.9-3.3-2.1-4-2.1-1.7-.2-3.3 1-4.2 1-.9 0-2.2-1-3.7-1-1.9 0-3.7 1.1-4.7 2.8-2 3.5-.5 8.7 1.4 11.5.9 1.4 2.1 2.9 3.6 2.8 1.4-.1 2-1 3.7-1s2.2 1 3.7 1c1.5 0 2.5-1.4 3.5-2.8 1.1-1.6 1.6-3.2 1.6-3.3-.1 0-3.2-1.2-3.2-4.8ZM14 4.8c.8-1 1.4-2.5 1.2-3.9-1.2 0-2.7.8-3.6 1.8-.8.9-1.5 2.4-1.3 3.8 1.4.1 2.8-.7 3.7-1.7Z"/></svg></button>` : ""}`;
       const hasSocial = methods.google || methods.apple;
       body.innerHTML = `${social ? `<div class="auth-providers">${social}</div>` : ""}${hasSocial ? `<div class="auth-divider"></div>` : ""}<div class="auth-tabs">${methods.email ? `<button type="button" data-auth-method="email" class="is-active">${text("邮箱", "Email")}</button>` : ""}${methods.phone ? `<button type="button" data-auth-method="phone">${text("手机号", "Mobile")}</button>` : ""}</div><form class="rewards-login"><label data-contact-field><span class="sr-only">${text("邮箱地址", "Email address")}</span><input name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" placeholder="you@example.com"></label><label data-password-field><span class="sr-only">${text("密码", "Password")}</span><input name="password" type="password" autocomplete="current-password" minlength="8" maxlength="72" placeholder="${text("密码", "Password")}"></label><label data-confirm-field hidden><span class="sr-only">${text("确认密码", "Confirm password")}</span><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" placeholder="${text("确认密码", "Confirm password")}"></label><label data-code-field hidden><span class="sr-only">${text("验证码", "Verification code")}</span><input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,8}" maxlength="8" placeholder="${text("验证码", "Verification code")}"></label><p class="rewards-error" role="alert"></p><button class="primary" type="submit">${text("登录", "Sign in")}</button><div class="auth-links"></div><div class="auth-secondary" hidden><button type="button" class="reward-link" data-change-contact>${text("更换账号", "Change account")}</button><button type="button" class="reward-link" data-resend>${text("重新发送", "Resend")}</button></div></form>`;
-      let methodName = methods.email ? "email" : "phone", view = methodName === "email" ? "password" : "otp", sentValue = "", lastSent = 0, busy = false;
+      let methodName = methods.email ? "email" : "phone", view = "otp", sentValue = "", lastSent = 0, busy = false;
       const form = body.querySelector("form"), submit = form.querySelector("[type=submit]"), error = form.querySelector("[role=alert]"), links = form.querySelector(".auth-links");
       const title = (zh, en) => d.querySelector("h2").innerHTML = `<span>${text(zh,en)}</span><small>${text(en,zh)}</small>`;
       const contact = () => form.querySelector("[data-contact-field] input");
@@ -121,8 +194,8 @@ globalThis.RewardsUI = (() => {
         body.querySelector(".auth-tabs").hidden = false;
         if(view === "signup") { title("注册","Join"); submit.textContent = text("注册","Join"); links.innerHTML = `<button type="button" data-auth-view="password">${text("返回登录","Back to sign in")}</button>`; }
         else if(view === "forgot") { title("忘记密码","Forgot password"); submit.textContent = text("发送重置邮件","Send reset email"); links.innerHTML = `<button type="button" data-auth-view="password">${text("返回登录","Back to sign in")}</button>`; }
-        else if(view === "otp") { title("验证码登录","Verification code"); submit.textContent = text("获取验证码","Get verification code"); links.innerHTML = methodName === "email" ? `<button type="button" data-auth-view="password">${text("密码登录","Use password")}</button>` : ""; }
-        else { title("登录 / 注册","Sign in / Join"); submit.textContent = text("登录","Sign in"); links.innerHTML = `<button type="button" data-auth-view="signup">${text("注册","Join")}</button><button type="button" data-auth-view="forgot">${text("忘记密码","Forgot password")}</button><button type="button" data-auth-view="otp">${text("验证码登录","Use code")}</button>`; }
+        else if(view === "otp") { title("登录 / 注册","Sign in / Join"); submit.textContent = text("继续","Continue"); links.innerHTML = methodName === "email" ? `<button type="button" data-auth-view="password">${text("用密码登录","Use a password")}</button>` : ""; }
+        else { title("密码登录","Password sign-in"); submit.textContent = text("登录","Sign in"); links.innerHTML = `<button type="button" data-auth-view="otp">${text("用邮箱验证码登录","Use an email code")}</button><span class="auth-minor"><button type="button" data-auth-view="signup">${text("注册","Join")}</button><button type="button" data-auth-view="forgot">${text("忘记密码","Forgot password")}</button></span>`; }
         links.querySelectorAll("[data-auth-view]").forEach(button => button.onclick = () => setView(button.dataset.authView));
       };
       const setMethod = (next) => {
@@ -130,7 +203,7 @@ globalThis.RewardsUI = (() => {
         body.querySelectorAll("[data-auth-method]").forEach((button) => button.classList.toggle("is-active", button.dataset.authMethod === next));
         contact().name = next; contact().type = next === "phone" ? "tel" : "email"; contact().inputMode = next === "phone" ? "tel" : "email"; contact().autocomplete = next === "phone" ? "tel" : "email"; contact().placeholder = next === "phone" ? "+65 8123 4567" : "you@example.com";
         form.querySelector("[data-contact-field]>span").textContent = text(next === "phone" ? "手机号码" : "邮箱地址", next === "phone" ? "Mobile number" : "Email address");
-        setView(next === "phone" ? "otp" : "password");
+        setView("otp");
       };
       const notice = (message, action = "") => {
         body.innerHTML = `<section class="auth-notice"><p>${esc(message)}</p>${action ? `<button class="primary" type="button" data-auth-action>${text("继续","Continue")}</button>` : ""}<button type="button" class="reward-link" data-auth-again>${text("返回登录","Back to sign in")}</button></section>`;
@@ -147,6 +220,7 @@ globalThis.RewardsUI = (() => {
       };
       body.querySelectorAll("[data-auth-method]").forEach((button) => button.onclick = () => setMethod(button.dataset.authMethod));
       body.querySelectorAll("[data-oauth]").forEach((button) => button.onclick = async () => { button.disabled = true; try { const out = await request("/api/member", { action: "oauth", provider: button.dataset.oauth, consent: true }); location.assign(out.url); } catch (e) { error.textContent = e.message; button.disabled = false; } });
+      if (googleClientId && methods.google) mountGoogle(body, googleClientId, error, finish);
       form.querySelector("[data-change-contact]").onclick = showMethods;
       form.querySelector("[data-resend]").onclick = async () => { try { lastSent = 0; await send(); error.textContent = text("验证码已重新发送", "Code sent"); } catch (e) { error.textContent = e.message; } };
       form.onsubmit = async (event) => {

@@ -1,0 +1,10 @@
+/* Online menu visual restored. Only owner-photo compatibility lives here.
+   Menu palette, type, spacing, cards and controls come from the deployed
+   atelier.css + shared-table.css. Confirmed pickup styling is scoped separately. */
+img[src*="/shoot-20260908-"] { filter: none !important; }
+#menuList .dish-image:has(img[src*="/shoot-20260908-"]) { aspect-ratio: 3 / 2; overflow: hidden; background: transparent; }
+#menuList .dish-image img[src*="/shoot-20260908-"] { position: absolute; inset: 0; width: 100%; height: 100%; max-width: 100%; object-fit: contain; transform: none; }
+.preparation-photo:has(img[src*="/shoot-20260908-"]) { aspect-ratio: 3 / 2; }
+.preparation-photo img[src*="/shoot-20260908-"] { width: 100%; height: 100%; object-fit: contain; }
+#sheet[data-mode="dish"] .detail-image:has(img[src*="/shoot-20260908-"]) { height: auto; aspect-ratio: 3 / 2; margin: 12px 22px 0; padding: 0; overflow: hidden; }
+#sheet[data-mode="dish"] .detail-image img[src*="/shoot-20260908-"] { width: 100%; height: 100%; max-width: 100%; object-fit: contain; }

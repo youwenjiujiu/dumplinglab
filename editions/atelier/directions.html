@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dumpling Lab · 三种视觉方向</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 40px 28px; background: #f4f4f1; color: #222; font: 14px/1.6 -apple-system,"PingFang SC",sans-serif; }
+    header { max-width: 1300px; margin: 0 auto 32px; }
+    header p { color: #60645e; margin: 6px 0; }
+    h1 { font-size: 28px; font-weight: 500; margin: 0 0 12px; }
+    main { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; max-width: 1300px; margin: auto; }
+    article { min-width: 0; }
+    h2 { font-size: 19px; font-weight: 500; margin: 0 0 6px; }
+    article > p { color: #60645e; min-height: 44px; margin: 0 0 16px; }
+    .swatches { display: flex; gap: 6px; margin: 0 0 18px; }
+    .swatches span { width: 32px; height: 12px; background: var(--swatch); }
+    iframe { display: block; width: 100%; height: 730px; border: 1px solid #c9ccc5; border-radius: 0; background: #ddd; }
+    a { display: block; padding: 14px 0; color: #222; text-underline-offset: 5px; font-size: 14px; }
+    a:focus-visible { outline: 2px solid #222; outline-offset: 3px; }
+    @media (max-width: 980px) { main { grid-template-columns: 1fr; max-width: 430px; gap: 36px; } header { max-width: 430px; } body { padding: 24px 16px; } article > p { min-height: 0; } }
+  </style>
+</head>
+<body>
+  <header><h1>Dumpling Lab · 色彩方向</h1><p>同一份菜单，三种视觉方向。每一版都可以直接试点菜。</p><p>本地设计预览 · 不影响正式站，订单不会发送到真实厨房。</p></header>
+  <main>
+    <article><h2>01　椒红 × 冷粉</h2><p>更鲜明、更有食欲；不走传统中餐的暗红与金色。</p><div class="swatches" aria-label="椒红、冷粉、深莓色"><span style="--swatch:#eb462f"></span><span style="--swatch:#f6ccd6"></span><span style="--swatch:#431c28"></span></div><iframe src="/design?palette=punch" title="椒红冷粉菜单预览" loading="lazy"></iframe><a href="/design?palette=punch">打开这一版</a></article>
+    <article><h2>02　钴蓝 × 柠檬黄</h2><p>蓝色铺满页面，黄色留给标题与操作；冷暖反差更大胆。</p><div class="swatches" aria-label="钴蓝、柠檬黄、浅蓝"><span style="--swatch:#173bcc"></span><span style="--swatch:#f4ed60"></span><span style="--swatch:#dae3f9"></span></div><iframe src="/design?palette=cobalt" title="钴蓝柠檬黄菜单预览" loading="lazy"></iframe><a href="/design?palette=cobalt">打开这一版</a></article>
+    <article><h2>03　银灰 × 荧光橙</h2><p>借用不锈钢厨房的色感，配锐利橙色；更贴近 Lab 的气质。</p><div class="swatches" aria-label="银灰、荧光橙、炭黑"><span style="--swatch:#d9dcd7"></span><span style="--swatch:#ff600a"></span><span style="--swatch:#242825"></span></div><iframe src="/design?palette=alloy" title="银灰荧光橙菜单预览" loading="lazy"></iframe><a href="/design?palette=alloy">打开这一版</a></article>
+  </main>
+</body>
+</html>

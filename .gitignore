@@ -28,3 +28,13 @@ web/img/*-placeholder.png
 
 # Local-only ordering preview data
 .local/
+
+# Build and experiment output, regenerated on demand — 5.6 GB of it.
+output/
+editions/*/test-output/
+editions/atelier/experiments/
+editions/atelier/generated/
+editions/website/generated/
+editions/website/review/
+editions/website/dist*/
+editions/website/.tmp*/

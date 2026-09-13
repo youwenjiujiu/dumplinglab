@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 62" preserveAspectRatio="none">
+<!-- The pleated edge of a dumpling: six folds stepping up across the whole
+     width, each with the short riser where it laps the next, then the crown
+     falls away to the right. Black keeps; used as the panel's top band. -->
+<path fill="#000" d="M0 62 L0 47
+ C6 36 20 33 30 40 L33 30
+ C40 19 56 16 68 23 L72 15
+ C80 7 98 5 112 11 L117 6
+ C128 1 148 1 162 5
+ C186 11 206 12 232 9
+ C268 5 306 9 334 20
+ C346 25 354 31 360 38
+ L360 62 Z"/>
+</svg>

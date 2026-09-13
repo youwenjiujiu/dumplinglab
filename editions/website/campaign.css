@@ -1,0 +1,529 @@
+/* D46: the food is the subject; the display type and light compose its stage. */
+@font-face{font-family:Lilita;src:url('/site/fonts/LilitaOne-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:KuaiLe;src:url('/site/fonts/KuaiLe-Campaign-subset-v1.woff2') format('woff2');font-weight:400;font-display:swap;unicode-range:U+3000-303F,U+3400-4DBF,U+4E00-9FFF,U+FF00-FFEF}
+:root{--stage-cream:#fff3dd;--campaign-ink:#2c080d;--campaign-pop:#ff6751;--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px);--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--gutter:max(clamp(20px,5vw,88px),var(--safe-left),var(--safe-right))}
+:root{--header-height:86px}
+:root{--brand:#84282d;--red:#9b252d;--ink:#2c080d;--quiet:#705048;--line:#dcc6be}
+@media(max-width:760px){:root{--header-height:74px}}
+@media(min-width:1800px){:root{--header-height:96px}}
+html:not(.has-js) #courseControl,html:not(.has-js) #filmToggle,html:not(.has-js) .scroll-cue{display:none}
+/* Reserve the scroll chapter before deferred catalogue/module execution, so
+   enhancing the page cannot push an already-painted next section away. */
+@media(prefers-reduced-motion:no-preference) and (min-height:651px){
+ html.has-js .product-story:not([data-enhanced=false]){height:220svh;min-height:1380px}
+ html.has-js .product-story:not([data-enhanced=false]) .product-stage{position:sticky;top:var(--header-height);height:calc(100svh - var(--header-height))}
+}
+@media(prefers-reduced-motion:no-preference) and (min-height:651px) and (max-width:760px){html.has-js .product-story:not([data-enhanced=false]){height:180svh;min-height:1200px}}
+.site-header{background:#2c080d;color:var(--stage-cream);padding-block:12px;min-height:86px;gap:30px}
+.site-header .logo{background:var(--stage-cream);padding:5px 13px;border-radius:9px}.logo img{width:112px;height:38px}
+.site-header nav{position:absolute;left:50%;transform:translateX(-50%);margin:0;gap:26px;padding:2px 24px;border:1px solid #ffffff26;background:#ffffff09;border-radius:40px}.site-header nav a:hover{color:#ff9a79}
+.header-actions{margin-left:auto}.site-header .order-link{background:#ff6751;color:#2c080d;border-radius:40px;font-weight:500;gap:22px;padding-inline:22px}.site-header .order-link:hover{background:#ff8a70}
+.site-header a:focus-visible,.site-header button:focus-visible{outline-color:var(--stage-cream)}.nav-toggle span{background:var(--stage-cream)}
+.product-story{background:#2c080d}.product-stage{background-color:#2c080d;color:var(--stage-cream);transition:background-color .8s ease;--campaign-pop:#ff6751}
+.product-stage[data-course=chilli]{background-color:#3b070b;--campaign-pop:#ff4d3c}.product-stage[data-course=broth]{background-color:#38131c;--campaign-pop:#ff986f}
+.product-stage::before{background:radial-gradient(ellipse at 50% 51%,#b731354a,transparent 64%),linear-gradient(0deg,#17030888,transparent 35%)}
+.stage-meta{top:16px;font-size:.75rem;letter-spacing:.11em;color:#f2c3b7}.stage-meta>span:last-child{letter-spacing:.06em}
+.stage-title,html[lang=zh] .stage-title{top:8%;left:5%;width:90%;line-height:.88;letter-spacing:-.035em;text-align:center}
+#stageWord,html[lang=zh] #stageWord{font-family:Lilita,var(--sans);font-size:clamp(6rem,14.2vw,17rem);line-height:.94;letter-spacing:-.045em;white-space:pre-line;font-weight:400;transform:none;color:var(--campaign-pop);transition:color .6s ease}
+html[lang=zh] #stageWord{font-family:KuaiLe,var(--sans);font-size:clamp(9rem,25vw,25rem);line-height:.88;letter-spacing:.025em}
+.stage-product{top:43%;width:min(53vw,70svh,840px)}.stage-product img{filter:drop-shadow(0 24px 18px #0c020878)}.product-float{animation-duration:8s}
+/* Progressive bytes can paint a sliced-off strip of food on a slow link.
+   Keep the composed typography visible, then reveal the complete decoded hero.
+   No-JS/module-download failure retains the browser's ordinary image fallback. */
+html.has-js .product-stage:not([data-image-ready=true]) .stage-product{visibility:hidden}
+.stage-stamp{display:none}.stage-tags{position:absolute;inset:0;z-index:6;pointer-events:none;opacity:var(--intro-opacity)}
+/* Food moves forward, labels and typography answer from shallower planes.
+   All offsets share the existing bounded/pausable pointer state. */
+.stage-title{translate:calc(var(--pointer-x) * -.25) 0}
+.stage-tags{translate:calc(var(--pointer-x) * -.45) calc(var(--pointer-y) * -.6)}
+.stage-tags>span{position:absolute;border:1px solid var(--campaign-pop);color:#ffc5aa;background:#260809d9;box-shadow:0 10px 24px #14020844;border-radius:36px;padding:9px 20px;font-size:1rem;font-weight:500;line-height:1.3}
+.stage-tags>span:nth-child(1){left:23%;top:28%;transform:rotate(-9deg)}.stage-tags>span:nth-child(2){right:18%;top:40%;transform:rotate(8deg)}.stage-tags>span:nth-child(3){left:22%;top:54%;transform:rotate(-7deg)}
+.stage-caption{left:25%;bottom:18%;width:50%;text-align:center}.stage-count{display:none}.stage-caption h2,html[lang=zh] .stage-caption h2{max-width:none;font-size:1.125rem;font-family:var(--sans);font-weight:500;line-height:1.4;letter-spacing:0}.stage-caption p{font-size:1rem;margin-top:8px;color:#eed0c5}
+.stage-order{left:50%;right:auto;bottom:8%;transform:translateX(-50%);border:0;border-radius:40px;background:var(--campaign-pop);color:#29070b;padding:12px 26px;min-height:50px;gap:34px;font-size:1rem;font-weight:500;white-space:nowrap}.stage-order>span:last-child{font-size:1.4rem}
+.stage-bottom{inset:0;display:block;pointer-events:none}.stage-bottom button,.stage-bottom a{pointer-events:auto}.scroll-cue{position:absolute;left:var(--gutter);bottom:18px;font-size:.875rem}
+.course-control{position:absolute;inset:0;pointer-events:none}/* The pills take their cream from the course palette, so these do too — a flat
+   #fff3dd left two creams on the same screen. No fill and no blur: any wash
+   over the photograph averages the red and the food into grey. A ring alone
+   stays legible over both. */
+.course-control>button{position:absolute;top:43%;width:48px;height:48px;border-radius:50%;border:1px solid #fff3dd55;background:transparent;color:#fff3dd;border-color:color-mix(in srgb,var(--scene-pop) 55%,transparent);color:var(--scene-pop);font-size:1.5rem}.course-control>button:hover{border-color:var(--scene-pop)}
+#previousCourse{left:var(--gutter)}#nextCourse{right:var(--gutter)}
+#courseChoices{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);gap:24px;pointer-events:auto}#courseChoices button{flex-direction:row;gap:8px;font-size:.875rem;min-height:44px;color:#eabdaf}#courseChoices button>span:first-child{font-size:.75rem;opacity:.7}
+#motionToggle{position:absolute;right:var(--gutter);bottom:18px;font-size:.875rem}#motionLabel{font-size:.875rem;max-width:none}.story-progress{height:1px}.story-progress>span{background:var(--campaign-pop)}
+.stage-detail{top:22%;width:36%}.stage-detail h2,html[lang=zh] .stage-detail h2{font-family:Lilita,var(--sans);font-size:clamp(3.5rem,6vw,7rem);font-weight:400;line-height:1.02;letter-spacing:-.025em;color:var(--campaign-pop)}html[lang=zh] .stage-detail h2{font-family:KuaiLe,var(--sans);line-height:1.1}
+.stage-detail p{color:#eed0c5}.stage-detail a{color:var(--stage-cream)}
+/* The close-up link is revealed only when its chapter becomes interactive.
+   A partially faded-in but inert link must not look ready to click. */
+.stage-detail[inert] a{visibility:hidden}
+.film-section{background:#26070c}.film-heading h2{font-family:Lilita,var(--sans);font-weight:400}.film-heading h2>em{font:inherit;color:#ff957e}html[lang=zh] .film-heading h2{font-family:KuaiLe,var(--sans);font-weight:400}
+@media(min-width:1800px){.stage-product{width:min(56vw,76svh,1040px)}.stage-caption{bottom:18%}}
+@media(max-width:1050px){.site-header nav{gap:20px;padding-inline:18px}.site-header{gap:16px}.stage-tags>span{font-size:.875rem}.stage-tags>span:nth-child(1){left:18%}.stage-tags>span:nth-child(2){right:14%}.stage-tags>span:nth-child(3){left:16%}.stage-detail{width:40%}}
+@media(max-width:760px){.site-header{min-height:74px;padding:10px 16px;gap:10px}.site-header .logo{padding:4px 9px;border-radius:7px}.logo img{width:88px;height:34px}.header-actions{gap:0}.site-header .order-link{padding:9px 14px;gap:12px;font-size:.875rem}.site-header nav{left:0;right:0;transform:none;border-radius:0;background:#2c080d;padding:12px 20px;gap:0}.site-header nav[data-open=true]{display:flex}
+.product-stage{min-height:680px}.stage-meta{inset:14px 20px auto;font-size:.75rem}.stage-title,html[lang=zh] .stage-title{top:13%;left:2%;width:96%}#stageWord{font-size:16vw;line-height:1.3}html[lang=zh] #stageWord{font-size:37vw;line-height:1.15;letter-spacing:.04em}
+.stage-product{top:42%;width:min(100vw,64svh);max-width:510px}.stage-tags>span{padding:6px 12px;font-size:.8125rem}.stage-tags>span:nth-child(1){left:10%;top:25%}.stage-tags>span:nth-child(2){right:6%;top:46%}.stage-tags>span:nth-child(3){left:8%;top:56%}
+.stage-caption{bottom:19%;left:12%;width:76%}.stage-caption h2,html[lang=zh] .stage-caption h2{font-size:1rem}.stage-caption p{font-size:.875rem;margin-top:6px}.stage-order{bottom:10%;min-height:48px;padding:10px 26px;font-size:.9375rem}.course-control>button{top:42%;width:44px;min-height:44px;height:44px;border-radius:50%;font-size:1.25rem}#previousCourse{left:12px}#nextCourse{right:12px}.scroll-cue{display:none}#courseChoices{left:20px;bottom:13px;transform:none;gap:15px}#courseChoices button{font-size:.8125rem;gap:5px}#motionToggle{right:18px;bottom:13px}#motionLabel{font-size:.8125rem;max-width:4em}.stage-detail{top:auto;bottom:18%;width:86%}.stage-detail h2,html[lang=zh] .stage-detail h2{font-size:clamp(2.6rem,11vw,4rem)}
+.product-story[data-enhanced=true]{height:180svh;min-height:1200px}.product-stage[data-detail=true] .stage-order{visibility:hidden}
+}
+@media(max-width:360px){.site-header{padding-inline:10px;gap:6px}.site-header .logo{padding:3px 7px}.logo img{width:74px}.site-header .order-link{padding-inline:10px;gap:7px}.nav-toggle{width:36px}.stage-product{width:98vw}.stage-caption{bottom:20%;left:8%;width:84%}#courseChoices{gap:12px;left:14px}#motionToggle{right:12px}#motionLabel{font-size:.75rem}.stage-tags>span{font-size:.75rem}.stage-tags>span:nth-child(3){top:54%}}
+@media(max-height:650px){.product-story[data-enhanced=true] .product-stage{height:720px}.stage-product{width:min(56vw,450px);top:44%}html[lang=zh] #stageWord{font-size:20vw}.stage-title,html[lang=zh] .stage-title{top:13%}.stage-caption{bottom:18%}.stage-order{bottom:8%}}
+@media(max-height:650px) and (max-width:760px){.stage-product{width:95vw}.stage-title,html[lang=zh] .stage-title{top:12%}html[lang=zh] #stageWord{font-size:37vw}}
+/* Round 8: reserve a clean caption band and keep controls on the stage edges. */
+.course-control{width:100%;height:100%;justify-self:stretch}
+@media(min-width:761px) and (min-height:651px){html[lang=zh] #stageWord{font-size:min(23vw,32svh);line-height:.9}.stage-title,html[lang=zh] .stage-title{top:8%}.stage-product{top:41%;width:min(51vw,65svh,820px)}}
+.product-stage[data-detail=true] .course-control>button{top:auto;bottom:22px;width:44px;height:44px;border-radius:50%;background:transparent;color:var(--stage-cream)}
+.product-stage[data-detail=true] #previousCourse{left:calc(50% - 185px)}
+.product-stage[data-detail=true] #nextCourse{right:calc(50% - 185px)}
+@media(max-width:760px){.product-stage[data-detail=true] .course-control>button{bottom:76px}.product-stage[data-detail=true] #previousCourse{left:20px}.product-stage[data-detail=true] #nextCourse{right:20px}}
+/* Round 9: longer Chinese lines provide visible type to either side of the food. */
+@media(min-width:761px){html[lang=zh] #stageWord{font-size:min(17vw,27svh);line-height:1.02;letter-spacing:-.035em}.stage-title,html[lang=zh] .stage-title{top:9%}}
+@media(max-width:760px){html[lang=zh] #stageWord{font-size:21.5vw;line-height:3.5;letter-spacing:-.02em}.stage-title,html[lang=zh] .stage-title{top:2%}html[lang=en] .stage-title{top:4%}#stageWord{line-height:3.2}.stage-tags>span:nth-child(2){right:10%;top:53%}.stage-tags>span:nth-child(3){left:8%;top:43%}}
+/* Tall narrow phones have room to read the second English headline below the
+   food. Keep the first line's baseline while widening/capping the line gap. */
+@media(max-width:440px) and (min-height:821px){
+ html[lang=en] .stage-title{--word-half-leading:clamp(177.5px,45.6vw,187.5px);top:calc(4% + 25.6vw - var(--word-half-leading))}
+ html[lang=en] #stageWord{line-height:calc(var(--word-half-leading) * 2)}
+}
+@media(max-height:650px) and (min-width:761px){html[lang=zh] #stageWord{font-size:17vw}}
+/* Round 10: keep the close-up inside the phone, and offer a compact short screen. */
+@media(max-width:760px){.stage-tags>span:nth-child(3){top:34%}.stage-meta{opacity:var(--intro-opacity)}}
+@media(max-height:650px) and (max-width:760px){.product-stage,.product-story[data-enhanced=true] .product-stage{height:calc(100svh - var(--header-height,74px));min-height:490px}.stage-product{width:min(78vw,45svh);top:41%}.stage-title,html[lang=zh] .stage-title{top:4%}html[lang=zh] #stageWord{line-height:2.5}#stageWord{line-height:2.7}.stage-caption{bottom:21%;left:5%;width:90%}.stage-caption h2,html[lang=zh] .stage-caption h2{font-size:.875rem}.stage-caption p{font-size:.75rem;margin-top:3px}.stage-order{bottom:10%;min-height:40px;padding:7px 20px;font-size:.875rem}#courseChoices{bottom:0}#motionToggle{bottom:0}.stage-tags>span{font-size:.6875rem;padding:4px 9px}.stage-tags>span:nth-child(1){top:22%;left:7%}.stage-tags>span:nth-child(2){top:55%;right:8%}.stage-tags>span:nth-child(3){display:none}.stage-meta{font-size:.6875rem}.course-control>button{top:39%}}
+/* Rounds 12–14: carry the campaign's typography and scale through the full page. */
+.food-section{padding-block:96px 80px;background:#fff;color:#2c080d}.section-intro{margin-bottom:48px}.section-intro h2,html[lang=zh] .section-intro h2{font-family:Lilita,var(--sans);font-size:clamp(3.5rem,7vw,7rem);line-height:1.04;letter-spacing:-.03em;font-weight:400;max-width:950px}html[lang=zh] .section-intro h2{font-family:KuaiLe,var(--sans);font-size:clamp(2.7rem,6.5vw,6rem)}
+.section-intro>.text-link{background:#2c080d;color:#fff3dd;border:0;border-radius:40px;padding:12px 22px;gap:28px}.section-intro>.text-link:hover{background:#8a2424}.food-grid{gap:32px;counter-reset:menu-card}.food-item{position:relative;counter-increment:menu-card;border-color:#dcc6be}.food-item::before{content:'0' counter(menu-card);font:400 clamp(3rem,5vw,5.5rem)/1 Lilita,var(--sans);color:#e9d1c5;position:absolute;top:0;left:0;z-index:0;pointer-events:none}.food-image{position:relative;z-index:1;perspective:1000px}.food-image img{transform:rotate(-4deg) scale(.94);transition:transform .65s cubic-bezier(.2,.75,.2,1)}.food-item:nth-child(2) .food-image img{transform:rotate(4deg) scale(.94)}.food-item a:hover img,.food-item a:focus-visible img{transform:translateY(-12px) rotate(0deg) scale(1.02)}.food-caption{position:relative;z-index:2}.food-caption h3{font-weight:500}.food-price{color:#892723;font-weight:500}.menu-end{margin-top:28px}
+.space-section{position:relative;padding:0;background:#2c080d;min-height:760px;isolation:isolate;overflow:hidden}.space-heading{position:absolute;z-index:3;top:11%;left:var(--gutter);display:block;margin:0;max-width:68%}.space-heading .eyebrow{margin-bottom:28px;color:#ffe9d5}.space-heading h2,html[lang=zh] .space-heading h2{font-family:Lilita,var(--sans);font-size:clamp(4rem,8.2vw,9rem);line-height:.98;font-weight:400;letter-spacing:-.025em;text-shadow:0 2px 30px #18060733}.space-heading h2 em{font:inherit;color:#ff9b7e}html[lang=zh] .space-heading h2{font-family:KuaiLe,var(--sans);font-size:clamp(3.5rem,7.8vw,8rem);line-height:1.12}
+.space-layout{display:block}.space-layout figure{position:relative;height:max(88svh,760px)}.space-layout figure>img{height:100%;width:100%;aspect-ratio:auto;object-fit:cover;object-position:center;transform:translateY(var(--room-y,0px)) scale(1.1);will-change:transform}.space-layout figure::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#17050a9c,transparent 80%),linear-gradient(0deg,#17050ad9,transparent 50%);pointer-events:none}.space-layout figcaption{position:absolute;left:var(--gutter);bottom:36px;z-index:2;color:#fff3dd;font-size:.875rem;letter-spacing:.02em}.space-copy{position:absolute;right:var(--gutter);bottom:36px;z-index:3;width:26%;padding:0}.space-copy .front-detail{display:none}.space-copy p{font-size:1rem;color:#fff3dd;line-height:1.65;text-shadow:0 1px 6px #17050a}.space-copy .text-link{color:#fff3dd}
+.visit-section{background:#fff3dd;padding-block:84px;color:#2c080d}.visit-copy h2,.visit-order h3,html[lang=zh] .visit-copy h2{font-family:Lilita,var(--sans);font-weight:400;font-size:clamp(3rem,5vw,5rem);line-height:1.05}html[lang=zh] .visit-copy h2,html[lang=zh] .visit-order h3{font-family:KuaiLe,var(--sans);font-size:clamp(2.6rem,4vw,4rem)}.visit-order h3{font-size:clamp(2rem,3.4vw,3.5rem)}.visit-order{border-color:#cfa79a}.visit-copy address{font-size:1.125rem}.visit-order .text-link{border:0;border-radius:40px;background:#2c080d;color:#fff3dd;padding:12px 24px;gap:32px}
+.site-footer{background:#2c080d;color:#fff3dd;padding-block:52px 20px}.footer-line p{font:400 clamp(2.5rem,5vw,5rem)/1.1 Lilita,var(--sans)}html[lang=zh] .footer-line p{font-family:KuaiLe,var(--sans)}.footer-bottom{margin-top:36px;border-color:#fff3dd30;color:#c9a496}
+@media(max-width:760px){.food-section{padding-block:54px 40px}.section-intro{margin-bottom:20px}.section-intro h2,html[lang=zh] .section-intro h2{font-size:clamp(2.5rem,11vw,3.5rem)}.food-grid{gap:0}.food-item::before{font-size:3rem;top:10px}.food-item,.food-item:first-child{padding-block:22px;gap:18px}.food-item .food-caption,.food-item:first-child .food-caption{gap:12px}.food-image img{transform:rotate(-4deg) scale(1)}.food-item:nth-child(2) .food-image img{transform:rotate(4deg) scale(1)}.food-sub{font-size:.75rem;line-height:1.5}.food-caption h3{font-size:1rem}.food-price{font-size:1rem}.menu-end{font-size:.8125rem}.space-section{min-height:700px}.space-layout figure{height:760px}.space-heading{top:48px;max-width:90%}.space-heading h2,html[lang=zh] .space-heading h2{font-size:clamp(3rem,13vw,4.5rem)}.space-heading .eyebrow{margin-bottom:24px}.space-layout figure>img{object-position:46% center}.space-layout figure::after{background:linear-gradient(180deg,#17050ab3,transparent 55%,#17050af2)}.space-copy{left:var(--gutter);right:var(--gutter);bottom:80px;width:auto}.space-copy p{font-size:1rem;max-width:360px;margin-bottom:10px}.space-layout figcaption{bottom:26px;font-size:.75rem}.visit-section{padding-block:48px;gap:28px}.visit-copy h2,html[lang=zh] .visit-copy h2{font-size:2.8rem}.visit-order h3,html[lang=zh] .visit-order h3{font-size:2.3rem}.site-footer{padding-top:40px}.footer-line p{font-size:2rem}.footer-line{flex-direction:column;gap:12px}.footer-bottom{margin-top:24px}}
+@media(prefers-reduced-motion:reduce){.space-layout figure>img{transform:none}.food-image img,.food-item:nth-child(2) .food-image img{transform:none}}
+/* Round 15: photo rectangles must not cut through the menu's editorial numbers. */
+.food-item::before{z-index:3;font-size:2rem;line-height:1;background:#fff;padding:4px 8px 4px 0;color:#8b2d2c;top:0}
+.food-item:first-child h3,.food-caption h3{font-size:1.2rem}
+html[lang=zh] .visit-copy h2,html[lang=zh] .space-heading h2,html[lang=zh] .visit-order h3{font-family:KuaiLe,Lilita,var(--sans)}
+html[lang=zh] .visit-order h3{font-size:clamp(2rem,3.1vw,3rem);text-wrap:balance}
+@media(max-width:760px){.food-item::before{font-size:1.5rem;top:18px}.food-item:first-child h3,.food-caption h3{font-size:1rem}.food-item:first-child .food-image{aspect-ratio:1}.visit-copy h2,html[lang=zh] .visit-copy h2{font-size:2.6rem}html[lang=zh] .visit-order h3{font-size:2.2rem}}
+@media(max-width:480px){#courseChoices button>span:first-child{display:none}#courseChoices{gap:22px}#motionLabel{display:none}#motionToggle{width:44px;height:44px;justify-content:center}#motionToggle .motion-symbol{font-size:1rem}.site-header{flex-wrap:wrap}.header-actions{max-width:100%}}
+/* Round 18: brand-red opening, dark chilli, light broth — one warm palette. */
+body{--scene-bg:#2c080d;--scene-pop:#ff6751;--scene-ink:#fff3dd;--scene-quiet:#eed0c5;--scene-label:#260809d9;--scene-rule:#fff3dd55}
+body[data-course=fried]{--scene-bg:#9b252d;--scene-pop:#fff0d1;--scene-ink:#fff0d1;--scene-quiet:#ffe2c9;--scene-label:#791b24e8;--scene-rule:#ffd9c080}
+body[data-course=broth]{--scene-bg:#f7e6c9;--scene-pop:#84282d;--scene-ink:#3a1418;--scene-quiet:#705048;--scene-label:#f7e6c9ed;--scene-rule:#84282d55}
+.site-header{background:var(--scene-bg);color:var(--scene-ink);transition:background-color .8s,color .6s}.site-header .order-link{background:var(--scene-pop);color:var(--scene-bg)}.site-header nav{border-color:var(--scene-rule)}.site-header nav a:hover{color:var(--scene-ink);text-decoration:underline;text-underline-offset:5px}.nav-toggle span{background:var(--scene-ink)}
+.product-stage,.product-stage[data-course]{background-color:var(--scene-bg);color:var(--scene-ink);--campaign-pop:var(--scene-pop)}
+.product-story{background:var(--scene-bg)}
+.product-stage[data-course=fried]::before{background:radial-gradient(ellipse at 50% 45%,#c93a3655,transparent 65%),linear-gradient(0deg,#53091566,transparent 45%)}
+.product-stage[data-course=broth]::before{background:radial-gradient(ellipse at 50% 45%,#ffbc6755,transparent 70%)}
+/* The light broth scene needs warm, diffused lift rather than the dark scene's
+   heavy studio shadow. Keep the same depth without muddy halos on cream. */
+.product-stage[data-course=broth] .stage-product img{filter:drop-shadow(0 20px 20px #794b292e)}
+.product-stage[data-course=broth] .stage-tags>span{box-shadow:0 8px 20px #6c322516}
+.stage-meta,.stage-caption p,.stage-detail p{color:var(--scene-quiet)}.stage-tags>span{background:var(--scene-label);border-color:var(--scene-rule);color:var(--scene-ink)}.stage-order{background:var(--scene-pop);color:var(--scene-bg)}.stage-detail a{color:var(--scene-ink);border-color:var(--scene-rule)}
+#courseChoices button{color:var(--scene-quiet)}#courseChoices button[aria-pressed=true]{color:var(--scene-ink);border-color:var(--scene-ink)}.product-stage[data-detail=true] .course-control>button{color:var(--scene-ink);border-color:var(--scene-rule)}
+body[data-course=broth] .course-control>button{background:transparent;color:#84282d;border-color:#84282d59}body[data-course=broth] .course-control>button:hover{border-color:#84282d}body[data-course=broth] .product-stage[data-detail=true] .course-control>button{background:transparent;color:#84282d}
+body[data-course=broth] .site-header .logo{background:transparent}body[data-course=broth] .site-header a:focus-visible,body[data-course=broth] .site-header button:focus-visible,body[data-course=broth] .product-stage a:focus-visible,body[data-course=broth] .product-stage button:focus-visible{outline-color:#84282d}
+@media(max-width:760px){.site-header nav{background:var(--scene-bg)}}
+/* Round 20: portrait tablets need a hero composition, not desktop half-width. */
+@media(min-width:761px) and (max-width:1050px) and (min-height:651px){.stage-product{width:min(78vw,65svh)}.stage-tags>span:nth-child(1){left:11%}.stage-tags>span:nth-child(2){right:8%;top:35%}.stage-tags>span:nth-child(3){left:9%}.stage-caption{left:15%;width:70%}}
+@media(min-width:1800px){.stage-product{width:min(50vw,72svh,1120px);top:42%}.stage-caption h2,html[lang=zh] .stage-caption h2{font-size:1.5rem}.stage-caption p{font-size:1.125rem}.site-header{min-height:96px}.logo img{width:140px;height:46px}.site-header nav a{font-size:1rem}}
+/* Round 21: caption and CTA flow together, including enlarged text. */
+.product-stage{height:calc(100svh - var(--header-height,86px))}
+.stage-purchase{position:absolute;z-index:7;bottom:8%;left:10%;width:80%;display:grid;justify-items:center;gap:24px;pointer-events:none}
+.stage-purchase .stage-caption{position:static;width:100%;max-width:780px;pointer-events:none}
+.stage-purchase .stage-order{position:static;transform:none;pointer-events:auto}
+@media(max-width:760px){.stage-purchase{bottom:10%;left:8%;width:84%;gap:20px}}
+@media(max-height:650px) and (max-width:760px){.stage-purchase{bottom:10%;left:5%;width:90%;gap:12px}}
+/* Enlarged body text grows the scene instead of colliding with its illustration. */
+.product-stage{min-height:max(680px,35rem)}.stage-purchase{gap:1.5rem}
+@media(max-width:760px){.stage-purchase{gap:1.25rem}}
+@media(max-height:650px) and (max-width:760px){.product-stage,.product-story[data-enhanced=true] .product-stage{min-height:max(490px,30rem)}.stage-purchase{gap:.75rem}}
+/* Round 22: grid tracks reflow with text size instead of stretching food images. */
+@media(max-width:760px){.food-item,.food-item:first-child{grid-template-columns:repeat(auto-fit,minmax(min(100%,8rem),1fr))}.food-image,.food-item:first-child .food-image{width:100%;align-self:center;min-width:0}.food-caption{min-width:0}}
+/* No-JS has no pause control, so its photograph must remain still. */
+.product-float{animation:none}
+body[data-motion-paused=false] .product-float{animation:plate-breathe 8s ease-in-out infinite}
+body[data-motion-hidden=true] .product-float{animation-play-state:paused}
+.site-header nav a{position:relative}.site-header nav a[aria-current=location]::after{content:'';position:absolute;bottom:7px;left:0;width:20px;height:2px;background:currentColor}
+.site-header nav a[aria-current=location]:hover{text-decoration:none}
+/* Switch palette atomically. Interpolating between light and dark scenes makes
+   foreground/background cross at low contrast, even with motion paused. Food,
+   type position and labels retain their independently timed movement. */
+.site-header,.product-stage,#stageWord{transition:none}
+.product-stage{touch-action:pan-y pinch-zoom}
+@media(prefers-reduced-motion:reduce){.product-story[data-enhanced=true] .product-stage{top:0;height:calc(100svh - var(--header-height))}}
+html{scroll-padding-top:calc(var(--header-height,86px) + 20px)}
+main:focus{outline:none}
+/* Native fragment navigation can land keyboard/assistive focus in the chapter
+   itself, without adding sections to the ordinary Tab order. */
+main>section:focus{outline:none}
+.film-section a:focus-visible,.space-section a:focus-visible{outline-color:#fff3dd}
+#filmToggle{border-radius:999px;background:#2c080de8;gap:16px;padding:8px 16px}
+#filmToggle:hover{background:#482028}
+/* The phone film was composed vertically. A square viewport cropped away its
+   steam and steel-dish context. Preserve the portrait frame on tall phones. */
+@media(max-width:760px) and (min-height:651px){.cinema-screen{aspect-ratio:2/3;max-height:calc(100svh - var(--header-height));min-height:320px}.cinema-poster,.brand-film{object-position:center}}
+/* Large text can lengthen the editorial/photo chapter without copy overlap. */
+.section-intro{grid-template-columns:minmax(0,1fr) auto}.section-intro>*{min-width:0}
+.space-layout figure{height:max(88svh,760px,40rem)}
+@media(max-width:760px){
+ .section-intro{grid-template-columns:minmax(0,1fr)}
+ html[lang=en] .section-intro h2{font-size:clamp(2rem,11vw,3.5rem)}
+ .space-layout figure{height:max(760px,40rem)}
+ .space-copy{bottom:max(80px,5.5rem)}
+ .space-layout figcaption{max-width:calc(100% - 2 * var(--gutter))}
+}
+/* No active featured dishes: an intentional static brand scene, never a room
+   photograph tilted and animated as if it were another food cutout. */
+body[data-course=empty]{--scene-pop:#fff0d1;--scene-ink:#fff0d1;--scene-quiet:#ffe2c9}
+.product-stage[data-empty=true] .stage-product{inset:0;width:100%;max-width:none;height:100%;aspect-ratio:auto;transform:none;z-index:0}
+.product-stage[data-empty=true] .product-float{transform:none;animation:none}
+.product-stage[data-empty=true] .stage-product img{width:100%;height:100%;aspect-ratio:auto;object-fit:cover;filter:brightness(.38);border-radius:0}
+.product-stage[data-empty=true] .stage-meta,.product-stage[data-empty=true] .stage-title{z-index:2}
+.product-stage[data-empty=true] .stage-title,html[lang=zh] .product-stage[data-empty=true] .stage-title{top:25%;left:5%;width:90%;text-align:center}
+.product-stage[data-empty=true] #stageWord,html[lang=zh] .product-stage[data-empty=true] #stageWord{font-size:clamp(3rem,10vw,9rem);line-height:1.1;white-space:normal;letter-spacing:-.02em}
+.product-stage[data-empty=true] .stage-purchase{bottom:15%}
+.product-stage[data-empty=true] .scroll-cue{display:none}
+/* A failed hero must not expose a browser broken-image icon. Ordering and the
+   complete typographic scene remain available even if both image sources fail. */
+.product-stage[data-image-unavailable=true] .stage-product{visibility:hidden}
+.product-stage[data-image-unavailable=true] .stage-tags{visibility:hidden}
+.product-stage[data-image-unavailable=true] .stage-title,html[lang=zh] .product-stage[data-image-unavailable=true] .stage-title{top:22%;left:5%;width:90%;text-align:center}
+.product-stage[data-image-unavailable=true] #stageWord,html[lang=zh] .product-stage[data-image-unavailable=true] #stageWord{font-size:clamp(3rem,min(12vw,17svh),9rem);line-height:1.16}
+@media(max-width:760px){.product-stage[data-image-unavailable=true] #stageWord,html[lang=zh] .product-stage[data-image-unavailable=true] #stageWord{font-size:18vw}.product-stage[data-image-unavailable=true] .course-control>button{display:none}}
+/* Short landscape/tablet windows use a horizontal composition instead of
+   forcing a 720 px hero below a 500–650 px browser viewport. */
+@media(min-width:761px) and (max-height:650px){
+ .product-stage,.product-story[data-enhanced=true] .product-stage{height:calc(100svh - var(--header-height,86px));min-height:max(304px,19rem)}
+ .stage-meta,.stage-tags{display:none}.stage-title,html[lang=zh] .stage-title{left:5%;top:5%;width:43%;text-align:left}
+ #stageWord,html[lang=zh] #stageWord{font-size:clamp(3rem,min(7.5vw,12svh),7rem);line-height:1.03;letter-spacing:-.035em}
+ .stage-product{left:72%;top:43%;width:min(36vw,70svh)}
+ /* Nested perspective can drop the image's composited layer when a short
+    viewport clips its top. Keep this horizontal pose in the 2D plane. */
+ .product-float{transform:none}
+ .stage-purchase{left:5%;width:42%;bottom:20%;gap:8px;justify-items:start}.stage-purchase .stage-caption{text-align:left}
+ .stage-caption h2,html[lang=zh] .stage-caption h2{font-size:.875rem}.stage-caption p{font-size:.75rem;margin-top:4px}
+ .stage-order{min-height:44px;padding:7px 18px;font-size:.875rem;gap:18px}.stage-order>span:last-child{font-size:1.125rem}
+ .course-control>button{top:auto;bottom:10px;width:44px;height:44px;border-radius:50%}#courseChoices{bottom:10px;gap:14px}
+ .scroll-cue{display:none}
+ #motionToggle{right:calc(var(--gutter) + 60px);bottom:10px}#motionLabel{font-size:.75rem}#courseChoices button{font-size:.75rem}
+}
+/* Viewport-fit=cover must not put controls under a notch/home indicator. */
+.site-header{padding-top:calc(12px + var(--safe-top))}
+.site-footer{padding-bottom:max(20px,var(--safe-bottom))}
+@media(max-width:760px){
+ .site-header{padding-top:calc(10px + var(--safe-top));padding-left:max(16px,var(--safe-left));padding-right:max(16px,var(--safe-right))}
+ #previousCourse{left:max(12px,var(--safe-left))}#nextCourse{right:max(12px,var(--safe-right))}
+ #courseChoices{left:max(20px,var(--safe-left));bottom:max(13px,var(--safe-bottom))}
+ #motionToggle{right:max(18px,var(--safe-right));bottom:max(13px,var(--safe-bottom))}
+ .stage-purchase{bottom:max(10%,calc(var(--safe-bottom) + var(--course-controls-height,44px) + 24px))}
+}
+/* Enlarged English labels may use two rows. Reserve a separate right-hand
+   track for pause rather than letting it cover the third dish selector. */
+@media(max-width:760px){#courseChoices{right:calc(max(18px,var(--safe-right)) + 60px);flex-wrap:wrap;column-gap:clamp(8px,3vw,22px);row-gap:0}}
+@media(max-width:760px){body[data-reduced-motion=true] #courseChoices{right:max(20px,var(--safe-right))}}
+@media(max-width:760px){.product-stage[data-detail=true] .course-control>button{bottom:max(76px,calc(max(13px,var(--safe-bottom)) + var(--course-controls-height,44px) + 12px))}}
+@media(max-width:360px){.site-header{padding-left:max(10px,var(--safe-left));padding-right:max(10px,var(--safe-right))}#courseChoices{left:max(14px,var(--safe-left))}#motionToggle{right:max(12px,var(--safe-right))}}
+@media(min-width:761px) and (max-height:650px){
+ .stage-title,html[lang=zh] .stage-title,.stage-purchase{left:var(--gutter)}
+ .course-control>button,#courseChoices,#motionToggle{bottom:max(10px,var(--safe-bottom))}
+ .stage-purchase{bottom:max(20%,calc(var(--safe-bottom) + 60px))}
+}
+@media(max-width:760px){.nav-toggle,.course-control>button{width:44px}#courseChoices button{min-width:44px}}
+@media(prefers-reduced-motion:reduce){.food-item a:hover img,.food-item a:focus-visible img{transform:none}}
+/* The arrival chapter pairs directions with the owner's existing storefront
+   reference, giving the location a visual identity instead of another text row. */
+.visit-section{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);column-gap:clamp(32px,5vw,80px);row-gap:30px;align-items:start}
+.visit-front{grid-column:1;grid-row:1/3;align-self:stretch;display:grid;grid-template-rows:minmax(0,1fr) auto;min-width:0}
+.visit-front img{width:100%;height:100%;min-height:300px;object-fit:cover;object-position:38% center}
+.visit-front figcaption{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #cfa79a;padding:14px 0;font-size:.75rem;letter-spacing:.08em}
+.visit-copy{grid-column:2}.visit-copy h2,html[lang=zh] .visit-copy h2{font-size:clamp(2.5rem,4.2vw,4.5rem)}
+.visit-order{grid-column:2;border-left:0;border-top:1px solid #cfa79a;padding:24px 0 0}
+.visit-illustrations{margin-bottom:16px;gap:18px}.visit-illustrations img{height:60px}
+.visit-order h3,html[lang=zh] .visit-order h3{font-size:clamp(1.75rem,2.5vw,2.75rem);margin-bottom:16px}
+@media(max-width:760px){
+ .visit-section{grid-template-columns:minmax(0,1fr);gap:28px}
+ .visit-copy{grid-column:1;grid-row:1}.visit-front{grid-column:1;grid-row:2}.visit-order{grid-column:1;grid-row:3}
+ .visit-front img{height:auto;min-height:0;aspect-ratio:1200/687;object-fit:contain}
+ .visit-copy h2,html[lang=zh] .visit-copy h2{font-size:2.6rem}
+ .visit-front figcaption{font-size:.6875rem;letter-spacing:.04em;border-bottom:0;padding-bottom:0}
+ .visit-order h3,html[lang=zh] .visit-order h3{font-size:2rem}
+}
+/* Keep navigation out of the logo/ordering band on tablets and compact laptops,
+   including enlarged text. Hero/tablet composition still uses its own breakpoint. */
+@media(min-width:761px) and (max-width:1200px){
+ .site-header nav{display:none;position:absolute;top:100%;left:0;right:0;transform:none;border-radius:0;background:var(--scene-bg);padding:12px var(--gutter);flex-direction:column;align-items:stretch;gap:0;border:0;border-bottom:1px solid var(--scene-rule)}
+ .site-header nav[data-open=true]{display:flex}
+ .site-header nav a{padding:12px 0;font-size:1rem}
+ .nav-toggle{display:flex;flex-direction:column;gap:5px;width:44px;height:44px;align-items:center;justify-content:center}
+ .nav-toggle span{width:20px;height:1px;background:var(--scene-ink)}
+}
+@media(max-width:1200px){.site-header nav{max-height:calc(100svh - var(--header-height) - var(--safe-bottom));overflow-y:auto;overscroll-behavior:contain}}
+/* The open drawer has an explicit close glyph. This is an immediate state
+   change, without decorative motion or any movement of the 44px button. */
+.nav-toggle[aria-expanded=true] span:first-child{transform:translateY(3px) rotate(45deg)}
+.nav-toggle[aria-expanded=true] span:last-child{transform:translateY(-3px) rotate(-45deg)}
+@media(max-width:1200px){#motionLabel{display:none}#motionToggle{width:44px;min-height:44px;justify-content:center}}
+/* When enlarged text makes the hero taller than the viewport, it becomes an
+   ordinary scrolling chapter. Pinning a taller scene would strand its controls. */
+html.has-js .product-story[data-fits-viewport=false]{height:auto;min-height:0}
+html.has-js .product-story[data-fits-viewport=false] .product-stage{position:relative;top:0}
+/* Catalogue names may legally contain 120 characters. The campaign teaser is
+   two lines; the full name remains in the DOM/accessibility tree and menu. */
+.stage-caption h2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+/* Scene/close-up foregrounds change atomically; a lingering cream background
+   would briefly erase the newly cream arrow while its old transition runs. */
+.course-control>button{transition:none}
+/* Keep the opening food silhouette clear of its caption on wide screens.
+   The lift follows the outgoing layer and vanishes in the final close-up. */
+@media(min-width:1051px) and (min-height:651px){
+ .product-stage:not([data-empty=true]) .stage-product{top:calc(41% - (18px + var(--caption-extra,0px)) * var(--intro-opacity,1))}
+}
+@media(min-width:1800px) and (min-height:651px){
+ .product-stage:not([data-empty=true]) .stage-product{top:calc(42% - (44px + var(--caption-extra,0px)) * var(--intro-opacity,1))}
+}
+@media(min-width:761px) and (max-width:1050px) and (min-height:651px){
+ .product-stage:not([data-empty=true]) .stage-product{top:calc(41% - var(--caption-extra,0px) * var(--intro-opacity,1))}
+}
+@media(max-width:760px) and (min-height:651px){
+ .product-stage:not([data-empty=true]) .stage-product{top:calc(42% - var(--caption-extra,0px) * var(--intro-opacity,1))}
+}
+@media(max-width:760px) and (max-height:650px){
+ .product-stage:not([data-empty=true]) .stage-product{top:calc(41% - var(--caption-extra,0px) * var(--intro-opacity,1))}
+}
+/* Hover uses the active scene's palette as well. A fixed peach hover washed out
+   the light broth scene's cream button label. */
+body{--scene-button-hover:#ff8a70}
+body[data-course=fried]{--scene-button-hover:#fff8e9}
+body[data-course=broth]{--scene-button-hover:#6d2028}
+.site-header .order-link:hover,.stage-order:hover{background:var(--scene-button-hover)}
+/* Campaign typography forms a closing signature, not a replacement logo. */
+.footer-line p,html[lang=zh] .footer-line p{font-family:var(--sans);font-size:1.125rem;line-height:1.4}
+.footer-line{flex-direction:row;align-items:center;flex-wrap:wrap}
+.footer-mark{font-family:Lilita,var(--sans);font-size:13vw;line-height:.85;letter-spacing:-.045em;white-space:nowrap;margin-top:32px;text-align:center;color:#fff0d1}
+.footer-bottom{margin-top:30px}
+@media(max-width:760px){.footer-line p,html[lang=zh] .footer-line p{font-size:.9375rem}.footer-line>a{font-size:.75rem}.footer-mark{margin-top:28px}.footer-bottom{margin-top:22px}}
+.food-image[data-unavailable=true]{background:#fff3dd;border:1px solid #e9d1c5}
+.food-image[data-unavailable=true] img{visibility:hidden}
+.food-image[data-unavailable=true]::after{content:attr(data-missing-label);position:absolute;inset:12%;display:grid;place-content:center;text-align:center;white-space:pre-line;font:400 .875rem/1.9 var(--sans);color:#84282d}
+/* Homepage cards are summaries. Long catalogue names must not widen a flex row
+   or turn the whole editorial grid into columns of copy. */
+.food-caption>div{min-width:0;flex:1}
+.food-caption h3 a,.food-sub{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.food-caption h3 a{-webkit-line-clamp:3}
+.food-sub{-webkit-line-clamp:2}
+.food-stock{display:block;width:fit-content;max-width:100%;padding:4px 9px;border:1px solid #84282d33;border-radius:20px;background:#fff3dd;color:#84282d;font-size:.75rem;line-height:1.4;font-weight:500}
+.menu-empty{display:grid;gap:14px;padding:clamp(28px,4vw,56px);border:1px solid var(--line);border-radius:4px;background:#fff3dd;color:var(--ink)}
+.menu-empty .eyebrow{color:var(--brand)}
+.menu-empty>p:last-child{font-size:clamp(1.125rem,2vw,1.5rem);line-height:1.5;max-width:40ch}
+.catalog-status{display:flex;align-items:center;flex-wrap:wrap;gap:8px 24px;margin-top:20px}
+.catalog-status .catalog-note{margin:0;flex:1 1 260px}
+.catalog-retry{flex:none;color:var(--brand);font-size:.875rem;min-height:44px;border-bottom:1px solid currentColor;padding:8px 0}
+.catalog-retry[aria-disabled=true]{opacity:.6;cursor:wait}
+/* Preserve control silhouettes when the operating system replaces author
+   colors. Background-painted hamburger lines otherwise become canvas-colored. */
+@media(forced-colors:active){
+ .nav-toggle span{background:ButtonText;forced-color-adjust:none}
+ .site-header nav a[aria-current=location]::after{background:Highlight;forced-color-adjust:none}
+ .course-control>button,#filmToggle,.stage-order,.site-header .order-link,.section-intro>.text-link,.visit-order .text-link{border:1px solid ButtonText}
+ #courseChoices button[aria-pressed=true]{border-bottom-color:Highlight}
+ .story-progress,.film-progress{background:GrayText;forced-color-adjust:none}
+ .story-progress>span,.film-progress>span{background:Highlight;forced-color-adjust:none}
+}
+.food-price,.food-item::before{color:var(--brand)}
+.food-price small{display:inline;font-size:.75em;color:inherit;font-weight:400}
+.section-intro>.text-link:hover{background:#6d2028}
+/* A restrained ingredient detail belongs to the chilli label, not a second
+   floating hero. Compact compositions keep the original uncluttered labels. */
+@media(min-width:1201px) and (min-height:751px){
+ .product-stage[data-course=chilli] #flavorTag1::before{content:"";position:absolute;left:-72px;top:50%;width:64px;height:64px;transform:translateY(-50%) rotate(-15deg);border:1px solid #ff675166;border-radius:50%;background:#260809 url(/site/media/ingredient-chilli-v1.webp) center/54px 54px no-repeat;box-shadow:0 10px 20px #08010366;pointer-events:none}
+}
+/* Keep the secondary film poster out of the opening food's network budget.
+   Without the enhancement module, the native picture remains available. */
+html.has-js #filmScreen:not([data-poster-released=true]) > picture{display:none}
+/* An unavailable preview keeps an intentional, quiet frame and a usable play
+   control. A decoded poster or playing film replaces this fallback in place. */
+.film-fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:28px;color:#fff0d1;background:radial-gradient(ellipse at 50% 40%,#84282d,#2c080d 85%);text-align:center;font-size:.875rem}
+.film-fallback[hidden],.cinema-screen[data-film-ready=true] .film-fallback{display:none}
+.film-fallback-mark{font-family:Lilita,sans-serif;font-size:clamp(2rem,4vw,4rem);line-height:1.1;letter-spacing:-.02em}
+.cinema-screen[data-poster-unavailable=true] .cinema-poster{visibility:hidden}
+@media(max-width:760px){.film-fallback-mark{font-size:clamp(2rem,9vw,3.5rem)}}
+
+/* Up-close editorial gallery. Strictly scoped: the approved Hero is unchanged. */
+#film.film-gallery{display:block;padding:76px var(--gutter) 84px;background:#fff4e3;color:#79232b;overflow:hidden;scroll-margin-top:var(--header-height)}
+#film .film-heading{display:flex;flex-direction:row;align-items:flex-end;justify-content:space-between;gap:32px;padding:0;margin:0 0 38px}
+#film .film-heading .eyebrow{color:#79232b;font-size:.75rem;letter-spacing:.13em;margin:0 0 18px}
+#film .film-heading h2{font-family:Lilita,var(--sans);font-size:clamp(2.75rem,5.9vw,6.5rem);font-weight:400;line-height:1.03;letter-spacing:-.025em;margin:0;text-wrap:balance}
+html[lang=zh] #film .film-heading h2{font-family:KuaiLe,var(--sans);letter-spacing:-.035em}
+#film .film-heading .text-link{flex:none;color:#79232b;margin:0 0 5px;font-size:.9375rem;border-bottom:1px solid #79232b60;min-height:44px}
+#film .film-heading .text-link:hover{color:#ac252d;border-color:currentColor}
+#film .film-heading a:focus-visible{outline:2px solid #79232b;outline-offset:6px}
+#film .film-gallery-grid{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(0,1fr);gap:28px;align-items:start}
+#film .film-gallery-item{margin:0;min-width:0}
+#film .film-detail{margin-top:66px}
+#film .cinema-screen{min-height:0;max-height:none;aspect-ratio:1.45;border-radius:24px;background:#4d1115;isolation:isolate}
+#film .cinema-poster,#film .brand-film{object-position:68% center}
+#film .film-detail-image{position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:24px;background:#6c151b}
+#film .film-detail-image img{display:block;width:100%;height:100%;object-fit:cover;transition:transform 850ms cubic-bezier(.2,.7,.2,1)}
+#film .film-gallery-caption{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:18px 2px 0;font-size:1rem;line-height:1.5}
+#film .film-gallery-caption>span:last-child{font-size:.75rem;opacity:.72;font-variant-numeric:tabular-nums}
+#film #filmToggle{right:18px;bottom:18px;min-height:44px;background:#290b13b8;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-color:#fff4e350}
+#film #filmToggle:hover{background:#290b13eb}
+#film .film-progress{bottom:0;height:2px}
+#film .film-detail-fallback:not([hidden]){position:absolute;inset:0;display:grid;place-content:center;padding:24px;color:#fff4e3;text-align:center}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){#film .film-detail-image:hover img{transform:scale(1.045)}}
+@media(hover:hover) and (pointer:fine){html,body,body *{cursor:url('/site/media/dumpling-cursor-v1.png') 8 6,auto!important}}
+@media(min-width:1800px){#film.film-gallery{padding-block:92px 100px}#film .film-gallery-grid{gap:36px}#film .film-detail{margin-top:90px}}
+@media(max-width:1000px){#film.film-gallery{padding-block:52px 60px}#film .film-gallery-grid{gap:20px;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}#film .film-detail{margin-top:44px}#film .cinema-screen{aspect-ratio:1.2}}
+@media(max-width:760px){
+ #film.film-gallery{padding:42px var(--gutter) 48px}
+ #film .film-heading{display:block;margin-bottom:26px}
+ #film .film-heading .eyebrow{font-size:.75rem;margin-bottom:14px}
+ #film .film-heading h2{font-size:clamp(2.6rem,10.8vw,4.6rem);line-height:1.06}
+ #film .film-heading .text-link{display:inline-flex;margin:17px 0 0;font-size:.875rem}
+ #film .film-gallery-grid{grid-template-columns:1fr;gap:28px}
+ #film .cinema-screen{aspect-ratio:4/5;min-height:0;max-height:none;border-radius:18px}
+ #film .cinema-poster,#film .brand-film{object-position:50% 44%}
+ #film .film-detail{margin:0 0 0 15%}
+ #film .film-detail-image{aspect-ratio:1.25;border-radius:18px}
+ #film .film-detail-image img{object-position:50% 63%}
+ #film .film-gallery-caption{font-size:.9375rem;padding-top:12px}
+ #film #filmToggle{right:12px;bottom:12px;font-size:.8125rem;padding-inline:14px}
+}
+@media(prefers-reduced-motion:reduce){#film .film-detail-image img{transition:none;transform:none}}
+@media(forced-colors:active){#film.film-gallery{background:Canvas;color:CanvasText}#film .film-heading .eyebrow,#film .film-heading .text-link{color:CanvasText}#film .cinema-screen,#film .film-detail-image{border:1px solid CanvasText}}
+/* Preserve the entire sharing plate, including on small screens and hover. */
+#film[data-subject=boiled] .film-detail-image{aspect-ratio:1122/1402}
+#film[data-subject=boiled] .film-detail-image img{object-fit:contain;transform:none;object-position:center}
+#film[data-subject=boiled] .cinema-poster,#film[data-subject=boiled] .brand-film{object-position:center}
+/* Extra root-font height is reserved in CSS, without a ResizeObserver feedback
+   loop. At the ordinary 16px root size this adds no height to the composition.
+   The existing viewport-fit guard makes oversized scenes scroll normally. */
+@media(min-width:1051px) and (min-height:651px){
+ .product-stage{min-height:max(680px,35rem,calc(72svh + clamp(0px,40rem - 520px,18rem)))}
+}
+/* Failed place photos retain useful copy without a browser error icon or a
+   photograph-sized void. These rules never affect a successful photo. */
+.place-photo-status{display:block;font:400 .75rem/1.5 var(--sans);letter-spacing:0;margin-top:8px}
+.place-photo-status[hidden]{display:none}
+figure[data-photo-unavailable=true]>img{display:none}
+.visit-front[data-photo-unavailable=true]{align-self:start;grid-row:auto;padding:24px;border:1px solid #cfa79a;border-radius:4px}
+.visit-front[data-photo-unavailable=true] figcaption{flex-wrap:wrap;border:0;padding:0}
+.visit-front[data-photo-unavailable=true] .place-photo-status{flex-basis:100%;margin-top:0;color:var(--quiet)}
+.space-section[data-photo-unavailable=true]{padding:clamp(40px,5vw,80px) var(--gutter);min-height:0}
+.space-section[data-photo-unavailable=true] .space-heading{position:static;max-width:100%;margin-bottom:32px}
+.space-section[data-photo-unavailable=true] .space-layout{display:flex;flex-direction:column;gap:24px}
+.space-section[data-photo-unavailable=true] .space-layout figure{order:2;height:auto}
+.space-section[data-photo-unavailable=true] .space-layout figure::after{display:none}
+.space-section[data-photo-unavailable=true] .space-layout figcaption{position:static;max-width:100%}
+.space-section[data-photo-unavailable=true] .space-copy{position:static;width:auto;max-width:44rem}
+.space-section[data-photo-unavailable=true] .space-copy p{max-width:none}
+/* A partial script download must not leave a dead menu button or language
+   toggle. Expose native chapter links; ordering keeps its inline language URL. */
+.site-ui-fallback{display:none}
+.site-ui-unavailable .site-ui-fallback{display:block;padding:24px 0;color:var(--quiet);font-size:1rem;line-height:1.6}
+.site-ui-fallback a{display:inline-block;color:var(--brand);text-decoration:underline;text-underline-offset:4px}
+.site-ui-unavailable #language,.site-ui-unavailable #navToggle{display:none}
+.site-ui-unavailable .site-header{flex-wrap:wrap;row-gap:0}
+.site-ui-unavailable #mainNav{order:3;flex-basis:100%;display:flex;position:static;transform:none;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:4px 24px;padding:4px 0;border:0;background:transparent;max-height:none;overflow:visible}
+.site-ui-unavailable #mainNav a{font-size:.875rem;padding:8px 0}
+
+/* Hierarchy edit: a quiet masthead, one food subject, one sentence and action.
+   Full catalogue names remain available to assistive technology and the menu. */
+.visually-hidden,.stage-caption #stageName{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.site-header .logo{padding:0;background:transparent;border-radius:0;min-height:44px;display:flex;align-items:center}
+.site-header .logo img{width:112px;height:auto;filter:brightness(0) invert(1);opacity:.94}
+body[data-course=broth] .site-header .logo img{filter:none;opacity:1}
+@media(min-width:1201px){.site-header nav{border-color:color-mix(in srgb,var(--scene-ink) 10%,transparent);background:transparent;box-shadow:none}}
+#stageWord,html[lang=zh] #stageWord{color:var(--scene-display,var(--scene-pop));transition:none}
+body[data-course=fried]{--scene-display:#f48d7d}
+body[data-course=broth]{--scene-display:#ae6757}
+.stage-purchase{gap:20px;bottom:10%}
+.stage-purchase .stage-caption{max-width:42rem}
+.stage-caption p{margin:0;font-size:1.125rem;line-height:1.5;color:var(--scene-ink);text-wrap:balance}
+#motionToggle{width:44px;min-height:44px;justify-content:center;bottom:max(16px,var(--safe-bottom));opacity:.7}
+#motionToggle:hover,#motionToggle:focus-visible{opacity:1}
+.stage-tags>span{box-shadow:none;background:color-mix(in srgb,var(--scene-bg) 88%,transparent);border-color:var(--scene-rule)}
+.product-stage[data-course=chilli] #flavorTag1::before{display:none}
+.product-stage[data-detail=true] #previousCourse{left:var(--gutter)}
+.product-stage[data-detail=true] #nextCourse{right:calc(var(--gutter) + 60px)}
+@media(min-width:761px) and (min-height:651px){
+ .stage-title,html[lang=zh] .stage-title{top:10%}
+}
+@media(max-width:760px){
+ .site-header .logo img{width:90px}
+ .stage-purchase{bottom:max(10%,calc(var(--safe-bottom) + 64px));gap:18px}
+ .stage-caption p{font-size:1rem;line-height:1.5}
+ .product-stage[data-detail=true] #previousCourse{left:max(16px,var(--safe-left))}
+ .product-stage[data-detail=true] #nextCourse{right:max(16px,var(--safe-right))}
+}
+@media(max-width:360px){.site-header .logo img{width:76px}}
+@media(min-width:761px) and (max-height:650px){.stage-purchase{bottom:20%;gap:12px}.stage-caption p{font-size:1rem}}
+@media(max-width:760px) and (max-height:650px){.stage-purchase{bottom:max(12%,calc(var(--safe-bottom) + 54px));gap:12px}.stage-caption p{font-size:.9375rem}}
+
+/* Soft light behind the food, localized glass over it. Neither the product
+   photograph nor readable type is blurred. Pause/reduced-motion stops the light. */
+.product-stage::after{content:"";position:absolute;inset:-12%;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 34% 42%,var(--scene-glow,#b526453b),transparent 44%),radial-gradient(ellipse at 69% 55%,var(--scene-glow-alt,#e8492729),transparent 42%);filter:blur(30px);transform:translate3d(calc(var(--pointer-x) * -1.5),calc(var(--pointer-y) * -1.5),0)}
+body[data-course=fried]{--scene-glow:#ff624e60;--scene-glow-alt:#c30f6638}
+body[data-course=chilli]{--scene-glow:#d5296559;--scene-glow-alt:#ff5f383d}
+body[data-course=broth]{--scene-glow:#ffcf8255;--scene-glow-alt:#ef92743d}
+@keyframes atmosphere-flow{0%,100%{translate:-2% 1%;scale:1}50%{translate:2% -2%;scale:1.07}}
+body[data-motion-paused=false] .product-stage::after{animation:atmosphere-flow 18s ease-in-out infinite}
+body[data-motion-hidden=true] .product-stage::after{animation-play-state:paused}
+.stage-tags>span,.product-stage[data-course=broth] .stage-tags>span{background:color-mix(in srgb,var(--scene-bg) 42%,transparent);border:1px solid color-mix(in srgb,var(--scene-pop) 50%,transparent);box-shadow:inset 0 1px 0 #ffffff12,0 9px 18px #10020924;backdrop-filter:blur(10px) saturate(1.35);-webkit-backdrop-filter:blur(10px) saturate(1.35);transform-origin:center;will-change:transform,opacity}
+.stage-tags>span:nth-child(1){left:24%;top:25%}
+.stage-tags>span:nth-child(2){left:18%;right:auto;top:39%;transform:rotate(-8deg)}
+.stage-tags>span:nth-child(3){left:22%;top:55%}
+.stage-tags>.ingredient-badge{display:grid;place-items:center;left:auto;width:clamp(62px,5.2vw,82px);height:clamp(62px,5.2vw,82px);padding:8px;border-radius:50%;border-width:2px}
+#ingredientBadge1{right:23%;top:34%;transform:rotate(9deg)}
+#ingredientBadge2{right:21%;top:55%;transform:rotate(-9deg)}
+.ingredient-badge img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 3px #14020833)}
+.ingredient-badge[data-image-ready=false]{visibility:hidden}
+.stage-tags>.ingredient-badge[hidden]{display:none}
+.product-stage[data-ingredient-count="3"] #ingredientBadge1{right:23%;top:25%}
+.product-stage[data-ingredient-count="3"] #ingredientBadge2{right:19%;top:41%}
+#ingredientBadge3{right:22%;top:58%;transform:rotate(6deg)}
+@media(min-width:761px) and (max-width:1050px){.product-stage[data-ingredient-count="3"] #ingredientBadge1{right:12%}.product-stage[data-ingredient-count="3"] #ingredientBadge2{right:8%}#ingredientBadge3{right:11%}}
+@media(max-width:760px){.product-stage[data-ingredient-count="3"] #ingredientBadge1{right:4%;top:23%}.product-stage[data-ingredient-count="3"] #ingredientBadge2{right:18%;top:37%}#ingredientBadge3{right:4%;top:55%}}
+@media(min-width:1201px){.site-header nav{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}}
+@media(min-width:761px) and (max-width:1050px){.stage-tags>span:nth-child(1){left:12%}.stage-tags>span:nth-child(2){left:7%}.stage-tags>span:nth-child(3){left:10%}#ingredientBadge1{right:12%}#ingredientBadge2{right:10%}}
+@media(max-width:760px){
+ .stage-tags>span:nth-child(1){left:7%;top:26%}
+ .stage-tags>span:nth-child(2){left:5%;right:auto;top:35%;font-size:.8125rem}
+ .stage-tags>span:nth-child(3){display:none}
+ .stage-tags>.ingredient-badge{width:54px;height:54px;padding:6px}
+ #ingredientBadge1{right:7%;top:30%}#ingredientBadge2{right:5%;top:54%}
+ .product-stage::after{filter:blur(20px)}
+}
+@media(max-height:650px){.stage-tags>.ingredient-badge{width:46px;height:46px;padding:5px}}
+@media(prefers-reduced-motion:reduce){.product-stage::after{animation:none!important;transform:none}}
+
+/* The two hero pills, glass instead of cream. Appended last and matched at the
+   same weight as the per-course rules so a scene palette cannot put its own
+   fill back. The chopstick arrows deliberately do NOT get the blur: they sit on
+   the photograph, where blurring averages the food into grey. */
+.site-header .order-link,
+body[data-course] .site-header .order-link,
+.stage-order,
+body[data-course] .stage-order{
+ background:rgba(255,255,255,.14);
+ border:1px solid rgba(255,255,255,.22);
+ color:#fff;
+ -webkit-backdrop-filter:blur(12px);
+ backdrop-filter:blur(12px);
+}
+.site-header .order-link *,.stage-order *{color:#fff}
+.site-header .order-link:hover,.stage-order:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.36)}
+
+/* Optical centring. The frame is centred but the food inside each photograph is
+   not, and each one is off by a different amount — measured from the assets:
+   potstickers 0.532, chilli wontons 0.460, century egg 0.519 of the width. The
+   independent `translate` property is used so the stage's own rotate/scale
+   transform is not overwritten. */
+body[data-course=fried] .stage-product{--optical:-3.2%}
+body[data-course=chilli] .stage-product{--optical:4%}
+body[data-course=broth] .stage-product{--optical:-1.9%}
+.stage-product{translate:var(--optical,0%) 0}
+/* The detail view offsets the product by 10% of its width to clear the copy on
+   its left. On a phone that copy sits underneath instead, so the offset only
+   reads as "not centred"; it is taken back, keeping the optical nudge. */
+@media(max-width:760px){
+ .product-stage[data-detail=true] .stage-product{translate:calc(var(--optical,0%) - 10%) 0}
+}
+

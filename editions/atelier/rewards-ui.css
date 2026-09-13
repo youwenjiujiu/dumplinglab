@@ -100,41 +100,80 @@
 .rewards-login label[hidden] {
   display: none;
 }
-.auth-dialog{width:min(520px,calc(100vw - 24px));background:#fff;border-radius:24px;overflow:hidden}
-.auth-dialog>header{position:relative;padding:30px 36px 18px;border:0;align-items:flex-start;overflow:hidden}
-.auth-dialog>header::after{content:"饺";position:absolute;right:76px;top:-28px;width:108px;height:108px;display:grid;place-items:center;border:1px solid #b5232b12;border-radius:50%;color:#b5232b0b;font-size:54px;font-family:serif;transform:rotate(-9deg);pointer-events:none}
-.auth-dialog>header>div,.auth-dialog>header>button{position:relative;z-index:1}
+.auth-dialog{width:min(400px,calc(100vw - 56px));background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 18px 52px #00000033}
+.auth-dialog>header{position:relative;padding:18px 18px 0;border:0;flex-direction:column;align-items:center;text-align:center;overflow:visible}
+.auth-dialog>header>div{display:flex;flex-direction:column;align-items:center}
+.auth-dialog>header>button{position:absolute;top:10px;right:10px}
 .auth-dialog>header .eyebrow{display:none}
-.auth-dialog>header h2{font-size:28px;line-height:1.2;letter-spacing:-.5px;margin:0}
-.auth-dialog>header h2 small{display:block;margin-top:8px;color:#75695f;font-size:15px;line-height:1.4;letter-spacing:0;font-weight:400}
-.auth-dialog>.rewards-content{padding:0 36px 32px}
+.auth-dialog>header h2{font-size:21px;line-height:1.15;letter-spacing:-.2px;font-weight:400;margin:0}
+.auth-dialog>header h2 span{display:block}
+/* The English line is a label, not a second headline. */
+.auth-dialog>header h2 small{display:block;margin-top:8px;color:#a2958a;font-size:10px;line-height:1.4;letter-spacing:.2em;text-transform:uppercase;font-weight:400}
+.auth-dialog>.rewards-content{position:relative;z-index:1;padding:0 22px 18px}
+.auth-methods>.rewards-content{padding-top:0}
+.auth-dialog>.rewards-login,.auth-dialog .auth-links{text-align:center}
 .auth-dumpling-row{display:flex;align-items:center;justify-content:center;gap:9px}
 .auth-dumpling-row i{display:block;width:24px;height:24px;background:currentColor;mask:url('/brand/dumpling-symbol.svg') center/contain no-repeat;transform:rotate(-90deg)}
-.auth-methods>header{border-bottom:1px solid #ededed}
-.auth-methods>.rewards-content{padding-top:8px}
-.auth-providers{display:grid;grid-template-columns:repeat(2,64px);justify-content:center;gap:44px;padding:8px 0 18px}
-.auth-provider{display:grid;place-items:center;width:64px;min-height:58px;padding:0;border:0;background:transparent;color:#302a24;cursor:pointer}
-.auth-provider:hover{opacity:.68}.auth-provider svg{width:30px;height:30px}.auth-apple svg{width:31px;height:31px;fill:currentColor}
-.auth-divider{height:1px;background:#e8e8e8;margin:0 0 18px}
+/* Chopsticks pick the dumpling up and carry it to the middle of the panel. The
+   two sticks are separate cutouts, so paint order alone does what a mask cannot:
+   the far stick is drawn before the dumpling and disappears behind it, the near
+   one after and lies across it, and the pair straddles it the way a real grip
+   does. Geometry is measured, not guessed: the tip is at (0, 0.934) of the
+   chopstick cutout and lands at 0.45 of the dumpling's width; the box is the
+   size that placement needs, since the dialog crops anything outside it. Both
+   the box and the dumpling are centred, so the carry distance is half the
+   difference of their widths. Easing is the website's own. */
+.auth-hero{display:contents}
+.auth-hero-shape{display:none}
+.auth-pick{--pick:64px;--carry:calc(var(--pick)*.6);--ease:cubic-bezier(.2,.75,.25,1);position:relative;display:block;width:calc(var(--pick)*2.2);height:calc(var(--pick)*1.509);margin:0 0 6px;transform:translate(var(--carry),-9px) rotate(-2deg);animation:auth-pick-lift .6s var(--ease) 1.06s both}
+.auth-pick-food{position:absolute;left:0;bottom:0;width:var(--pick);height:auto;filter:drop-shadow(2px 8px 5px #50382029)}
+.auth-pick-sticks{position:absolute;left:calc(var(--pick)*.45);bottom:calc(var(--pick)*.488);width:calc(var(--pick)*1.75);height:calc(var(--pick)*1.021)}
+.auth-pick-sticks img{display:block;width:100%;height:auto;filter:drop-shadow(5px 8px 5px #3b1e141c);animation:auth-pick-close .72s var(--ease) .34s both}
+/* The sheet's own entry animation is declared on dialog[open], which outranks a
+   plain class, so the lift lives on the hero instead of the dialog. */
+@keyframes auth-pick-close{from{transform:translate(44px,-54px)}to{transform:none}}
+@keyframes auth-pick-lift{from{transform:none}to{transform:translate(var(--carry),-9px) rotate(-2deg)}}
+@media(prefers-reduced-motion:reduce){.auth-pick,.auth-pick-sticks img{animation:none}}
+/* A lone provider has to sit in the middle, not in the first of two columns. */
+.auth-providers{display:flex;justify-content:center;gap:12px;padding:12px 0 14px}
+/* Google injects an iframe that would otherwise sit on the text baseline and
+   ride a couple of pixels below the mark beside it. */
+.auth-google-mount{display:grid;place-items:center;width:32px;height:32px;line-height:0;font-size:0}
+.auth-google-mount>*{display:block}
+.auth-providers{align-items:center}
+/* These rows are hidden by setting .hidden, and their own display would win. */
+.auth-dialog [hidden]{display:none!important}
+/* Google draws its own ringed icon and we cannot restyle it, so the others
+   wear the same ring rather than floating as bare glyphs beside it. */
+.auth-provider{display:grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid #dadce0;border-radius:50%;background:#fff;color:#302a24;cursor:pointer;transition:border-color .18s ease}
+.auth-provider:hover{border-color:#302a24}.auth-provider svg{width:16px;height:16px;flex:none}.auth-apple svg{width:17px;height:17px;fill:currentColor}
+/* Space separates the two ways in; a rule would be one more line to read. */
+.auth-divider{display:none}
 .auth-tabs{display:grid;grid-template-columns:repeat(2,1fr);padding:3px;background:#f3f3f3;border-radius:9px;margin-bottom:12px}
 .auth-tabs:has(button:only-child){display:none}
 .auth-tabs button{min-height:34px;border:0;border-radius:7px;background:transparent;color:#75695f;font:inherit;font-size:11px;cursor:pointer}
 .auth-tabs button.is-active{background:#fff;color:#302a24;box-shadow:0 1px 5px #00000010}
-.auth-dialog .rewards-login{gap:10px}
+.auth-dialog .rewards-login{gap:2px}
 .auth-dialog .rewards-login>label>span:first-child{font-size:11px;color:#75695f}
-.auth-dialog .rewards-login input:not([type="checkbox"]){border-color:#d9d9d9;border-radius:9px;padding:13px 14px;min-height:48px}
-.auth-dialog .rewards-login input:not([type="checkbox"]):focus{outline:0;border-color:#b5232b;box-shadow:0 0 0 3px #b5232b12}
-.auth-dialog .primary{border-radius:999px;min-height:49px;font-weight:500;margin-top:4px;box-shadow:0 7px 18px #8e1f271c;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
-.auth-dialog .primary:hover{background:#a51f27;box-shadow:0 9px 22px #8e1f2728;transform:translateY(-1px)}
-.auth-dialog .primary:active{transform:translateY(0);box-shadow:0 3px 10px #8e1f2720}
-.auth-links{display:flex;align-items:center;justify-content:center;gap:18px;min-height:28px;flex-wrap:wrap}
+.auth-dialog .rewards-login input:not([type="checkbox"]){border:0;border-bottom:1px solid #e6ded6;border-radius:0;padding:6px 2px;min-height:36px;background:transparent;font-size:14px}
+.auth-dialog .rewards-login input::placeholder{color:#b6aa9e}
+.auth-dialog .rewards-login input:not([type="checkbox"]):focus{outline:0;border-bottom-color:#b5232b;box-shadow:none}
+.rewards-dialog.auth-dialog .primary{width:auto;justify-self:center;min-width:176px;padding:9px 30px;border-radius:999px;min-height:40px;font-size:14px;font-weight:500;letter-spacing:.04em;margin-top:14px;box-shadow:0 7px 18px #8e1f271c;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}
+.rewards-dialog.auth-dialog .primary:hover{background:#a51f27;box-shadow:0 9px 22px #8e1f2728;transform:translateY(-1px)}
+.rewards-dialog.auth-dialog .primary:active{transform:translateY(0);box-shadow:0 3px 10px #8e1f2720}
+/* Three links of equal weight made the guest read all three. The alternative
+   way in is now a control; recovery and sign-up are small print under it. */
+.auth-links{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
 .auth-links button{border:0;background:transparent;color:#75695f;padding:5px 0;font:inherit;font-size:11px;cursor:pointer}
 .auth-links button:hover{color:#b5232b}
+.auth-links .auth-alt{width:100%;min-height:46px;padding:0 18px;border:1px solid #e0d8d0;border-radius:999px;color:#302a24;font-size:13px;transition:border-color .18s ease}
+.auth-links .auth-alt:hover{border-color:#b5232b;color:#b5232b}
+.auth-links .auth-minor{display:flex;justify-content:center;gap:26px}
 .auth-notice{text-align:center;padding:14px 0 4px}.auth-notice .reward-link{margin:4px auto 0;text-align:center}
 .auth-reset>.rewards-content{padding-top:12px}
 .auth-dialog .rewards-error{margin:0}
 .auth-secondary{display:flex;justify-content:space-between;gap:18px}.auth-secondary[hidden]{display:none}.auth-secondary .reward-link{width:auto;padding:4px 0;text-align:left}
-@media(max-width:560px){.auth-dialog>header{padding:25px 24px 16px}.auth-dialog>.rewards-content{padding:0 24px 26px}.auth-dialog>header h2{font-size:25px}}
+@media(max-width:560px){.auth-dialog>header h2{font-size:22px}}
 [hidden]{display:none!important}
 .rewards-dialog .primary {
   background: #b5232b;
@@ -375,6 +414,9 @@
 .member-home .account-balance strong{font-size:23px;margin:0;color:#fff5e8}
 .member-home .account-balance>span:last-child{font-size:11px;color:#fff5e8}
 .member-home .account-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:22px 0 24px;padding:0 0 20px;border-bottom:1px solid #e5ddd5}
+/* With no order to show, the section below collapses to nothing and the
+   rule underneath the shortcuts is left hanging over empty space. */
+.member-home .account-nav:has(+ [data-current-order]:empty){margin-bottom:8px;padding-bottom:0;border-bottom:0}
 .member-home .account-nav button{flex-direction:column;justify-content:center;gap:10px;border:0;min-height:70px;padding:4px;font-size:12px;text-align:center}
 .member-home .account-nav button+button{border-left:1px solid #e5ddd5}
 .member-home .account-nav button>span:last-child{font-size:12px;color:#302a24}

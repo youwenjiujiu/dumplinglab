@@ -1,0 +1,166 @@
+/* 饺子实验室 — built from the restaurant's own brand book, nothing borrowed.
+   Its two colours (cream #fef6e6, red #dd3735), its marks (the nine-dumpling
+   disc, the 饺 seal, the // chopsticks) and its name taken literally: every
+   dish is a specimen with a number and a formula. Photographs untouched. */
+@font-face{font-family:"Scto Grotesk A";src:url("fonts/scto-grotesk-a-light.woff2") format("woff2");font-weight:300;font-style:normal;font-display:swap}
+@font-face{font-family:"Scto Grotesk A";src:url("fonts/scto-grotesk-a-regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Scto Grotesk A";src:url("fonts/scto-grotesk-a-medium.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Scto Grotesk A";src:url("fonts/scto-grotesk-a-bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+:root{
+  --paper:#FEF6E6;--bg:var(--paper);--bg-2:#F6EAD4;
+  --ink:#2B1B18;--ink-2:rgba(43,27,24,.72);--mute:rgba(43,27,24,.44);--line:rgba(221,55,53,.20);--rule:rgba(221,55,53,.42);
+  --red:#DD3735;--ui:#DD3735;
+  --sans:"Scto Grotesk A","PingFang SC","HarmonyOS Sans SC","Hiragino Sans GB","Noto Sans SC",-apple-system,sans-serif;
+  --display:var(--sans);--serif:var(--sans);
+}
+body,.view{background:var(--paper);color:var(--ink);font-family:var(--sans)}
+.view{transition:opacity 300ms var(--ease-out),transform 300ms var(--ease-out),filter 300ms var(--ease-out)}
+@starting-style{.view:not([hidden]){opacity:0;transform:scale(.99) translateY(8px);filter:blur(12px)}}
+.m,.slab{font-family:var(--sans);font-size:9.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.pill{font-family:var(--sans);font-weight:500;font-size:11px;letter-spacing:.18em;text-transform:uppercase;height:46px;border-radius:100px}
+.pill.solid{background:var(--ui);border-color:var(--ui);color:var(--paper)}
+.pill.ghost{border:1px solid var(--rule);color:var(--ink)}
+/* the shop's own pattern: one dumpling from the mark, repeated the way the awning does */
+.dump-band{background-image:url("brand/dumpling.webp");background-repeat:repeat-x;background-size:auto 22px;background-position:center;opacity:.16}
+
+/* ---------- cover: the photograph is the design — a styled scene shot on the
+   brand's own two colours, the words laid over it ---------- */
+#cover{background:var(--paper);display:flex;flex-direction:column;overflow:hidden}
+#cover::before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;height:auto;background:url("img/hero/cover.webp") center 40%/cover no-repeat}
+#cover::after{content:"";position:absolute;left:0;right:0;top:0;bottom:0;background:linear-gradient(to bottom,rgba(150,24,22,.40) 0%,rgba(150,24,22,.06) 22%,rgba(150,24,22,0) 38%)}
+#cover .top{position:relative;z-index:3;padding:calc(26px + env(safe-area-inset-top)) 22px 0;align-items:center}
+#cover .top img{width:min(56%,290px);content:url("brand/dumpling-lab-cream.webp")}
+#cover .top button{color:rgba(254,246,230,.8)}
+#cover .lead{display:none}   /* the photograph says it; no headline over the food */
+#cover .lead::after{display:none}
+.scene{position:relative;flex:1;min-height:0}
+.scene .glow,.scene .plate{display:none}
+#cover .words{position:relative;z-index:3;background:var(--paper);box-shadow:0 -18px 26px rgba(254,246,230,.9);padding:16px 22px calc(28px + env(safe-area-inset-bottom))}
+#cover .words::before{display:none}
+#cover .words .serif{font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+#cover .words .slab{margin-top:5px;font-size:10px;color:var(--mute)}
+#cover .cta{margin-top:16px;gap:10px}
+
+/* ---------- shop ---------- */
+#shop .top,.kinds{background:rgba(254,246,230,.95)}
+.kinds::after{background:linear-gradient(to bottom,rgba(254,246,230,.95),rgba(254,246,230,0))}
+#shop .tools button{color:var(--ink)}
+.kinds button{font-family:var(--sans);font-weight:500;font-size:13px;letter-spacing:.01em;color:var(--mute)}
+.kinds button.on{color:var(--red)}
+.kinds button.on::after{background:var(--red)}
+.section{position:relative;display:block;padding:34px 20px 0}
+.section h2{display:flex;align-items:baseline;gap:10px;padding-bottom:10px;position:relative;border-bottom:1px solid var(--rule);font-family:var(--sans);font-weight:300;font-size:29px;letter-spacing:-.03em;color:var(--ink);writing-mode:horizontal-tb;position:static}
+.section h2::before{display:none}
+.section h2 .en{display:inline;margin:0;font-size:9.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--red)}
+.section h2 .count{display:block;margin-left:auto;font-size:9.5px;font-weight:500;letter-spacing:.18em;color:var(--mute);font-variant-numeric:tabular-nums}
+.section h2 .count::before{content:"// "}
+.section-body{display:block;padding-top:0}
+.section-body::before{display:none}
+.grid.photos{display:grid;grid-template-columns:1fr 1fr;gap:30px 16px;margin-top:20px;align-items:end}
+.grid.photos .tile .art{aspect-ratio:1.05;background:none;border-radius:0;overflow:visible;display:grid;place-items:center}
+.grid.photos .tile .art img{width:90%;height:90%;object-fit:contain;filter:drop-shadow(0 14px 12px rgba(90,40,25,.18))}
+.grid.photos .tile .art .add,.grid.photos .tile .art .qty{right:0;bottom:-4px;width:28px;height:28px;font-size:16px;border-width:1.5px}
+.grid.photos .tile .cap{margin-top:10px;text-align:left}
+.grid.photos .tile .cap .no{display:block;font-size:9px;font-weight:500;letter-spacing:.18em;color:var(--red);font-variant-numeric:tabular-nums}
+.grid.photos .tile .nm{margin-top:2px;font-weight:500;font-size:14px;line-height:1.35}
+.grid.photos .tile .en{display:none}
+.grid.photos .tile .pr{margin-top:3px;font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.grid.photos .tile .pr span{display:none}
+.grid.photos .tile.is-ph .cap .no::after{content:" // 示意图";letter-spacing:.12em;color:var(--mute)}
+.grid.photos .tile .art .ph{display:none}
+.rows{margin-top:14px}
+.row{display:flex;align-items:baseline;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .txt{flex:1;min-width:0}
+.row .nm{font-weight:500;font-size:15px;line-height:1.3}
+.row .nm .no{margin-right:9px;font-size:9px;font-weight:500;letter-spacing:.18em;color:var(--red);font-variant-numeric:tabular-nums}
+.row .en{margin-top:2px;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+.row .side{display:flex;align-items:center;gap:14px;flex:0 0 auto}
+.row .pr{margin:0;font-size:13px;font-weight:500;letter-spacing:.04em;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.row .pr span{display:none}
+.add{border-color:var(--red);color:var(--red);background:transparent}
+.qty{background:var(--red);border-color:var(--red);color:var(--paper)}
+
+/* ---------- the order rail wears the mark ---------- */
+#rail{background:var(--red)}
+#rail .seal{background:var(--paper);color:var(--red);font-size:0;background-image:url("brand/dumpling-grid.webp");background-size:78% 78%;background-repeat:no-repeat;background-position:center}
+#rail .seal .seal-glyph{display:none}
+#rail .seal b{background:var(--ink);color:var(--paper)}
+#rail .lab{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase}
+#rail .tot{font-size:16px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* ---------- dish: a specimen sheet ---------- */
+#dish{background:var(--paper)}
+#dish .top button{background:rgba(221,55,53,.08);color:var(--ink)}
+.d-pic{aspect-ratio:.88;margin-top:-20px}
+.d-pic .dglow,.d-pic .ground{display:none}
+.d-art-object>img:first-child{filter:drop-shadow(0 24px 22px rgba(90,40,25,.2))}
+.d-art-object .mirror{display:none}
+.d-body{padding-top:4px}
+.d-strip{gap:6px 10px;margin-bottom:8px}
+.d-strip .m{color:var(--red)}
+.d-strip .m.dim{color:var(--mute)}
+.d-name{font-weight:300;font-size:35px;letter-spacing:-.03em;line-height:1.08;color:var(--ink)}
+.d-en{margin-top:8px}
+.d-price{margin-top:14px;font-weight:300;font-size:46px;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:8px;color:var(--red)}
+.d-price small{align-self:flex-start;margin-top:10px;font-size:9.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.d-flavor{font-size:14px;line-height:1.75;color:var(--ink-2);margin-top:16px}
+.facts-head{display:block;margin-top:24px;font-size:9.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--red)}
+.facts-head::after{content:" //";color:var(--mute)}
+.facts{margin-top:8px;border-top:1px solid var(--rule)}
+.fact{position:relative;display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}
+.fact .k{font-size:9.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.fact .v{font-size:14px;font-weight:500;color:var(--ink);text-align:right}
+.fact .v em{font-style:normal;font-size:9.5px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-left:6px}
+.fact .prog{position:absolute;left:0;bottom:-1px;height:1px;background:var(--red)}
+.d-foot{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
+.d-foot .k{display:block;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+.d-foot .v{display:block;margin-top:4px;font-size:13px;font-weight:500;color:var(--ink-2)}
+.style-opt{border-color:var(--rule);font-size:9.5px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;height:34px}
+.style-opt.on{background:var(--red);border-color:var(--red);color:var(--paper)}
+.d-bar{background:linear-gradient(to top,rgba(254,246,230,.98) 70%,rgba(254,246,230,0))}
+.stepper{background:var(--bg-2)}
+.stepper b{font-variant-numeric:tabular-nums}
+.d-add{background:var(--red);font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase}
+.d-add strong{font-size:14px;font-weight:500;letter-spacing:.04em;text-transform:none;font-variant-numeric:tabular-nums}
+
+/* ---------- index ---------- */
+#indexView .top{background:rgba(254,246,230,.96)}
+#indexView .ix-sec{display:block;padding:26px 20px 0}
+#indexView .ix-sec h2{display:flex;flex-direction:row;align-items:baseline;gap:10px;font-weight:300;font-size:26px;letter-spacing:-.03em;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+#indexView .ix-sec h2 .en{display:inline;margin:0;font-size:9.5px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--red)}
+.ix-row{border-bottom:1px solid var(--line)}
+.ix-row .no{font-size:9px;font-weight:500;letter-spacing:.16em;color:var(--red);font-variant-numeric:tabular-nums}
+.ix-row .nm{font-size:15px;font-weight:500}
+.ix-row .pr{font-size:13px;font-weight:500;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* ---------- ticket / waiter / done ---------- */
+#cart,#waiterSheet{background:var(--paper)}
+#cart .t-head{background:var(--red)}
+#cart .t-head h2{font-weight:300;letter-spacing:-.02em}
+#cart .close{color:var(--red)}
+.cart-line{border-bottom:1px solid var(--line)}
+.cart-line .th{background:transparent}
+.cart-line .nm{font-weight:500;font-size:15px}
+.cart-line .sub{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase}
+#note{background:var(--bg-2)}
+#cartTotals .rowt{border-top:1px solid var(--rule)}
+#cartTotals .rowt b{font-weight:300;font-size:26px;letter-spacing:-.03em;color:var(--red);font-variant-numeric:tabular-nums}
+#placeOrder,#waiterSend{background:var(--red);font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase}
+#placeOrder strong{font-size:14px;font-weight:500;letter-spacing:.04em;text-transform:none;font-variant-numeric:tabular-nums}
+#callWaiter{border:1px solid var(--rule);background:transparent;font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase}
+.reason{background:var(--bg-2)}
+.reason.on{background:var(--red)}
+.diet button{border-color:var(--rule)}
+.diet button.on{background:var(--red);border-color:var(--red)}
+.find{background:var(--bg-2)}
+#done{background:var(--red)}
+.slip{background:var(--paper)}
+/* the order is stamped with the shop's own seal */
+/* the order is stamped: the shop's own seal comes down and settles */
+.done-mark{width:112px;height:112px;border:0;background:url("brand/dumpling-seal.webp") center/contain no-repeat;font-size:0;animation:labStamp 560ms cubic-bezier(.2,1.4,.5,1) 160ms both}
+@keyframes labStamp{0%{opacity:0;transform:scale(1.5) rotate(-11deg);filter:blur(3px)}60%{opacity:1;transform:scale(.94) rotate(3deg);filter:blur(0)}100%{opacity:1;transform:none}}
+.slip{position:relative;overflow:hidden}
+.slip::after{content:"";position:absolute;left:0;right:0;bottom:0;height:14px;background-image:url("brand/dumpling.webp");background-repeat:repeat-x;background-size:auto 14px;opacity:.2}
+.done-mark .seal-glyph{display:none}
+#toast{background:var(--ink);font-size:10.5px;letter-spacing:.12em}

@@ -3,7 +3,7 @@ import { walletService, walletEnabled } from "../server/wallet-production.js";
 import { onlineService } from "../server/online-production.js";
 import { requireStaff } from "../server/staff-auth.js";
 import { RequestError } from "../server/order-core.js";
-import { bodyOf, fail, json, method } from "../server/http.js";
+import { bodyOf, fail, json, method, sameOrigin} from "../server/http.js";
 export default async function handler(req, res) {
   try {
     if (req.method === "GET" && req.query?.admin === "1") {
@@ -42,8 +42,10 @@ export default async function handler(req, res) {
       });
     }
     if (
-      req.headers.origin !==
-      (process.env.DL_MEMBER_ORIGIN || process.env.DL_ORDER_ORIGIN)
+      !sameOrigin(
+        req.headers,
+        process.env.DL_MEMBER_ORIGIN || process.env.DL_ORDER_ORIGIN,
+      )
     )
       throw new RequestError("请从本网站操作", 403);
     if (input.action === "topup")

@@ -1,5 +1,6 @@
 import * as THREE from "./vendor/three.module.js";
 import { GLTFLoader } from "./vendor/GLTFLoader.js";
+import { makeTable, makeStudioEnvironment } from "./table3d.js";
 
 const clamp = THREE.MathUtils.clamp;
 
@@ -54,31 +55,58 @@ function makeStageTicks() {
 /* A small procedural softbox room baked to a PMREM: bright ceiling panel,
    dimmer walls, dark floor. Enough for believable reflections on glaze and
    broth without shipping an HDR file. */
-function makeStudioEnvironment(renderer) {
-  const scene = new THREE.Scene();
-  const panel = (w, h, color, intensity, position, lookAt) => {
-    const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, h),
-      new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(intensity), side: THREE.DoubleSide }),
-    );
-    mesh.position.copy(position);
-    mesh.lookAt(lookAt);
-    scene.add(mesh);
+
+
+/* ---------- photo projection ----------
+   The photograph is the truth; the model only knows the other angles. At the
+   rest pose the photo is projected back onto every surface that faced the
+   camera when it was taken (and was not hidden behind something else, per a
+   depth pass at that pose). Those surfaces show the real pixels; everything
+   the photo never saw keeps the generated texture. Turning the dish reveals
+   the generated sides gradually, and a double tap brings the photo back. */
+const PROJ_KEY = "dl-photo-projection-5";
+
+function makeProjection() {
+  return {
+    photoMap: { value: null },
+    photoDepth: { value: null },
+    photoMatrix: { value: new THREE.Matrix4() },
+    photoCamObj: { value: new THREE.Vector3() },
+    photoRect: { value: new THREE.Vector4(0, 0, 1, 1) },
+    photoStrength: { value: 0 },
   };
-  const origin = new THREE.Vector3();
-  panel(6, 4, 0xffffff, 3.2, new THREE.Vector3(-3, 6, 4), origin);        // key softbox
-  panel(8, 8, 0xfff8ef, 1.4, new THREE.Vector3(0, 8, 0), origin);         // ceiling
-  panel(10, 6, 0xeef2ff, 0.9, new THREE.Vector3(6, 3, 2), origin);        // fill wall
-  panel(10, 6, 0xffffff, 0.6, new THREE.Vector3(0, 3, -7), origin);       // back wall
-  panel(14, 14, 0x777066, 0.5, new THREE.Vector3(0, -3, 0), new THREE.Vector3(0, 1, 0)); // floor
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const texture = pmrem.fromScene(scene, 0.04).texture;
-  pmrem.dispose();
-  scene.traverse(o => { o.geometry?.dispose(); o.material?.dispose(); });
-  return texture;
 }
 
-function prepareModel(root, preTilt = 0) {
+function installProjection(material, uniforms) {
+  material.customProgramCacheKey = () => PROJ_KEY;
+  material.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nuniform mat4 photoMatrix;\nvarying vec4 vPhotoClip;\nvarying vec3 vObjPos;\nvarying vec3 vObjNormal;")
+      .replace("#include <project_vertex>", "#include <project_vertex>\nvPhotoClip = photoMatrix * vec4(transformed, 1.0);\nvObjPos = transformed;\nvObjNormal = objectNormal;");
+    const blend = `
+      if (photoStrength > 0.0) {
+        vec3 pndc = vPhotoClip.xyz / vPhotoClip.w;
+        vec2 scr = pndc.xy * 0.5 + 0.5;
+        vec2 puv = vec2((scr.x - photoRect.x) / photoRect.z, (scr.y - photoRect.y) / photoRect.w);
+        float inside = step(0.0, puv.x) * step(puv.x, 1.0) * step(0.0, puv.y) * step(puv.y, 1.0);
+        if (inside > 0.0) {
+          vec4 ph = texture2D(photoMap, puv);
+          float facing = dot(normalize(vObjNormal), normalize(photoCamObj - vObjPos));
+          float seen = step(pndc.z * 0.5 + 0.5, texture2D(photoDepth, scr).r + 0.0004);
+          float w = photoStrength * smoothstep(0.25, 0.85, ph.a) * smoothstep(0.4, 0.78, facing) * seen;
+          gl_FragColor.rgb = mix(gl_FragColor.rgb, ph.rgb, w);
+        }
+      }`;
+    const decl = "uniform sampler2D photoMap;\nuniform sampler2D photoDepth;\nuniform vec3 photoCamObj;\nuniform vec4 photoRect;\nuniform float photoStrength;\nvarying vec4 vPhotoClip;\nvarying vec3 vObjPos;\nvarying vec3 vObjNormal;";
+    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", "#include <common>\n" + decl);
+    const hook = shader.fragmentShader.includes("#include <opaque_fragment>") ? "#include <opaque_fragment>" : "#include <output_fragment>";
+    shader.fragmentShader = shader.fragmentShader.replace(hook, hook + blend);
+  };
+  material.needsUpdate = true;
+}
+
+function prepareModel(root, preTilt = 0, projection = null) {
   if (preTilt) root.rotation.x = preTilt;
   root.traverse(object => {
     if (!object.isMesh) return;
@@ -117,6 +145,7 @@ function prepareModel(root, preTilt = 0) {
         material.map.anisotropy = 8;
       }
       material.needsUpdate = true;
+      if (projection && material.isMeshStandardMaterial) installProjection(material, projection);
       return material;
     });
     object.material = Array.isArray(object.material) ? materials : materials[0];
@@ -183,10 +212,16 @@ export function mountGeneratedDish3D(container, options = {}) {
   pivot.name = "generated-dish-pivot";
   scene.add(pivot);
   const shadow = makeContactShadow();
+  shadow.visible = options.contactShadow !== false;
   scene.add(shadow);
+  const table = options.table ? makeTable(renderer, scene, options.table) : null;   // the restaurant's table under the dish
 
   let disposed = false;
   let root = null;
+  const projection = options.photoURL ? makeProjection() : null;   // photo → surfaces that faced the camera
+  let reflectionGroup = null;                                      // the dish mirrored in the table top
+  let photoSize = null;                                            // natural size of the photograph
+  let depthTarget = null;
   let dragging = false;
   let touched = false;               // has the guest ever taken hold of the dish
   let velocityX = 0;
@@ -225,14 +260,75 @@ export function mountGeneratedDish3D(container, options = {}) {
     return { left: minX, top: minY, width: maxX - minX, height: maxY - minY };
   };
 
+  // How far the dish has been turned away from the photograph's angle (radians).
+  const turnNow = () => Math.hypot(Math.atan2(Math.sin(pivot.rotation.y), Math.cos(pivot.rotation.y)), pivot.rotation.x * 1.6);
+  // Put the dish back the way it was served (double tap, or a small turn let go).
+  const startReset = () => { reset = { fromY: pivot.rotation.y, fromX: pivot.rotation.x, fromZoom: zoom, start: performance.now() }; velocityX = velocityY = 0; wake(); };
   const publish = () => {
     container.dataset.rotationX = pivot.rotation.x.toFixed(4);
     container.dataset.rotationY = pivot.rotation.y.toFixed(4);
     container.dataset.zoom = zoom.toFixed(3);
+    const turn = turnNow();
+    if (projection) {
+      // The projected photo holds for the first stretch of a turn, then lets go of the sides it never saw.
+      const ready = projection.photoMap.value && projection.photoDepth.value ? 1 : 0;
+      projection.photoStrength.value = ready * (1 - THREE.MathUtils.smoothstep(turn, 0.15, 0.45));
+    }
+    options.onPose?.({ turn, rotationY: pivot.rotation.y, rotationX: pivot.rotation.x, zoom });
   };
 
+  /* Rest-pose mapping: where each surface point landed in the photograph, and
+     a depth pass so surfaces hidden at that pose do not borrow its pixels. */
+  const updateProjection = () => {
+    if (!projection || !root || !photoSize) return;
+    const savedY = pivot.rotation.y, savedX = pivot.rotation.x, savedZoom = zoom;
+    pivot.rotation.set(0, 0, 0); zoom = 1; placeCamera();
+    pivot.updateMatrixWorld(true); camera.updateMatrixWorld(true);
+    const width = renderer.domElement.clientWidth, height = renderer.domElement.clientHeight;
+    const box = screenBox();
+    const photoHeight = box.width * photoSize.height / photoSize.width;
+    const centreUp = 1 - (box.top + box.height / 2) / height;
+    projection.photoRect.value.set(box.left / width, centreUp - photoHeight / height / 2, box.width / width, photoHeight / height);
+    const viewProj = new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    root.traverse(object => {
+      if (!object.isMesh) return;
+      projection.photoMatrix.value.multiplyMatrices(viewProj, object.matrixWorld);
+      projection.photoCamObj.value.copy(camera.position).applyMatrix4(object.matrixWorld.clone().invert());
+    });
+    const dpr = renderer.getPixelRatio(), w = Math.max(1, Math.round(width * dpr)), h = Math.max(1, Math.round(height * dpr));
+    if (!depthTarget || depthTarget.width !== w || depthTarget.height !== h) {
+      depthTarget?.dispose();
+      depthTarget = new THREE.WebGLRenderTarget(w, h, { depthTexture: new THREE.DepthTexture(w, h, THREE.UnsignedIntType), depthBuffer: true });
+    }
+    const strength = projection.photoStrength.value; projection.photoStrength.value = 0;
+    const shadowWas = shadow.visible; shadow.visible = false; if (reflectionGroup) reflectionGroup.visible = false; if (table) table.group.visible = false;
+    renderer.setRenderTarget(depthTarget); renderer.render(scene, camera); renderer.setRenderTarget(null);
+    shadow.visible = shadowWas; if (reflectionGroup) reflectionGroup.visible = true; if (table) table.group.visible = true;
+    projection.photoDepth.value = depthTarget.depthTexture;
+    projection.photoStrength.value = strength;
+    pivot.rotation.set(savedX, savedY, 0); zoom = savedZoom; placeCamera(); pivot.updateMatrixWorld(true);
+    publish();
+  };
+  if (projection) {
+    new THREE.TextureLoader().load(options.photoURL, texture => {
+      if (disposed) { texture.dispose(); return; }
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.anisotropy = 8;
+      photoSize = { width: texture.image.width, height: texture.image.height };
+      projection.photoMap.value = texture;
+      updateProjection(); render();
+    });
+  }
+
+  // At rest the sheet shows the photograph on top; the model is then hidden in the main
+  // pass but still reflected in the table, so the photograph appears to stand on it.
+  let dishVisible = true;
   const render = () => {
-    if (!disposed) renderer.render(scene, camera);
+    if (disposed) return;
+    if (root) root.visible = true;
+    table?.beforeRender(camera);
+    if (root) root.visible = dishVisible;
+    renderer.render(scene, camera);
   };
 
   /* One loop drives idle spin, flick inertia and the reset animation; it parks
@@ -276,6 +372,7 @@ export function mountGeneratedDish3D(container, options = {}) {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
+    updateProjection();
     render();
   };
   const observer = new ResizeObserver(resize);
@@ -289,14 +386,31 @@ export function mountGeneratedDish3D(container, options = {}) {
     gltf => {
       if (disposed) return;
       root = gltf.scene;
-      prepareModel(root, Number(options.preTilt) || 0);
+      prepareModel(root, Number(options.preTilt) || 0, projection);
       pivot.add(root);
+      if (options.reflection) {
+        // A planar reflection in the table: the same dish mirrored through the floor plane (y = -0.71),
+        // drawn translucent; the sheet fades it with distance from the base with a mask.
+        const ghost = root.clone(true);
+        ghost.traverse(object => {
+          if (!object.isMesh) return;
+          const from = Array.isArray(object.material) ? object.material[0] : object.material;
+          object.material = new THREE.MeshStandardMaterial({ map: from?.map || null, color: from?.color ? from.color.clone() : new THREE.Color(0xffffff), roughness: 1, metalness: 0, transparent: true, opacity: options.reflection.opacity ?? 0.32, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.3 });
+          object.renderOrder = 1;
+        });
+        reflectionGroup = new THREE.Group();
+        reflectionGroup.position.y = -1.42;
+        reflectionGroup.scale.y = -1;
+        reflectionGroup.add(ghost);
+        pivot.add(reflectionGroup);
+      }
       if (Number.isFinite(options.rotationY)) pivot.rotation.y = options.rotationY;
       if (Number.isFinite(options.rotationX)) pivot.rotation.x = clamp(options.rotationX, TILT_MIN, TILT_MAX);
       if (Number.isFinite(options.zoom)) { zoom = clamp(options.zoom, ZOOM_MIN, ZOOM_MAX); placeCamera(); }
       container.classList.add("model-loaded");
       container.dataset.source = "generated-glb";
       pivot.updateMatrixWorld(true);
+      updateProjection();
       publish();
       render();
       options.onReady?.(screenBox());
@@ -340,10 +454,8 @@ export function mountGeneratedDish3D(container, options = {}) {
     // A double tap puts the dish back the way it was served.
     const now = performance.now();
     if (now - lastTap < 300) {
-      reset = { fromY: pivot.rotation.y, fromX: pivot.rotation.x, fromZoom: zoom, start: now };
-      velocityX = velocityY = 0;
+      startReset();
       lastTap = 0;
-      wake();
       return;
     }
     lastTap = now;
@@ -382,7 +494,9 @@ export function mountGeneratedDish3D(container, options = {}) {
     if (pointers.size === 0) {
       dragging = false;
       renderer.domElement.style.cursor = "grab";
-      wake();   // let the flick coast out
+      // A small turn let go springs back to the photograph; a real turn coasts out and stays.
+      if (options.snapBack && turnNow() + Math.abs(velocityY) * 10 < options.snapBack) startReset();
+      else wake();   // let the flick coast out
     }
   };
 
@@ -401,6 +515,8 @@ export function mountGeneratedDish3D(container, options = {}) {
   element.addEventListener("wheel", wheel, { passive: false });
 
   return {
+    reset: startReset,
+    setDishVisible(visible) { dishVisible = Boolean(visible); render(); },
     dispose() {
       if (disposed) return;
       disposed = true;
@@ -420,6 +536,10 @@ export function mountGeneratedDish3D(container, options = {}) {
           material?.dispose();
         });
       });
+      reflectionGroup?.traverse(object => { if (object.isMesh) object.material?.dispose(); });
+      table?.dispose();
+      projection?.photoMap.value?.dispose();
+      depthTarget?.dispose();
       shadow.geometry.dispose();
       shadow.material.map.dispose();
       shadow.material.dispose();
