@@ -247,12 +247,19 @@ function printFor(d) {
   return null;
 }
 
+/* Web-sized copies of a dish photograph (see scripts/optimise-images.mjs). */
+function imgURL(name, size = "s") {
+  if (!name) return "";
+  if (/^3d-covers\//.test(name)) return `img/${name}`;
+  return `img/${size}/${name.replace(/\.(png|jpe?g)$/i, "")}.webp`;
+}
+
 function artFor(d) {
   const print = printFor(d);
   if (print) return `<img src="${print}" alt="${d.cn||d.name||''}" loading="lazy" draggable="false"
     onerror="__artFallback(this, '${d.id}')">`;
   const image = d.img || d.cover;
-  if (image) return `<img src="img/${image}" alt="${d.cn||d.name||''}" loading="lazy" draggable="false"
+  if (image) return `<img src="${imgURL(image, "s")}" alt="${d.cn||d.name||''}" loading="lazy" draggable="false"
     onerror="__artFallback(this, '${d.id}')">`;
   return svgArtFor(d);
 }

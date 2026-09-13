@@ -1,0 +1,216 @@
+diff --git a/editions/atelier/build-production.mjs b/editions/atelier/build-production.mjs
+index e276e0c..9398839 100644
+--- a/editions/atelier/build-production.mjs
++++ b/editions/atelier/build-production.mjs
+@@ -24,6 +24,7 @@ for (const dir of ["api", "server", "img/s", "img/l"]) {
+ }
+ for (const file of ["scto-grotesk-a-regular.woff2", "scto-grotesk-a-medium.woff2"]) await copy(resolve(web, "fonts", file), `fonts/${file}`);
+ await copy(resolve(web, "brand/dumpling-lab-primary.png"), "brand/dumpling-lab-primary.png");
++await copy(resolve(web, "brand/interior-reference.png"), "brand/interior-reference.png");
+ for (const file of ["entry-dinein-v1.svg", "entry-takeaway-v1.svg", "entry-delivery-v1.svg", "header-dinein-v1.svg", "header-takeaway-v1.svg", "header-delivery-v1.svg"]) await copy(resolve(web, "brand", file), `brand/${file}`);
+ let html = (await readFile(resolve(here, "index.html"), "utf8"))
+   .replace('<html lang="zh-CN">', '<html lang="zh-CN" data-environment="production">')
+diff --git a/editions/atelier/fulfilment.js b/editions/atelier/fulfilment.js
+index 24d492a..840fc59 100644
+--- a/editions/atelier/fulfilment.js
++++ b/editions/atelier/fulfilment.js
+@@ -90,7 +90,7 @@ const Fulfilment = (() => {
+   const entryText = (zh, en) => `<span class="entry-copy"><span lang="zh-CN">${escapeHTML(zh)}</span><span lang="en" class="entry-en">${escapeHTML(en)}</span></span>`;
+   function select() {
+     openModal('fulfilment', '');
+-    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><img class="entry-art" src="/brand/entry-dinein-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><img class="entry-art" src="/brand/entry-takeaway-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('打包外带','Takeaway')}</strong></button><button data-fulfilment="delivery"><img class="entry-art" src="/brand/entry-delivery-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('外送','Delivery')}</strong></button></div></div>`;
++    $('#sheetBody').innerHTML = `<div class="entry-room" aria-hidden="true"><img src="/brand/interior-reference.png" width="1655" height="950" alt="" decoding="async"></div><div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><img class="entry-art" src="/brand/entry-dinein-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><img class="entry-art" src="/brand/entry-takeaway-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('打包外带','Takeaway')}</strong></button><button data-fulfilment="delivery"><img class="entry-art" src="/brand/entry-delivery-v1.svg" width="260" height="220" alt="" draggable="false"><strong>${entryText('外送','Delivery')}</strong></button></div></div>`;
+     $('#closeSheet').ariaLabel = '关闭 / Close';
+     const heading = $('#sheetTitle'); heading.tabIndex = -1; heading.focus({preventScroll:true});
+   }
+diff --git a/editions/atelier/index.html b/editions/atelier/index.html
+index 774fec2..6451efc 100644
+--- a/editions/atelier/index.html
++++ b/editions/atelier/index.html
+@@ -6,7 +6,7 @@
+       name="viewport"
+       content="width=device-width, initial-scale=1, viewport-fit=cover"
+     />
+-    <meta name="theme-color" content="#954b3d" />
++    <meta name="theme-color" content="#ac171d" />
+     <title>Dumpling Lab · 午晚餐菜单</title>
+     <link
+       rel="preload"
+diff --git a/editions/atelier/shared-table.css b/editions/atelier/shared-table.css
+index 1bca9f8..5b6c575 100644
+--- a/editions/atelier/shared-table.css
++++ b/editions/atelier/shared-table.css
+@@ -1546,6 +1546,172 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
+ .pickup-success h2 { font-size: 24px; }
+ .pickup-success .pickup-ticket { margin-top: 12px; padding-block: 24px; }
+ .pickup-success .pickup-ticket strong { font-size: clamp(36px,12vw,64px); }
++
++/* Interior study v2 — red storefront, fine frame, open white menu.
++   Preserve menu-card geometry and sticky offsets; the entrance has its own
++   bounded image window, independent of menu photos and order logic. */
++:root {
++  --paper: #ffffff;
++  --ink: #202222;
++  --muted: #646868;
++  --red: #ac171d;
++  --backdrop: #ffffff;
++  --line: #d8dbd9;
++  --steel: #f1f3f2;
++}
++.masthead {
++  background: var(--red);
++  color: #fff;
++  box-shadow: none;
++}
++.masthead .brand img, .masthead .fulfilment-mode-icon {
++  filter: brightness(0) invert(1);
++}
++.masthead .language-button { color: #fff; }
++.masthead button:focus-visible, .masthead a:focus-visible {
++  outline-color: #fff;
++}
++.preview-notice {
++  background: #202222;
++  color: #dddeda;
++}
++.fulfilment-switch {
++  border: 0;
++  border-radius: 0;
++  background: transparent;
++  color: #fff;
++  padding-inline: 8px;
++  gap: 8px;
++}
++.fulfilment-switch:hover > span { text-decoration: underline; text-underline-offset: 5px; }
++.fulfilment-switch .fulfilment-chevron { width: 12px; height: 12px; }
++.table-button { border-radius: 0; border-color: transparent; background: transparent; padding-left: 0; }
++.dinein-controls { box-shadow: inset 0 -1px 0 var(--line); }
++.menu-toolbar {
++  background: var(--paper);
++  backdrop-filter: none;
++  box-shadow: none;
++}
++.category-item { color: var(--muted); }
++.category-item.active { color: var(--red); }
++.category-item.active::after {
++  width: 22px;
++  height: 2px;
++  border-radius: 0;
++  bottom: 6px;
++}
++#menuList {
++  border-radius: 0;
++  box-shadow: none;
++}
++.section-heading h2 { color: var(--ink); }
++.section-heading {
++  position: relative;
++}
++.menu-section + .menu-section .section-heading::before {
++  content: "";
++  position: absolute;
++  inset: -16px 0 auto;
++  height: 1px;
++  background: var(--line);
++  pointer-events: none;
++}
++.dish-number { color: var(--muted); }
++.dish-price, .detail-price, .cart-unit-price {
++  font-variant-numeric: tabular-nums;
++}
++.dish-image img { filter: none; }
++.menu-section .dish-add {
++  border-radius: 50%;
++  border-color: var(--red);
++  background: var(--red);
++  color: #fff;
++}
++.menu-section .dish-add.selected {
++  border-color: var(--ink);
++  background: var(--ink);
++}
++.menu-section .dish-add:disabled {
++  background: var(--steel);
++  border-color: var(--line);
++  color: var(--muted);
++}
++.table-tray {
++  border-radius: 4px;
++  background: var(--ink);
++  color: #fff;
++  box-shadow: 0 4px 12px #14191914;
++}
++.tray-copy small, .tray-more { color: #cdd1d0; }
++.tray-action { color: #fff; }
++.primary { background: var(--red); color: #fff; border-radius: 4px; }
++.secondary, .chip, .filters button, .search-panel { border-radius: 4px; }
++.preparation-badge { color: var(--red); background: #b21f240a; }
++#sheet,
++#sheet[data-mode="fulfilment"],
++#sheet[data-mode="pickup"],
++#sheet[data-mode="cart"][open] {
++  border-radius: 8px;
++  box-shadow: 0 20px 64px #14191926;
++}
++html.has-open-sheet::before { background: rgb(18 23 23 / 54%); }
++.fulfilment-entry { --entry-red: var(--red); }
++.entry-room {
++  height: clamp(108px, 21dvh, 166px);
++  position: relative;
++  overflow: hidden;
++  background: var(--red);
++  border-bottom: 3px solid var(--red);
++}
++.entry-room > img {
++  width: 100%;
++  height: 100%;
++  object-fit: cover;
++  object-position: 50% 46%;
++}
++#sheet[data-mode="fulfilment"]:has(.entry-room) .sheet-header {
++  position: absolute;
++  top: 8px;
++  right: 8px;
++}
++#sheet[data-mode="fulfilment"]:has(.entry-room) .close-button {
++  background: #202222;
++  color: #fff;
++  border-radius: 50%;
++}
++.entry-room + .fulfilment-entry { padding-top: 22px; }
++.entry-room + .fulfilment-entry h2 { padding-right: 0; }
++.entry-room + .fulfilment-entry .entry-choices button { padding-bottom: 12px; }
++@media (max-height: 580px) {
++  .entry-room { height: 76px; }
++  .entry-room + .fulfilment-entry { padding-top: 16px; padding-bottom: 12px; }
++}
++.entry-choices button + button::before { background: #bfc5c3; }
++.entry-choices button:focus-visible { border-radius: 4px; }
++#sheet .online-field input, #sheet .online-field select { border-radius: 4px; }
++#toast[data-kind="added"] {
++  border-radius: 4px;
++  border-color: #bfc5c3;
++  box-shadow: 0 3px 12px #14191912;
++}
++#toast[data-kind="added"] > svg { background: #b21f240a; }
++.desktop-index,
++.desktop-index .eyebrow,
++.desktop-index .side-category,
++.desktop-index .side-note small { color: var(--muted); }
++.desktop-index .side-category.active { color: var(--red); }
++.desktop-index .side-category.active::after { background: var(--red); }
++.desktop-index .side-note { border-color: var(--line); }
++.desktop-index button:focus-visible { outline-color: var(--red); }
++.desktop-ticket {
++  clip-path: none;
++  border-radius: 0;
++  box-shadow: none;
++}
++.colophon, .colophon b { color: var(--ink); }
++@media (max-width: 760px) {
++  #sheet[data-mode="cart"][open] { border-radius: 6px 6px 0 0; }
++}
+ @media (max-width:360px) { .pickup-ticket { grid-template-columns: minmax(0,1fr) 112px; gap: 8px; } .pickup-ticket img { width:112px; height:112px; } }
+ .online-fields { display: grid; gap: 18px; margin-top: 24px; }
+ .online-field { display: grid; gap: 8px; min-width: 0; font: 400 14px/1.4 var(--sans); }
+

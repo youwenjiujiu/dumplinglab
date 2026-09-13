@@ -15,7 +15,23 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "web/img/candidates/sam3");
 mkdirSync(OUT, { recursive: true });
 
+const SHOOT = Object.fromEntries([
+  ['1163', 'bowl', [360, 230, 1190, 780], [[750, 490], [770, 720]]],
+  ['1084', 'bowl', [400, 190, 1110, 800], [[750, 490], [770, 730]]],
+  ['1060', 'metal serving tray', [300, 265, 1240, 770], [[750, 500], [1100, 620]]],
+  ['0752', 'bowl', [240, 180, 1220, 800], [[730, 490], [730, 710]]],
+  ['0893', 'bowl', [240, 180, 1220, 800], [[730, 490], [730, 710]]],
+  ['0955', 'metal serving tray', [180, 180, 1270, 820], [[730, 510], [1060, 650]]],
+  ['0980', 'metal serving tray', [180, 180, 1270, 820], [[730, 510], [1060, 650]]],
+  ['1036', 'plate', [200, 200, 1250, 810], [[730, 510]]],
+  ['1044', 'plate', [150, 180, 1300, 810], [[730, 510]]],
+  ['1048', 'plate', [240, 180, 1250, 810], [[730, 510]]],
+  ['0852', 'metal serving tray', [180, 180, 1270, 820], [[730, 510], [1060, 650]]],
+].map(([number, prompt, box, points]) => [`shoot-20260908-${number}`, {
+  image: `l/shoot-20260908-${number}.webp`, prompt, box, points,
+}]));
 const ASSETS = Object.freeze({
+  ...SHOOT,
   "red-oil-wontons": { image: "red-oil-wontons.jpg", box: [410, 320, 1520, 1060], prompt: "bowl", points: [[960, 690]] },
   "minced-pork-egg-noodles": { image: "minced-pork-egg-noodles.jpg", box: [380, 280, 1540, 1110], prompt: "bowl", points: [[960, 700]] },
   "wonton-soup-noodles": { image: "wonton-soup-noodles.jpg", box: [380, 290, 1550, 1110], prompt: "bowl", points: [[960, 700]] },
@@ -53,7 +69,7 @@ if (!key) throw new Error("Missing fal credentials");
 fal.config({ credentials: key });
 
 const source = readFileSync(join(ROOT, "web/img", asset.image));
-const imageURL = await fal.storage.upload(new File([source], asset.image, { type: "image/jpeg" }));
+const imageURL = await fal.storage.upload(new File([source], asset.image.split('/').at(-1), { type: asset.image.endsWith('.webp') ? 'image/webp' : 'image/jpeg' }));
 const [xMin, yMin, xMax, yMax] = asset.box;
 const response = await fal.subscribe("fal-ai/sam-3/image", {
   input: {

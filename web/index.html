@@ -3,18 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#F7F6F1">
 <title>Dumpling Lab · 点餐</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Josefin+Slab:wght@300;400;600&family=Noto+Serif+SC:wght@300;400;600;900&display=swap">
-<link rel="stylesheet" href="menu.css?v=8">
+<link rel="preload" href="fonts/scto-grotesk-a-light.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/scto-grotesk-a-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/scto-grotesk-a-medium.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="menu.css?v=22">
+<link rel="stylesheet" href="look-paper.css?v=22" id="lookCSS">
+<script>(function(){var q=new URLSearchParams(location.search),look=q.get("look"),f={table:"look-table.css?v=25",plain:"look-plain.css?v=2",showa:"look-showa.css?v=9",lab:"look-lab.css?v=8"}[look];if(f)document.getElementById("lookCSS").href=f;var t=q.get("tray");if(t){var c=t.split("-");var r=document.documentElement.style;r.setProperty("--tray-top","#"+c[0]);r.setProperty("--tray-far","#"+c[0]);r.setProperty("--tray-deep","#"+(c[1]||c[0]));}})();</script>
 </head>
 <body>
 
-<!-- COVER: black, one dish, two words -->
+<!-- COVER: the restaurant's own photograph of one dish under a warm light -->
 <section class="view" id="cover">
   <div class="top"><img id="brandLogo" src="brand/dumpling-lab-primary.png" alt="Dumpling Lab"><button class="slab" id="coverLang">EN</button></div>
+  <p class="lead" id="coverLine"></p>
   <div class="scene" id="coverStage"><div class="glow"></div></div>
   <div class="words">
     <p class="serif" id="coverDish"></p>
@@ -23,14 +26,26 @@
   </div>
 </section>
 
-<!-- SHOP: white, one thing per cell -->
+<!-- SHOP: chapters of rows, one photo card per chapter -->
 <section class="view" id="shop" hidden>
-  <div class="top"><a class="brand" href="#" id="toCover"><img src="brand/dumpling-lab-primary.png" alt="Dumpling Lab"></a><div class="tools"><span class="m" id="tableTag"></span><button id="findBtn" aria-label="搜索"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15.5 15.5 5 5"/></svg></button><button id="bellBtn" aria-label="服务员"><svg viewBox="0 0 24 24"><path d="M6.5 17h11M8 17v-5a4 4 0 0 1 8 0v5M10 20h4M12 6V4"/></svg></button><button id="langBtn">EN</button></div></div>
+  <div class="top"><a class="brand" href="#" id="toCover"><img src="brand/dumpling-lab-primary.png" alt="Dumpling Lab"></a><div class="tools"><span class="m" id="tableTag"></span><button id="indexBtn" aria-label="全部菜品"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><button id="findBtn" aria-label="搜索"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15.5 15.5 5 5"/></svg></button><button id="bellBtn" aria-label="服务员"><svg viewBox="0 0 24 24"><path d="M6.5 17h11M8 17v-5a4 4 0 0 1 8 0v5M10 20h4M12 6V4"/></svg></button><button id="langBtn">EN</button></div></div>
   <div class="kinds" id="kinds"></div>
   <div class="find" id="find" hidden><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="m15.5 15.5 5 5"/></svg><input id="search" type="search" autocomplete="off"><div class="diet" id="diet"></div></div>
+  <section id="menuIntro" aria-labelledby="introTitle">
+    <p class="m" id="introKicker"></p>
+    <h1 id="introTitle"></h1>
+    <p id="introCopy"></p>
+    <span class="intro-brush" aria-hidden="true"></span>
+  </section>
   <div id="list"></div>
   <div id="empty" hidden></div>
-  <p class="m" id="heroSub" style="padding:40px 18px 0;text-transform:none;letter-spacing:.04em;line-height:1.8"></p>
+  <p class="m" id="heroSub" style="padding:44px 20px 0;line-height:1.8"></p>
+</section>
+
+<!-- INDEX: every dish on one screen, numbered, no pictures -->
+<section class="view" id="indexView" hidden>
+  <div class="top"><button id="indexClose" aria-label="返回"><svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg></button><span class="m" id="indexTitle"></span><span class="m" id="indexCount"></span></div>
+  <div id="indexBody"></div>
 </section>
 
 <!-- DISH -->
@@ -51,6 +66,8 @@
     <div id="noteWrap"><label class="m" id="noteLabel" for="note"></label><textarea id="note" rows="2"></textarea></div>
     <div id="cartTotals"></div>
     <button id="placeOrder"><span id="orderLabel"></span><strong id="orderTotal"></strong></button>
+    <div id="orderHistory"></div>
+    <button id="groupAction"></button>
     <button id="callWaiter"><span id="waiterLabel"></span></button>
   </div>
 </aside>
@@ -61,14 +78,14 @@
   <button id="waiterSend" disabled></button>
 </section>
 <div id="done" hidden>
-  <div class="slip"><div class="slip-reg"><span class="m">Dumpling Lab</span><span class="m">DL//ORDER</span></div><div class="done-mark"><span class="seal-glyph" aria-hidden="true"></span></div><h2 id="doneTitle"></h2><p id="doneNote"></p></div>
+  <div class="slip"><div class="slip-reg"><span class="m">Dumpling Lab</span><span class="m" id="slipTable"></span></div><div class="done-mark"><span class="seal-glyph" aria-hidden="true"></span></div><h2 id="doneTitle"></h2><p id="doneNote"></p></div>
   <button id="doneBack" class="pill"></button>
 </div>
-<div id="toast" hidden></div>
+<div id="toast" hidden role="status" aria-live="polite"></div>
 
-<script src="menu-data.js?v=34"></script>
-<script src="i18n.js?v=35"></script>
-<script src="art.js?v=45"></script>
-<script src="menu.js?v=7"></script>
+<script src="menu-data.js?v=37"></script>
+<script src="i18n.js?v=43"></script>
+<script src="art.js?v=46"></script>
+<script src="menu.js?v=51"></script>
 </body>
 </html>

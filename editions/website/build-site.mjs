@@ -40,6 +40,12 @@ await writeFile(resolve(output,'vercel.json'),JSON.stringify({
  redirects:[
   {source:'/order',destination:`${ordering}/`,permanent:false},
   {source:'/order/(.*)',destination:`${ordering}/$1`,permanent:false},
+  // The back office and the staff console live with the ordering app. Typing
+  // them on this domain is an easy mistake; send them across instead of 404ing.
+  {source:'/staff',destination:`${ordering}/staff`,permanent:false},
+  {source:'/staff/(.*)',destination:`${ordering}/staff/$1`,permanent:false},
+  {source:'/catalog-admin',destination:`${ordering}/catalog-admin`,permanent:false},
+  {source:'/admin',destination:`${ordering}/catalog-admin`,permanent:false},
  ],
  headers:[
   {source:'/(.*)',headers:[

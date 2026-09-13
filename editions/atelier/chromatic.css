@@ -1,0 +1,124 @@
+/* Three art-direction studies. Local /design?palette=... only. */
+html[data-palette="punch"] {
+  --paper: #f6ccd6;
+  --ink: #431c28;
+  --muted: #753f4f;
+  --red: #9b261b;
+  --backdrop: #f6ccd6;
+  --line: #cd99a7;
+  --surface: #edb2c3;
+  --accent: #eb462f;
+  --accent-ink: #240a09;
+}
+html[data-palette="cobalt"] {
+  --paper: #173bcc;
+  --ink: #fff7c1;
+  --muted: #d6ddff;
+  --red: #f4ed60;
+  --backdrop: #173bcc;
+  --line: #5772df;
+  --surface: #dae3f9;
+  --accent: #f4ed60;
+  --accent-ink: #152b89;
+}
+html[data-palette="alloy"] {
+  --paper: #d9dcd7;
+  --ink: #242825;
+  --muted: #555d56;
+  --red: #8b3000;
+  --backdrop: #d9dcd7;
+  --line: #aeb5ad;
+  --surface: #eef0eb;
+  --accent: #ff600a;
+  --accent-ink: #281800;
+}
+[data-palette] .masthead, [data-palette] .table-line, [data-palette] .menu-toolbar,
+[data-palette] .sheet-header, [data-palette] .search-panel { background: var(--paper); }
+[data-palette] .section-heading h2 { font-size: 43px; }
+[data-palette] .category-item.active { color: var(--ink); }
+[data-palette] .dish-add, [data-palette] .primary,
+[data-palette] #sheet[data-mode="profile"] .nickname-form .primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+[data-palette] .dish-add.selected { background: var(--ink); color: var(--paper); }
+[data-palette] .table-tray { background: var(--accent); color: var(--accent-ink); border: 0; box-shadow: 0 4px 16px #20262022; }
+[data-palette] .tray-action, [data-palette] .tray-copy small { color: inherit; }
+[data-palette] .tray-pictures:focus-visible { outline-color: var(--accent-ink); }
+[data-palette] .desktop-index .side-category.active { color: var(--ink); }
+[data-palette] .desktop-index .side-category.active::after { background: var(--ink); }
+[data-palette] .desktop-index .eyebrow { color: var(--muted); }
+[data-palette] .ticket-table { border-color: var(--line); color: var(--ink); }
+[data-palette] .detail-image { background: var(--surface); }
+[data-palette] .sheet-header { color: var(--ink); }
+[data-palette] .table-tray .tray-pictures { scrollbar-color: var(--accent-ink) transparent; }
+[data-palette] .preview-notice { background: var(--ink); color: var(--paper); }
+[data-palette] .colophon, [data-palette] .menu-change-notice { color: var(--muted); }
+
+/* A. Red and cold pink: a bold, convivial restaurant identity. */
+[data-palette="punch"] .masthead { background: var(--accent); color: var(--accent-ink); border-color: var(--accent-ink); }
+[data-palette="punch"] .masthead .brand img { filter: brightness(0); }
+[data-palette="punch"] .table-button { border-color: #79261966; }
+[data-palette="punch"] .table-button b { color: var(--accent-ink); }
+[data-palette="punch"] .menu-toolbar { border-bottom: 2px solid var(--ink); }
+[data-palette="punch"] .section-heading h2 { color: #ad291e; }
+[data-palette="punch"] .section-heading .translation { font-size: 10px; color: var(--ink); border: 1px solid var(--ink); padding: 4px 7px; }
+[data-palette="punch"] .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-image { border-radius: 100px 100px 2px 2px; background: #eea6b8; }
+[data-palette="punch"] .dish-card { border-color: var(--ink); }
+[data-palette="punch"] .dish-add { border-radius: 50%; }
+[data-palette="punch"] .table-tray { border-radius: 28px; padding-inline: 18px; }
+[data-palette="punch"] .category-item.active::after { background: var(--ink); }
+
+/* B. Cobalt and lemon: blue is the page, yellow is the active voice. */
+[data-palette="cobalt"] .masthead .brand img { filter: brightness(0) invert(1); }
+[data-palette="cobalt"] .preview-notice { background: #112889; color: #d6ddff; }
+[data-palette="cobalt"] .section-heading h2 { color: var(--accent); }
+[data-palette="cobalt"] .section-heading .translation { color: var(--ink); }
+[data-palette="cobalt"] .table-button { border-color: var(--line); }
+[data-palette="cobalt"] .table-button b { color: var(--accent); }
+[data-palette="cobalt"] .menu-toolbar { background: #173bcc; border-block: 1px solid var(--line); }
+[data-palette="cobalt"] .category-item { height: 35px; margin-block: 8px; padding-inline: 10px; }
+[data-palette="cobalt"] .category-scroll { gap: 7px; }
+[data-palette="cobalt"] .category-item.active { color: var(--accent-ink); background: var(--accent); border-radius: 3px; }
+[data-palette="cobalt"] .category-item.active::after { display: none; }
+[data-palette="cobalt"] .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-image { border-radius: 50%; aspect-ratio: 1; background: #cddcfa; }
+[data-palette="cobalt"] .dish-name { color: var(--ink); }
+[data-palette="cobalt"] .dish-price { color: var(--accent); }
+[data-palette="cobalt"] .dish-add { border-radius: 50%; }
+[data-palette="cobalt"] .dish-card { border-color: #6980e5; }
+[data-palette="cobalt"] .preparation-photo { background: #cddcfa; border-radius: 50%; aspect-ratio: 1; }
+[data-palette="cobalt"] .lunch-options .chip.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); box-shadow: none; }
+[data-palette="cobalt"] .search-input, [data-palette="cobalt"] .chip { color: var(--ink); }
+[data-palette="cobalt"] .search-input input::placeholder { color: var(--muted); opacity: 1; }
+[data-palette="cobalt"] dialog {
+  --paper: #fcf7d7; --ink: #152b89; --muted: #53618a;
+  --red: #173bcc; --line: #d4d5b6; --surface: #f0edcf;
+  --accent: #173bcc; --accent-ink: #fff7c1;
+}
+[data-palette="cobalt"] dialog .lunch-options .chip.active { background: #173bcc; color: #fff7c1; border-color: #173bcc; }
+[data-palette="cobalt"] dialog .chip { color: var(--ink); }
+[data-palette="cobalt"] .cart-dishes .cart-unit-price { color: var(--ink); }
+[data-palette="cobalt"] .search-summary button:focus-visible { outline-color: var(--accent); }
+
+/* C. Brushed alloy and hot orange: sharper, technical, more “Lab”. */
+[data-palette="alloy"] .masthead { background: linear-gradient(105deg, #eceee9, #c8cdc7 50%, #f0f1ed); border-bottom: 1px solid var(--ink); }
+[data-palette="alloy"] .menu-toolbar { border-block: 1px solid var(--ink); }
+[data-palette="alloy"] .section-heading { border-left: 6px solid var(--accent); padding-left: 12px; }
+[data-palette="alloy"] .section-heading .translation { letter-spacing: .16em; color: var(--ink); }
+[data-palette="alloy"] .dish-number { display: inline-block; width: fit-content; padding: 2px 5px; background: var(--accent); color: var(--accent-ink); }
+[data-palette="alloy"] .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-image { border: 1px solid #b6bfb4; border-radius: 0; background: #e9ece6; }
+[data-palette="alloy"] .dish-card { border-bottom: 1px solid var(--ink); }
+[data-palette="alloy"] .dish-add, [data-palette="alloy"] .table-tray, [data-palette="alloy"] .primary { border-radius: 0; }
+[data-palette="alloy"] .category-item.active::after { height: 4px; background: var(--accent); }
+[data-palette="alloy"] .desktop-ticket { border-top: 6px solid var(--accent); }
+[data-palette="alloy"] .table-tray { border: 1px solid var(--accent-ink); }
+[data-palette="alloy"] dialog { border-radius: 0; }
+@media (max-width: 760px) {
+  [data-palette] .section-heading h2 { font-size: 36px; }
+  [data-palette="punch"] .section-heading .translation { font-size: 9px; }
+  [data-palette="cobalt"] .category-item { font-size: 12px; padding-inline: 9px; }
+  [data-palette="cobalt"] .category-scroll { gap: 5px; }
+}
+@media (hover: hover) {
+  [data-palette] .dish-add:hover { background: var(--ink); color: var(--paper); }
+}

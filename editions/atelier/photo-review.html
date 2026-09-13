@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Dumpling Lab · 实拍照片对照</title>
+  <script src="/menu-data.js" defer></script>
+  <script src="/lunch-archive.js" defer></script>
+  <script src="/lunch-menu.js" defer></script>
+  <script src="/photography.js" defer></script>
+  <style>
+    *{box-sizing:border-box}body{margin:0;border-top:4px solid #bd3023;font:15px/1.6 system-ui,sans-serif;color:#242424;background:#fff}main{max-width:1240px;margin:auto;padding:24px 20px 60px}header{margin-bottom:24px;border-bottom:1px solid #d4d4d1;padding-bottom:20px}h1{font-size:26px;font-weight:600;margin:16px 0 8px}p{margin:4px 0;color:#686765}a{color:#bd3023;text-underline-offset:4px}.filters{display:flex;gap:8px;margin:20px 0}button{min-height:44px;padding:8px 16px;border:1px solid #d4d4d1;background:#fff;border-radius:4px;font:inherit;cursor:pointer}button[aria-pressed=true]{background:#bd3023;color:#fff;border-color:#bd3023}#photos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px 18px}figure{margin:0;min-width:0}figure img{width:100%;aspect-ratio:3/2;object-fit:contain;background:#e9edf0}figcaption{padding-top:10px}strong{font-size:20px;font-variant-numeric:tabular-nums;font-weight:500}figcaption p{font-size:13px}.assigned{color:#bd3023}small{display:block;color:#686765;margin-top:4px}[hidden]{display:none!important}:focus-visible{outline:2px solid #bd3023;outline-offset:4px}@media(max-width:760px){#photos{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px}main{padding-inline:16px}h1{font-size:23px}.filters button{font-size:13px;padding-inline:12px}}
+  </style>
+</head>
+<body><main>
+  <header><a href="/">← 返回菜单预览</a><h1>实拍照片对照</h1><p>41 张原片 · 按原文件编号排列</p><p>“已试配”是根据画面辨认，仍可调整。未确认的馅料、汤面和相似摆盘没有替换菜单。</p><small>仅本地审阅，不随正式网站发布。点照片可看大图。</small></header>
+  <div class="filters" aria-label="筛选照片"><button data-filter="all" aria-pressed="true">全部</button><button data-filter="assigned" aria-pressed="false">已试配</button><button data-filter="pending" aria-pressed="false">待确认</button></div>
+  <div id="photos"></div>
+</main>
+<script>
+addEventListener('DOMContentLoaded',()=>{
+  const labels=new Map();
+  const add=(number,name)=>labels.set(number,[...(labels.get(number)||[]),name]);
+  for(const dish of MENU) if(dish.photography) add(dish.photography.number,dish.cn);
+  for(const prep of LUNCH_PREPARATIONS) if(prep.photography) add(prep.photography.number,`做法示意：${prep.cn}（非特定馅料）`);
+  for(const number of DL_PHOTOGRAPHY.shots){
+    const figure=document.createElement('figure');figure.dataset.assigned=String(labels.has(number));
+    const a=document.createElement('a');a.href='/img/l/'+DL_PHOTOGRAPHY.file(number);a.target='_blank';a.rel='noopener';
+    const img=document.createElement('img');img.src='/img/s/'+DL_PHOTOGRAPHY.file(number);img.alt=`实拍照片 ${number}`;img.loading='lazy';img.width=720;img.height=480;a.append(img);
+    const caption=document.createElement('figcaption'),title=document.createElement('strong'),copy=document.createElement('p');title.textContent=number;
+    copy.textContent=labels.has(number)?'已试配：'+labels.get(number).join('；'):'待确认菜名 / 馅料';if(labels.has(number))copy.className='assigned';
+    caption.append(title,copy);figure.append(a,caption);document.getElementById('photos').append(figure);
+  }
+  document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{
+    document.querySelectorAll('[data-filter]').forEach(other=>other.setAttribute('aria-pressed',String(other===button)));
+    document.querySelectorAll('figure').forEach(figure=>{figure.hidden=button.dataset.filter!=='all'&&(figure.dataset.assigned==='true')!==(button.dataset.filter==='assigned');});
+  }));
+});
+</script></body></html>

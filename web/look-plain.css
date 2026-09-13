@@ -1,0 +1,7 @@
+/* ?look=plain — the white version, for comparison only. */
+:root{--tray-top:#F1F0EA;--tray-far:#F1F0EA;--tray-deep:#F1F0EA;--wood:#F1F0EA;--wood-deep:#F1F0EA;--ui:#E01800;--paper:#FAFAF7;--bg-2:#F1F0EA}
+.scene::before,#dish.has-pic .d-pic::before{display:none}
+.scene .mirror,#dish.has-pic .d-pic>.mirror{display:none}
+.tile.has-pic .art{background:var(--bg-2);box-shadow:none}
+.tile.has-pic .art .add,.tile.has-pic .art .qty{background:var(--paper);color:var(--ui);border-color:var(--ui)}
+.tile.has-pic .art .qty{background:var(--ui);color:#fff}
