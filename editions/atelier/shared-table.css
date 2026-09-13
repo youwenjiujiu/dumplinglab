@@ -228,11 +228,14 @@ body.viewing-table .table-tray {
 }
 .tray-summary .tray-copy small { margin-top: 3px; }
 .table-tray { flex-direction: row; align-items: center; gap: 8px; padding: 8px 12px; }
-.table-tray .tray-pictures { width: max-content; max-width: 84px; flex: 0 0 auto; padding: 0; scrollbar-width: none; }
+/* 84px only ever fitted three dishes and the fourth was hidden outright, so a
+   dish you had just added could be missing from the tray. They overlap more
+   instead: six fit, and past that the rack scrolls rather than dropping any. */
+.table-tray .tray-pictures { width: max-content; max-width: 148px; flex: 0 0 auto; padding: 0; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
 .table-tray .tray-pictures::-webkit-scrollbar { display: none; }
-.table-tray .tray-pictures img, .table-tray .tray-pictures > span { width: 36px; height: 36px; flex-basis: 36px; }
-.table-tray .tray-pictures > img + img { margin-inline-start: -12px; }
-.table-tray .tray-pictures > img:nth-of-type(n+4) { display: none; }
+.table-tray .tray-pictures img, .table-tray .tray-pictures > span { width: 36px; height: 36px; flex: 0 0 36px; }
+.table-tray .tray-pictures > img + img { margin-inline-start: -16px; }
+
 .table-tray .tray-summary { flex: 1; width: auto; min-width: 0; min-height: 44px; gap: 8px; }
 .table-tray .tray-copy { flex: none; white-space: nowrap; }
 .table-tray .tray-copy strong { font-size: 11px; }

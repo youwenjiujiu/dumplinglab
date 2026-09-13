@@ -1021,6 +1021,7 @@ dl-value-motion { display: inline-block; font: inherit; color: inherit; }
   flex: none;
 }
 .tray-pictures img {
+  flex: none;
   width: 42px;
   height: 42px;
   object-fit: contain;
