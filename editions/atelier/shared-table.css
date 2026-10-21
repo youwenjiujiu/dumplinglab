@@ -1282,15 +1282,13 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
 .chapter-mains .dish-image {
   aspect-ratio: 1.1;
 }
-/* Match visible bowl widths, not the differently padded source canvases.
-   Factors measured against the six current noodle assets; no title offsets. */
-.chapter-mains .dish-image img { scale: var(--bowl-scale, 1); }
-.chapter-mains img[src*="lunch-mince-scallion-noodles-generated-v1-appetite-v1"] { --bowl-scale: 1.025; }
-.chapter-mains img[src*="lunch-mince-chilli-noodles-generated-v1-appetite-v1"] { --bowl-scale: .968; }
-.chapter-mains img[src*="lunch-kampong-chicken-soup-generated-v1-appetite-v1"] { --bowl-scale: .995; }
-.chapter-mains img[src*="hot-oil-noodles-appetite-v2"] { --bowl-scale: 1.077; }
-.chapter-mains img[src*="lunch-v2-century-egg-noodles-generated-v1-appetite-v1"] { --bowl-scale: .972; }
-.chapter-mains img[src*="lunch-mince-red-oil-noodles-generated-v1-appetite-v1"] { --bowl-scale: .955; }
+/* Keep intrinsic image height out of the grid track so fitDish centers the
+   picture within the actual frame, including the shorter desktop frames. */
+.chapter-mains .dish-image > img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
 .chapter-mains .dish-info {
   padding: 12px 28px 12px 14px;
 }
@@ -2067,6 +2065,8 @@ img[src*="-appetite-v"] { filter: none !important; }
   .section-heading h2, html[lang="en"] .section-heading h2 { font-size: 26px; }
   .dish-grid { column-gap: 24px; }
   .menu-section .dish-image { aspect-ratio: 1.35; mix-blend-mode: multiply; }
+  /* Deep bowls need enough height to share the same visible width as plates. */
+  .menu-section:not([data-section="drinks"]) .dish-image { aspect-ratio: 1.1; }
   .menu-section .dish-image img { width: 90%; height: 90%; }
   .menu-section .dish-name {
     font-size: 17px !important;
@@ -2186,3 +2186,8 @@ img[src*="-appetite-v"] { filter: none !important; }
   .menu-section { padding: 20px; }
   .desktop-ticket { padding: 18px; }
 }
+
+/* Dish pictures are scaled to their food (see fitDish in app.js); keep the
+   enlarged picture inside its box, and let white backgrounds sit on the paper. */
+.dish-image { overflow: hidden; }
+.dish-image > img { mix-blend-mode: multiply; }
