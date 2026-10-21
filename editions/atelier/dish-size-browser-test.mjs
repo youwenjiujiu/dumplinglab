@@ -18,6 +18,7 @@ try {
       ? route.continue() : route.abort();
   });
   await page.goto(origin + '/?table=A1&lang=en');
+  await page.evaluate(() => CatalogClient.ready);
   await page.locator('.dish-image img').first().waitFor();
   async function loaded() {
     await page.evaluate(async () => {
@@ -39,7 +40,9 @@ try {
         const top = rect.top + (rect.height - ph) / 2 + box.y * ph;
         return {
           name:img.closest('.dish-open').getAttribute('aria-label'),
-          drink:img.closest('section').dataset.section === 'drinks',
+          // Staff uploads may be portrait cutouts or landscape compositions,
+          // even in Drinks. Match the limiting axis without distorting either.
+          byHeight:box.w * box.ratio / box.h < (.9 / .97) * frame.width / frame.height,
           width:box.w * pw / frame.width, height:box.h * ph / frame.height,
           centerX:(left + box.w * pw / 2 - frame.left) / frame.width,
           centerY:(top + box.h * ph / 2 - frame.top) / frame.height,
@@ -48,12 +51,13 @@ try {
       }));
     assert(rows.length >= 35, 'entire menu, including recommendations, is loaded');
     for (const row of rows) {
-      assert(Math.abs((row.drink ? row.height : row.width) - (row.drink ? .97 : .9)) < .005, `${label}: size ${JSON.stringify(row)}`);
+      assert(Math.abs((row.byHeight ? row.height : row.width) - (row.byHeight ? .97 : .9)) < .005, `${label}: size ${JSON.stringify(row)}`);
+      assert(row.width <= .905 && row.height <= .975, `${label}: preserves frame margins ${row.name}`);
       assert(Math.abs(row.centerX - .5) < .005 && Math.abs(row.centerY - .5) < .005, `${label}: centered ${row.name}`);
       assert(!row.clipped, `${label}: uncropped ${row.name}`);
     }
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no page overflow');
-    console.log(`PASS ${browserEngine} ${label}: ${rows.length} images; food width 90%, drinks height 97%, centered, no clipping/overflow`);
+    console.log(`PASS ${browserEngine} ${label}: ${rows.length} images; uniform fit (90% width / 97% height), centered, no clipping/overflow`);
   }
   for (const width of [390,1440,1846,320,724,390]) {
     await page.setViewportSize({width,height:1000});
