@@ -1498,13 +1498,18 @@ function measureDish(img) {
   let data; try { data = context.getImageData(0, 0, w, h).data; } catch { return null; }
   const at = (x, y) => (y * w + x) * 4, corners = [at(0, 0), at(w - 1, 0), at(0, h - 1), at(w - 1, h - 1)];
   const opaque = corners.every(i => data[i + 3] > 200), bg = [0, 1, 2].map(c => corners.reduce((n, i) => n + data[i + c], 0) / 4);
-  let left = w, top = h, right = -1, bottom = -1;
+  // Reviewed ceramic foot; the cast shadow below it is not part of the bowl.
+  const bodyBottom = /wonton-soup-noodles-cutout-appetite-v2\.webp/.test(img.currentSrc || img.src) ? .85 : null;
+  let left = w, top = h, right = -1, bottom = -1, pixels = 0;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const i = at(x, y);
     const food = opaque ? Math.abs(data[i] - bg[0]) + Math.abs(data[i + 1] - bg[1]) + Math.abs(data[i + 2] - bg[2]) > 24 : data[i + 3] > 16;
-    if (food) { if (x < left) left = x; if (x > right) right = x; if (y < top) top = y; if (y > bottom) bottom = y; }
+    if (food) { if (bodyBottom === null || (y + .5) / h <= bodyBottom) pixels++; if (x < left) left = x; if (x > right) right = x; if (y < top) top = y; if (y > bottom) bottom = y; }
   }
-  return right < 0 ? null : { x: left / w, y: top / h, w: (right - left + 1) / w, h: (bottom - top + 1) / h, ratio };
+  // The reviewed studio image includes a cast shadow below the ceramic foot.
+  // Align the bowl itself, rather than treating that shadow as its base.
+  const baseline = bodyBottom ?? (bottom + 1) / h;
+  return right < 0 ? null : { x: left / w, y: top / h, w: (right - left + 1) / w, h: (bottom - top + 1) / h, area: pixels / (w * h), baseline, ratio };
 }
 function fitDish(img) {
   if (!decodedDishes.has(img) || !img.complete || !img.naturalWidth || !img.isConnected) return;
@@ -1517,14 +1522,22 @@ function fitDish(img) {
   if (!fw || !fh) return;
   // Size of the whole picture inside the element under object-fit: contain.
   const s = Math.min(bw / box.ratio, bh), pw = s * box.ratio, ph = s;
-  // Same visible width for every bowl and plate (90% of the frame); a deep bowl
-  // or a bottle is held back only when it would run past the frame's height.
-  // Allow shrinking as well as enlarging: source padding must not determine
-  // the visible size. Tall drinks naturally use the common height limit.
-  const k = Math.min(fw * .9 / (box.w * pw), fh * .97 / (box.h * ph));
+  const bowl = frame.closest('.menu-section')?.dataset.section !== 'drinks' && box.w * box.ratio / box.h >= 1.05;
+  // Match the visible silhouette area, not only its width: a deeper bowl must
+  // shrink relative to a shallow bowl. The century-egg bowl is the visual
+  // reference (roughly .39 of frame width squared at its previous size).
+  const k = Math.min(fw * .9 / (box.w * pw), fh * .97 / (box.h * ph),
+    bowl ? Math.sqrt(fw * fw * .39 / (box.area * pw * ph)) : Infinity);
   const dx = (box.x + box.w / 2 - .5) * pw, dy = (box.y + box.h / 2 - .5) * ph;
+  let ty = -dy * k;
+  if (bowl) {
+    ty = fh * .86 - fh / 2 - (box.baseline - .5) * ph * k;
+    // Keep the entire photograph inside the frame, including its soft shadow.
+    ty = Math.max(fh * .015 - fh / 2 - (box.y - .5) * ph * k,
+      Math.min(ty, fh * .985 - fh / 2 - (box.y + box.h - .5) * ph * k));
+  }
   img.style.scale = k.toFixed(5);
-  img.style.translate = `${(-dx * k / bw * 100).toFixed(4)}% ${(-dy * k / bh * 100).toFixed(4)}%`;
+  img.style.translate = `${(-dx * k / bw * 100).toFixed(4)}% ${(ty / bh * 100).toFixed(4)}%`;
 }
 const dishFrames = new Set();
 const dishResize = new ResizeObserver(entries => entries.forEach(({ target }) => {
