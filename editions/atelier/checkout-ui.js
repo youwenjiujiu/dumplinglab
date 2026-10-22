@@ -9,6 +9,7 @@ const CheckoutUI = (() => {
   function recovery(view, problem) {
     if (!current(view)) return;
     view.picker?.close();
+    view.express?.destroy(); view.express = null;
     view.element?.destroy(); view.element = null; view.actions = null;
     const own = Boolean(view.owner.order?.token), blocked = locked(problem);
     const message = blocked ? errorText(pendingError()) : errorText(problem);
@@ -17,6 +18,7 @@ const CheckoutUI = (() => {
       <p class="fineprint">${bi('已选菜品与付款凭证会保留，请勿重复付款。', 'Your selection and payment access are retained. Please do not pay twice.')}</p>
       <button class="primary" type="button" data-checkout-retry>${own ? bi('检查并继续原付款', 'Check & resume payment') : bi('重新检查', 'Check again')}</button>
       ${own && !view.confirmed ? `<button class="online-back" type="button" data-checkout-edit>${bi('取消原付款并修改菜品', 'Cancel payment & edit order')}</button>` : ''}
+      ${blocked && !own ? `<button class="online-back" type="button" data-table-unlock>${bi('取消同桌的付款，由我来付', 'Cancel their payment & pay here')}</button>` : ''}
       ${view.owner.order?.paymentMethod==='wallet'||globalThis.WalletUI?.input(view.owner).paymentMethod==='wallet'?`<button class="online-back" type="button" data-checkout-wallet>${bi('改用其他支付方式','Use another payment method')}</button>`:''}
       <button class="online-back" type="button" data-checkout-back>${bi('返回菜单', 'Back to menu')}</button></div>`;
   }
@@ -40,6 +42,7 @@ const CheckoutUI = (() => {
     active?.picker?.close();
     const email = active?.node.querySelector('[data-checkout-email]');
     if (typeof email?.value === 'string') contactEmail = email.value.slice(0, 254);
+    active?.express?.destroy();
     active?.element?.destroy();
     active = null;
   }
@@ -78,7 +81,16 @@ const CheckoutUI = (() => {
     });
   }
   function itemsHTML(order) {
-    return order.items.map(i => `<article>${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="80" height="80">` : ''}<div><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}<small>× ${i.qty}</small></div><b>${money(i.price * i.qty)}</b></article>`).join('');
+    const line = (i, qty) => `<article>${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="80" height="80">` : ''}<div><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}<small>× ${qty}</small></div><b>${money(i.price * qty)}</b></article>`;
+    // A voucher pays for exactly one unit of its dish. That unit is a gift, not
+    // a purchase, so it gets its own quieter line at $0 rather than sitting in
+    // the list at full price.
+    const l = order.loyalty, gift = l?.voucherId && l.discountCents ? order.items.find(i => i.id === l.dishId && (i.style || null) === (l.style || null)) : null;
+    const giftLine = i => `<article class="is-gift">${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="48" height="48">` : ''}<div><span class="gift-tag">${bi('赠品', 'Gift')}</span><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong></div><b>${money(0)}</b></article>`;
+    // 买一赠一 units arrive from the server as their own $0 line.
+    const bogoLine = i => `<article class="is-gift">${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="48" height="48">` : ''}<div><span class="gift-tag">${bi('买一赠一', 'Buy 1 get 1')}</span><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}<small>× ${i.qty}</small></div><b>${money(0)}</b></article>`;
+    const paid = order.items.flatMap(i => i.promo === 'bogo' ? [bogoLine(i)] : i !== gift ? [line(i, i.qty)] : i.qty > 1 ? [line(i, i.qty - 1)] : []);
+    return [...paid, ...(gift ? [giftLine(gift)] : [])].join('');
   }
   function draw(view) {
     const { order, config } = view, dining = order.mode === 'dinein', extras = addons(order);
@@ -88,7 +100,7 @@ const CheckoutUI = (() => {
       ${globalThis.RewardsUI?.checkoutHTML(order)||''}
       ${extras}
       <section class="checkout-block checkout-totals"><h3>${bi('费用明细', 'Order total')}<small>${order.items.reduce((n,i) => n + i.qty, 0)} ${bi('份', 'items')}</small></h3>${Fulfilment.summary(order)}</section>
-      <section class="checkout-block checkout-payment"><h3>${bi('支付方式', 'Payment methods')}<small>${order.paymentMethod==='wallet'?bi('余额','Balance'):order.total===0?bi('兑换','Reward'):bi('银行卡 / PayNow','Card / PayNow')}</small></h3>${globalThis.WalletUI?.paymentHTML(order)||''}<div data-payment-element><p class="fineprint" role="status">${config.preview ? bi('本地流程演示，不会扣款。', 'Local demonstration. No charge.') : view.enabled ? bi('正在加载安全支付…', 'Loading secure payment…') : bi('线上付款尚未开放，选菜会保留。', 'Online payments are not open yet. Your selection is saved.')}</p></div>
+      <section class="checkout-block checkout-payment"><h3>${bi('支付方式', 'Payment methods')}<small>${order.paymentMethod==='wallet'?bi('余额','Balance'):order.total===0?bi('兑换','Reward'):bi('银行卡 / PayNow','Card / PayNow')}</small></h3>${globalThis.WalletUI?.paymentHTML(order)||''}<div class="checkout-express" data-express-checkout hidden><div data-express-element></div></div><div data-payment-element><p class="fineprint" role="status">${config.preview ? bi('本地流程演示，不会扣款。', 'Local demonstration. No charge.') : view.enabled ? bi('正在加载安全支付…', 'Loading secure payment…') : bi('线上付款尚未开放，选菜会保留。', 'Online payments are not open yet. Your selection is saved.')}</p></div>
       ${!config.preview ? `<label class="online-field checkout-email"><span>${bi('电子邮箱', 'Email')}</span><input data-checkout-email type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required maxlength="254" placeholder="you@example.com" value="${escapeHTML(contactEmail)}" aria-describedby="checkoutEmailHint"></label><p class="fineprint" id="checkoutEmailHint">${bi('用于完成付款，不会订阅营销邮件。', 'Required for payment. No marketing subscription.')}</p>` : ''}</section></div>
       <footer class="checkout-paybar"><p class="field-error" data-checkout-error role="alert"></p><p class="checkout-pay-note">${bi('支付成功后，订单才会发送至门店', 'Your order is sent only after successful payment')}</p><button class="primary" type="button" data-checkout-pay disabled><span>${config.preview ? bi('模拟付款', 'Simulate payment') : bi('付款并下单', 'Pay & order')}</span><span data-stripe-total>${money(order.total)}</span></button></footer>`;
   }
@@ -135,11 +147,55 @@ const CheckoutUI = (() => {
     view.actions = loaded.actions;
     const session = view.actions.getSession();
     view.node.querySelector('[data-stripe-total]').textContent = session.total.total.amount;
-    view.element = view.checkout.createPaymentElement({ layout: { type: 'accordion', defaultCollapsed: true, radios: 'always', spacedAccordionItems: false, visibleAccordionItemsCount: 0 }, paymentMethodOrder: ['apple_pay', 'paynow', 'card'] });
+    view.element = view.checkout.createPaymentElement({ layout: { type: 'accordion', defaultCollapsed: true, radios: 'always', spacedAccordionItems: false, visibleAccordionItemsCount: 0 }, paymentMethodOrder: ['paynow', 'card'], wallets: { applePay: 'auto' } });
     const mount = view.node.querySelector('[data-payment-element]'); mount.replaceChildren();
     view.element.mount(mount);
     view.element.on('ready', () => { if (current(view)) view.node.querySelector('[data-checkout-pay]').disabled = false; });
     view.element.on('loaderror', () => error(view, tr('安全支付加载失败，请返回后重试', 'Secure payment failed to load. Go back and retry.')));
+    mountApplePay(view);
+  }
+  function mountApplePay(view) {
+    // Let Stripe detect device/wallet eligibility; never draw a fake Apple Pay button.
+    const container = view.node.querySelector('[data-express-checkout]');
+    try {
+      const express = view.checkout.createExpressCheckoutElement({
+        buttonHeight: 48, buttonTheme: { applePay: 'black' }, buttonType: { applePay: 'pay' },
+        paymentMethods: { applePay: 'auto', googlePay: 'never', link: 'never', paypal: 'never', amazonPay: 'never', klarna: 'never' },
+      });
+      view.express = express;
+      express.on('ready', event => {
+        if (current(view) && view.express === express) container.hidden = !event.availablePaymentMethods?.applePay;
+      });
+      express.on('loaderror', () => { if (current(view) && view.express === express) container.hidden = true; });
+      express.on('confirm', async event => {
+        if (!current(view) || view.express !== express || view.busy || view.confirmed || !view.actions) {
+          event.paymentFailed?.({ reason: 'fail' }); return;
+        }
+        const pay = view.node.querySelector('[data-checkout-pay]');
+        view.busy = true; pay.disabled = true; error(view, '');
+        try {
+          // Wallet contact data avoids forcing an extra email entry before Apple Pay.
+          const email = event.billingDetails?.email || view.node.querySelector('[data-checkout-email]')?.value?.trim();
+          const result = await view.actions.confirm({
+            expressCheckoutConfirmEvent: event, redirect: 'if_required', ...(email ? { email } : {}),
+          });
+          if (result.type === 'error') throw new Error(result.error.message);
+          view.confirmed = true;
+          if (current(view)) error(view, tr('正在确认付款，请勿重复支付…', 'Confirming payment. Please do not pay again…'));
+          await refresh(view.owner);
+        } catch (err) {
+          event.paymentFailed?.({ reason: 'fail' });
+          error(view, errorText(err));
+        } finally {
+          view.busy = false;
+          if (current(view)) pay.disabled = Boolean(view.confirmed);
+        }
+      });
+      express.mount(view.node.querySelector('[data-express-element]'));
+    } catch {
+      // A wallet load failure must not prevent card or PayNow checkout.
+      view.express?.destroy(); view.express = null; container.hidden = true;
+    }
   }
   async function open({skipAddons = false} = {}) {
     dispose();
@@ -235,7 +291,7 @@ const CheckoutUI = (() => {
       // Never unlock a payable basket until the provider confirms expiration.
       await view.owner.api('/api/online', { ...view.owner.order, action: 'cancel' });
       view.changed = true;
-      view.actions = null; view.element?.destroy(); view.element = null;
+      view.actions = null; view.express?.destroy(); view.express = null; view.element?.destroy(); view.element = null;
       const pay = view.node.querySelector('[data-checkout-pay]'); if (pay) pay.disabled = true;
       view.owner.order = null; view.owner.emit();
       if (view.owner.table) await readCart(view.owner);
@@ -254,18 +310,57 @@ const CheckoutUI = (() => {
     else { dispose(); showCart(); }
   }
   const cancelling = new WeakSet();
-  function confirmCancellation(button) {
+  function confirmCancellation(button, table = false) {
     return new Promise(resolve => {
       const dialog = document.createElement('dialog');
       dialog.className = 'cancel-payment-dialog';
       dialog.setAttribute('aria-labelledby', 'cancelPaymentTitle');
-      dialog.innerHTML = `<h2 id="cancelPaymentTitle">${bi('取消待付款订单？', 'Cancel unpaid order?')}</h2><p>${bi('已选菜品会保留，取消后可继续点餐。', 'Your selected dishes will be kept so you can continue ordering.')}</p><div><button type="button" data-cancel-confirm>${bi('确认取消', 'Cancel order')}</button><button type="button" class="primary" data-cancel-keep autofocus>${bi('保留订单', 'Keep order')}</button></div>`;
+      dialog.innerHTML = table
+        ? `<h2 id="cancelPaymentTitle">${bi('同桌有人正在付款', 'Someone at your table is paying')}</h2><p>${bi('要修改菜品，需要先取消这次付款。已选的菜都会保留，改完再付款就行。', 'To change dishes, cancel this payment first. All dishes stay; pay again after editing.')}</p><div><button type="button" data-cancel-keep>${bi('等他付完', 'Let them pay')}</button><button type="button" class="primary" data-cancel-confirm autofocus>${bi('取消付款并修改', 'Cancel & edit')}</button></div>`
+        : `<h2 id="cancelPaymentTitle">${bi('取消待付款订单？', 'Cancel unpaid order?')}</h2><p>${bi('已选菜品会保留，取消后可继续点餐。', 'Your selected dishes will be kept so you can continue ordering.')}</p><div><button type="button" data-cancel-confirm>${bi('确认取消', 'Cancel order')}</button><button type="button" class="primary" data-cancel-keep autofocus>${bi('保留订单', 'Keep order')}</button></div>`;
       const finish = accepted => { dialog.close(); dialog.remove(); if (button.isConnected) button.focus({preventScroll:true}); resolve(accepted); };
       dialog.querySelector('[data-cancel-confirm]').onclick = () => finish(true);
       dialog.querySelector('[data-cancel-keep]').onclick = () => finish(false);
       dialog.addEventListener('cancel', e => { e.preventDefault(); e.stopPropagation(); finish(false); });
       document.body.append(dialog); dialog.showModal();
     });
+  }
+  // The paying phone cancels its own unpaid payment. The server asks Stripe first and
+  // refuses when the payment already went through.
+  async function cancelOwn(owner, view = active) {
+    // Resolve in-flight creation before asking the provider to expire it.
+    if (view?.owner === owner) await view.preparation?.catch(() => {});
+    const pending = owner.order;
+    if (!pending) return;
+    if (!pending.token) throw new Error(tr('请联系店员核实这笔付款', 'Ask staff to check this payment'));
+    await owner.api('/api/online', { ...pending, action: 'cancel' });
+    if (owner.order !== pending) return;
+    if (view?.owner === owner) { view.actions = null; view.express?.destroy(); view.express = null; view.element?.destroy(); view.element = null; const pay = view.node.querySelector('[data-checkout-pay]'); if (pay) pay.disabled = true; }
+    owner.order = null; owner.emit();
+    if (owner.table) await readCart(owner);
+  }
+  // Editing dishes while a payment is unfinished. The paying phone simply cancels it;
+  // another phone at the table is asked first. Returns true once the cart is editable.
+  async function unlock(button = document.activeElement) {
+    const owner = store;
+    if (cancelling.has(owner)) return false;
+    cancelling.add(owner);
+    try {
+      if (owner.order?.token) {
+        await cancelOwn(owner);
+        toast(tr('已取消未完成的付款，可以修改了', 'Unpaid payment cancelled. You can edit now.'));
+        return store === owner && !owner.order;
+      }
+      if (!owner.table || !await confirmCancellation(button, true) || store !== owner) return false;
+      await owner.api('/api/online', { action: 'cancel-table', table: owner.table, group: owner.group });
+      await readCart(owner);
+      toast(tr('已取消同桌的付款，可以修改了', 'Their payment was cancelled. You can edit now.'));
+      return store === owner && !owner.remote?.paymentPending;
+    } catch (e) {
+      // Never clear a paid, processing, or unverified payment locally.
+      if (store === owner) toast(errorText(e));
+      return false;
+    } finally { cancelling.delete(owner); }
   }
   async function cancelPending(button) {
     const owner = store, view = active;
@@ -274,17 +369,8 @@ const CheckoutUI = (() => {
     try {
       if (!await confirmCancellation(button)) return;
       if (store !== owner) return;
-      // Resolve in-flight creation before asking the provider to expire it.
-      if (view?.owner === owner) await view.preparation?.catch(() => {});
-      const pending = owner.order;
-      if (pending) {
-        if (!pending.token) throw new Error(tr('请联系店员核实这笔付款', 'Ask staff to check this payment'));
-        await owner.api('/api/online', { ...pending, action: 'cancel' });
-        if (owner.order !== pending) return;
-        if (view?.owner === owner) { view.actions = null; view.element?.destroy(); view.element = null; const pay = view.node.querySelector('[data-checkout-pay]'); if (pay) pay.disabled = true; }
-        owner.order = null; owner.emit();
-        if (owner.table) await readCart(owner);
-      }
+      await cancelOwn(owner, view);
+      if (owner.order) return;
       if (store === owner) {
         dispose(); closeModal();
         toast(tr('本次付款已取消，已选菜品保留，可继续点餐', 'Payment cancelled. Your dishes are saved; keep ordering.'));
@@ -297,20 +383,27 @@ const CheckoutUI = (() => {
   document.addEventListener('click', async e => {
     const cancel = e.target.closest('[data-checkout-cancel]');
     if (cancel?.hasAttribute('data-checkout-cancel')) { await cancelPending(cancel); return; }
+    const tableUnlock = e.target.closest('[data-table-unlock]');
+    if (tableUnlock?.hasAttribute('data-table-unlock')) {
+      tableUnlock.disabled = true;
+      const inCheckout = Boolean(active && current(active));
+      try { if (await unlock(tableUnlock) && inCheckout) await open(); } finally { if (tableUnlock.isConnected) tableUnlock.disabled = false; }
+      return;
+    }
     const button = e.target.closest('[data-checkout-wallet], [data-checkout-rewards], [data-checkout-pay], [data-checkout-edit], [data-checkout-addon], [data-checkout-addons-open], [data-checkout-retry], [data-checkout-back]');
     const view = active;
     if (!button || !view || !current(view) || view.busy) return;
     if (button.hasAttribute('data-checkout-addons-open') || button.hasAttribute('data-checkout-addon')) return chooseAddons(view, button.dataset.checkoutAddon);
     if(button.hasAttribute('data-checkout-wallet')){
       view.busy=true;button.disabled=true;const priorPay=view.node.querySelector('[data-checkout-pay]');if(priorPay)priorPay.disabled=true;
-      try{if(view.owner.order){await view.owner.api('/api/online',{...view.owner.order,action:'cancel'});view.owner.order=null;view.owner.emit();view.element?.destroy();view.actions=null;if(view.owner.table)await readCart(view.owner);}WalletUI.setMethod(view.owner,(view.order?.paymentMethod||view.owner.order?.paymentMethod||WalletUI.input(view.owner).paymentMethod)==='wallet'?'stripe':'wallet');await open({skipAddons:true});}catch(e){error(view,errorText(e));if(priorPay&&view.owner.order)priorPay.disabled=false;}finally{view.busy=false;button.disabled=false;}return;
+      try{if(view.owner.order){await view.owner.api('/api/online',{...view.owner.order,action:'cancel'});view.owner.order=null;view.owner.emit();view.express?.destroy();view.express=null;view.element?.destroy();view.actions=null;if(view.owner.table)await readCart(view.owner);}WalletUI.setMethod(view.owner,(view.order?.paymentMethod||view.owner.order?.paymentMethod||WalletUI.input(view.owner).paymentMethod)==='wallet'?'stripe':'wallet');await open({skipAddons:true});}catch(e){error(view,errorText(e));if(priorPay&&view.owner.order)priorPay.disabled=false;}finally{view.busy=false;button.disabled=false;}return;
     }
     if(button.hasAttribute('data-checkout-rewards')) {
       try { await RewardsUI.choose(view.owner,async(selection,reward)=>{
         await view.preparation;if(!current(view)||view.busy||view.confirmed)throw new Error(tr('请重新确认订单','Please check your order again'));
         view.busy=true;
         try {
-          if(view.owner.order){await view.owner.api('/api/online',{...view.owner.order,action:'cancel'});view.owner.order=null;view.owner.emit();view.element?.destroy();view.actions=null;view.changed=true;if(view.owner.table)await readCart(view.owner);}
+          if(view.owner.order){await view.owner.api('/api/online',{...view.owner.order,action:'cancel'});view.owner.order=null;view.owner.emit();view.express?.destroy();view.express=null;view.element?.destroy();view.actions=null;view.changed=true;if(view.owner.table)await readCart(view.owner);}
           RewardsUI.setSelection(view.owner,selection);
           if(reward&&!view.owner.items.some(i=>i.id===reward.dishId&&(i.style||null)===(reward.style||null)))view.owner.mutate({kind:'delta',dishId:reward.dishId,style:reward.style||undefined,delta:1});
           await view.owner.flush();await open({skipAddons:true});
@@ -342,5 +435,5 @@ const CheckoutUI = (() => {
     finally { view.busy = false; if (button.isConnected) button.disabled = button.hasAttribute('data-checkout-pay') && Boolean(view.confirmed); }
   });
   setInterval(() => { if (!document.hidden && store?.order?.token && Fulfilment.mode() === 'dinein') refresh(store); }, 3000);
-  return { open, refresh, dispose, itemsHTML };
+  return { open, refresh, dispose, itemsHTML, unlock };
 })();

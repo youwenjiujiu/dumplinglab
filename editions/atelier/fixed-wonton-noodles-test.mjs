@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {createCatalogService,catalogView} from '../../web/server/catalog-core.js';
+import {cleanItems} from '../../web/server/order-core.js';
+let record=null;const storage={async read(){return structuredClone(record)},async write(value,etag){record={value:structuredClone(value),etag:String(Number(etag||0)+1)}},isConflict(){return false}};
+const svc=createCatalogService(storage),id='lunch-v7-prawn-roe-wonton-noodles';
+let d=(await svc.menu()).find(d=>d.id===id);assert.equal(d.fixedPieces,5);assert.deepEqual(Object.keys(d.portionPrices),['5']);assert(Object.values(d.variants).every(v=>v.pieces===5));assert.equal(cleanItems([{id,style:d.styles[0],qty:2}],[d])[0].qty,2);
+for(const count of [9,10])assert.throws(()=>cleanItems([{id,style:`清汤 · ${count}颗云吞`,qty:1}],[d]));
+await assert.rejects(svc.save({id,revision:0,patch:{portionSizes:[9],portionPrices:{9:14}}}));
+await svc.save({id,revision:0,patch:{portionPrices:{5:12}}});assert.equal((await svc.menu()).find(d=>d.id===id).price,12);
+const migrated=catalogView({revision:0,holds:{},overrides:{[id]:{menuRevision:d.menuRevision,portionSizes:[5,9],portionPrices:{5:11,9:15},stock:20}}}).items.find(d=>d.id===id);assert.equal(migrated.price,11);assert.deepEqual(Object.keys(migrated.portionPrices),['5']);assert.equal(migrated.stock,null,'wonton noodles now count the wonton stock, not their own');assert(migrated.styles.every(s=>migrated.variants[s].pieces===5));
+console.log('PASS fixed five-wonton noodles, single price remains editable, obsolete 9/10 choices rejected, multiple servings supported, old price preserved, stock shared with wontons.');

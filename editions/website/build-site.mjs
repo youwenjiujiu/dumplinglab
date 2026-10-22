@@ -17,7 +17,7 @@ const output=execFileSync(process.execPath,[resolve(here,'build.mjs')],{encoding
 // set of Stripe and Blob credentials, and two things to keep in step.
 for(const name of ['api','server','img','vendor','order.html','staff.html',
  'catalog-admin.html','catalog-admin.js','catalog-admin.css','rewards-admin.js',
- 'wallet-admin.js','package.json','package-lock.json','vercel.json'])
+ 'wallet-admin.js','report-admin.js','package.json','package-lock.json','vercel.json'])
  await rm(resolve(output,name),{recursive:true,force:true});
 
 // `/order` was this project's own path while both sites shared one deployment.

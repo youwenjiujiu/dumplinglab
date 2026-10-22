@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {createCatalogService} from '../../web/server/catalog-core.js';
+import {cleanItems} from '../../web/server/order-core.js';
+let record=null;
+const catalog=createCatalogService({async read(){return structuredClone(record)},async write(value,etag){if(record?.etag!==etag)throw Error('Conflict');record={value:structuredClone(value),etag:randomUUID()}},isConflict:()=>false});
+let view=await catalog.admin();
+const drink=view.items.find(d=>d.section==='drinks'),hot=view.items.find(d=>d.section==='noodles');
+assert.equal(drink.printStation,'bar');assert.equal(hot.printStation,'kitchen');
+await catalog.save({id:hot.id,revision:view.revision,patch:{printStation:'bar'}});
+let snapshot=cleanItems([{id:hot.id,qty:1,printStation:'kitchen'}],await catalog.menu());
+assert.equal(snapshot[0].printStation,'bar','Server catalogue overrides client-supplied routing');
+view=await catalog.admin();await catalog.save({id:hot.id,revision:view.revision,patch:{printStation:'kitchen'}});
+assert.equal(snapshot[0].printStation,'bar','Existing snapshot is immutable');
+await assert.rejects(catalog.save({id:hot.id,revision:(await catalog.admin()).revision,patch:{printStation:'http://other-printer'}}),/出单/);
+const id='custom-'+randomUUID();
+await catalog.create({id,patch:{cn:'新凉菜',name:'New Cold Dish',section:'cold',price:4,active:true}});
+assert.equal((await catalog.menu()).find(d=>d.id===id).printStation,'bar');
+await catalog.save({id,revision:(await catalog.admin()).revision,patch:{printStation:'kitchen'}});
+await catalog.save({id,revision:(await catalog.admin()).revision,patch:{section:'drinks'}});
+assert.equal((await catalog.menu()).find(d=>d.id===id).printStation,'kitchen','Explicit assignment is independent of category');
+assert.equal((await catalog.admin()).audit.filter(e=>e.details?.printStation).length,3);
+// Field-level concurrency protects a printer selection changed by another staff member.
+const prior=await catalog.admin();
+await catalog.save({id,revision:prior.revision,patch:{printStation:'bar'}});
+await assert.rejects(catalog.save({id,revision:prior.revision,base:{printStation:'kitchen'},patch:{printStation:'kitchen'}}),e=>e.status===409);
+console.log('PASS printer selection: defaults, explicit override, custom dishes, invalid destinations, immutable server-owned order snapshots and concurrent-edit protection. No printer/network calls.');

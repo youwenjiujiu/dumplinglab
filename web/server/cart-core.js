@@ -2,7 +2,11 @@ import "../menu-data.js";
 import { cleanGroup, RequestError } from "./order-core.js";
 
 const CATALOG = new Map(globalThis.MENU.map(dish => [dish.id, dish]));
-export const currentOperation = op => op.kind === "note" || globalThis.isLunchItem(op.dishId, op.style);
+const available = (id,style,catalog) => {
+ const dish=catalog?.find(d=>d.id===id);
+ return catalog ? Boolean(dish&&dish.active!==false&&!dish.soldOut&&(!dish.styles?!style:dish.styles.includes(style))) : globalThis.isLunchItem(id,style);
+};
+export const currentOperation = (op,catalog) => op.kind === "note" || available(op.dishId,op.style,catalog);
 const TABLE_RE = /^[a-z0-9-]{1,12}$/i;
 const ID_RE = /^[a-f0-9-]{16,64}$/i;
 
@@ -19,7 +23,7 @@ export function cleanCartOpIds(value) {
   return ids;
 }
 
-export function cleanCartOperation(input) {
+export function cleanCartOperation(input, catalog) {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new RequestError("购物车操作无效");
   const id = typeof input.opId === "string" && ID_RE.test(input.opId) ? input.opId : null;
   const deviceId = typeof input.deviceId === "string" && ID_RE.test(input.deviceId) ? input.deviceId : null;
@@ -29,8 +33,8 @@ export function cleanCartOperation(input) {
     return { ...base, kind: "note", note: typeof input.note === "string" ? input.note.trim().slice(0, 240) : "" };
   }
   if (input.kind !== "delta") throw new RequestError("购物车操作类型无效");
-  const dish = CATALOG.get(input.dishId);
-  if (!dish || dish.soldOut) throw new RequestError("菜品不存在或已售罄");
+  const dish = catalog ? catalog.find(d=>d.id===input.dishId) : CATALOG.get(input.dishId);
+  if (!dish || dish.soldOut || dish.active === false) throw new RequestError("菜品不存在或已售罄");
   const delta = Number(input.delta);
   if (!Number.isInteger(delta) || !delta || Math.abs(delta) > 20) throw new RequestError("菜品数量变化无效");
   const style = dish.styles ? (typeof input.style === "string" && dish.styles.includes(input.style) ? input.style : null) : null;
@@ -39,7 +43,7 @@ export function cleanCartOperation(input) {
   return { ...base, kind: "delta", dishId: dish.id, style, delta };
 }
 
-export function reduceCartOperations(operations) {
+export function reduceCartOperations(operations, catalog) {
   const items = new Map();
   let note = "", noteTime = -1;
   const sorted = [...operations].sort((a, b) => (a.storedAt || Date.parse(a.at) || 0) - (b.storedAt || Date.parse(b.at) || 0) || a.id.localeCompare(b.id));
@@ -56,10 +60,10 @@ export function reduceCartOperations(operations) {
     if (current.qty) items.set(key, current); else items.delete(key);
   }
   return {
-    items: [...items.values()].filter(i => globalThis.isLunchItem(i.id, i.style)),
-    unavailableItems: [...items.values()].filter(i => !globalThis.isLunchItem(i.id, i.style)),
+    items: [...items.values()].filter(i => available(i.id,i.style,catalog)),
+    unavailableItems: [...items.values()].filter(i => !available(i.id,i.style,catalog)),
     menuVersion: globalThis.MENU_VERSION,
-    note: note || null, opIds: sorted.filter(currentOperation).map(operation => operation.id),
+    note: note || null, opIds: sorted.filter(op=>currentOperation(op,catalog)).map(operation => operation.id),
     revision: sorted.reduce((latest, operation) => Math.max(latest, operation.storedAt || Date.parse(operation.at) || 0), 0),
   };
 }

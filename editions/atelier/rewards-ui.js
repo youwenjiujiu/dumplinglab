@@ -24,6 +24,31 @@ globalThis.RewardsUI = (() => {
       );
     return out;
   }
+  // Vouchers now come from more than one issuer; the account panel says which.
+  const issuer = (r) => (r.source === "tiger" ? "TIGER" : "CanCan");
+
+  /* Arriving from the printed voucher's QR. Signing in is the whole claim:
+     one voucher per account, and it lands in 优惠券 where checkout will find
+     it. Never auto-redeems — the five dumplings are added to an order in the
+     shop, so a tap here could only destroy the voucher. */
+  async function claimCampaign() {
+    await refresh();
+    if (!data?.enabled) return;
+    if (!data.member) return login(() => claimCampaign());
+    try {
+      const out = await request("/api/voucher", { action: "claim" });
+      await refresh();
+      await account("vouchers");
+      toast(
+        out.fresh
+          ? text("饺子券已存入你的账户", "Your dumpling voucher is saved to your account")
+          : text("这张券已经在你的账户里了", "This voucher is already in your account"),
+      );
+    } catch (e) {
+      toast(e.message);
+    }
+  }
+
   function paint() {
     const bar = document.querySelector("#rewardsBar");
     if (!bar) return;
@@ -290,7 +315,7 @@ globalThis.RewardsUI = (() => {
       .map((r, i) => {
         const d = dish(r.dishId),
           image = d?.img ? photo(d, "s") : null;
-        return `<article class="reward-item">${image ? `<img src="${esc(image)}" alt="" width="60" height="60">` : ""}<div><strong>${esc(r.type === "voucher" ? r.title : d ? name(d) : r.title)}</strong><small>${r.type === "points" ? `${r.points} ${text("积分 · 兑换一份", "points · one portion")}${r.style ? " · " + esc(r.style) : ""}` : `CanCan · ${text("有效至", "Until")} ${new Date(r.expiresAt).toLocaleDateString("en-SG")}`}</small>${!r.usable ? `<small>${(r.type === "points" && !r.available) || !d || d.soldOut ? text("暂时售罄", "Unavailable") : text("积分不足", "More points needed")}</small>` : ""}</div><button type="button" data-reward-choice="${i}" ${r.usable ? "" : "disabled"}>${text("本单使用", "Use")}</button></article>`;
+        return `<article class="reward-item">${image ? `<img src="${esc(image)}" alt="" width="60" height="60">` : ""}<div><strong>${esc(r.type === "voucher" ? r.title : d ? name(d) : r.title)}</strong><small>${r.type === "points" ? `${r.points} ${text("积分 · 兑换一份", "points · one portion")}${r.style ? " · " + esc(r.style) : ""}` : `${issuer(r)} · ${text("有效至", "Until")} ${new Date(r.expiresAt).toLocaleDateString("en-SG")}`}</small>${!r.usable ? `<small>${(r.type === "points" && !r.available) || !d || d.soldOut ? text("暂时售罄", "Unavailable") : text("积分不足", "More points needed")}</small>` : ""}</div><button type="button" data-reward-choice="${i}" ${r.usable ? "" : "disabled"}>${text("本单使用", "Use")}</button></article>`;
       })
       .join("");
   }
@@ -373,7 +398,7 @@ globalThis.RewardsUI = (() => {
       return `<article class="reward-item loyalty-food ${voucher ? 'loyalty-coupon' : r.usable ? 'is-unlocked' : 'is-locked'}">
         ${food?.img ? `<div class="loyalty-food-photo"><img src="${esc(photo(food,'s'))}" alt="" width="180" height="160"></div>` : ''}
         <div class="loyalty-food-copy">
-          ${voucher ? `<small>CANCAN · ${text('已领取','CLAIMED')}</small>` : `<span class="loyalty-cost">${r.usable ? '' : lock}<b>${r.points}</b> ${text('积分','points')}</span>`}
+          ${voucher ? `<small>${issuer(r).toUpperCase()} · ${text('已领取','CLAIMED')}</small>` : `<span class="loyalty-cost">${r.usable ? '' : lock}<b>${r.points}</b> ${text('积分','points')}</span>`}
           <strong>${esc(voucher ? r.title : food ? name(food) : r.title)}</strong>
           ${r.style ? `<span class="loyalty-style">${esc(r.style)}</span>` : ''}
           ${voucher ? `<span>${text('有效至 ','Until ') + new Date(r.expiresAt).toLocaleDateString('en-SG')}</span>` : ''}
@@ -539,7 +564,7 @@ globalThis.RewardsUI = (() => {
   function checkoutHTML(order) {
     if (!data?.enabled && !order.loyalty) return "";
     const l = order.loyalty;
-    return `<section class="checkout-block checkout-rewards"><h3>${bi("积分与优惠", "Rewards")}<button class="checkout-text-action" type="button" data-checkout-rewards>${data?.member ? bi("选择 / 修改", "Choose / change") : bi("登录使用", "Sign in")}</button></h3><p>${l?.discountCents ? `${esc(l.title)} · −${money(l.discountCents / 100)}${l.pointsCost ? ` · ${l.pointsCost} ${text("积分", "points")}` : ""}` : data?.member ? text("本单未使用兑换优惠", "No reward selected") : text("游客可直接付款；登录后本单可累计积分。", "Guests can pay directly. Sign in to earn points on this order.")}</p>${l ? `<small>${text("完成付款预计获得", "Earn after payment")} ${l.expectedPoints} ${text("积分", "points")}</small>` : ""}</section>`;
+    return `<section class="checkout-block checkout-rewards"><h3>${bi("积分与优惠", "Rewards")}<button class="checkout-text-action" type="button" data-checkout-rewards>${data?.member ? bi("选择 / 修改", "Choose / change") : bi("登录使用", "Sign in")}</button></h3><p>${l?.discountCents ? (l.pointsCost ? `${esc(l.title)} · −${money(l.discountCents / 100)} · ${l.pointsCost} ${text("积分", "points")}` : `${esc(l.title)} · ${text("免费", "Free")}`) : data?.member ? text("本单未使用兑换优惠", "No reward selected") : text("游客可直接付款；登录后本单可累计积分。", "Guests can pay directly. Sign in to earn points on this order.")}</p>${l ? `<small>${text("完成付款预计获得", "Earn after payment")} ${l.expectedPoints} ${text("积分", "points")}</small>` : ""}</section>`;
   }
   const receiptHTML = (order) =>
     order.rewardsSettled
@@ -548,6 +573,7 @@ globalThis.RewardsUI = (() => {
   document.addEventListener("DOMContentLoaded", () => {
     refresh().catch(() => {});
     if (new URLSearchParams(location.search).get("reset_password") === "1") resetPassword();
+    if (new URLSearchParams(location.search).get("claim") === "tiger") claimCampaign().catch(() => {});
   });
   document.addEventListener("click", async (e) => {
     const b = e.target.closest("[data-rewards-account], [data-dish-reward]");

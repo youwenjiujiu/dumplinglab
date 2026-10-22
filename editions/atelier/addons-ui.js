@@ -9,7 +9,8 @@ const AddonUI = (() => {
     'lunch-v2-soft-egg': '/brand/addon-soft-egg-v4.webp',
     'lunch-v2-cucumber': '/brand/addon-cucumber-v4.webp',
   };
-  const available = order => ids.map(id => dish(id)).filter(d => d && !d.soldOut && !d.styles && !order.items.some(i => i.id === d.id));
+  // Only suggest what is on today's menu; retired dishes (卤蛋、黄瓜) stay out.
+  const available = order => ids.map(id => dish(id)).filter(d => d && d.active !== false && !d.soldOut && !d.styles && !order.items.some(i => i.id === d.id));
   const imageHTML = d => `<div class="addon-scene"><img src="${escapeHTML(campaign[d.id] || photo(d,'s'))}" alt="" width="160" height="160"></div>`;
   function section(order) {
     const dishes = available(order);

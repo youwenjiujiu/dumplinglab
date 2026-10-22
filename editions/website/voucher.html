@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-SG">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>饺子券 · Dumpling Voucher</title>
+<link rel="icon" type="image/png" sizes="64x64" href="/site/media/brand-favicon.png">
+<meta name="description" content="Dumpling Lab 饺子券：任意消费送 5 颗水饺，仅限堂食。Save your voucher to your phone.">
+<meta name="theme-color" content="#CE4624">
+<meta name="robots" content="noindex">
+<link rel="preload" href="/fonts/scto-grotesk-a-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/site/voucher.css">
+<script src="/site/voucher.js" defer></script>
+</head>
+<body>
+<main class="sheet">
+
+  <header class="stub">
+    <img class="stub-mark" src="/site/media/brand-wordmark-480.webp" width="480" height="158" alt="Dumpling Lab">
+    <p class="stub-title"><strong>饺子券</strong><span>Dumpling Voucher</span></p>
+  </header>
+
+  <section class="card">
+
+    <!-- 扫码就到这里。第一件事是把印在纸上那句 "Scan to Redeem" 顶回去。 -->
+    <p class="alert" id="alert">
+      <strong>扫码不会核销。</strong>你的券还在，到店出示给店员才会使用。
+      <span lang="en">Scanning does not redeem. Show it to staff in the shop.</span>
+    </p>
+
+    <dl class="terms">
+      <div><dt>优惠 <span lang="en">Offer</span></dt>
+        <dd>任意消费送 <b>5 颗水饺</b><span lang="en">5 free boiled dumplings with any purchase</span></dd></div>
+      <div><dt>限制 <span lang="en">Limit</span></dt>
+        <dd>仅限堂食<span lang="en">Dine-in only</span></dd></div>
+      <div><dt>有效期 <span lang="en">Valid through</span></dt>
+        <dd><span id="expiry">2027年2月28日</span><span lang="en" id="expiryEn">28 February 2027, inclusive</span></dd></div>
+    </dl>
+
+    <!-- 领取：没有表单。登录就是领取，券进会员账户的「我的优惠券」。 -->
+    <div class="claim" id="claim">
+      <h2>领取到你的账户<span lang="en">Save it to your account</span></h2>
+      <p class="hint" id="hint">登录一次，券就存进账户。纸丢了也不影响，到店点餐时自动出现。<span lang="en">Sign in once and the voucher is yours. Lose the slip and it still works — it appears when you order at the table.</span></p>
+      <a class="primary" id="go" href="/order?claim=tiger">登录领取 · Sign in to claim</a>
+      <p class="fineprint">邮箱、Google 或 Apple 都可以，一步完成。<span lang="en">Email, Google or Apple — one step.</span></p>
+    </div>
+
+  </section>
+
+  <footer class="foot">
+    <p class="addr"><a href="https://maps.google.com/?q=49+Circular+Road+Singapore+049404" target="_blank" rel="noopener">49 Circular Road, Singapore 049404 <span aria-hidden="true">↗</span></a></p>
+    <p class="home"><a href="/">dumplinglab.sg</a> · Dumpling Lab by CANCAN</p>
+  </footer>
+
+</main>
+</body>
+</html>

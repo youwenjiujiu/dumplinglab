@@ -24,7 +24,7 @@ for (const language of ['zh','en']) {
   };
   vm.createContext(ctx);
   vm.runInContext(addons,ctx);
-  vm.runInContext(ui.replace('return { open, refresh, dispose, itemsHTML };', 'return { open, refresh, dispose, itemsHTML, draw };'),ctx);
+  vm.runInContext(ui.replace('return { open, refresh, dispose, itemsHTML, unlock };', 'return { open, refresh, dispose, itemsHTML, unlock, draw };'),ctx);
   vm.runInContext(fulfilment,ctx);
   for (const mode of ['takeaway','dinein']) {
     ctx.view.order={...order,mode};

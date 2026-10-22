@@ -43,7 +43,7 @@ assert.equal(results.find(r=>r.status==='rejected').reason.code,'PAYMENT_PENDING
 assert.equal((await online.checkout(chosen)).clientSecret,'secret_fixture');
 assert.equal(payments,1,'Retry reuses original session');
 const session = sessions.get(chosen.requestId);
-const paid = {id:session.id,metadata:{dumpling_order_id:chosen.requestId},currency:'sgd',amount_total:350,payment_status:'paid'};
+const paid = {id:session.id,metadata:{dumpling_order_id:chosen.requestId},currency:'sgd',amount_total:385,payment_status:'paid'};
 await assert.rejects(online.paymentEvent({...paid,amount_total:1}),e=>e.status===409);
 await assert.rejects(online.paymentEvent({...paid,id:'cs_wrong'}),e=>e.status===409);
 await online.paymentEvent({...paid,payment_status:'unpaid'});

@@ -1,0 +1,109 @@
+diff --git a/editions/website/build.mjs b/editions/website/build.mjs
+index 73254a6..e1bf730 100644
+--- a/editions/website/build.mjs
++++ b/editions/website/build.mjs
+@@ -32,4 +32,12 @@ for(const match of [...html.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))"/g)])
+  html=html.replace(match[0],match[0].replace(match[1],`${match[1]}?v=${hash}`));
+ }
+ await writeFile(resolve(output,'index.html'),html);
++// The Tiger campaign landing page. Its own document so the homepage keeps its
++// English-only contract and its approved hero untouched.
++let voucher=await readFile(resolve(here,'voucher.html'),'utf8');
++for(const match of [...voucher.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))"/g)]){
++ const hash=createHash('sha256').update(await readFile(resolve(output,'.'+match[1]))).digest('hex').slice(0,12);
++ voucher=voucher.replace(match[0],match[0].replace(match[1],`${match[1]}?v=${hash}`));
++}
++await writeFile(resolve(output,'voucher.html'),voucher);
+ console.log(output);
+diff --git a/editions/website/index.html b/editions/website/index.html
+index 635baa9..89a8293 100644
+--- a/editions/website/index.html
++++ b/editions/website/index.html
+@@ -20,6 +20,16 @@
+ </head>
+ <body data-course="fried">
+   <a class="skip" href="#main" data-en="Skip to content">Skip to content</a>
++  <!-- Tiger campaign. A guest scanning the printed slip lands on this homepage,
++       which otherwise says nothing about the voucher they are holding. Fixed to
++       the bottom so the approved hero keeps its exact viewport height. -->
++  <aside class="voucher-nudge" id="voucherNudge" hidden>
++    <a href="/voucher">
++      <span class="voucher-nudge-text"><b>Holding a Dumpling Voucher?</b> Save it to your phone before you lose the slip.</span>
++      <span class="voucher-nudge-go" aria-hidden="true">↗︎</span>
++    </a>
++    <button type="button" id="voucherNudgeClose" aria-label="Dismiss">×</button>
++  </aside>
+   <header class="site-header">
+     <a class="logo" href="#main" aria-label="Dumpling Lab · Back to top"><img src="/site/media/brand-wordmark-480.webp" width="480" height="158" alt="Dumpling Lab"></a>
+     <nav id="mainNav" aria-label="Main navigation"><a href="#food" data-en="Menu">Menu</a><a href="#space" data-en="Our space">Our space</a><a href="#visit" data-en="Find us">Find us</a></nav>
+@@ -90,5 +100,20 @@
+     </div>
+   </main>
+   <script>{document.querySelectorAll('a[href^="/order"]').forEach(el=>el.href='/order?lang=en');}</script>
++  <script>
++  /* Campaign window only, and never twice for the same guest. Dates are the
++     Tiger event through the voucher's printed expiry (2027-02-28). */
++  (function(){
++    // TODO 上线前把 FROM 改成 Tiger 活动当天。现在设成过去,是为了本地能看到横幅。
++    var FROM='2026-09-01T00:00:00+08:00', UNTIL='2027-02-28T23:59:59+08:00';
++    var now=Date.now(); if(now<Date.parse(FROM)||now>Date.parse(UNTIL))return;
++    try{ if(localStorage.getItem('dl-voucher-nudge')==='off')return; }catch(e){}
++    var bar=document.getElementById('voucherNudge'); if(!bar)return;
++    bar.hidden=false;
++    document.getElementById('voucherNudgeClose').addEventListener('click',function(){
++      bar.hidden=true; try{localStorage.setItem('dl-voucher-nudge','off')}catch(e){}
++    });
++  })();
++  </script>
+ </body>
+ </html>
+diff --git a/editions/website/release-assets.mjs b/editions/website/release-assets.mjs
+index 0f980c3..f57b1f5 100644
+--- a/editions/website/release-assets.mjs
++++ b/editions/website/release-assets.mjs
+@@ -1,6 +1,6 @@
+ // Explicit delivery assets. Source artwork, old designs and review evidence
+ // remain in the workspace, never copied into the public website package.
+-export const websiteFiles=['site.css','site.js','website-catalog.js','motion-math.mjs','stage.css','stage.js','campaign.css'];
++export const websiteFiles=['site.css','site.js','website-catalog.js','motion-math.mjs','stage.css','stage.js','campaign.css','voucher.css','voucher.js'];
+ export const websiteFonts=['LilitaOne-Regular.woff2','KuaiLe-Campaign-subset-v1.woff2','LilitaOne-OFL.txt','ZCOOLKuaiLe-OFL.txt'];
+ export const websiteMedia=[
+  ...['roll','fill','fold','boil','serve'].flatMap(step=>[`kitchen-${step}-v1.webp`,`kitchen-${step}-v1-800.webp`]),
+diff --git a/editions/website/site.css b/editions/website/site.css
+index 75e8089..6809b3c 100644
+--- a/editions/website/site.css
++++ b/editions/website/site.css
+@@ -216,3 +216,15 @@ a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:po
+  .brand-chapters .pick-feedback{order:4;min-height:88px}
+  .brand-chapters .pick-feedback .pick-status{margin-top:0;margin-bottom:8px}
+ }
++
++/* Tiger voucher nudge. Fixed, so inserting it cannot change the hero's
++   100svh arithmetic; slim, because most visitors are not holding a slip. */
++.voucher-nudge{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;align-items:stretch;background:#CE4624;color:#FDF2DA;box-shadow:0 -2px 14px #2a232026;padding-bottom:env(safe-area-inset-bottom)}
++.voucher-nudge[hidden]{display:none}
++.voucher-nudge>a{flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:13px 8px 13px var(--gutter);color:inherit;text-decoration:none}
++.voucher-nudge-text{flex:1;min-width:0;font-size:.875rem;line-height:1.4}
++.voucher-nudge-text b{font-weight:500}
++.voucher-nudge-go{flex:0 0 auto;font-size:1.0625rem;opacity:.85}
++.voucher-nudge>button{flex:0 0 auto;width:46px;border:0;background:none;color:inherit;opacity:.7;font-size:1.375rem;line-height:1;cursor:pointer}
++.voucher-nudge>button:hover{opacity:1}
++@media(max-width:760px){.voucher-nudge>a{padding-left:16px}.voucher-nudge-text{font-size:.8125rem}}
+diff --git a/editions/website/verify.mjs b/editions/website/verify.mjs
+index 608179b..b050cf0 100644
+--- a/editions/website/verify.mjs
++++ b/editions/website/verify.mjs
+@@ -38,11 +38,12 @@ assert.match(order,/data-environment="production"/);
+ assert(!order.includes('id="previewNotice"'));
+ assert.match(order,/<a id="websiteHome" href="\/\?lang=zh" aria-label="Dumpling Lab · 返回官网"[^>]*><span id="footerCopy">/);
+ assert.throws(()=>orderingDocument('<html></html>'),/footer changed/);
++assert((await stat(resolve(bundle,'voucher.html'))).isFile(),'Tiger voucher landing page ships');
+ const config=JSON.parse(await readFile(resolve(bundle,'vercel.json')));assert.equal(config.cleanUrls,true);
+ let assets=0;
+ for(const match of html.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))\?v=([a-f0-9]+)"/g))assert.equal(createHash('sha256').update(await readFile(resolve(bundle,'.'+match[1]))).digest('hex').slice(0,12),match[2],'asset cache fingerprint');
+ for(const page of [html,order])for(const match of page.matchAll(/(?:src|href)="(\/[^"?#]+)(?:\?[^"#]*)?"/g)){
+- const path=match[1];if(path==='/order'||path==='/')continue;
++ const path=match[1];if(path==='/order'||path==='/'||path==='/voucher')continue;
+  assert((await stat(resolve(bundle,'.'+path))).isFile(),path);assets++;
+ }
+ for(const name of ['app.js','cart-store.js','fulfilment.js','checkout-ui.js','shared-table.js'])assert.equal(await readFile(resolve(bundle,name),'utf8'),await readFile(resolve(root,'editions/atelier',name),'utf8'));

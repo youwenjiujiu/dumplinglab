@@ -30,7 +30,7 @@ storage.set("atelier:QAENTRY:B", JSON.stringify({ order: { requestId: "unconfirm
 assert.throws(() => draft.bindTable("QAENTRY"), /待确认/);
 assert.equal(draft.table, null);
 storage.set("atelier:QAENTRY:B", JSON.stringify({
-  remote: { items: [{ id: "lunch-v2-cucumber", qty: 1 }], orders: [], opIds: [] },
+  remote: { items: [{ id: "lunch-v2-pickled-radish", qty: 1 }], orders: [], opIds: [] },
   pending: [{ opId: "peer", kind: "delta", dishId: "lunch-v2-water", delta: 1, table: "QAENTRY", group: "B" }],
 }));
 draft.bindTable(" qaentry ");
@@ -61,3 +61,13 @@ assert.equal(retired.retiredPending.length,1);
 assert.equal(retired.orders[0].items[0].name,"Mini 卤肉饭");
 assert.equal(retired.orders[0].total,5.5);
 console.log("PASS: old lunch cache is quarantined; historic receipt names and totals survive the menu revision.");
+
+// A newly created SKU may not exist in the static menu while /api/catalog loads.
+const customId='custom-11111111-2222-4333-8444-555555555555';
+storage.set('atelier:browse:B',JSON.stringify({remote:{items:[],orders:[],opIds:[]},pending:[{opId:'custom-op',kind:'delta',dishId:customId,delta:1}]}));
+const customDraft=make();
+assert.equal(customDraft.pending.length,1,'Keep custom pending operations before live catalogue arrives');
+assert.equal(customDraft.retiredPending.length,0);
+vm.runInContext(`MENU.push({id:'${customId}',cn:'新菜',name:'New Dish',section:'cold',price:4.5})`,context);
+assert.equal(customDraft.items[0].id,customId,'Selection becomes visible after catalogue hydration');
+console.log('PASS: custom SKU offline selection survives catalogue-loading race.');

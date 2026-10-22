@@ -6,19 +6,19 @@ import {imageType,imageId} from '../../web/server/catalog-image-core.js';
 import {requireStaff} from '../../web/server/staff-auth.js';
 function memory(){let record=null;return {async read(){await Promise.resolve();return structuredClone(record)},async write(value,etag){if(record?.etag!==etag)throw Object.assign(new Error('Conflict'),{conflict:true});record={value:structuredClone(value),etag:String(Number(record?.etag||0)+1)}},isConflict:e=>e.conflict}}
 const inventory=createCatalogService(memory());
-let view=await inventory.admin();assert.equal(view.items.length,35);
+let view=await inventory.admin();assert.equal(view.items.length,MENU.length);
 const dumpling=view.items.find(d=>d.kind==='dumpling'),simple=view.items.find(d=>!d.variants);
 const save=async(id,patch)=>inventory.save({id,patch,revision:(await inventory.admin()).revision});
 await save(dumpling.id,{stock:10,portionPrices:{5:7,9:11}});
 assert.equal((await inventory.menu()).find(d=>d.id===dumpling.id).variants[dumpling.styles[0]].price,7);
-const five=dumpling.styles.find(s=>dumpling.variants[s].pieces===5&&dumpling.variants[s].prep==='fried');
+const five=dumpling.styles.find(s=>dumpling.variants[s].pieces===5&&dumpling.variants[s].prep==='boiled');
 const nine=dumpling.styles.find(s=>dumpling.variants[s].pieces===9);
 const make=(style,qty=1)=>({id:randomUUID(),tokenHash:'test-owner',inventoryManaged:true,items:[{id:dumpling.id,style,qty,price:style===nine?11:7}]});
 const a=make(five),b=make(nine);
 const competition=await Promise.allSettled([inventory.reserve(a),inventory.reserve(b)]);
 assert.equal(competition.filter(r=>r.status==='fulfilled').length,1,'competing preparations share stock');
 const winner=competition[0].status==='fulfilled'?a:b;
-const units=winner===a?5:9;
+const units=winner===a?5:10;
 view=await inventory.admin();assert.equal(view.items.find(d=>d.id===dumpling.id).available,10-units);
 await inventory.reserve(winner);assert.equal((await inventory.admin()).items.find(d=>d.id===dumpling.id).reserved,units,'retry does not reserve twice');
 await assert.rejects(save(dumpling.id,{stock:units-1}),/预占/);
@@ -69,4 +69,30 @@ await assert.rejects(inventory.save({id:simple.id,revision:editBase.revision,bas
 assert.throws(()=>requireStaff({headers:{}},'test-password'),e=>e.status===401);
 requireStaff({headers:{authorization:'Basic '+Buffer.from('staff:test-password').toString('base64')}},'test-password');
 assert.throws(()=>imageType(Buffer.from('<svg/>')));assert.throws(()=>imageId('../../secrets'));
-console.log('PASS catalogue: 35 products, price edits, validation, CAS conflicts, shared-piece inventory, concurrent last-stock claim, idempotent payment/cancel, protected admin, image validation; no production calls');
+{const settings=createCatalogService(memory());
+assert.deepEqual((await settings.public()).settings,{tableDiscounts:{}},'no table discounts by default');
+await settings.saveSettings({action:'table-discount',table:'a1',discount:{type:'percent',value:20,note:'周五包场'}});
+await settings.saveSettings({action:'table-discount',table:'B2',discount:{type:'amount',value:50}});
+assert.deepEqual(await settings.tableDiscount('A1'),{type:'percent',value:20,note:'周五包场'});
+assert.deepEqual((await settings.public()).settings.tableDiscounts.B2,{type:'amount',value:50});
+for(const bad of [{type:'percent',value:0},{type:'percent',value:101},{type:'amount',value:-1},{type:'free',value:1}])await assert.rejects(settings.saveSettings({action:'table-discount',table:'A1',discount:bad}),e=>e.status===400);
+await assert.rejects(settings.saveSettings({action:'table-discount',table:'A 1',discount:{type:'percent',value:10}}),e=>e.status===400);
+await settings.saveSettings({action:'table-discount',table:'A1',discount:null});
+assert.equal(await settings.tableDiscount('A1'),null);
+assert.equal((await settings.admin()).audit.filter(a=>a.action==='settings').length,3);}
+console.log('PASS catalogue: October menu products, price edits, validation, CAS conflicts, shared-piece inventory, concurrent last-stock claim, idempotent payment/cancel, protected admin, image validation; no production calls');
+
+// Reclassification keeps SKU identity, price and stock; variant categories stay protected.
+const coldService=createCatalogService(memory());
+let coldView=await coldService.admin();
+const cucumber=coldView.items.find(d=>d.id==='lunch-v2-cucumber');
+assert(globalThis.SECTIONS.includes('cold'));
+assert.equal(globalThis.SECTION_LABELS.cold,'Cold Dishes');
+await coldService.save({id:cucumber.id,revision:coldView.revision,patch:{section:'cold'}});
+const moved=(await coldService.public()).items.find(d=>d.id===cucumber.id);
+assert.equal(moved.section,'cold');assert.equal(moved.price,cucumber.price);
+assert.equal(moved.stockUnit,cucumber.stockUnit);
+await assert.rejects(coldService.save({id:dumpling.id,revision:(await coldService.admin()).revision,patch:{section:'cold'}}),/分类/);
+await coldService.save({id:cucumber.id,revision:(await coldService.admin()).revision,patch:{section:'sides'}});
+assert.equal((await coldService.menu()).find(d=>d.id===cucumber.id).section,'sides');
+console.log('PASS cold category: reclassify and restore existing SKU, preserve pricing/units, reject incompatible variants.');

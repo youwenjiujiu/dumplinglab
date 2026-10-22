@@ -27,6 +27,17 @@ const server=createServer(async(req,res)=>{
    if(upstream.headers.getSetCookie().length)responseHeaders['set-cookie']=upstream.headers.getSetCookie();
    res.writeHead(upstream.status,responseHeaders);res.end(Buffer.from(await upstream.arrayBuffer()));return;
   }
+  // 本地预览：一键登录成测试会员，方便在自己的浏览器里看券。
+  if(url.pathname==='/preview-login'){
+   const upstream=await fetch(`http://127.0.0.1:${backendPort}/api/member`,{method:'POST',
+     headers:{'content-type':'application/json'},body:JSON.stringify({action:'preview-login'})});
+   const cookies=upstream.headers.getSetCookie();
+   // 同时清掉浏览器里残留的购物车/待确认订单，本地服务重启后它们会和服务端对不上。
+   const next=JSON.stringify(url.searchParams.get('next')||'/order?table=C3');
+   res.writeHead(200,{'content-type':'text/html; charset=utf-8',
+     ...(cookies.length?{'set-cookie':cookies}:{}),'cache-control':'no-store'});
+   return res.end(`<!doctype html><meta charset="utf-8"><script>try{localStorage.clear();sessionStorage.clear()}catch(e){}location.replace(${next})</script>`);
+  }
   let path=decodeURIComponent(url.pathname);
   if(path.split('/').some(segment=>segment.startsWith('.'))||!['GET','HEAD'].includes(req.method))throw Object.assign(new Error('Not found'),{code:'ENOENT'});
   if(path==='/site/catalogue-bootstrap.js'){
@@ -46,6 +57,8 @@ const server=createServer(async(req,res)=>{
   if(path==='/review/111')path='/review-111.html';
   if(path==='/review/114')path='/review-114.html';
   if(path==='/review/120')path='/review-120.html';
+  if(path==='/voucher'||path==='/voucher/')path='/voucher.html';
+  if(path==='/voucher.html'){const page=await readFile(resolve(here,'voucher.html'),'utf8');res.writeHead(200,{'content-type':mime['.html'],'cache-control':'no-store'});return res.end(req.method==='HEAD'?undefined:page)}
   if(path==='/staff')path='/staff.html';
   if(path==='/catalog-admin')path='/catalog-admin.html';
   if(['/order','/order/','/order.html'].includes(path)){
@@ -54,7 +67,7 @@ const server=createServer(async(req,res)=>{
   // Live website source, assembled shared assets. Never expose repository data.
   let target=resolve(bundle,'.'+path);
   if(!target.startsWith(bundle+sep))throw Object.assign(new Error('Not found'),{code:'ENOENT'});
-  if(['/site/site.css','/site/site.js','/site/website-catalog.js','/site/cinema.css','/site/cinema.js','/site/motion-math.mjs','/site/stage.css','/site/stage.js','/site/campaign.css'].includes(path))target=resolve(here,path.split('/').pop());
+  if(['/site/site.css','/site/site.js','/site/website-catalog.js','/site/cinema.css','/site/cinema.js','/site/motion-math.mjs','/site/stage.css','/site/stage.js','/site/campaign.css','/site/voucher.css','/site/voucher.js'].includes(path))target=resolve(here,path.split('/').pop());
   if(/^\/site\/fonts\/[a-zA-Z0-9-]+\.(ttf|woff2|txt)$/.test(path))target=resolve(here,'fonts',path.split('/').pop());
   if(/^\/site\/media\/[a-z0-9-]+\.(webp|mp4|wav|png)$/.test(path))target=resolve(here,'media',path.split('/').pop());
   if(path==='/site/media/brand-favicon.png')target=resolve(here,'media/brand-favicon.png');

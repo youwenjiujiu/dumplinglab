@@ -15,11 +15,14 @@ await copy(resolve(here, "generated/table-view-motion/developer/web-component/ta
 await copy(resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js"), "micro-motion.js");
 await copy(resolve(here, "generated/receipt-print/developer/web-component/receipt-print.js"), "receipt-motion.js");
 await copy(resolve(here, "generated/table-sharing/developer/web-component/table-sharing.js"), "sharing-motion.js");
-for (const file of ["menu-data.js", "lunch-archive.js", "lunch-menu.js", "catalog-client.js", "catalog-admin.html", "catalog-admin.js", "rewards-admin.js", "wallet-admin.js", "catalog-admin.css", "order-pricing.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
+for (const file of ["lunch-set-art.js", "lunch-set-admin.js", "menu-data.js", "lunch-archive.js", "lunch-menu.js", "catalog-client.js", "catalog-admin.html", "catalog-admin.js", "rewards-admin.js", "wallet-admin.js", "report-admin.js", "catalog-admin.css", "order-pricing.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
+for (const file of await readdir(resolve(web,"vendor/cutout"))) await copy(resolve(web,"vendor/cutout",file),`vendor/cutout/${file}`);
 for (const dir of ["api", "server", "img/s", "img/l"]) {
   for (const file of await readdir(resolve(web, dir))) {
     // Photographer shoot is archived locally, not part of the active menu.
     if (file.startsWith('shoot-20260908-')) continue;
+    // 领券流程已取消（二维码只指向官网首页），领券接口不上线。
+    if (dir === "api" && file === "voucher.js") continue;
     if (/^dining-(together|separate)-v\d+\.webp$/.test(file) && !/^dining-(together-v5|separate-v7)\.webp$/.test(file)) continue;
     if (/\.(js|webp)$/.test(file)) await copy(resolve(web, dir, file), `${dir}/${file}`);
   }

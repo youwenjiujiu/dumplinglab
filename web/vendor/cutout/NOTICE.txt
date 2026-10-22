@@ -1,0 +1,15 @@
+Browser background-removal assets (loaded only on explicit user action)
+
+ONNX Runtime Web 1.22.0, Microsoft, MIT License (ONNX-LICENSE.txt)
+Source: https://github.com/microsoft/onnxruntime/tree/v1.22.0
+Distributed JS/WASM: https://registry.npmjs.org/onnxruntime-web/-/onnxruntime-web-1.22.0.tgz
+
+U2Netp, Xuebin Qin et al., Apache License 2.0 (U2NET-LICENSE.txt)
+Original model project: https://github.com/xuebinqin/U-2-Net
+ONNX conversion distributed by rembg:
+https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx
+Verified model MD5: 8e83ca70e441ab06c318d82300c84806
+
+worker.js is application code: browser-only inference, largest-component alpha mask,
+optional edge refinement for uniform pale backdrops, transparent square framing.
+No automatic colour, exposure, recipe or food-content generation.

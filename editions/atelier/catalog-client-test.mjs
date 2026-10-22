@@ -10,7 +10,7 @@ vm.runInContext(await readFile(new URL('../../web/catalog-client.js',import.meta
 await ctx.CatalogClient.ready;
 assert.equal(ctx.MENU.find(d=>d.id===chosen).active,false);assert.equal(ctx.MENU.find(d=>d.id===initial[1].id).price,12);
 assert(!ctx.LUNCH_RECOMMENDATIONS.some(r=>r.dishId===chosen));assert.equal(events.at(-1),'catalog-updated');
-assert.equal(ctx.MENU.length,35,'inactive IDs remain available for existing receipts and drafts');
+assert.equal(ctx.MENU.length,49,'inactive IDs remain available for existing receipts and drafts');
 const count=events.length;await ctx.CatalogClient.refresh();assert.equal(events.length,count,'same version is not rerendered');
 version++;await ctx.CatalogClient.refresh();assert.equal(events.length,count+1);
 fail=true;await ctx.CatalogClient.refresh();assert.equal(events.at(-1),'catalog-unavailable');assert.equal(ctx.MENU.find(d=>d.id===initial[1].id).price,12,'outage does not replace last known catalogue');

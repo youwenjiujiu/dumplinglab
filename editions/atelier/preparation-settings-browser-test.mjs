@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {spawn} from 'node:child_process';
+import {mkdtemp,mkdir,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const {chromium}=createRequire(import.meta.url)('playwright'),root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
+const state=await mkdtemp(resolve(tmpdir(),'dumpling-method-photos-')),out=resolve(root,'editions/atelier/test-output/preparation-photos');await mkdir(out,{recursive:true});
+const server=spawn(process.execPath,['editions/atelier/preview.mjs'],{cwd:root,env:{...process.env,PORT:'0',DL_PREVIEW_DATA:state},stdio:['ignore','pipe','pipe']});let browser;
+try{
+ const origin=await new Promise((yes,no)=>{const t=setTimeout(()=>no(Error('Preview timeout')),10000);server.once('error',no);server.stdout.on('data',chunk=>{const m=chunk.toString().match(/http:\/\/127\.0\.0\.1:\d+/);if(m){clearTimeout(t);yes(m[0])}})});
+ browser=await chromium.launch({channel:'chrome',headless:true});const context=await browser.newContext({viewport:{width:1400,height:1000}});await context.route('**/*',r=>r.request().url().startsWith(origin+'/')?r.continue():r.abort());
+ const admin=await context.newPage(),errors=[];admin.on('pageerror',e=>errors.push(e.message));await admin.goto(origin+'/catalog-admin.html');await admin.locator('[name=password]').fill('preview-only');await admin.locator('#loginButton').click();
+ const id='lunch-v2-pork-chive-shrimp';
+ await admin.locator(`[data-edit="${id}"]:not([data-mode])`).click();
+ assert.equal(await admin.locator('[name=prep_extra_soup]').inputValue(),'1');assert.equal(await admin.locator('[name=prep_extra_fried]').inputValue(),'1.5');
+ await admin.locator('[name=prep_enabled_soup]').uncheck();await admin.locator('[name=prep_extra_peanut]').fill('2');
+ await admin.locator('#save').click();await admin.locator('#editor').waitFor({state:'hidden'});
+ await admin.reload();await admin.locator(`[data-edit="${id}"]:not([data-mode])`).click();assert.equal(await admin.locator('[name=prep_enabled_soup]').isChecked(),false);assert.equal(await admin.locator('[name=prep_extra_peanut]').inputValue(),'2');
+ const customer=await context.newPage();customer.on('pageerror',e=>errors.push(e.message));await customer.goto(origin+'/?table=A1&lang=zh');
+ await customer.locator(`#section-dumplings [data-dish="${id}"]`).click();assert.equal(await customer.locator('[data-lunch-option=prep][data-value=soup]').count(),0);
+ assert((await customer.locator('[data-lunch-option=prep][data-value=peanut]').innerText()).includes('2.00'));
+ await customer.locator('[data-lunch-option=prep][data-value=peanut]').click();assert((await customer.locator('.detail-price').innerText()).includes('8.80'));
+ await customer.locator('[data-lunch-option=pieces][data-value="9"]').click();assert((await customer.locator('.detail-price').innerText()).includes('12.80'));
+ await customer.keyboard.press('Escape');await customer.locator('#sheet').waitFor({state:'hidden'});
+ await customer.locator('[data-recommendation=chive-fried]').first().click();assert((await customer.locator('#sheetTitle').innerText()).includes('煎饺'));assert((await customer.locator('.detail-price').innerText()).includes('8.30'));assert.equal(await customer.locator('[data-lunch-option=prep]').count(),0);
+ await customer.keyboard.press('Escape');await customer.locator('#sheet').waitFor({state:'hidden'});
+ await admin.locator('[name=prep_enabled_fried]').uncheck();await admin.locator('#save').click();await admin.locator('#editor').waitFor({state:'hidden'});
+ await customer.evaluate(()=>CatalogClient.refresh());assert(await customer.locator('[data-recommendation=chive-fried]').first().isVisible(),'Independent fried product stays available when filling fried option is disabled');await customer.locator(`#section-dumplings [data-dish="${id}"]`).click();assert.equal(await customer.locator('[data-lunch-option=prep][data-value=fried]').count(),0);await customer.keyboard.press('Escape');await customer.locator('#sheet').waitFor({state:'hidden'});
+ await admin.locator(`[data-edit="${id}"]:not([data-mode])`).click();await admin.screenshot({path:resolve(out,'preparation-settings.png')});
+ assert.deepEqual(errors,[]);console.log('PASS browser: admin persists switches/prices, customer gets exact surcharge on both portions, independent fixed fried recommendation remains when filling option is disabled.');
+}finally{await browser?.close();server.kill('SIGTERM');await new Promise(yes=>server.exitCode!==null?yes():server.once('exit',yes));await rm(state,{recursive:true,force:true})}

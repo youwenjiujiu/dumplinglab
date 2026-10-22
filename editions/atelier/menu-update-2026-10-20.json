@@ -1,0 +1,395 @@
+{
+  "version": "menu-2026-10-20-v8",
+  "status": "local-preview-prices-deferred",
+  "source": "User-supplied updated menu image, 2026-10-20",
+  "currency": "SGD",
+  "activeInApplication": true,
+  "portions": [
+    5,
+    10
+  ],
+  "fillings": [
+    {
+      "key": "pork-chive-shrimp",
+      "cn": "韭菜虾仁猪肉",
+      "kind": "dumpling",
+      "portionPrices": {
+        "5": 6.8,
+        "10": 10.8
+      }
+    },
+    {
+      "key": "chicken-cabbage",
+      "cn": "鸡肉包菜",
+      "kind": "dumpling",
+      "portionPrices": {
+        "5": 5.8,
+        "10": 9.8
+      }
+    },
+    {
+      "key": "pork-celery-shrimp",
+      "cn": "芹菜虾仁猪肉",
+      "kind": "dumpling",
+      "portionPrices": {
+        "5": 6.8,
+        "10": 10.8
+      }
+    },
+    {
+      "key": "pork-corn",
+      "cn": "猪肉玉米",
+      "kind": "dumpling",
+      "portionPrices": {
+        "5": 5.8,
+        "10": 9.8
+      },
+      "replaces": "pork-cabbage"
+    },
+    {
+      "key": "pork-scallion",
+      "cn": "猪肉大葱",
+      "kind": "dumpling",
+      "portionPrices": {
+        "5": 5.8,
+        "10": 9.8
+      }
+    },
+    {
+      "key": "prawn-roe-wonton",
+      "cn": "鲜虾蟹籽云吞",
+      "kind": "wonton",
+      "portionPrices": {
+        "5": 7.2,
+        "10": 11.8
+      }
+    },
+    {
+      "key": "pork-wonton",
+      "cn": "鲜肉云吞",
+      "kind": "wonton",
+      "portionPrices": {
+        "5": 5.8,
+        "10": 9.8
+      }
+    }
+  ],
+  "singleItemPreparationLabels": [
+    "水煮",
+    "清汤",
+    "四川红油拌",
+    "花生酱拌"
+  ],
+  "recommendations": [
+    {
+      "cn": "韭菜虾仁猪肉煎饺",
+      "key": "pork-chive-shrimp",
+      "preparation": "fried"
+    },
+    {
+      "cn": "鸡肉包菜煎饺",
+      "key": "chicken-cabbage",
+      "preparation": "fried"
+    },
+    {
+      "cn": "红油抄手",
+      "key": "red-oil-chaoshou",
+      "priceNotPrinted": true
+    },
+    {
+      "cn": "清汤鲜肉云吞",
+      "key": "pork-wonton",
+      "preparation": "soup"
+    },
+    {
+      "cn": "肉末辣椒板面",
+      "key": "mince-chilli-noodles"
+    },
+    {
+      "cn": "销魂皮蛋面",
+      "key": "century-egg-noodles"
+    },
+    {
+      "cn": "鲜虾蟹籽云吞面",
+      "key": "prawn-roe-wonton",
+      "preparation": "soup",
+      "addNoodles": true
+    },
+    {
+      "cn": "白灼所有口味",
+      "chooseFilling": true,
+      "preparation": "boiled"
+    }
+  ],
+  "noodles": [
+    {
+      "key": "mince-scallion-noodles",
+      "cn": "肉末葱油面",
+      "price": 10.8
+    },
+    {
+      "key": "mince-chilli-noodles",
+      "cn": "肉末辣椒板面",
+      "price": 11.8,
+      "recommended": true
+    },
+    {
+      "key": "shaanxi-hot-oil-noodles",
+      "cn": "陕西油泼面",
+      "price": 11.8
+    },
+    {
+      "key": "century-egg-noodles",
+      "cn": "销魂皮蛋面",
+      "price": 12.8,
+      "recommended": true
+    },
+    {
+      "key": "mince-red-oil-noodles",
+      "cn": "肉末红油燃面",
+      "price": 10.8
+    }
+  ],
+  "sides": [
+    {
+      "key": "pork-rice",
+      "cn": "卤肉饭",
+      "price": 5.8
+    },
+    {
+      "key": "braised-tofu",
+      "cn": "卤豆腐",
+      "price": 5.2
+    },
+    {
+      "key": "braised-pork-belly",
+      "cn": "卤五花肉",
+      "price": 6.5
+    },
+    {
+      "key": "pork-cutlet",
+      "cn": "秘制猪排",
+      "price": 6.2,
+      "portion": "1块"
+    },
+    {
+      "key": "chicken-wings",
+      "cn": "秘制鸡翅",
+      "price": 6.2,
+      "portion": "3个"
+    },
+    {
+      "key": "cold-veg-shreds",
+      "cn": "凉拌蔬菜丝",
+      "price": 4.8
+    },
+    {
+      "key": "choy-sum",
+      "cn": "酱油菜心",
+      "price": 6.8
+    },
+    {
+      "key": "oyster-lettuce",
+      "cn": "蚝油生菜",
+      "price": 6.8
+    },
+    {
+      "key": "century-egg-tofu",
+      "cn": "皮蛋豆腐",
+      "price": 5.2
+    },
+    {
+      "key": "onsen-egg",
+      "cn": "温泉蛋",
+      "price": 1.5,
+      "replaces": "soft-egg"
+    },
+    {
+      "key": "pickled-radish",
+      "cn": "腌萝卜",
+      "price": 1.5
+    }
+  ],
+  "drinks": [
+    {
+      "key": "barley",
+      "cn": "薏米水",
+      "price": 3.5
+    },
+    {
+      "key": "lemon-tea",
+      "cn": "柠檬茶",
+      "price": 4.2
+    },
+    {
+      "key": "sour-plum",
+      "cn": "酸梅汁",
+      "price": 3.9
+    },
+    {
+      "key": "soft-drink",
+      "cn": "软饮",
+      "price": 3
+    },
+    {
+      "key": "water",
+      "cn": "水",
+      "price": 1
+    }
+  ],
+  "lunchSets": [
+    {
+      "key": "dumpling-set",
+      "name": "Dumpling Set",
+      "price": null,
+      "pieces": 10,
+      "fillingChoices": [
+        "pork-chive-shrimp",
+        "pork-corn",
+        "pork-scallion",
+        "pork-celery-shrimp",
+        "pork-wonton",
+        "prawn-roe-wonton"
+      ],
+      "preparationChoices": [
+        {
+          "key": "boiled",
+          "cn": "白煮"
+        },
+        {
+          "key": "soup",
+          "cn": "清汤"
+        },
+        {
+          "key": "red-oil",
+          "cn": "四川红油拌"
+        },
+        {
+          "key": "peanut",
+          "cn": "花生酱拌"
+        }
+      ],
+      "includedColdDish": "cold-veg-shreds",
+      "drinkChoices": [
+        "barley",
+        "lemon-tea",
+        "sour-plum"
+      ],
+      "optionalNoodlesExtra": 2.5,
+      "pricingStatus": "pending",
+      "orderable": false,
+      "priceLabel": {
+        "cn": "价格待定",
+        "en": "Price to be confirmed"
+      }
+    },
+    {
+      "key": "noodle-set",
+      "name": "Noodle Set",
+      "price": null,
+      "noodleChoices": [
+        "mince-scallion-noodles",
+        "mince-chilli-noodles",
+        "shaanxi-hot-oil-noodles",
+        "century-egg-noodles",
+        "mince-red-oil-noodles"
+      ],
+      "sideDumplings": {
+        "pieces": 4,
+        "preparation": "fried",
+        "fillingChoices": [
+          "chicken-cabbage",
+          "pork-chive-shrimp",
+          "pork-scallion"
+        ]
+      },
+      "drinkChoices": [
+        "barley",
+        "lemon-tea",
+        "sour-plum"
+      ],
+      "pricingStatus": "pending",
+      "orderable": false,
+      "priceLabel": {
+        "cn": "价格待定",
+        "en": "Price to be confirmed"
+      }
+    }
+  ],
+  "availability": {
+    "days": "inherit-business-hours",
+    "start": "11:00",
+    "end": "15:00",
+    "timeZone": "Asia/Singapore",
+    "requiresRestaurantOpen": true
+  },
+  "notListedInUpdatedImage": [
+    "pork-cabbage",
+    "chicken-corn-wonton",
+    "kampong-chicken-soup",
+    "fishball-soup",
+    "mouthwatering-chicken",
+    "cucumber",
+    "osmanthus-oolong",
+    "soft-egg"
+  ],
+  "pending": [
+    "Both set base prices and any filling/noodle/drink upgrade charges",
+    "Existing red-oil-chaoshou standalone price/portion after 9-to-10 transition; no separate price printed"
+  ],
+  "implementationRequirements": [
+    "Customer selection, server pricing, basket validation and piece-based inventory must agree on 5/10 portions and 4-piece set sides",
+    "Snapshot set components/options and their kitchen/bar print destinations into orders",
+    "Keep existing merchant images/stock/settings for unchanged dishes; do not relabel old dishes as different fillings",
+    "Keep historical order snapshots unchanged; require review of outdated basket portions/prices",
+    "Do not expose unconfirmed set prices as zero or fabricate upgrade charges",
+    "Treat peanut sauce as peanut sauce; do not reuse sesame-sauce ingredient text",
+    "Keep lunch sets non-orderable until merchant enters and enables valid positive prices; null price must never fall back to zero."
+  ],
+  "singleItemOptionalNoodles": false,
+  "confirmedRules": {
+    "lunchWindow": "During business hours, 11:00–15:00 Singapore time",
+    "dumplingSetColdDish": "cold-veg-shreds",
+    "optionalNoodles": {
+      "scope": "dumpling-set-only",
+      "extra": 2.5
+    }
+  },
+  "priceConfirmationDeferred": true,
+  "releaseStatus": "not-deployed",
+  "singleItemFillingKeys": [
+    "pork-chive-shrimp",
+    "pork-celery-shrimp",
+    "pork-corn",
+    "pork-scallion",
+    "prawn-roe-wonton",
+    "pork-wonton"
+  ],
+  "recommendedOnlyFillings": [
+    "chicken-cabbage"
+  ],
+  "latestMenuNote": "自选先选口味，再选做法；四种饺子可选四种做法，两款云吞可选清汤、四川红油拌、花生酱拌。鸡肉包菜仅保留煎饺推荐及套餐配餐。",
+  "independentProducts": {
+    "wontons": "lunch-v2-prawn-roe-wonton",
+    "wontonNoodles": "lunch-v7-prawn-roe-wonton-noodles",
+    "note": "独立定价、图片、库存及推荐状态；云吞面先沿用拆分前展示的5／10颗组合价，后续可单独改价。"
+  },
+  "selectionFlow": [
+    "filling",
+    "preparation",
+    "portion"
+  ],
+  "preparationRules": {
+    "dumpling": [
+      "boiled",
+      "soup",
+      "red-oil",
+      "peanut"
+    ],
+    "wonton": [
+      "soup",
+      "red-oil",
+      "peanut"
+    ]
+  }
+}

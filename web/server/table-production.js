@@ -1,3 +1,4 @@
+import {catalogService} from './catalog-production.js';
 import { get, put, list, BlobPreconditionFailedError } from "@vercel/blob";
 import { createTableStore } from "./table-state.js";
 import { ensureStorage, readOrderHistory, readFeed, resolveEvent } from "./order-store.js";
@@ -34,6 +35,7 @@ export const tableStore = createTableStore({
     return (await Promise.all(paths.map(async blob => (await read(blob.pathname))?.value))).filter(Boolean);
   },
 }, {
+  menu: () => catalogService.menu(),
   async read(table, group) {
     ensureStorage();
     const [paths, orders] = await Promise.all([blobs(`dumplinglab-carts/v1/${table}/${group}/`), readOrderHistory(table, group)]);

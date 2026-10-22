@@ -38,3 +38,4 @@ editions/website/generated/
 editions/website/review/
 editions/website/dist*/
 editions/website/.tmp*/
+.vercel

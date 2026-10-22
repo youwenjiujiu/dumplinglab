@@ -25,6 +25,7 @@ import {imageType,imageId} from '../../web/server/catalog-image-core.js';
 import {createWalletService} from '../../web/server/wallet-core.js';
 import {createCanCanService} from '../../web/server/cancan-core.js';
 import {createRewardsService} from '../../web/server/rewards-core.js';
+import {createVoucherService} from '../../web/server/voucher-core.js';
 import {createMemberService} from '../../web/server/member-core.js';
 import {requireStaff} from '../../web/server/staff-auth.js';
 
@@ -44,10 +45,10 @@ db.rewards ||= {
   schema: 1, revision: 0, configRevision: 1, pointsPerDollar: 1,
   rewards: {
     "lunch-v2-pickled-radish": { dishId:"lunch-v2-pickled-radish", style:null, title:"腌萝卜", points:50, active:true },
-    "lunch-v2-soft-egg": { dishId:"lunch-v2-soft-egg", style:null, title:"溏心卤蛋", points:60, active:true },
+    "lunch-v5-onsen-egg": { dishId:"lunch-v5-onsen-egg", style:null, title:"温泉蛋", points:60, active:true },
     "lunch-v2-barley": { dishId:"lunch-v2-barley", style:null, title:"薏米水", points:100, active:true },
     "lunch-v2-lemon-tea": { dishId:"lunch-v2-lemon-tea", style:null, title:"柠檬茶", points:120, active:true },
-    "lunch-v2-cucumber": { dishId:"lunch-v2-cucumber", style:null, title:"黄瓜", points:130, active:true }
+    "lunch-v2-cold-veg-shreds": { dishId:"lunch-v2-cold-veg-shreds", style:null, title:"凉拌蔬菜丝", points:130, active:true }
   },
   accounts:{}, holds:{}, vouchers:{}, audit:[]
 };
@@ -105,6 +106,21 @@ const rewards=createRewardsService({
  async read(){await queue;return db.rewards?{value:structuredClone(db.rewards),etag:String(db.rewards.revision)}:null},
  async write(value,etag){return transaction(()=>{if((db.rewards?String(db.rewards.revision):undefined)!==etag)throw Object.assign(new Error('Conflict'),{conflict:true});db.rewards=structuredClone(value)})},isConflict:e=>e.conflict
 });
+db.vouchers||={paper:{count:0,log:[]}};
+// 券本身就是会员券，存在 rewards 里；这里只剩纸券计数。
+const vouchers=createVoucherService({
+ rewards, catalog,
+ tally:{
+  async count(){await queue;return db.vouchers.paper.count},
+  async bump(entry){return transaction(()=>{const p=db.vouchers.paper;p.count++;p.log.unshift(entry);p.log.length=Math.min(p.log.length,500);return p.count})},
+ },
+},{
+ cap:Number(process.env.DL_VOUCHER_CAP)||2000,
+ opensAt:process.env.DL_VOUCHER_OPENS_AT||null,
+ closesAt:process.env.DL_VOUCHER_CLOSES_AT||null,
+ expiresAt:process.env.DL_VOUCHER_EXPIRES_AT||'2027-02-28',
+ dishId:process.env.DL_VOUCHER_DISH||undefined,
+});
 // Explicit opt-in test identity, only in this loopback-only development server.
 const testMembers=process.env.DL_PREVIEW_TEST_MEMBER==='1';
 // Same variable names as production, so a local look at the login panel shows
@@ -127,7 +143,7 @@ const wallet=createWalletService({
 // The source ledger below exists only in opt-in local demonstrations. The real
 // CanCan issuer uses its own Prisma transaction and is tested in its worktree.
 const demoSecret='local-demo-cancan-secret-never-for-production';
-const demoOffers=[{id:'demo-free-egg',title:'CanCan 溏心卤蛋券',dishId:'lunch-v2-soft-egg',points:0,claimOnce:true},{id:'demo-barley',title:'CanCan 薏米水券',dishId:'lunch-v2-barley',points:50,claimOnce:false}];
+const demoOffers=[{id:'demo-free-egg',title:'CanCan 温泉蛋券',dishId:'lunch-v5-onsen-egg',points:0,claimOnce:true},{id:'demo-barley',title:'CanCan 薏米水券',dishId:'lunch-v2-barley',points:50,claimOnce:false}];
 const demoCanCanSource=async(_url,options)=>{
  db.cancanDemo||={points:200,vouchers:{},requests:{},claimed:{}};
  if(options.method==='POST'){const input=JSON.parse(options.body),offer=demoOffers.find(o=>o.id===input.offerId);if(!offer)throw new RequestError('没有该测试活动');await transaction(()=>{const s=db.cancanDemo,key=offer.claimOnce?offer.id:input.requestId;if(s.requests[key])return;if(s.points<offer.points)throw new RequestError('CanCan 测试积分不足');s.points-=offer.points;const id=randomUUID();s.requests[key]=id;s.claimed[offer.id]=true;s.vouchers[id]={id,title:offer.title,dishId:offer.dishId,memberId:'preview-member',expiresAt:new Date(Date.now()+30*86400000).toISOString()};});return Response.json({ok:true});}
@@ -144,6 +160,7 @@ const dining = createTableStore({
   isConflict: e => e.conflict,
   async all() { await queue; return Object.values(db.tableStates).map(r => structuredClone(r.value)); },
 }, {
+  menu: () => catalog.menu(),
   async read(table, group) { await queue; return { operations: db.scopes[scope(table, group)] || [], orders: db.events.filter(e => e.type === 'order' && e.table === table && e.group === group) }; },
   async feed() { await queue; const events = db.events.filter(e => !e.resolvedAt); return { events, activeIds: events.map(e => e.id) }; },
   async resolve(id) { return transaction(() => { const event = db.events.find(e => e.id === id); if (event) event.resolvedAt = new Date().toISOString(); }); },
@@ -171,6 +188,8 @@ const online = createOnlineService({
 const mime = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript",
+  ".mjs": "text/javascript",
+  ".wasm": "application/wasm",
   ".css": "text/css",
   ".json": "application/json",
   ".webp": "image/webp",
@@ -247,6 +266,24 @@ const server = createServer(async (req, res) => {
         if(testMembers&&req.method==='POST'&&input?.action==='logout'){res.setHeader('set-cookie','dl-preview-member=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');return json(200,{ok:true});}
         const result=await memberAuth(req).handle({method:req.method,headers:req.headers,query:Object.fromEntries(url.searchParams),body:input});if(result.cookies||result.cookie)res.setHeader('set-cookie',result.cookies||result.cookie);if(result.redirect){res.writeHead(302,{location:result.redirect});return res.end()}return json(200,result.body);
       }
+      if(url.pathname==='/api/voucher'){
+        if(req.method==='GET'){
+          if(url.searchParams.get('admin')==='1'){
+            requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');
+            return json(200,{ok:true,...await vouchers.admin()});
+          }
+          const m=await memberIdentity(req).catch(()=>null);
+          return json(200,{ok:true,member:m?{id:m.id}:null,...await vouchers.status(m?.id||null)});
+        }
+        if(req.method!=='POST')return json(405,{error:'Method not allowed'});
+        if(input?.action==='claim'){
+          const m=await memberIdentity(req).catch(()=>null);
+          return json(200,{ok:true,...await vouchers.claim(m?.id||null)});
+        }
+        requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');
+        if(input?.action==='redeem-paper')return json(200,{ok:true,...await vouchers.redeemPaper(input)});
+        return json(400,{error:'操作无效'});
+      }
       if(url.pathname==='/api/rewards'){
         if(req.method==='POST'||url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...(req.method==='POST'?await rewards.save(input,await catalog.menu()):await rewards.admin())});}
         if(req.method!=='GET')return json(405,{ok:false,error:'Method not allowed'});
@@ -256,19 +293,23 @@ const server = createServer(async (req, res) => {
       }
       if(url.pathname==='/api/catalog'){
         if(req.method==='GET'){if(url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await catalog.admin()})}return json(200,{ok:true,...await catalog.public()})}
-        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await catalog.save(input)})}
+        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await (input.action==='lunch-set-save'?catalog.saveLunchSet(input):input.action==='create'?catalog.create(input):input.action==='table-discount'?catalog.saveSettings(input):catalog.save(input))})}
         return json(405,{error:'Method not allowed'});
       }
       if (url.pathname === '/api/online') {
         if (req.method === 'GET') {
+          if (url.searchParams.get('pending') === '1') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,orders:await online.pendingPayments()}); }
+          if (url.searchParams.get('report') === '1') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,report:await online.report({from:url.searchParams.get('from')||undefined,to:url.searchParams.get('to')||undefined})}); }
           if (url.searchParams.get('history') === '1') return json(200,{ok:true,...await online.memberOrders((await memberIdentity(req))?.id,url.searchParams.get('before') || '')});
           const id = url.searchParams.get('id');
           if (id && url.searchParams.get('progress') === '1') return json(200,{ok:true,progress:await online.progress(id,req.headers['x-pickup-code'])});
           if (id) return json(200,{ok:true,order:await online.get(id,String(req.headers.authorization||'').replace(/^Bearer /,''))});
-          return json(200,{ok:true,config:{preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,dineinEnabled:true,takeawayEnabled:true,deliveryEnabled:false,deliveryMinimum:100,deliveryRate:0.09,gstRate:0.09,radiusKm:10}});
+          return json(200,{ok:true,config:{preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,dineinEnabled:true,takeawayEnabled:true,deliveryEnabled:false,deliveryMinimum:100,deliveryRate:0.09,serviceRate:0.1,radiusKm:10}});
         }
         if (req.method === 'POST') {
           if (input.action === 'cancel') return json(200,{ok:true,...await online.cancel(input)});
+          if (input.action === 'cancel-table') return json(200,{ok:true,...await online.cancelForTable(input)});
+          if (input.action === 'staff-cancel') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,...await online.staffCancel(input.id)}); }
           if(input.action==='confirm-wallet')return json(200,{ok:true,...await online.confirmWallet(input,(await memberIdentity(req))?.id)});
           if(input.action==='confirm-reward')return json(200,{ok:true,...await online.confirmReward(input,(await memberIdentity(req))?.id)});
           if (input.action === 'preview-pay') {
@@ -350,8 +391,8 @@ const server = createServer(async (req, res) => {
       "/shared-table.js",
     ]);
     const allowedAsset =
-      /^\/(img|brand|fonts)\//.test(path) ||
-      ["/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/catalog-client.js", "/catalog-admin.html", "/catalog-admin.js", "/rewards-admin.js", "/wallet-admin.js", "/catalog-admin.css", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
+      /^\/(img|brand|fonts)\//.test(path) || /^\/vendor\/cutout\/[a-zA-Z0-9.-]+$/.test(path) ||
+      ["/lunch-set-art.js", "/lunch-set-admin.js", "/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/catalog-client.js", "/catalog-admin.html", "/catalog-admin.js", "/rewards-admin.js", "/wallet-admin.js", "/report-admin.js", "/catalog-admin.css", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
     if (!localFiles.has(path) && !allowedAsset)
       return json(404, { error: "Not found" });
     const data = await readFile(
@@ -390,6 +431,7 @@ const server = createServer(async (req, res) => {
     json(e.status || (e.code === "ENOENT" ? 404 : 500), {
       ok: false,
       error: e.status ? e.message : "Local preview error",
+      ...(process.env.DL_PREVIEW_TRACE==="1"&&!e.status?{trace:String(e.stack||e).slice(0,600)}:{}),
       ...(e.code === "NOTE_CONFLICT" ? { code: e.code, cart: e.cart } : {}),
     });
   }

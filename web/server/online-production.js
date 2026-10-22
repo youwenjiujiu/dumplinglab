@@ -50,7 +50,7 @@ export function onlineConfig() {
     dineinEnabled: ready(), publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null,
     takeawayEnabled: ready() && settings().locations.length > 0,
     deliveryEnabled: false,
-    deliveryMinimum: 100, deliveryRate: 0.09, gstRate: 0.09, radiusKm: 10 };
+    deliveryMinimum: 100, deliveryRate: 0.09, serviceRate: 0.1, radiusKm: 10 };
 }
 async function stripePost(route, params, idempotencyKey) {
   const response = await fetch(`https://api.stripe.com/v1/${route}`, {
@@ -71,14 +71,16 @@ export function stripeCheckoutParams(order) {
       'payment_intent_data[metadata][app]': 'dumplinglab',
       'payment_intent_data[metadata][dumpling_order_id]': order.id,
       client_reference_id: order.id, return_url: returnUrl.href,
-      expires_at: String(Math.floor(Date.parse(order.at) / 1000) + 3600),
+      // Stripe needs at least 30 minutes; we void the link at 15 (PAYMENT_WINDOW_MS).
+      // 46 minutes keeps any link created inside our window above Stripe's minimum.
+      expires_at: String(Math.floor(Date.parse(order.at) / 1000) + 46 * 60),
       // Match comedy's enabled methods without changing shared account settings.
       // Apple Pay is a card wallet, not a separate API payment-method type.
       'payment_method_types[0]': 'card', 'payment_method_types[1]': 'paynow',
       'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': 'sgd',
       'line_items[0][price_data][unit_amount]': String(globalThis.OrderPricing.cents(order.total)),
       'line_items[0][price_data][product_data][name]': `Dumpling Lab ${order.no}`,
-      'line_items[0][price_data][product_data][description]': `Food $${order.subtotal.toFixed(2)} · Delivery $${order.deliveryFee.toFixed(2)} · GST 9% $${order.gst.toFixed(2)}`,
+      'line_items[0][price_data][product_data][description]': order.mode === 'dinein' ? `Food $${order.subtotal.toFixed(2)} · Service charge 10% $${(order.serviceCharge || 0).toFixed(2)}` : `Food $${order.subtotal.toFixed(2)} · Delivery $${order.deliveryFee.toFixed(2)}`,
     });
 }
 const payment = {
@@ -90,6 +92,14 @@ const payment = {
   async expire(id) {
     if (!/^cs_[A-Za-z0-9_]+$/.test(id || '')) throw new RequestError('付款编号无效');
     return stripePost(`checkout/sessions/${id}/expire`, new URLSearchParams(), `dl-expire-${id}`);
+  },
+  // Read-only: used when a link already expired on Stripe's side.
+  async retrieve(id) {
+    if (!/^cs_[A-Za-z0-9_]+$/.test(id || '')) throw new RequestError('付款编号无效');
+    const response = await fetch(`https://api.stripe.com/v1/checkout/sessions/${id}`, { headers: { authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'Stripe-Version': '2026-08-26.dahlia' }, signal: AbortSignal.timeout(15000) });
+    const out = await response.json();
+    if (!response.ok) throw new RequestError('付款服务暂时不可用，请重试', 503);
+    return out;
   },
 };
 async function geocode(postal) {

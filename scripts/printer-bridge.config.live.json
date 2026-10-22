@@ -1,0 +1,19 @@
+{
+  "source": "https://order.dumplinglab.sg",
+  "ledger": ".local/printer-bridge/live-jobs.sqlite",
+  "receipts": ".local/printer-bridge/live-receipts",
+  "font": "/System/Library/Fonts/Hiragino Sans GB.ttc",
+  "testMode": false,
+  "pollSeconds": 3,
+  "slipPerDish": true,
+  "printers": {
+    "bar": {
+      "host": "192.168.1.83",
+      "port": 9100
+    },
+    "kitchen": {
+      "host": "192.168.1.234",
+      "port": 9100
+    }
+  }
+}

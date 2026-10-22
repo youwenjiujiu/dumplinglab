@@ -1,23 +1,28 @@
 // One atomic document per dining group: cart, receipts and staff queue commit together.
 // Storage is injected so concurrency and failure paths can be tested without live orders.
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { cleanCartOperation, cleanCartOpIds, cleanTable, reduceCartOperations, currentOperation } from "./cart-core.js";
 import { cleanOrder, cleanCall, cleanGroup, RequestError } from "./order-core.js";
 import { cleanNickname, contributorsFor } from "./cart-meta.js";
 
 export const TABLE_STATE_PREFIX = "dumplinglab-tables/v2/";
-const canonical = items => JSON.stringify(items.map(i => [i.id, i.style || null, i.qty]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+// 买一赠一 splits a cart line into paid and free lines; compare total units per dish/style.
+const canonical = items => {
+  const units = new Map();
+  for (const i of items) { const k = JSON.stringify([i.id, i.style || null]); units.set(k, (units.get(k) || 0) + i.qty); }
+  return JSON.stringify([...units].sort(([a], [b]) => a.localeCompare(b)));
+};
 const cleanNote = note => typeof note === "string" ? note.trim().slice(0, 240) : "";
 const paymentLocked = message => Object.assign(new RequestError(message, 409), { code: 'PAYMENT_PENDING' });
 
 export function createTableStore(storage, legacy) {
   const pathFor = (table, group) => `${TABLE_STATE_PREFIX}${cleanTable(table)}/${cleanGroup(group)}.json`;
-  const snapshot = state => ({
-    ...reduceCartOperations(state.operations),
+  const snapshot = (state,menu) => ({
+    ...reduceCartOperations(state.operations,menu),
     orders: state.events.filter(e => e.type === "order"),
     contributors: contributorsFor(state.operations),
     activity: state.activity.slice(-40),
-    version: `v2:${globalThis.MENU_VERSION}:${state.revision}`,
+    version: `v2:${globalThis.MENU_VERSION}:${state.revision}${menu?':'+createHash('sha256').update(JSON.stringify(menu)).digest('hex').slice(0,12):''}`,
     paymentPending: Boolean(state.paymentHold),
   });
   async function read(table, group) {
@@ -52,21 +57,23 @@ export function createTableStore(storage, legacy) {
   }
   return {
     async cart(table, group, version = "") {
+      const menu = await legacy.menu?.();
       table = cleanTable(table); group = cleanGroup(group);
       const { value } = await read(table, group);
-      const cart = snapshot(value);
+      const cart = snapshot(value,menu);
       // Unmigrated legacy state has no stable revision; always return its contents.
       return value.revision !== "initial" && cart.version === version ? { unchanged: true, version } : cart;
     },
     async mutate(input) {
-      const op = cleanCartOperation(input);
+      const menu = await legacy.menu?.();
+      const op = cleanCartOperation(input,menu);
       op.actorName = cleanNickname(input.actorName);
       const { state } = await transact(op.table, op.group, state => {
         if (state.operations.some(o => o.id === op.id) || state.events.some(e => e.cartOpIds?.includes(op.id))) return { changed: false };
         if (state.paymentHold) throw paymentLocked("本组正在付款，请完成或取消付款后再修改菜品。");
-        if (op.kind === "note" && Object.hasOwn(input, "baseNote") && cleanNote(input.baseNote) !== cleanNote(reduceCartOperations(state.operations).note)) {
+        if (op.kind === "note" && Object.hasOwn(input, "baseNote") && cleanNote(input.baseNote) !== cleanNote(reduceCartOperations(state.operations,menu).note)) {
           const error = new RequestError("同桌修改了备注，请确认要保留的内容。", 409);
-          error.code = "NOTE_CONFLICT"; error.cart = snapshot(state); throw error;
+          error.code = "NOTE_CONFLICT"; error.cart = snapshot(state,menu); throw error;
         }
         op.storedAt = Math.max(Date.now(), state.sequence + 1);
         state.sequence = op.storedAt;
@@ -74,10 +81,11 @@ export function createTableStore(storage, legacy) {
         state.activity = [...state.activity, op].slice(-80);
         return { changed: true };
       });
-      return snapshot(state);
+      return snapshot(state,menu);
     },
     async order(input) {
-      const order = cleanOrder(input), ids = cleanCartOpIds(input.cartOpIds), selectedIds = new Set(ids);
+      const menu = await legacy.menu?.();
+      const order = cleanOrder(input,menu), ids = cleanCartOpIds(input.cartOpIds), selectedIds = new Set(ids);
       const { state, event } = await transact(order.table, order.group, state => {
         if (state.paymentHold) throw paymentLocked("本组正在付款，请等待付款确认。");
         const prior = state.events.find(e => e.id === order.id);
@@ -87,9 +95,9 @@ export function createTableStore(storage, legacy) {
         }
         if (ids.some(id => !state.operations.some(op => op.id === id))) throw new RequestError("同桌已经提交了这份菜单，请查看已下单。", 409);
         const selectedOps = state.operations.filter(op => selectedIds.has(op.id));
-        const selected = reduceCartOperations(selectedOps);
+        const selected = reduceCartOperations(selectedOps,menu);
         if (canonical(selected.items) !== canonical(order.items)) throw new RequestError("购物车已更新，请重新确认。", 409);
-        if (state.operations.some(op => currentOperation(op) && !selectedIds.has(op.id) && (op.kind === "note" || op.delta < 0))) throw new RequestError("同桌修改了菜品或备注，请重新确认订单。", 409);
+        if (state.operations.some(op => currentOperation(op,menu) && !selectedIds.has(op.id) && (op.kind === "note" || op.delta < 0))) throw new RequestError("同桌修改了菜品或备注，请重新确认订单。", 409);
         order.cartOpIds = ids;
         order.contributors = contributorsFor(selectedOps);
         order.actorName = cleanNickname(input.actorName);
@@ -99,9 +107,10 @@ export function createTableStore(storage, legacy) {
         state.operations = state.operations.filter(op => !selectedIds.has(op.id));
         return { changed: true, event: order };
       });
-      return { order: event, cart: snapshot(state) };
+      return { order: event, cart: snapshot(state,menu) };
     },
     async reservePayment(order) {
+      const menu = await legacy.menu?.();
       const ids = cleanCartOpIds(order.cartOpIds), selectedIds = new Set(ids);
       await transact(order.table, order.group, state => {
         if (state.paymentHold) {
@@ -113,13 +122,18 @@ export function createTableStore(storage, legacy) {
         }
         if (state.events.some(e => e.id === order.id)) throw new RequestError("此订单已提交，请查看已下单。", 409);
         if (ids.some(id => !state.operations.some(op => op.id === id))) throw new RequestError("购物车已更新，请重新确认。", 409);
-        const selected = reduceCartOperations(state.operations.filter(op => selectedIds.has(op.id)));
+        const selected = reduceCartOperations(state.operations.filter(op => selectedIds.has(op.id)),menu);
         if (canonical(selected.items) !== canonical(order.items) || cleanNote(selected.note) !== cleanNote(order.note) ||
-            state.operations.some(op => currentOperation(op) && !selectedIds.has(op.id) && (op.kind === 'note' || op.delta < 0)))
+            state.operations.some(op => currentOperation(op,menu) && !selectedIds.has(op.id) && (op.kind === 'note' || op.delta < 0)))
           throw new RequestError("同桌修改了菜品或备注，请重新确认。", 409);
         state.paymentHold = { ...order, cartOpIds: ids };
         return { changed: true };
       });
+    },
+    // Anyone with the table link can edit this cart, so any phone there may cancel an
+    // unfinished payment; the online service checks with Stripe before releasing it.
+    async paymentHold(table, group) {
+      return (await read(table, group)).value.paymentHold?.id || null;
     },
     async finishPayment(order) {
       await transact(order.table, order.group, state => {

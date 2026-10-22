@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { cleanItems, cleanOrder, RequestError } from './order-core.js';
 import { cleanCartOpIds } from './cart-core.js';
 import { cleanNickname } from './cart-meta.js';
+import { summarizeOrders } from './report-core.js';
 
 export const SLOTS = ['11:30-12:30', '12:30-13:30', '13:30-14:30', '17:00-18:00'];
 export const validId = value => typeof value === 'string' && /^[a-f0-9-]{36}$/.test(value);
@@ -46,8 +47,8 @@ export function cleanOnline(input, config, now = new Date(), catalog) {
     if (!/^(?:\+65)?[3689]\d{7}$/.test(customer.phone)) throw new RequestError('请填写新加坡联系电话');
     if (!bookingDates(now).includes(input.date) || !SLOTS.includes(input.slot)) throw new RequestError('请选择有效的预订日期和时段；次日订单前晚 21:00 截止');
     fulfilment.date = input.date; fulfilment.slot = input.slot;
-    // $100 food minimum, before delivery/GST. A fee cannot qualify the food basket.
-    if (pricing.subtotal < 100) throw new RequestError('配送菜品小计需满 $100（未税，不含配送费）');
+    // $100 food minimum, before the delivery fee. A fee cannot qualify the food basket.
+    if (pricing.subtotal < 100) throw new RequestError('配送菜品小计需满 $100（不含配送费）');
     customer.postalCode = text(c.postalCode, 6, '邮编');
     if (!/^\d{6}$/.test(customer.postalCode)) throw new RequestError('请填写六位邮编');
     customer.unit = typeof c.unit === 'string' ? c.unit.trim().slice(0, 40) : '';
@@ -64,6 +65,9 @@ export function cleanOnline(input, config, now = new Date(), catalog) {
     mode: input.mode, table: null, group: null, items, customer, fulfilment,
     note: typeof input.note === 'string' ? input.note.trim().slice(0, 240) : '', ...pricing };
 }
+// An unpaid card/PayNow checkout holds stock for 15 minutes. Stripe's own link
+// lives longer (its minimum is 30 minutes), so we void the link ourselves.
+export const PAYMENT_WINDOW_MS = 15 * 60000;
 export const preparationState = order => order.collectedAt || order.resolvedAt ? 'collected'
   : order.readyAt ? 'ready' : order.preparingAt ? 'preparing' : 'received';
 export const publicOrder = order => {
@@ -107,10 +111,13 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       order.fulfilment.distanceKm = result.distanceKm;
     }
     if(input.rewardSelection&&!memberId)throw new RequestError('请先登录后使用积分或兑换券',401);
+    // The back office decides a table's discount; the client only displays it.
+    const tableDiscount = order.mode === 'dinein' ? await inventory?.tableDiscount?.(order.table) : null;
+    if (tableDiscount) Object.assign(order, globalThis.OrderPricing.quote(order.foodTotal, order.mode, tableDiscount));
     if(memberId&&rewards){
       order.memberId=memberId;
       order.loyalty=await rewards.quote(memberId,order,input.rewardSelection||null);
-      Object.assign(order,globalThis.OrderPricing.quote((order.loyalty.grossFoodCents-order.loyalty.discountCents)/100,order.mode));
+      Object.assign(order,globalThis.OrderPricing.quote((order.loyalty.grossFoodCents-order.loyalty.discountCents)/100,order.mode,tableDiscount));
     }
     if(input.paymentMethod&&!['stripe','wallet'].includes(input.paymentMethod))throw new RequestError('支付方式无效');
     if(input.paymentMethod==='wallet'){if(!wallet||!memberId)throw new RequestError('请先登录后使用余额',401);order.memberId=memberId;order.paymentMethod='wallet';order.walletAllocation=await wallet.check(order);if(rewards)order.loyalty=await rewards.quote(memberId,order,input.rewardSelection||null);}
@@ -126,6 +133,31 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(order.status==='expired')await dining.releasePayment(order);
     }
     return order;
+  }
+  // Void the payment link first, so a late payment cannot land on released stock.
+  async function voidPayment(order,by){
+    if(order.status==='paid')throw new RequestError('这笔订单已经付款，不能取消',409);
+    if(order.status!=='expired'){
+      // A link still being created is recovered by its idempotent request, then voided.
+      // Stripe links end 46 minutes after the order starts, so an older order has none.
+      const mayHaveLink=order.sessionId||(by!=='staff'&&now().getTime()-Date.parse(order.at)<46*60000);
+      if(order.total!==0&&order.paymentMethod!=='wallet'&&mayHaveLink){
+        const id=order.sessionId||(await payment.create(order)).id;
+        let session;
+        try{session=await payment.expire(id)}catch(error){session=payment.retrieve?await payment.retrieve(id):null;if(!session)throw error}
+        if(session.payment_status==='paid'||session.status==='complete')throw new RequestError('客人已经付款，系统正在确认，请稍后刷新',409);
+        if(session.status!=='expired')throw new RequestError('付款链接还没作废，请稍后再试',409);
+      }
+      await mutate(order.id,prior=>{if(prior.status==='paid')throw new RequestError('这笔订单已经付款，不能取消',409);return {...prior,status:'expired',cancelledBy:by,cancelledAt:now().toISOString()}});
+    }
+    await finalize({...order,status:'expired'});
+  }
+  // Runs whenever staff screens or the printer read orders (every few seconds while
+  // the printer bridge is on). A customer paying at that moment keeps the order.
+  async function expireStale(orders){
+    const stale=orders.filter(o=>o?.type==='order'&&o.status==='awaiting_payment'&&o.paymentMethod!=='wallet'&&o.total!==0&&now().getTime()-Date.parse(o.at)>=PAYMENT_WINDOW_MS);
+    for(const o of stale){try{await voidPayment(o,'timeout');o.status='expired'}catch(error){if(error.status!==409)console.error('Payment timeout failed',o.id,error.message)}}
+    return orders;
   }
   async function pickupTicket(order) {
     if (order.pickup || order.mode !== 'takeaway') return order.pickup;
@@ -161,7 +193,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       const page = rows.slice(0, 20);
       return { orders: page.map(o => ({
         id:o.id, at:o.at, mode:o.mode, status:o.status, total:o.total,
-        subtotal:o.subtotal, gst:o.gst, paymentMethod:o.paymentMethod || 'card',
+        subtotal:o.subtotal, gst:o.gst, serviceCharge:o.serviceCharge, discount:o.discount, paymentMethod:o.paymentMethod || 'card',
         refundedCents:o.refundedCents || 0, preparationStatus:preparationState(o), pickupNumber:o.pickup?.number || null,
         items:(o.items || []).map(i => ({id:i.id,name:i.name,englishName:i.englishName,style:i.style,qty:i.qty,price:i.price})),
       })), next:rows.length > 20 ? key(page.at(-1)) : null };
@@ -227,6 +259,34 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(!validId(input.id)||!validId(input.refundId)||!Number.isSafeInteger(input.amountCents)||input.amountCents<0||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>200)throw new RequestError('请填写有效的退款金额和原因');
       const order=await mutate(input.id,prior=>{if(!prior||prior.status!=='paid'||(prior.paymentMethod!=='wallet'&&prior.total!==0))throw new RequestError('此订单须通过原支付渠道退款',409);const requests={...prior.refundRequests};if(requests[input.refundId]){if(requests[input.refundId].amountCents!==input.amountCents||requests[input.refundId].reason!==input.reason)throw new RequestError('退款请求不一致',409);return prior;}const amount=(prior.localRefundCents||0)+input.amountCents;if(amount>globalThis.OrderPricing.cents(prior.total)||(input.amountCents===0&&(prior.total!==0||prior.freeRewardRefunded)))throw new RequestError('超过可退金额',409);requests[input.refundId]={amountCents:input.amountCents,reason:input.reason,at:now().toISOString()};return {...prior,refundRequests:requests,localRefundCents:amount,refundCompleted:false,...(prior.total===0?{freeRewardRefunded:true}:{})};});return publicOrder(await finalize(order));
     },
+    // Staff view of payments started but not finished; each still holds stock.
+    async pendingPayments(){
+      return (await expireStale(await storage.all())).filter(o=>o.type==='order'&&o.status==='awaiting_payment')
+        .sort((a,b)=>String(a.at).localeCompare(String(b.at)))
+        .map(o=>({id:o.id,no:o.no,mode:o.mode,table:o.table,group:o.group,at:o.at,expiresAt:new Date(Date.parse(o.at)+PAYMENT_WINDOW_MS).toISOString(),
+          total:o.total,paymentMethod:o.paymentMethod||'card',items:(o.items||[]).map(i=>({id:i.id,name:i.name,style:i.style,qty:i.qty}))}));
+    },
+    // Another phone at the same table cancels an unfinished payment so the table can
+    // edit the order. Stripe is asked first; a completed payment is never released.
+    async cancelForTable(input){
+      if(!dining)throw new RequestError('堂食付款尚未开放',503);
+      const id=await dining.paymentHold(input.table,input.group);
+      if(!id)return {cancelled:true};
+      const order=(await storage.read(id))?.value;
+      if(!order)throw new RequestError('付款正在创建，请几秒后再试',409);
+      if(order.status==='paid')throw new RequestError('同桌已经付款成功，请查看已下单',409);
+      await voidPayment(order,'table');
+      return {cancelled:true};
+    },
+    async staffCancel(id){
+      if(!validId(id))throw new RequestError('订单编号无效');
+      const order=(await storage.read(id))?.value;
+      if(!order||order.type!=='order')throw new RequestError('找不到该订单',404);
+      await voidPayment(order,'staff');
+      return {cancelled:true};
+    },
+    // Staff-only sales summary; reads paid order snapshots.
+    async report(query){return summarizeOrders(await storage.all(),query,now());},
     async localPayments(){return (await storage.all()).filter(o=>o.status==='paid'&&(o.paymentMethod==='wallet'||o.total===0)).sort((a,b)=>b.at.localeCompare(a.at)).slice(0,100).map(publicOrder);},
     async confirmReward(input,memberId) {
       const existing=(await storage.read(input.requestId))?.value;
@@ -286,7 +346,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(order.memberId&&rewards)await rewards.refund(order,charge.amount_refunded);
       return finalize(await mutate(id,prior=>({...prior,refundedCents:Math.max(prior.refundedCents||0,charge.amount_refunded)})));
     },
-    async feed() { return (await storage.all()).filter(o => o.mode !== 'dinein' && o.status === 'paid' && !o.resolvedAt && !o.freeRewardRefunded && (o.paymentMethod!=='wallet'||o.walletSettled) && (!o.refundedCents||o.refundedCents<globalThis.OrderPricing.cents(o.total))).map(publicOrder); },
+    async feed() { return (await expireStale(await storage.all())).filter(o => o.mode !== 'dinein' && o.status === 'paid' && !o.resolvedAt && !o.freeRewardRefunded && (o.paymentMethod!=='wallet'||o.walletSettled) && (!o.refundedCents||o.refundedCents<globalThis.OrderPricing.cents(o.total))).map(publicOrder); },
     // A pickup credential grants status-only access, not staff authority or PII.
     // It also lets receipts created before status tracking refresh safely.
     async progress(id, code) {

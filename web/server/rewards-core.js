@@ -11,6 +11,7 @@ const initial = () => ({
   vouchers: {},
   audit: [],
 });
+const SOURCES = ["cancan", "tiger"];
 const key = (v) =>
   typeof v === "string" &&
   /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}$/.test(v) &&
@@ -137,6 +138,9 @@ export function createRewardsService(storage, { now = () => new Date() } = {}) {
       voucherId,
       title,
       pointsCost,
+      // Which line the reward pays for, so checkout can show it as the gift.
+      dishId: item?.id || null,
+      style: item?.style || null,
       discountCents: discount,
       grossFoodCents: gross,
       pointsPerDollar: s.pointsPerDollar,
@@ -467,6 +471,18 @@ export function createRewardsService(storage, { now = () => new Date() } = {}) {
         audit(s, "refund", { orderId: order.id, cumulativeCents });
       });
     },
+    /* Campaign issuers need to know what they have already handed out. These
+       read the same voucher table the account panel shows, so there is no
+       second ledger to keep in step. */
+    async findVoucher(id) {
+      return (await read()).vouchers[id] || null;
+    },
+    async listVouchers(source) {
+      return Object.values((await read()).vouchers).filter((v) => v.source === source);
+    },
+    async countVouchers(source) {
+      return (await this.listVouchers(source)).length;
+    },
     async importVoucher(input, catalog) {
       if (
         !key(input.id) ||
@@ -479,8 +495,8 @@ export function createRewardsService(storage, { now = () => new Date() } = {}) {
       )
         fail("兑换券资料无效", 400);
       const d = catalog.find((d) => d.id === input.dishId);
-      if (!d || d.variants || !["sides", "drinks"].includes(d.section))
-        fail("兑换券菜品须为配菜或饮品", 400);
+      if (!d || d.variants || !["sides", "drinks", "gifts"].includes(d.section))
+        fail("兑换券菜品须为配菜、饮品或赠品", 400);
       const v = {
         id: input.id,
         memberId: input.memberId,
@@ -488,7 +504,9 @@ export function createRewardsService(storage, { now = () => new Date() } = {}) {
         style: null,
         title: input.title,
         expiresAt: new Date(input.expiresAt).toISOString(),
-        source: "cancan",
+        // CanCan is not the only issuer any more: the Tiger campaign hands out
+        // its own vouchers, and the account panel labels them by source.
+        source: SOURCES.includes(input.source) ? input.source : "cancan",
       };
       await change((s) => {
         if (s.vouchers[v.id]) {

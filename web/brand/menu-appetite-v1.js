@@ -5,6 +5,12 @@ globalThis.DL_TRAY_ART = Object.freeze({
   "oyster-lettuce-clean-v2.png": "oyster-lettuce-clean-v2-appetite-v1.png"
 });
 globalThis.DL_MENU_ART = Object.freeze({
+  "lunch-chicken-corn-generated-v1.png": "lunch-chicken-corn-generated-v1-appetite-v2.png",
+  "lunch-fried-wontons-generated-v1.png": "lunch-fried-wontons-generated-v1-appetite-v2.png",
+  "lunch-v5-onsen-egg-placeholder.png": "lunch-v5-onsen-egg-placeholder-appetite-v2.png",
+  "lunch-v5-cucumber-tofu-soup-placeholder.png": "lunch-v5-cucumber-tofu-soup-placeholder-appetite-v2.png",
+  "lunch-v5-peanut-sesame-sauce-placeholder.png": "lunch-v5-peanut-sesame-sauce-placeholder-appetite-v2.png",
+  "lunch-v5-chilli-oil-placeholder.png": "lunch-v5-chilli-oil-placeholder-appetite-v2.png",
   "filling-pork-chive-shrimp-boiled-cutaway-v1.png": "filling-pork-chive-shrimp-boiled-cutaway-v1-appetite-v1.png",
   "filling-pork-chive-shrimp-tossed-cutaway-v1.png": "filling-pork-chive-shrimp-tossed-cutaway-v1-appetite-v2.png",
   "potstickers-pork-shrimp-chive-cutaway-v1.png": "potstickers-pork-shrimp-chive-cutaway-v1-appetite-v1.png",

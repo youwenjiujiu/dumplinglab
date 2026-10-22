@@ -14,7 +14,7 @@ class Node {
 }
 const body={set innerHTML(s){if(root)root.isConnected=false;root=new Node();root.innerHTML=s;root.querySelector('[data-checkout-pay]').disabled=true;},get firstElementChild(){return root;}};
 const catalog=[{id:'lunch-v2-barley',cn:'薏米水',name:'Barley',price:3.5,img:'barley.webp'},{id:'lunch-v2-sour-plum',cn:'酸梅汁',name:'Plum',price:4.2,img:'plum.webp'}];
-let saved, picker;
+let saved, picker, wallet, walletAvailable=true, walletConfirmations=0, walletGate=null;
 const owner={table:'A1',group:'A',nickname:'Test',remote:{opIds:['op']},items:[{id:catalog[0].id,qty:1}],note:'',order:null,storageAvailable:true,
   async flush(){},async poll(){},persist(){},emit(){},
   mutate(op){this.items.push({id:op.dishId,qty:1});},
@@ -39,8 +39,13 @@ const ctx={console,crypto,URLSearchParams,URL,AbortSignal,structuredClone,store:
   fetch:async()=>({ok:true,json:async()=>({ok:true,order:{...saved,status:paid?'paid':'awaiting_payment',fulfilmentCommitted:paid}})}),
   Stripe:()=>({initCheckoutElementsSdk(options){
     assert.equal(options.clientSecret,'cs_fixture_secret');
-    return {async loadActions(){if(delayActions)await new Promise(resolve=>releaseActions=resolve);return {type:'success',actions:{getSession:()=>({total:{total:{amount:'SGD 3.50'}}}),async confirm(opts){assert.equal(opts.redirect,'if_required');assert.equal(opts.email,'guest@example.test');if(decline)return {type:'error',error:{message:'Card declined'}};paid=true;return {type:'success'};}}};},
-      createPaymentElement(options){assert.equal(options.layout.radios,'always');return {mount(){},destroy(){},on(event,fn){if(event==='ready')fn();}};}
+    return {async loadActions(){if(delayActions)await new Promise(resolve=>releaseActions=resolve);return {type:'success',actions:{getSession:()=>({total:{total:{amount:'SGD 3.50'}}}),async confirm(opts){assert.equal(opts.redirect,'if_required');assert.equal(opts.email,opts.expressCheckoutConfirmEvent?'wallet@example.test':'guest@example.test');if(opts.expressCheckoutConfirmEvent){walletConfirmations++;if(walletGate)await walletGate;}if(decline)return {type:'error',error:{message:'Card declined'}};paid=true;return {type:'success'};}}};},
+      createPaymentElement(options){assert.equal(options.layout.radios,'always');return {mount(){},destroy(){},on(event,fn){if(event==='ready')fn();}};},
+      createExpressCheckoutElement(options){
+        assert.equal(options.paymentMethods.applePay,'auto');assert.equal(options.paymentMethods.googlePay,'never');
+        const handlers={};wallet={handlers,destroyed:false,options};const element=wallet;
+        return {mount(){},destroy(){element.destroyed=true;},on(event,fn){handlers[event]=fn;if(event==='ready')fn({availablePaymentMethods:walletAvailable?{applePay:true}:undefined});}};
+      }
     };
   }}),
 };
@@ -85,3 +90,38 @@ assert.equal(root.querySelector('[data-checkout-pay]').disabled,true);
 picker.handle.close();releaseActions();await opening;
 assert.equal(root.querySelector('[data-checkout-pay]').disabled,false);
 console.log('PASS add-on prompt does not wait for payment SDK; payment stays disabled until ready.');
+
+// Wallet callbacks use the same Session and wait for authoritative paid state.
+delayActions=false;paid=false;decline=true;walletAvailable=false;
+await vm.runInContext('CheckoutUI.open({skipAddons:true})',ctx);
+assert.equal(root.querySelector('[data-express-checkout]').hidden,true);
+assert.equal(root.querySelector('[data-checkout-pay]').disabled,false,'Card and PayNow remain available without Apple Pay');
+walletAvailable=true;
+await vm.runInContext('CheckoutUI.open({skipAddons:true})',ctx);
+assert.equal(root.querySelector('[data-express-checkout]').hidden,false);
+const walletEvent={billingDetails:{email:'wallet@example.test'},paymentFailed(){}};
+const sessionCount=created;
+await wallet.handlers.confirm(walletEvent);
+assert.equal(created,sessionCount,'Wallet decline retains the existing Session');
+assert.equal(root.querySelector('[data-checkout-pay]').disabled,false);
+assert(owner.order,'Declined wallet retains payment access');
+let releaseWallet;walletGate=new Promise(resolve=>releaseWallet=resolve);decline=false;
+const confirmationsBefore=walletConfirmations;
+const callback=wallet.handlers.confirm;
+const originalFetch=ctx.fetch;
+ctx.fetch=async()=>({ok:true,json:async()=>({ok:true,order:{...saved,status:'awaiting_payment',fulfilmentCommitted:false}})});
+const successBefore=confirmed;
+const inFlight=callback(walletEvent);
+await callback(walletEvent);
+assert.equal(walletConfirmations,confirmationsBefore+1,'Repeated authorization cannot confirm concurrently');
+releaseWallet();await inFlight;walletGate=null;
+assert.equal(confirmed,successBefore,'Stripe callback alone is not order success');
+assert(owner.order,'Pending server confirmation retains credentials');
+assert.equal(root.querySelector('[data-checkout-pay]').disabled,true);
+ctx.fetch=originalFetch;
+await vm.runInContext('CheckoutUI.refresh(store)',ctx);
+assert.equal(confirmed,successBefore+1);
+assert(wallet.destroyed,'Successful completion destroys wallet Element');
+await callback(walletEvent);
+assert.equal(walletConfirmations,confirmationsBefore+1,'Disposed callbacks cannot pay');
+console.log('PASS Apple Pay: eligibility, fallback, decline/retry, duplicate guard, wallet email, same Session, server-confirmed success and disposal. Mocked SDK only.');

@@ -712,6 +712,14 @@ img[src*="oyster-lettuce-clean-v2"] { filter: none !important; }
   font-weight: 400;
   font-size: 23px;
 }
+.cart-checkout .cart-breakdown {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.4;
+}
 .cart-checkout .primary {
   flex: 1;
   min-width: 0;
@@ -1305,7 +1313,7 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.chapter-mains .dish-add {
+.chapter-mains .dish-stepper {
   right: 0;
   bottom: 14px;
 }
@@ -1323,7 +1331,7 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
 .chapter-small .dish-info {
   padding: 0 48px 0 0;
 }
-.chapter-small .dish-add {
+.chapter-small .dish-stepper {
   left: auto;
   right: 0;
   bottom: 16px;
@@ -1412,7 +1420,7 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
     grid-row: 5;
     margin-top: 0;
   }
-  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-add {
+  .menu-section:not(.chapter-mains) .dish-card:not(.featured) .dish-stepper {
     position: relative;
     grid-column: 1;
     grid-row: 5;
@@ -1424,7 +1432,7 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
   .menu-section.chapter-small .dish-card:not(.featured) .dish-price {
     padding-right: 48px;
   }
-  .menu-section.chapter-small .dish-card:not(.featured) .dish-add {
+  .menu-section.chapter-small .dish-card:not(.featured) .dish-stepper {
     grid-row: 5;
     justify-self: end;
     margin-top: 6px;
@@ -2187,7 +2195,82 @@ img[src*="-appetite-v"] { filter: none !important; }
   .desktop-ticket { padding: 18px; }
 }
 
+/* Voucher gift line: smaller and quieter than a purchased dish. */
+.checkout-lines article.is-gift { padding: 12px 0; }
+.checkout-lines article.is-gift img { width: 48px; height: 48px; }
+.checkout-lines article.is-gift strong { font-size: 14px; color: var(--muted); }
+.checkout-lines article.is-gift b { color: var(--muted); font-weight: 400; }
+.checkout-lines .gift-tag { display: inline-block; margin-bottom: 3px; padding: 1px 7px; border: 1px solid currentColor; border-radius: 999px; font-size: 11px; line-height: 1.5; color: var(--brand, #b2222b); }
+
+/* Stripe renders the eligible Apple Pay button; unsupported wallets stay hidden. */
+.checkout-express:not([hidden]) { margin: 12px 0 18px; min-height: 48px; }
+
+/* Pending-price lunch-set previews share the existing menu and detail layout. */
+.lunch-set-hint{color:var(--muted,#74706b);font-size:14px;line-height:1.6;margin:0 0 24px}
+.lunch-set-card .dish-info{padding:24px;min-height:220px;display:flex;flex-direction:column;gap:14px}
+.lunch-set-card .dish-open{width:100%;text-align:left}
+.lunch-set-card .dish-flavor{display:block!important;line-height:1.65;white-space:normal}
+.lunch-set-preview{font-size:13px;color:var(--muted,#74706b)}
+.lunch-set-fields{display:grid;gap:20px;margin:28px 0}
+.lunch-set-field{display:grid;gap:8px;font-size:15px}
+.lunch-set-field select{width:100%;padding:14px;border:1px solid #d8d3cb;border-radius:10px;background:#fff;color:#252525;font:inherit}
+.lunch-set-art{position:relative;isolation:isolate;aspect-ratio:4/3;overflow:hidden;background:radial-gradient(ellipse at 45% 45%,#fff8ec,#eee2cc);width:100%}
+.lunch-set-art.uploaded>img{width:100%;height:100%;object-fit:cover;display:block}
+.lunch-set-art.composed>img{position:absolute;object-fit:contain;filter:drop-shadow(0 14px 12px #34211420)}
+.lunch-set-art .set-art-main{width:77%;height:87%;left:-5%;top:6%;z-index:2;transform:rotate(-8deg)}
+.lunch-set-art .set-art-side{width:44%;height:49%;right:0;bottom:-1%;z-index:3;transform:rotate(6deg)}
+.lunch-set-art .set-art-drink{width:31%;height:62%;right:1%;top:0;z-index:1}
+.set-art-caption{position:absolute;bottom:10px;left:14px;z-index:4;color:#5c4b37;background:#fff9;font-size:10px;letter-spacing:.03em;padding:4px 7px;border-radius:4px}
+.set-detail-art{width:100%;max-height:320px;overflow:hidden}.set-detail-art .lunch-set-art{aspect-ratio:16/9}.lunch-set-card .dish-info{min-height:180px}
+@media(max-width:600px){.set-detail-art{max-height:230px}.lunch-set-card .dish-info{padding:16px;gap:10px;min-height:165px}}
+.filling-first-intro{padding:4px 0 24px}.filling-first-intro h3{font-size:17px;margin-bottom:8px}.filling-first-intro p{font-size:14px;line-height:1.7;color:var(--muted,#777)}
 /* Dish pictures are scaled to their food (see fitDish in app.js); keep the
    enlarged picture inside its box, and let white backgrounds sit on the paper. */
 .dish-image { overflow: hidden; }
 .dish-image > img { mix-blend-mode: multiply; }
+
+/* Back-office promotions: a small red tag, the old price struck through. */
+.promo-tag { display: inline-block; padding: 1px 7px; border: 1px solid currentColor; border-radius: 999px; font-family: var(--sans); font-size: 11px; font-weight: 500; line-height: 1.5; letter-spacing: .02em; color: var(--red, #b5232b); white-space: nowrap; vertical-align: 2px; }
+.dish-price .promo-tag { display: block; width: fit-content; margin: 0 0 6px; }
+.list-price { margin-right: 6px; color: var(--muted); font-size: .85em; font-weight: 400; text-decoration-thickness: 1px; }
+.promo-note { margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+
+/* Menu dish names wrap to a second line instead of shrinking to fit one line
+   (shrinking took long English names down to 9px on phones). */
+.menu-section .dish-name { white-space: normal !important; text-wrap: balance; overflow-wrap: break-word; }
+@media (max-width: 760px) {
+  .menu-section .dish-name, .menu-section .chapter-small .dish-name { font-size: 19px; line-height: 1.35; font-weight: 500; }
+  html[lang="en"] .menu-section .dish-name { font-size: 16px; line-height: 1.35; }
+}
+/* 推荐: a quiet vertical note in the photo's empty left margin, clear of the dish name. */
+.dish-image { position: relative; }
+.dish-pick { position: absolute; left: 2px; top: 8px; z-index: 2; writing-mode: vertical-rl; font-family: var(--sans); font-size: 12px; font-weight: 600; line-height: 1; letter-spacing: .35em; color: var(--red, #b5232b); pointer-events: none; }
+html[lang="en"] .dish-pick { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; }
+/* Menu card stepper: − count + appears once a dish is in the cart. The minus
+   matches the + circle; the count replaces the old 「本桌已有 N 份」 line. */
+.dish-minus { position: relative; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid #e8d1cf; border-radius: 50%; background: #fff; color: var(--red); font-size: 18px; line-height: 1; transition: transform 120ms cubic-bezier(0.23,1,0.32,1); }
+.dish-minus::after { content: ""; position: absolute; inset: -7px; }
+.dish-minus:active { transform: scale(.96); }
+.dish-count { min-width: 22px; text-align: center; font: 600 15px/1 var(--sans); font-variant-numeric: tabular-nums; color: var(--ink, #2a2622); }
+.dish-stepper.has-qty .dish-add { background: var(--red); color: #fff8eb; border-color: var(--red); }
+.dish-card .dish-table-count { display: none !important; }
+/* Phones: a compact stepper; the price wraps beside it rather than moving the + . */
+.dish-stepper { gap: 2px; }
+.dish-count { min-width: 18px; }
+.dish-card:has(.dish-stepper.has-qty) .dish-price { padding-right: 80px !important; white-space: normal; overflow-wrap: anywhere; line-height: 1.3; }
+@media (min-width: 1151px) {
+  .menu-section .dish-minus { width: 40px; height: 40px; font-size: 22px; border-color: #d9b7ae; }
+  .menu-section .dish-minus::after { inset: -3px; }
+  .dish-stepper { gap: 4px; }
+  .dish-count { min-width: 22px; }
+  .dish-card:has(.dish-stepper.has-qty) .dish-price { padding-right: 116px !important; }
+}
+/* Cart: real round − / + and an explicit 删除 on every dish. */
+.cart-quantity button { position: relative; }
+.cart-quantity button::before { content: ""; position: absolute; inset: 50% auto auto 50%; width: 32px; height: 32px; translate: -50% -50%; border: 1px solid #e3c9c4; border-radius: 50%; }
+.cart-quantity button:disabled::before { opacity: .4; }
+.cart-remove { justify-self: end; min-height: 44px; padding: 0 2px 0 12px; color: var(--muted); font: 400 13px/1 var(--sans); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: #c9bdb0; }
+.cart-dishes[data-layout="table"] .cart-remove { grid-column: 1/-1; grid-row: 4; align-self: center; }
+.cart-dishes[data-layout="list"] .cart-remove { grid-column: 2; grid-row: 3; min-height: 32px; }
+/* Bottom bar says what tapping it does. */
+.table-tray #trayActionLabel { display: inline; font-size: 12px; font-weight: 500; }

@@ -1,0 +1,107 @@
+/* The page a guest lands on holding the printed slip, so it borrows the slip's
+   own two colours rather than the website's darker brand red. Recognition is
+   the whole job here: the paper in their hand has to look like it belongs to
+   this page, or they will not believe the voucher is real. */
+:root{
+ --red:#CE4624;          /* sampled from the printed voucher */
+ --cream:#FDF2DA;        /* ditto */
+ --ink:#2A2320;
+ --quiet:#8A7250;
+ --line:#EADBBC;
+ --sans:Scto,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+ --ming:Georgia,'Songti SC','Source Han Serif SC','Noto Serif CJK SC',serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+ margin:0;background:var(--cream);color:var(--ink);
+ font:400 16px/1.6 var(--sans);
+ padding:0 16px env(safe-area-inset-bottom);
+ display:flex;justify-content:center;
+}
+:lang(en){display:block;font-size:.8125rem;line-height:1.45;color:var(--quiet);letter-spacing:.005em}
+b,strong{font-weight:600}
+
+.sheet{width:100%;max-width:420px;padding-block:0 40px}
+
+/* ── 券头：呼应纸券正面那面满版红 ───────────────────────────── */
+.stub{
+ position:relative;margin:0 -16px;padding:26px 24px 22px;
+ background:var(--red);color:var(--cream);overflow:hidden;
+}
+/* 纸券正面那排饺子图标 */
+.stub::after{
+ content:"";position:absolute;inset:0;opacity:.13;pointer-events:none;
+ background:url('/site/media/brand-dumpling.webp') 0 0/26px 34px repeat;
+ filter:brightness(0) invert(1);
+}
+.stub-mark{position:relative;width:132px;height:auto;display:block;filter:brightness(0) invert(1)}
+.stub-title{position:relative;margin:14px 0 0;display:flex;align-items:baseline;gap:10px}
+.stub-title strong{font:400 1.75rem/1 var(--ming);letter-spacing:.06em}
+.stub-title span{font-size:.8125rem;letter-spacing:.14em;text-transform:uppercase;opacity:.8}
+
+/* ── 卡片 ────────────────────────────────────────────── */
+.card{
+ background:#fff;border:1px solid var(--line);border-top:0;
+ margin:0 -16px;padding:22px 24px 26px;
+}
+
+.alert{
+ margin:0 0 22px;padding:13px 15px;border-radius:10px;
+ background:#FDF2DA;border:1px solid var(--line);
+ font-size:.9375rem;line-height:1.55;
+}
+.alert strong{color:var(--red)}
+.alert :lang(en){margin-top:4px}
+
+/* 条款：照抄纸券上印的，一字不改 */
+.terms{margin:0 0 26px;display:grid;gap:13px}
+.terms div{display:grid;grid-template-columns:6.5rem minmax(0,1fr);gap:14px;align-items:start}
+.terms dt{font-size:.8125rem;line-height:1.35;color:var(--quiet)}
+.terms dt :lang(en){font-size:.6875rem;letter-spacing:.04em;text-transform:uppercase;text-wrap:balance}
+.terms dd{margin:0;font-size:.9375rem;line-height:1.45}
+.terms dd b{color:var(--red)}
+.terms dd :lang(en){margin-top:2px}
+
+/* ── 领取 ────────────────────────────────────────────── */
+.claim{border-top:1px solid var(--line);padding-top:22px}
+.claim h2{margin:0;font:400 1.375rem/1.25 var(--ming);letter-spacing:.02em}
+.claim h2 :lang(en){margin-top:3px;letter-spacing:.02em}
+.hint{margin:10px 0 20px;font-size:.875rem;line-height:1.55;color:var(--quiet)}
+.hint :lang(en){margin-top:3px}
+
+.field-label :lang(en){display:inline;font-size:inherit}
+
+.primary,
+.primary{display:flex;align-items:center;justify-content:center;border:0;background:var(--red);color:#fff;text-decoration:none;padding:0 18px;text-align:center}
+.primary:hover{background:#B93B1C}
+.primary[aria-disabled=true]{opacity:.5;pointer-events:none}
+.secondary{
+ margin-top:18px;background:none;color:var(--quiet);
+ border:1px solid var(--line);font-size:.875rem;min-height:44px;
+}
+
+.fineprint{margin:16px 0 0;font-size:.8125rem;line-height:1.55;color:var(--quiet)}
+.fineprint :lang(en){margin-top:3px}
+
+/* ── 券（领完之后）────────────────────────────────────── */
+
+/* ── 页脚 ────────────────────────────────────────────── */
+.foot{margin-top:24px;text-align:center}
+.foot p{margin:0}
+.addr{font-size:.875rem}
+.addr a{color:var(--red);text-decoration:none;border-bottom:1px solid #CE462455;padding-bottom:1px}
+.home{margin-top:10px;font-size:.75rem;color:var(--quiet);letter-spacing:.02em}
+.home a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line)}
+
+@media (min-width:460px){
+ body{padding-inline:0}
+ .sheet{padding-top:32px}
+ .stub{margin:0;border-radius:14px 14px 0 0}
+ .card{margin:0;border-radius:0 0 14px 14px;border-top:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.claim{border-top:1px solid var(--line);padding-top:22px}
+.claim h2{margin:0;font:400 1.375rem/1.25 var(--ming);letter-spacing:.02em}
+.claim h2 :lang(en){margin-top:3px;letter-spacing:.02em}

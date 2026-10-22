@@ -174,15 +174,318 @@
     { id: "roe-wonton-noodles", cn: "鲜虾蟹籽云吞面", name: "Prawn & Crab Roe Wonton Noodles", dishId: "lunch-v2-prawn-roe-wonton", prep: "soup", noodles: true, img: imageFor("wonton-soup-noodles") },
     { id: "boiled-dumplings", cn: "白灼饺子", name: "Boiled Dumplings", chooseFilling: true, prep: "boiled", img: boiledPhoto },
   ];
-  globalThis.SECTIONS = ["recommended", "dumplings", "noodles", "sides", "drinks"];
-  globalThis.SECTION_LABELS = { recommended: "Recommended", dumplings: "Your Choice", noodles: "Noodles", sides: "Sides", drinks: "Drinks" };
+  globalThis.SECTIONS = ["recommended", "dumplings", "noodles", "sides", "cold", "drinks"];
+  globalThis.SECTION_LABELS = { recommended: "Recommended", dumplings: "Your Choice", noodles: "Noodles", sides: "Sides", cold: "Cold Dishes", drinks: "Drinks" };
   globalThis.lunchPrice = (d, style) => d?.variants ? d.variants[style]?.price : d?.price;
   globalThis.isLunchItem = (id, style) => {
     const d = MENU.find(d => d.id === id);
     return Boolean(d && !d.soldOut && (!d.styles ? !style : d.styles.includes(style)));
   };
   if (typeof I18N !== "undefined") {
-    Object.assign(I18N.sections, { recommended: "推荐", dumplings: "自选口味", noodles: "面条", sides: "配菜", drinks: "饮品" });
+    Object.assign(I18N.sections, { recommended: "推荐", dumplings: "自选口味", noodles: "面条", sides: "配菜", cold: "凉菜", drinks: "饮品" });
     for (const d of MENU) I18N.dishes[d.id] = { flavor: "" };
   }
+})();
+
+// Confirmed October menu. Same-dish IDs preserve merchant photographs and stock.
+(()=>{
+ const update={"fillings":[{"key":"pork-chive-shrimp","cn":"韭菜虾仁猪肉","kind":"dumpling","portionPrices":{"5":6.8,"10":10.8}},{"key":"chicken-cabbage","cn":"鸡肉包菜","kind":"dumpling","portionPrices":{"5":5.8,"10":9.8}},{"key":"pork-celery-shrimp","cn":"芹菜虾仁猪肉","kind":"dumpling","portionPrices":{"5":6.8,"10":10.8}},{"key":"pork-corn","cn":"猪肉玉米","kind":"dumpling","portionPrices":{"5":5.8,"10":9.8},"replaces":"pork-cabbage"},{"key":"pork-scallion","cn":"猪肉大葱","kind":"dumpling","portionPrices":{"5":5.8,"10":9.8}},{"key":"prawn-roe-wonton","cn":"鲜虾蟹籽云吞","kind":"wonton","portionPrices":{"5":7.2,"10":11.8}},{"key":"pork-wonton","cn":"鲜肉云吞","kind":"wonton","portionPrices":{"5":5.8,"10":9.8}}],"noodles":[{"key":"mince-scallion-noodles","cn":"肉末葱油面","price":10.8},{"key":"mince-chilli-noodles","cn":"肉末辣椒板面","price":11.8,"recommended":true},{"key":"shaanxi-hot-oil-noodles","cn":"陕西油泼面","price":11.8},{"key":"century-egg-noodles","cn":"销魂皮蛋面","price":12.8,"recommended":true},{"key":"mince-red-oil-noodles","cn":"肉末红油燃面","price":10.8}],"sides":[{"key":"pork-rice","cn":"卤肉饭","price":5.8},{"key":"braised-tofu","cn":"卤豆腐","price":5.2},{"key":"braised-pork-belly","cn":"卤五花肉","price":6.5},{"key":"pork-cutlet","cn":"秘制猪排","price":6.2,"portion":"1块"},{"key":"chicken-wings","cn":"秘制鸡翅","price":6.2,"portion":"3个"},{"key":"cold-veg-shreds","cn":"凉拌蔬菜丝","price":4.8},{"key":"choy-sum","cn":"酱油菜心","price":6.8},{"key":"oyster-lettuce","cn":"蚝油生菜","price":6.8},{"key":"century-egg-tofu","cn":"皮蛋豆腐","price":5.2},{"key":"onsen-egg","cn":"温泉蛋","price":1.5,"replaces":"soft-egg"},{"key":"pickled-radish","cn":"腌萝卜","price":1.5}],"drinks":[{"key":"barley","cn":"薏米水","price":3.5},{"key":"lemon-tea","cn":"柠檬茶","price":4.2},{"key":"sour-plum","cn":"酸梅汁","price":3.9},{"key":"soft-drink","cn":"软饮","price":3},{"key":"water","cn":"水","price":1}],"lunchSets":[{"key":"dumpling-set","name":"Dumpling Set","price":null,"pieces":10,"fillingChoices":["pork-chive-shrimp","pork-corn","pork-scallion","pork-celery-shrimp","pork-wonton","prawn-roe-wonton"],"preparationChoices":[{"key":"boiled","cn":"白煮"},{"key":"soup","cn":"清汤"},{"key":"red-oil","cn":"四川红油拌"},{"key":"peanut","cn":"花生酱拌"}],"includedColdDish":"cold-veg-shreds","drinkChoices":["barley","lemon-tea","sour-plum"],"optionalNoodlesExtra":2.5,"pricingStatus":"pending","orderable":false,"priceLabel":{"cn":"价格待定","en":"Price to be confirmed"}},{"key":"noodle-set","name":"Noodle Set","price":null,"noodleChoices":["mince-scallion-noodles","mince-chilli-noodles","shaanxi-hot-oil-noodles","century-egg-noodles","mince-red-oil-noodles"],"sideDumplings":{"pieces":4,"preparation":"fried","fillingChoices":["chicken-cabbage","pork-chive-shrimp","pork-scallion"]},"drinkChoices":["barley","lemon-tea","sour-plum"],"pricingStatus":"pending","orderable":false,"priceLabel":{"cn":"价格待定","en":"Price to be confirmed"}}],"availability":{"days":"inherit-business-hours","start":"11:00","end":"15:00","timeZone":"Asia/Singapore","requiresRestaurantOpen":true}};
+ const clone=value=>JSON.parse(JSON.stringify(value));
+ const prior=clone(MENU),byKey=key=>prior.find(d=>d.id==='lunch-v2-'+key);
+ globalThis.LEGACY_MENU=[...prior,...(globalThis.LEGACY_MENU||[])];
+ globalThis.MENU_VERSION='lunch-2026-10-20-v5';
+ globalThis.LUNCH_ALLOW_NOODLE_EXTRA=false;
+ const active=[];
+ for(const entry of update.fillings){
+  const old=byKey(entry.key),template=old||byKey('pork-cabbage');
+  const d=clone(template);d.id=old?.id||'lunch-v5-'+entry.key;d.cn=entry.cn;d.portionPrices=entry.portionPrices;d.price=entry.portionPrices[5];d.styles=[];d.variants={};
+  if(!old){d.name='Pork & Corn Dumplings';d.img=null;delete d.preparationImages;d.ingredientInfo={items:[{cn:'猪肉',en:'Pork'},{cn:'玉米',en:'Corn'},{cn:'饺子皮',en:'Dumpling wrappers'}],completeRecipe:false,source:'current-menu-names'};}
+  for(const [style,v] of Object.entries(template.variants)){
+   if(v.legacy||v.noodles)continue;
+   const pieces=v.pieces===9?10:v.pieces,key=style.replace('9颗','10颗');
+   d.styles.push(key);d.variants[key]={...v,pieces,price:d.portionPrices[pieces],en:v.en.replace('9 pieces','10 pieces')};
+  }
+  // Existing wonton-noodle recommendation is a fixed noodle dish, not a single-item add-on.
+  if(entry.key==='prawn-roe-wonton')for(const pieces of [5,10]){const key='高汤 · '+pieces+'颗 · 加面';d.styles.push(key);d.variants[key]={prep:'soup',pieces,spicy:false,sesame:false,noodles:true,recommendationOnly:true,price:Math.round((d.portionPrices[pieces]+LUNCH_NOODLE_EXTRA)*100)/100,en:'Broth · '+pieces+' pieces · Noodles included'};}
+  d.menuRevision=MENU_VERSION;active.push(d);
+ }
+ for(const entry of [...update.noodles,...update.sides,...update.drinks]){
+  const old=byKey(entry.key);let d;
+  if(old)d=clone(old);else d={id:'lunch-v5-'+entry.key,name:'Onsen Egg',section:'sides',img:null,flavor:'',allergens:[],ingredientInfo:{items:[{cn:'蛋',en:'Egg'}],completeRecipe:false,source:'current-menu-names'}};
+  Object.assign(d,{cn:entry.cn,price:entry.price,menuRevision:MENU_VERSION});
+  if(entry.key==='mince-chilli-noodles')d.name='Minced Meat Chilli Ban Mian';
+  if(['cold-veg-shreds','century-egg-tofu','pickled-radish'].includes(entry.key))d.section='cold';
+  if(entry.portion)d.portion=entry.portion;active.push(d);
+ }
+ // Retired products stay visible to staff for reference and can be explicitly re-enabled.
+ const ids=new Set(active.map(d=>d.id));
+ const retired=prior.filter(d=>!ids.has(d.id)).map(d=>({...d,active:false,retired:true,menuRevision:MENU_VERSION}));
+ globalThis.MENU=[...active,...retired];
+ globalThis.LUNCH_RECOMMENDATIONS=LUNCH_RECOMMENDATIONS.filter(r=>r.id!=='red-oil-chaoshou');
+ LUNCH_RECOMMENDATIONS.push(...['mince-chilli-noodles','century-egg-noodles'].map(key=>{const d=byKey(key);return {id:key,dishId:d.id,cn:active.find(a=>a.id===d.id).cn,name:active.find(a=>a.id===d.id).name,img:d.img}}));
+ // No unconfirmed standalone chaoshou price is invented. Keep its shortcut visible but disabled.
+ const chaoshou=prior.find(d=>d.id==='lunch-v4-red-oil-chaoshou');
+ if(chaoshou)LUNCH_RECOMMENDATIONS.push({id:'red-oil-chaoshou',dishId:chaoshou.id,cn:chaoshou.cn,name:chaoshou.name,img:chaoshou.img,pending:true});
+ globalThis.LUNCH_SETS=update.lunchSets;globalThis.LUNCH_SET_AVAILABILITY=update.availability;
+ globalThis.SECTIONS=['lunchsets',...SECTIONS];globalThis.SECTION_LABELS.lunchsets='Lunch Sets';
+ if(typeof I18N!=='undefined')I18N.sections.lunchsets='午市套餐';
+})();
+
+// Latest single-dish menu: six boiled/tossed fillings; chicken-cabbage is fried only.
+(()=>{
+ globalThis.MENU_VERSION='lunch-2026-10-20-v6';
+ globalThis.LUNCH_SINGLE_PREPARATIONS=['boiled','tossed'];
+ LUNCH_PREPARATIONS.find(p=>p.id==='boiled').cn='水煮';
+ LUNCH_PREPARATIONS.find(p=>p.id==='tossed').cn='干拌';
+ for(const d of MENU.filter(d=>d.active!==false&&['dumpling','wonton'].includes(d.kind))){
+  d.singleChoice=!d.id.endsWith('-chicken-cabbage');
+  if(!d.singleChoice){
+   d.section='recommended';d.fixedPreparation={id:'fried',cn:'煎饺',en:'Pan-fried'};
+   d.preparations=['fried'];
+   d.styles=d.styles.filter(s=>d.variants[s].prep==='fried');
+   d.variants=Object.fromEntries(d.styles.map(s=>[s,d.variants[s]]));
+   d.img=d.preparationImages?.fried||d.img;
+   continue;
+  }
+  if(d.kind==='wonton'){
+   for(const pieces of [5,10]){
+    const key=`水煮 · ${pieces}颗`;
+    d.styles.push(key);d.variants[key]={prep:'boiled',pieces,spicy:false,sesame:false,noodles:false,price:d.portionPrices[pieces],en:`Boiled · ${pieces} pieces`};
+   }
+   d.preparations=[...new Set([...d.preparations,'boiled'])];
+   d.preparationImages={...d.preparationImages,boiled:d.img};
+  }
+  d.styles=d.styles.filter(s=>{const v=d.variants[s];return ['boiled','tossed'].includes(v.prep)||d.id.endsWith('-pork-chive-shrimp')&&v.prep==='fried'||d.id.endsWith('-pork-wonton')&&v.prep==='soup'||d.id.endsWith('-prawn-roe-wonton')&&v.prep==='soup'&&v.noodles});
+  d.variants=Object.fromEntries(d.styles.map(s=>[s,d.variants[s]]));
+  d.preparations=[...new Set(Object.values(d.variants).map(v=>v.prep))];
+ }
+ const recommendedOrder=['chive-fried','chicken-fried','red-oil-chaoshou','pork-soup','mince-chilli-noodles','century-egg-noodles','roe-wonton-noodles','boiled-dumplings'];
+ LUNCH_RECOMMENDATIONS.sort((a,b)=>recommendedOrder.indexOf(a.id)-recommendedOrder.indexOf(b.id));
+ const boiled=LUNCH_RECOMMENDATIONS.find(r=>r.id==='boiled-dumplings');if(boiled){boiled.cn='白灼所有口味';boiled.name='Boiled Dumplings & Wontons';}
+})();
+
+// The merchant can manage recommendations without changing dish names or IDs.
+(()=>{
+ const recommendedIds=new Set(LUNCH_RECOMMENDATIONS.filter(r=>!r.pending&&r.dishId).map(r=>r.dishId));
+ for(const d of MENU)d.recommended=d.active!==false&&(recommendedIds.has(d.id)||Boolean(d.best));
+})();
+
+// Wontons and wonton noodles are independent products, not an add-noodles variant.
+(()=>{
+ const wontons=MENU.find(d=>d.id==='lunch-v2-prawn-roe-wonton');
+ const shortcut=LUNCH_RECOMMENDATIONS.find(r=>r.id==='roe-wonton-noodles');
+ const clone=value=>JSON.parse(JSON.stringify(value));
+ const noodles={...clone(wontons),id:'lunch-v7-prawn-roe-wonton-noodles',cn:'鲜虾蟹籽云吞面',name:'Prawn & Crab Roe Wonton Noodles',section:'noodles',kind:'wonton-noodles',singleChoice:false,recommended:true,img:shortcut.img,menuRevision:'lunch-2026-10-20-v7',fixedPreparation:{id:'soup',cn:'清汤云吞面',en:'Wonton Noodle Soup'},preparations:['soup'],portionPrices:{},variants:{},styles:[]};
+ delete noodles.imageUrl;delete noodles.preparationImages;delete noodles.best;
+ for(const pieces of [5,10]){
+  // Carry forward displayed combination prices once; later edits are independent.
+  noodles.portionPrices[pieces]=Math.round((wontons.portionPrices[pieces]+LUNCH_NOODLE_EXTRA)*100)/100;
+  const key=`清汤 · ${pieces}颗云吞`;
+  noodles.styles.push(key);noodles.variants[key]={prep:'soup',pieces,spicy:false,sesame:false,noodles:false,containsNoodles:true,price:noodles.portionPrices[pieces],en:`Noodle soup · ${pieces} wontons`};
+ }
+ noodles.price=noodles.portionPrices[5];
+ noodles.ingredientInfo.items.push({cn:'面条',en:'Noodles'});
+ wontons.styles=wontons.styles.filter(s=>!wontons.variants[s].noodles);
+ wontons.variants=Object.fromEntries(wontons.styles.map(s=>[s,wontons.variants[s]]));
+ wontons.preparations=[...new Set(Object.values(wontons.variants).map(v=>v.prep))];
+ wontons.recommended=false;
+ MENU.push(noodles);
+ shortcut.dishId=noodles.id;shortcut.cn=noodles.cn;shortcut.name=noodles.name;delete shortcut.noodles;
+ globalThis.MENU_VERSION='lunch-2026-10-20-v7';
+})();
+
+// Pick a filling first, then the preparation allowed for that product.
+(()=>{
+ globalThis.MENU_VERSION='lunch-2026-10-20-v8';
+ globalThis.LUNCH_CHOOSE_FILLING_FIRST=true;
+ globalThis.LUNCH_SINGLE_PREPARATIONS=['boiled','soup','red-oil','peanut'];
+ const soup=LUNCH_PREPARATIONS.find(p=>p.id==='soup');soup.cn='清汤';soup.en='Clear Broth';
+ const image=LUNCH_PREPARATIONS.find(p=>p.id==='tossed').img;
+ for(const p of [{id:'red-oil',cn:'四川红油拌',en:'Sichuan Chilli Oil',extra:0,img:image},{id:'peanut',cn:'花生酱拌',en:'Peanut Sauce',extra:0,img:image}])if(!LUNCH_PREPARATIONS.some(x=>x.id===p.id))LUNCH_PREPARATIONS.push(p);
+ for(const d of MENU.filter(d=>d.active!==false&&d.singleChoice===true)){
+  const methods=d.kind==='wonton'?['soup','red-oil','peanut']:['boiled','soup','red-oil','peanut'];
+  const fried=d.id==='lunch-v2-pork-chive-shrimp'?Object.entries(d.variants).filter(([,v])=>v.prep==='fried'):[];
+  d.styles=[];d.variants={};
+  for(const method of methods)for(const pieces of [5,10]){
+   const p=LUNCH_PREPARATIONS.find(p=>p.id===method),key=`${p.cn} · ${pieces}颗`;
+   d.styles.push(key);d.variants[key]={prep:method,pieces,spicy:method==='red-oil',sesame:false,noodles:false,peanut:method==='peanut',price:d.portionPrices[pieces],en:`${p.en} · ${pieces} pieces`};
+  }
+  for(const [key,v] of fried){d.styles.push(key);d.variants[key]=v;}
+  d.preparations=[...methods,...(fried.length?['fried']:[])];
+  if(d.preparationImages){d.preparationImages['red-oil']=d.preparationImages.tossed||d.img;d.preparationImages.peanut=d.preparationImages.tossed||d.img;}
+ }
+})();
+
+// Portion counts are merchant editable; keep every preparation and price aligned.
+globalThis.remapMenuPortions = (dish, sizes) => {
+ const old=Object.keys(dish.portionPrices).map(Number).sort((a,b)=>a-b);
+ const counts=new Map(old.map((n,i)=>[n,sizes[i]])),variants={},styles=[];
+ for(const key of dish.styles){const v=dish.variants[key],pieces=counts.get(v.pieces);if(!pieces)continue;
+  const next=key.replace(/\d+(?=颗)/,String(pieces));styles.push(next);
+  variants[next]={...v,pieces,en:v.en?.replace(/\d+(?= pieces| wontons)/,String(pieces))};
+ }
+ dish.portionPrices=Object.fromEntries(old.map(n=>[counts.get(n),dish.portionPrices[n]]));dish.styles=styles;dish.variants=variants;
+ return dish;
+};
+for(const d of MENU.filter(d=>d.active!==false&&d.portionPrices?.[10]!==undefined))remapMenuPortions(d,Object.keys(d.portionPrices).map(Number).sort((a,b)=>a-b).map(n=>n===10?9:n));
+globalThis.MENU_VERSION='lunch-2026-10-20-v9';
+
+for(const s of globalThis.LUNCH_SETS||[])if(s.key==='dumpling-set')s.pieces=9;
+
+// Fixed potstickers are distinct products, separate from filling-first dumplings.
+(()=>{
+ const source=MENU.find(d=>d.id==='lunch-v2-pork-chive-shrimp');
+ const fried=JSON.parse(JSON.stringify(source));fried.id='lunch-v10-pork-chive-shrimp-fried';
+ Object.assign(fried,{cn:'韭菜虾仁猪肉煎饺',name:'Pork, Shrimp & Chive Potstickers',section:'recommended',singleChoice:false,recommended:true,fixedPreparation:{id:'fried',cn:'煎饺',en:'Pan-fried'},preparations:['fried']});
+ fried.styles=fried.styles.filter(s=>fried.variants[s].prep==='fried');fried.variants=Object.fromEntries(fried.styles.map(s=>[s,fried.variants[s]]));
+ fried.img=source.preparationImages?.fried||LUNCH_RECOMMENDATIONS.find(r=>r.id==='chive-fried').img;
+ fried.preparationImages={fried:fried.img};MENU.push(fried);
+ source.styles=source.styles.filter(s=>source.variants[s].prep!=='fried');source.variants=Object.fromEntries(source.styles.map(s=>[s,source.variants[s]]));
+ source.preparations=source.preparations.filter(p=>p!=='fried');if(source.preparationImages)delete source.preparationImages.fried;source.recommended=false;
+ LUNCH_RECOMMENDATIONS.find(r=>r.id==='chive-fried').dishId=fried.id;
+ const chicken=MENU.find(d=>d.id==='lunch-v2-chicken-cabbage');chicken.cn='鸡肉包菜煎饺';chicken.name='Chicken & Cabbage Potstickers';
+ globalThis.MENU_VERSION='lunch-2026-10-20-v10';
+})();
+
+// Restore the fried shortcut to its shared filling SKU; preparations are configurable.
+(()=>{
+ const source=MENU.find(d=>d.id==='lunch-v2-pork-chive-shrimp'),retired=MENU.find(d=>d.id==='lunch-v10-pork-chive-shrimp-fried');
+ for(const key of retired.styles){source.styles.push(key);source.variants[key]=JSON.parse(JSON.stringify(retired.variants[key]));}
+ source.preparations.push('fried');source.preparationImages={...source.preparationImages,fried:retired.img};source.recommended=true;
+ retired.active=false;retired.retired=true;retired.menuRevision='lunch-2026-10-20-v11';
+ LUNCH_RECOMMENDATIONS.find(r=>r.id==='chive-fried').dishId=source.id;
+ globalThis.LUNCH_SINGLE_PREPARATIONS=['boiled','soup','red-oil','peanut','fried'];
+ const fried=LUNCH_PREPARATIONS.find(p=>p.id==='fried');fried.cn='煎饺';fried.en='Pan-fried';
+ for(const d of MENU.filter(d=>d.active!==false&&['dumpling','wonton'].includes(d.kind))){
+  d.availablePreparations=d.fixedPreparation?['fried']:d.kind==='dumpling'?['boiled','soup','red-oil','peanut','fried']:['soup','red-oil','peanut'];
+  d.enabledPreparations=[...d.availablePreparations];
+  d.preparationExtras=Object.fromEntries(d.availablePreparations.map(id=>[id,id==='boiled'?0:id==='fried'?1.5:1]));
+ }
+ globalThis.MENU_VERSION='lunch-2026-10-20-v11';
+})();
+globalThis.configureMenuPreparations = d => {
+ if(!d.availablePreparations)return d;
+ const styles=[],variants={};
+ for(const method of d.enabledPreparations)for(const pieces of Object.keys(d.portionPrices).map(Number)){
+  const p=LUNCH_PREPARATIONS.find(p=>p.id===method),key=`${p.cn} · ${pieces}颗`;
+  styles.push(key);variants[key]={prep:method,pieces,spicy:method==='red-oil',sesame:false,noodles:false,peanut:method==='peanut',price:Math.round((d.portionPrices[pieces]+d.preparationExtras[method])*100)/100,en:`${p.en} · ${pieces} pieces`};
+ }
+ d.styles=styles;d.variants=variants;d.preparations=[...d.enabledPreparations];d.price=Math.min(...Object.values(variants).map(v=>v.price));return d;
+};
+for(const d of MENU)configureMenuPreparations(d);
+
+// Show a dedicated fixed fried product alongside the configurable filling.
+(()=>{
+ const source=MENU.find(d=>d.id==='lunch-v2-pork-chive-shrimp'),fried=MENU.find(d=>d.id==='lunch-v10-pork-chive-shrimp-fried');
+ Object.assign(fried,{active:true,recommended:true,menuRevision:source.menuRevision,availablePreparations:['fried'],enabledPreparations:['fried'],preparationExtras:{fried:1.5}});
+ delete fried.retired;configureMenuPreparations(fried);source.recommended=false;
+ LUNCH_RECOMMENDATIONS.find(r=>r.id==='chive-fried').dishId=fried.id;
+ globalThis.MENU_VERSION='lunch-2026-10-20-v12';
+})();
+
+// Wonton noodles have a fixed recipe of five wontons per serving.
+(()=>{
+ const d=MENU.find(d=>d.id==='lunch-v7-prawn-roe-wonton-noodles');d.fixedPieces=5;
+ d.portionPrices={5:d.portionPrices[5]};d.styles=d.styles.filter(s=>d.variants[s].pieces===5);d.variants=Object.fromEntries(d.styles.map(s=>[s,d.variants[s]]));d.price=d.portionPrices[5];
+ globalThis.MENU_VERSION='lunch-2026-10-20-v13';
+})();
+
+// 2026-10-20 店主最新菜单图，以此为准：价格、份量（饺子 5/9 颗、云吞 5/10 颗），
+// 单点做法不加价、单点不卖煎（煎饺只作为推荐里的独立菜品），配菜大小份和新菜。
+// 后台仍可开关做法、设加价；菜单版本号变化后，旧版本存的价格自动失效。
+(()=>{
+ const REVISION='lunch-2026-10-20-v14';
+ const find=id=>MENU.find(d=>d.id===id);
+ const price=(d,values)=>{d.portionPrices=values;d.menuRevision=REVISION;d.active=true;delete d.retired;configureMenuPreparations(d);};
+ const fillings={'lunch-v2-pork-chive-shrimp':[5.8,10.8],'lunch-v2-pork-celery-shrimp':[5.8,10.8],'lunch-v5-pork-corn':[4.8,9.8],'lunch-v2-pork-scallion':[4.8,9.8],'lunch-v2-prawn-roe-wonton':[5.8,10.8],'lunch-v2-pork-wonton':[4.8,9.8]};
+ for(const [id,[small,large]] of Object.entries(fillings)){
+  const d=find(id),wonton=d.kind==='wonton';
+  d.availablePreparations=wonton?['soup','red-oil','peanut']:['boiled','soup','red-oil','peanut','fried'];
+  d.enabledPreparations=wonton?['soup','red-oil','peanut']:['boiled','soup','red-oil','peanut'];
+  d.preparationExtras=Object.fromEntries(d.availablePreparations.map(p=>[p,0]));
+  price(d,wonton?{5:small,10:large}:{5:small,9:large});
+ }
+ // 猪肉玉米每种做法先共用一张照片，后台可按做法另传。
+ const corn=find('lunch-v5-pork-corn');corn.img='lunch-chicken-corn-generated-v1.png';
+ corn.preparationImages=Object.fromEntries(corn.availablePreparations.map(p=>[p,corn.img]));
+ // 推荐里的两道煎饺、红油抄手和云吞面是固定做法的独立菜品。
+ for(const [id,values] of [['lunch-v10-pork-chive-shrimp-fried',{5:5.8,9:10.8}],['lunch-v2-chicken-cabbage',{5:5.8,9:9.2}]]){const d=find(id);d.preparationExtras={fried:0};price(d,values);}
+ const chaoshou=find('lunch-v4-red-oil-chaoshou');price(chaoshou,{5:5.8,9:9.2});
+ const shortcut=LUNCH_RECOMMENDATIONS.find(r=>r.id==='red-oil-chaoshou');if(shortcut)delete shortcut.pending;
+ const wontonNoodles=find('lunch-v7-prawn-roe-wonton-noodles');wontonNoodles.portionPrices={5:8.8};wontonNoodles.menuRevision=REVISION;
+ for(const v of Object.values(wontonNoodles.variants))v.price=8.8;wontonNoodles.price=8.8;
+ for(const [key,value] of Object.entries({'mince-scallion-noodles':9.8,'mince-chilli-noodles':9.8,'shaanxi-hot-oil-noodles':10.8,'century-egg-noodles':11.8,'mince-red-oil-noodles':9.8,'cold-veg-shreds':5.8,'choy-sum':6.8,'oyster-lettuce':6.8,'century-egg-tofu':5.2,'pickled-radish':1.5,'barley':3.5,'lemon-tea':4.2,'sour-plum':3.9,'soft-drink':3,'water':1})){
+  const d=find('lunch-v2-'+key);d.price=value;d.menuRevision=REVISION;
+ }
+ find('lunch-v5-onsen-egg').price=1.5;find('lunch-v5-onsen-egg').img='lunch-v5-onsen-egg-placeholder.png';find('lunch-v5-onsen-egg').menuRevision=REVISION;
+ // 配菜分大小份的：数据上是两道菜（价格、库存各管各的），顾客菜单上合成一张卡片，点进去选份量。
+ const ingredients=items=>({items:items.map(([cn,en])=>({cn,en})),completeRecipe:false,source:'current-menu-names'});
+ const simple=(id,cn,name,section,value,img,portion,items)=>({id,cn,name,section,price:value,img,portion,flavor:'',allergens:[],menuRevision:REVISION,ingredientInfo:ingredients(items)});
+ const sized=[
+  ['pork-rice','卤肉饭','Braised Pork Rice',[5.8,9.8],['小份','大份']],
+  ['braised-tofu','卤豆腐','Braised Tofu',[6.2,10.8],['小份','大份']],
+  ['braised-pork-belly','卤五花肉','Braised Pork Belly',[7.2,12.5],['小份','大份']],
+  ['pork-cutlet','炸秘制猪排','Fried House Pork Cutlet',[7.2,12.5],['小份','大份']],
+  ['chicken-wings','炸秘制鸡翅','Fried House Chicken Wings',[6.2,11.5],['3个','6个']],
+  ['fried-wontons','炸云吞','Fried Wontons',[6.2,11.5],['小份','大份']],
+ ];
+ const sizeNames={'小份':'Small','大份':'Large','3个':'3 pieces','6个':'6 pieces'};
+ let previous=null;
+ for(const [key,cn,name,[small,large],[a,b]] of sized){
+  let first=find('lunch-v2-'+key);
+  if(!first){first=simple('lunch-v5-'+key,cn,name,'sides',small,`lunch-${key}-generated-v1.png`,a,[['云吞','Wontons']]);MENU.splice(MENU.indexOf(previous)+1,0,first);}
+  const second={...JSON.parse(JSON.stringify(first)),id:'lunch-v5-'+key+'-large'};
+  delete second.imageUrl;MENU.splice(MENU.indexOf(first)+1,0,second);
+  const ids=[first.id,second.id];
+  for(const [d,value,label] of [[first,small,a],[second,large,b]])Object.assign(d,{
+   cn:`${cn}（${label==='小份'?'小':label==='大份'?'大':label}）`,name:`${name} (${sizeNames[label]})`,section:'sides',price:value,portion:label,
+   active:true,menuRevision:REVISION,sizeGroup:ids,groupCn:cn,groupName:name,sizeLabel:{cn:label,en:sizeNames[label]},
+  });
+  previous=second;
+ }
+ const newSides=[
+  simple('lunch-v5-peanut-sesame-sauce','花生芝麻酱','Peanut Sesame Sauce','sides',0.5,'lunch-v5-peanut-sesame-sauce-placeholder.png','',[['花生','Peanut'],['芝麻','Sesame']]),
+  simple('lunch-v5-chilli-oil','辣油','Chilli Oil','sides',0.5,'lunch-v5-chilli-oil-placeholder.png','',[['辣椒油','Chilli oil']]),
+  simple('lunch-v5-cucumber-tofu-soup','黄瓜豆腐清汤','Cucumber & Tofu Clear Soup','sides',1.2,'lunch-v5-cucumber-tofu-soup-placeholder.png','',[['黄瓜','Cucumber'],['豆腐','Tofu']]),
+ ];
+ const radish=MENU.indexOf(find('lunch-v2-pickled-radish'));MENU.splice(radish+1,0,...newSides);
+ for(const d of MENU)if(typeof I18N!=='undefined'&&!I18N.dishes[d.id])I18N.dishes[d.id]={flavor:''};
+ // 套餐还没定要不要做：默认不在顾客菜单显示，后台「午市套餐」里打开。
+ for(const set of globalThis.LUNCH_SETS||[])set.visible=false;
+ globalThis.MENU_VERSION=REVISION;
+})();
+
+// 单价菜品的选项（例如软饮：可乐 / 气泡水 / 乌龙茶），由后台设置。选中的选项名
+// 就是订单里的规格，厨房和小票直接显示；所有选项共用本菜库存。
+globalThis.applyChoiceOptions = d => {
+ if (d.variants || !d.choiceOptions) return d;
+ const on = (d.choiceOptions.items || []).filter(o => o.active);
+ // Sold-out options stay listed for staff and customers but cannot be ordered.
+ if (on.length) d.styles = on.filter(o => !o.soldOut).map(o => o.cn); else delete d.styles;
+ d.optionsSoldOut = Boolean(on.length && !d.styles.length);
+ return d;
+};
+globalThis.choiceOptionFor = (d, style) => d?.choiceOptions?.items?.find(o => o.active && o.cn === style) || null;
+(() => {
+ const portionPrice = globalThis.lunchPrice;
+ globalThis.lunchPrice = (d, style) => {
+  if (d?.variants || !d?.choiceOptions?.items?.some(o => o.active)) return portionPrice(d, style);
+  const option = choiceOptionFor(d, style);
+  return option ? option.price ?? d.price : undefined;
+ };
+})();
+
+// 共用库存（店里按实物备料）：
+// 鲜虾蟹籽云吞面用云吞的库存，一碗扣 5 颗；韭菜虾仁猪肉如果在后台打开「煎」，
+// 煎的那部分扣煎饺库存（煎饺和水煮的饺子形状不同，分开备料）；
+// 配菜大小份共用一个库存：鸡翅按个数算（3 个 / 6 个），其余按小份算，大份扣 2 份。
+(() => {
+ const find = id => MENU.find(d => d.id === id);
+ find('lunch-v7-prawn-roe-wonton-noodles').stockPool = 'lunch-v2-prawn-roe-wonton';
+ find('lunch-v2-pork-chive-shrimp').stockPoolByPrep = { fried: 'lunch-v10-pork-chive-shrimp-fried' };
+ for (const d of MENU.filter(d => d.sizeGroup && d.id === d.sizeGroup[0])) {
+  const large = find(d.sizeGroup[1]), wings = d.id === 'lunch-v2-chicken-wings';
+  Object.assign(d, { stockUnits: wings ? 3 : 1, stockUnitName: wings ? '个' : '小份' });
+  Object.assign(large, { stockPool: d.id, stockUnits: wings ? 6 : 2, stockUnitName: d.stockUnitName });
+ }
 })();

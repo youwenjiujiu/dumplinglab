@@ -777,10 +777,16 @@ dl-value-motion { display: inline-block; font: inherit; color: inherit; }
   margin: 17px 0;
   max-width: 200px;
 }
-.dish-add {
+.dish-stepper {
   position: absolute;
   right: 0;
   bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dish-add {
+  position: relative;
   width: 40px;
   height: 40px;
   display: grid;
@@ -802,7 +808,7 @@ dl-value-motion { display: inline-block; font: inherit; color: inherit; }
   color: var(--paper);
   font-size: 14px;
 }
-.featured .dish-add {
+.featured .dish-stepper {
   align-self: end;
   position: static;
   margin-bottom: 3px;
@@ -1788,10 +1794,12 @@ html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
     line-height: 1.65;
     margin: 12px 0;
   }
-  .featured .dish-add {
+  .featured .dish-stepper {
     position: absolute;
     bottom: 20px;
     right: 0;
+  }
+  .featured .dish-add {
     width: 36px;
     height: 36px;
   }
@@ -1816,6 +1824,8 @@ html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
   .dish-add {
     width: 36px;
     height: 36px;
+  }
+  .dish-stepper {
     bottom: 10px;
   }
   .dish-info {

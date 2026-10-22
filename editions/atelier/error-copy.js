@@ -12,7 +12,7 @@
     ['请先处理备注冲突', 'Resolve the note conflict first'],
     ['订单同步未完成，请重新检查。', 'Your order has not finished syncing. Please check again.'],
     ['此地址超出 10 km 配送范围', 'This address is outside our 10 km delivery area.'],
-    ['配送菜品小计需满 $100（未税，不含配送费）', 'Delivery requires at least $100 of food before GST, excluding the delivery fee.'],
+    ['配送菜品小计需满 $100（不含配送费）', 'Delivery requires at least $100 of food, excluding the delivery fee.'],
     ['请选择有效的预订日期和时段；次日订单前晚 21:00 截止', 'Choose an available date and time. Next-day orders close at 9 pm Singapore time.'],
     ['请填写新加坡联系电话', 'Enter a valid Singapore contact number.'],
     ['请填写六位邮编', 'Enter a six-digit postal code.'],

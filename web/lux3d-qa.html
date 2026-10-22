@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lux3D 对比</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;padding:32px 24px 72px;background:#FAFAF7;color:#30343A;
+       font:15px/1.6 -apple-system,"PingFang SC",system-ui,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{margin:0 0 6px;font-size:26px;font-weight:600;letter-spacing:-.01em}
+  .sub{margin:0 0 40px;color:#8A8880;font-size:14px}
+  h2{margin:44px 0 4px;font-size:17px;font-weight:600}
+  h2 .tag{margin-inline-start:10px;font-size:12px;font-weight:500;padding:2px 9px;
+          border-radius:999px;vertical-align:2px}
+  .ok .tag{background:#E8F0E9;color:#1F6B3A}
+  .no .tag{background:#FBE9E7;color:#B0301C}
+  .note{margin:0 0 16px;color:#8A8880;font-size:13.5px}
+  .pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+  .one{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;max-width:580px}
+  figure{margin:0;min-width:0}
+  .stage{height:360px;border-radius:14px;background:#fff;
+         box-shadow:0 1px 3px #30343a14,0 10px 30px #30343a0d;position:relative}
+  figcaption{margin-top:9px;font-size:13px;color:#6B6862;display:flex;justify-content:space-between;gap:12px}
+  figcaption b{font-weight:600;color:#30343A}
+  hr{border:0;border-top:1px solid #E7E5DE;margin:52px 0 0}
+  @media(max-width:760px){body{padding:24px 16px 56px}.pair{grid-template-columns:1fr}.stage{height:68vw;min-height:280px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Lux3D 实测 · 可拖动对比</h1>
+  <p class="sub">用的是站上真正那个 3D 查看器（同样的打光、同样的托盘、同样的操作）。拖动可旋转，双指 / 滚轮缩放。</p>
+  <p class="sub" style="margin-top:-30px">顺带发现一件事：杯子、凳子这类<b>高个子</b>物体在现有查看器里会顶出画框 —— 那个相机是按浅盘子调的（<code>model3d.js</code> 里 <code>size.y * 1.2</code>）。这两格我临时拉远了镜头，真要接进去得把那个系数调大。</p>
+  <div id="out"></div>
+  <hr>
+</div>
+<script type="module">
+import { mountGeneratedDish3D } from "./model3d.js";
+
+const LUX = "models/candidates/lux3d";
+const PROD = "models/production";
+
+const GROUPS = [
+  { title: "红油抄手", state: "ok", tag: "成功",
+    note: "左边是 Lux3D 压到 616 KB 的结果，右边是你们现在站上用的那个（1.5 MB）。这一组是判断能不能用的关键。",
+    items: [ { src: `${LUX}/hongyouchaoshou.glb`, name: "Lux3D · 今天生成", size: "616 KB" },
+             { src: `${PROD}/red-oil-wontons.glb`, name: "现有 · 站上在跑的", size: "1.5 MB" } ] },
+  { title: "云吞汤", state: "ok", tag: "成功",
+    note: "碗沿的红线和圈足 360° 都立得住。右边现有的那个是云吞汤面，不是同一道菜，只作画质参照。",
+    items: [ { src: `${LUX}/yuntuntang.glb`, name: "Lux3D · 今天生成", size: "1.0 MB" },
+             { src: `${PROD}/wonton-soup-noodles.glb`, name: "现有 · 云吞汤面", size: "1.4 MB" } ] },
+  { title: "煎饺", state: "ok", tag: "成功",
+    note: "现有模型里没有对应的菜，所以单独看。正面最好，转到背面盘子会变薄。",
+    items: [ { src: `${LUX}/jianjiao.glb`, name: "Lux3D · 今天生成", size: "1.5 MB" } ] },
+  { title: "柠檬茶", state: "no", tag: "失败",
+    note: "玻璃和茶汤被烤成一整块不透明的棕色实体，两片柠檬整个丢了，冰块只剩顶上几个凸起。单图转 3D 处理不了透明材质 —— 带玻璃器皿的照片都别投。",
+    items: [ { src: `${LUX}/ningmengcha.glb`, name: "Lux3D · 透明材质做不了", size: "13 MB 未压", zoom: 1.34 } ] },
+  { title: "吧台凳 · 单个道具", state: "no", tag: "勉强",
+    note: "从门头图上裁了一张凳子。它把背景里的吧台一起卷进了模型，背面是撕裂的 —— 要用就得先抠成干净的白底图。",
+    items: [ { src: `${LUX}/dengzi.glb`, name: "Lux3D · 背景污染", size: "9.8 MB 未压", zoom: 1.34 } ] },
+  { title: "整面门头 · 店内场景", state: "no", tag: "失败",
+    note: "这就是「店里 3D」那条路的答案：它只做出一个六面方盒子，正面贴着那张图，其余三面是空白墙。不是场景，是块广告牌。",
+    items: [ { src: `${LUX}/mentou.glb`, name: "Lux3D · 只是个贴图盒子", size: "11 MB 未压" } ] },
+];
+
+const out = document.querySelector("#out");
+for (const g of GROUPS) {
+  const h = document.createElement("h2");
+  h.className = g.state;
+  h.innerHTML = `${g.title}<span class="tag">${g.tag}</span>`;
+  const p = document.createElement("p");
+  p.className = "note"; p.textContent = g.note;
+  const row = document.createElement("div");
+  row.className = g.items.length > 1 ? "pair" : "one";
+  out.append(h, p, row);
+  for (const it of g.items) {
+    const fig = document.createElement("figure");
+    fig.innerHTML = `<div class="stage"></div>
+      <figcaption><b>${it.name}</b><span>${it.size}</span></figcaption>`;
+    row.append(fig);
+    mountGeneratedDish3D(fig.querySelector(".stage"), {
+      modelURL: it.src,
+      label: `${g.title} · ${it.name}`,
+      ...(it.zoom ? { zoom: it.zoom } : {}),
+    });
+  }
+}
+</script>
+</body>
+</html>

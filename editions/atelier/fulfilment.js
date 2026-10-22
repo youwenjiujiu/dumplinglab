@@ -100,7 +100,7 @@ const Fulfilment = (() => {
   }
   const label = (value = mode()) => ({ dinein: tr('堂食', 'Dine-in'), takeaway: tr('打包自取', 'Pickup'), delivery: tr('外送', 'Delivery') })[value];
   const credentials = () => ({ requestId: crypto.randomUUID(), token: [...crypto.getRandomValues(new Uint8Array(32))].map(v => v.toString(16).padStart(2,'0')).join('') });
-  const summary = (order, paid = false) => `<dl class="payment-breakdown">${paid&&order.paymentMethod==='wallet'?`<div><dt>${bi('支付方式','Payment method')}</dt><dd>${bi('余额','Balance')}</dd></div>`:''}${paid&&order.walletAllocation?`<div><dt>${bi('本金 / 赠金','Principal / bonus')}</dt><dd>${money(order.walletAllocation.principalCents/100)} / ${money(order.walletAllocation.bonusCents/100)}</dd></div>`:''}${order.refundedCents?`<div><dt>${bi('已退款','Refunded')}</dt><dd>${money(order.refundedCents/100)}</dd></div>`:''}${order.loyalty?.discountCents ? `<div><dt>${bi('菜品原价（含税）','Food before reward (incl. GST)')}</dt><dd>${money(order.loyalty.grossFoodCents/100)}</dd></div><div><dt>${bi('兑换优惠','Reward')}</dt><dd>−${money(order.loyalty.discountCents/100)}</dd></div>` : ''}<div><dt>${bi('菜品金额（未税）','Food (before GST)')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}<div><dt>${order.pricingVersion === 'sg-inclusive-gst9-delivery9-v2' ? bi('内含 GST 9%','Included GST 9%') : 'GST 9%'}</dt><dd>${money(order.gst)}</dd></div><div class="payment-total"><dt>${paid ? bi('实付金额','Total paid') : bi('应付总额','Total to pay')}</dt><dd>${money(order.total)}</dd></div></dl>`;
+  const summary = (order, paid = false) => `<dl class="payment-breakdown">${paid&&order.paymentMethod==='wallet'?`<div><dt>${bi('支付方式','Payment method')}</dt><dd>${bi('余额','Balance')}</dd></div>`:''}${paid&&order.walletAllocation?`<div><dt>${bi('本金 / 赠金','Principal / bonus')}</dt><dd>${money(order.walletAllocation.principalCents/100)} / ${money(order.walletAllocation.bonusCents/100)}</dd></div>`:''}${order.refundedCents?`<div><dt>${bi('已退款','Refunded')}</dt><dd>${money(order.refundedCents/100)}</dd></div>`:''}${order.loyalty?.discountCents ? `<div><dt>${(order.gst !== undefined ? bi('菜品原价（含税）','Food before reward (incl. GST)') : bi('菜品原价','Food before reward'))}</dt><dd>${money(order.loyalty.grossFoodCents/100)}</dd></div><div><dt>${bi('兑换优惠','Reward')}</dt><dd>−${money(order.loyalty.discountCents/100)}</dd></div>` : ''}${order.gst !== undefined ? `<div><dt>${bi('菜品金额（未税）','Food (before GST)')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}<div><dt>${order.pricingVersion === 'sg-inclusive-gst9-delivery9-v2' ? bi('内含 GST 9%','Included GST 9%') : 'GST 9%'}</dt><dd>${money(order.gst)}</dd></div>` : `${order.discount ? `<div><dt>${bi('菜品金额','Food')}</dt><dd>${money(order.foodTotal)}</dd></div><div><dt>${order.discountRule?.type === 'percent' ? bi(`本桌折扣 ${order.discountRule.value}%`, `Table discount ${order.discountRule.value}%`) : bi('本桌折扣','Table discount')}</dt><dd>−${money(order.discount)}</dd></div>` : ''}<div><dt>${order.discount ? bi('折后菜品','Food after discount') : bi('菜品金额','Food')}</dt><dd>${money(order.subtotal)}</dd></div>${order.mode === 'delivery' ? `<div><dt>${bi('配送费 9%','Delivery fee 9%')}</dt><dd>${money(order.deliveryFee)}</dd></div>` : ''}${order.mode === 'dinein' ? `<div><dt>${bi('服务费 10%','Service charge 10%')}</dt><dd>${money(order.serviceCharge)}</dd></div>` : ''}`}<div class="payment-total"><dt>${paid ? bi('实付金额','Total paid') : bi('应付总额','Total to pay')}</dt><dd>${money(order.total)}</dd></div></dl>`;
   function chrome() {
     const button = $('#fulfilmentButton');
     const tableLabel = !remote() ? ` · ${table || tr('选桌号', 'Table')}` : '';
@@ -196,7 +196,7 @@ const Fulfilment = (() => {
     globalThis.RewardsUI?.onPaid();
     const pickup = order.mode === 'takeaway';
     $('#sheet').scrollTop = 0;
-    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${pickup ? bi('核对自取订单','Review pickup order') : bi('确认订单','Review order')}</h2><p class="online-policy">${escapeHTML(label(order.mode))}${pickup ? '' : ` · ${escapeHTML(input.date)} · ${escapeHTML(input.slot)}`}</p><p>${escapeHTML(pickup ? order.fulfilment.pickupName : order.customer.address)}<small class="pickup-location">${escapeHTML(pickup ? order.fulfilment.pickupAddress : order.customer.unit || '')}</small></p><div class="online-review-items">${order.items.map(i => `<div><span>${escapeHTML(language === 'zh' ? i.name : i.englishName)}<small>${i.style ? escapeHTML(styleName(i.style)) : ''} × ${i.qty}</small></span><b>${money(i.price*i.qty)}</b></div>`).join('')}</div>${summary(order)}<p class="fineprint">${pickup ? bi('付款后生成取餐号和取餐码，请留意门店叫号。','Your pickup number and QR code appear after payment. Listen for your number at the store.') : bi('支持信用卡及 PayNow。支付成功后提交门店。','Card and PayNow. Sent to the restaurant after successful payment.')}</p><p id="onlineError" class="field-error" role="alert"></p><button class="primary" data-online-pay>${bi('付款','Pay')} ${money(order.total)}</button><button class="online-back" ${pickup ? 'data-action="cart"' : 'data-online-start'}>${pickup ? bi('返回修改菜品','Edit selected items') : bi('修改资料','Edit details')}</button></div>`;
+    $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${pickup ? bi('核对自取订单','Review pickup order') : bi('确认订单','Review order')}</h2><p class="online-policy">${escapeHTML(label(order.mode))}${pickup ? '' : ` · ${escapeHTML(input.date)} · ${escapeHTML(input.slot)}`}</p><p>${escapeHTML(pickup ? order.fulfilment.pickupName : order.customer.address)}<small class="pickup-location">${escapeHTML(pickup ? order.fulfilment.pickupAddress : order.customer.unit || '')}</small></p><div class="online-review-items">${order.items.map(i => `<div><span>${escapeHTML(language === 'zh' ? i.name : i.englishName)}<small>${i.style ? escapeHTML(styleName(i.style)) : ''}${i.promo === 'bogo' ? ` · ${bi('买一赠一', 'Buy 1 get 1')}` : ''} × ${i.qty}</small></span><b>${money(i.price*i.qty)}</b></div>`).join('')}</div>${summary(order)}<p class="fineprint">${pickup ? bi('付款后生成取餐号和取餐码，请留意门店叫号。','Your pickup number and QR code appear after payment. Listen for your number at the store.') : bi('支持信用卡及 PayNow。支付成功后提交门店。','Card and PayNow. Sent to the restaurant after successful payment.')}</p><p id="onlineError" class="field-error" role="alert"></p><button class="primary" data-online-pay>${bi('付款','Pay')} ${money(order.total)}</button><button class="online-back" ${pickup ? 'data-action="cart"' : 'data-online-start'}>${pickup ? bi('返回修改菜品','Edit selected items') : bi('修改资料','Edit details')}</button></div>`;
   }
   async function quoteInput(input, isCurrent) {
     if (!isCurrent()) return;
@@ -266,7 +266,7 @@ const Fulfilment = (() => {
   }
   function init() {
     stores.set('dinein',store); $('#fulfilmentButton').onclick = select;
-    if (!q.get('table')) {
+    if (!table) {
       let selected; try { selected = localStorage.getItem('atelier-mode'); } catch { /* default */ }
       if (selected === 'takeaway') switchTo(selected,false);
       else if (selected === 'delivery') {
@@ -274,12 +274,12 @@ const Fulfilment = (() => {
       }
     }
     chrome();
-    // Payment returns recover their pending transaction; every normal page/QR
-    // entry explicitly offers dine-in/takeaway, even with a saved preference.
+    // Payment recovery takes priority. Valid table QR links enter dine-in
+    // directly; generic links still offer dine-in/takeaway.
     if (q.get('online_order')) checkout();
     else if (store.order) checkout();
     else if (remote() && store.orders.some(o => o.mode === 'takeaway' && o.pickup)) paid();
-    else select({initialEntry:true});
+    else if (!table) select({initialEntry:true});
   }
   for (const event of ['input','change']) document.addEventListener(event, e => {
     const form = e.target.closest?.('#onlineForm');

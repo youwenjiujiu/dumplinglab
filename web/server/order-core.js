@@ -47,6 +47,10 @@ export function cleanOrder(input, catalog) {
   return { ...event, type: "order", mode: "dinein", no, items, note: note || null, ...globalThis.OrderPricing.quote(subtotal) };
 }
 
+// Persist the server-owned destination with each ordered line, independent of later menu edits.
+export const printStationFor = dish => ['kitchen','bar'].includes(dish?.printStation)
+  ? dish.printStation : ['drinks','cold'].includes(dish?.section) ? 'bar' : 'kitchen';
+
 export function cleanItems(inputItems, catalog) {
   const currentCatalog = catalog ? new Map(catalog.map(d=>[d.id,d])) : CATALOG;
   const input = { items: inputItems };
@@ -58,13 +62,18 @@ export function cleanItems(inputItems, catalog) {
     const qty = Number(item.qty);
     if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new RequestError(`「${dish.cn}」的数量无效`);
     const style = dish.styles ? requiredText(item.style, /^.{1,100}$/u, `请选择「${dish.cn}」的做法和份量`) : null;
+    if (style && !dish.styles.includes(style) && dish.choiceOptions?.items?.some(o => o.active && o.cn === style && o.soldOut)) throw new RequestError(`「${dish.cn} · ${style}」已售罄，请返回菜单修改`, 409);
     if (style && !dish.styles.includes(style)) throw new RequestError(`「${dish.cn}」的做法无效`);
     if (!dish.styles && item.style) throw new RequestError("该菜品不提供自选做法");
     const price = globalThis.lunchPrice(dish, style);
     if (!Number.isFinite(price)) throw new RequestError("菜品规格价格无效");
-    return { id: dish.id, name: dish.cn, englishName: dish.name, style, qty, price, service: "lunch" };
+    return { id: dish.id, name: dish.cn, englishName: dish.name, style, qty, price, service: "lunch", printStation: printStationFor(dish) };
   });
-  return items;
+  // 买一赠一 lines are split so every snapshot line keeps one unit price; the free
+  // units follow their paid line at $0.
+  const free = globalThis.OrderPricing.bogoFree(items.map(i => ({ ...i, bogo: currentCatalog.get(i.id)?.promo?.type === "bogo" })));
+  return items.flatMap((i, n) => !free[n] ? [i]
+    : [...(i.qty > free[n] ? [{ ...i, qty: i.qty - free[n] }] : []), { ...i, qty: free[n], price: 0, listPrice: i.price, promo: "bogo" }]);
 }
 
 export function cleanCall(input) {

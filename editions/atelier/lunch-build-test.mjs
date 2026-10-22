@@ -22,18 +22,32 @@ for (const match of html.matchAll(/(?:src|href)="(\/[^"?]+\.(?:js|css))(?:\?v=([
 }
 const ctx = vm.createContext({});
 for (const file of ["menu-data.js","i18n.js","lunch-archive.js","lunch-menu.js"]) vm.runInContext(await readFile(resolve(release,file),"utf8"),ctx);
-assert.equal(ctx.MENU.length,35);
+assert.equal(ctx.MENU.length,49);   // 41 on sale + 8 retired kept for old receipts
+const onSale=ctx.MENU.filter(d=>d.active!==false);assert.equal(onSale.length,41);
+assert.equal(JSON.stringify(onSale.filter(d=>!d.img).map(d=>d.cn)),"[]","Do not publish a dish on sale without its photo");
+for(const d of onSale)for(const img of [d.img,...Object.values(d.preparationImages||{})].filter(Boolean))for(const size of ["s","l"])assert((await stat(resolve(release,"img",size,img.replace(/\.(png|jpe?g|webp)$/i,".webp")))).size>0,img);
 assert.equal(vm.runInContext("I18N.sections.dumplings",ctx),"自选口味");
 for (const path of scripts) execFileSync(process.execPath,["--check",resolve(release,"."+path)]);
 for (const dir of ['api','server']) for (const file of await readdir(resolve(release,dir))) {
   if (file.endsWith('.js')) execFileSync(process.execPath,['--check',resolve(release,dir,file)]);
 }
 execFileSync(process.execPath,['--check',resolve(release,'catalog-admin.js')]);
+const cutoutAssets=JSON.parse(await readFile(resolve(release,'vendor/cutout/assets.json'),'utf8'));
+for(const [file,hash] of Object.entries(cutoutAssets))assert.equal(createHash('sha256').update(await readFile(resolve(release,'vendor/cutout',file))).digest('hex'),hash,`cutout asset integrity: ${file}`);
+execFileSync(process.execPath,['--check',resolve(release,'vendor/cutout/worker.js')]);
+for(const file of ['ONNX-LICENSE.txt','U2NET-LICENSE.txt','NOTICE.txt'])assert((await stat(resolve(release,'vendor/cutout',file))).size>0);
+const adminHtml=await readFile(resolve(release,'catalog-admin.html'),'utf8');
+assert(adminHtml.includes('id="removeBackground"'),'Cutout action ships with admin');
+assert(!adminHtml.includes('ort.wasm.min.mjs'),'Inference runtime is loaded only on demand');
+
 for (const path of [...html.matchAll(/(?:src|href)="(\/[^"?]+)(?:\?[^"]*)?"/g)].map(m=>m[1])) {
   assert((await stat(resolve(release,"."+path))).isFile(),path);
 }
-assert.equal([...ctx.MENU,...ctx.LUNCH_PREPARATIONS,...ctx.LUNCH_RECOMMENDATIONS].filter(d=>!d.img).length, 0, "Do not publish any current dish or preparation without its image");
-for (const dish of [...ctx.MENU,...ctx.LUNCH_PREPARATIONS,...ctx.LUNCH_RECOMMENDATIONS]) for (const img of [dish.img,...Object.values(dish.preparationImages || {})]) for (const size of ["s","l"]) {
+// 2026-10-20 店主选定的新菜专属图（Codex 生成后挑选），不是借用其他菜的照片。
+for(const [id,img] of [['lunch-v5-onsen-egg','lunch-v5-onsen-egg-placeholder.png'],['lunch-v5-pork-corn','lunch-chicken-corn-generated-v1.png']])assert.equal(ctx.MENU.find(d=>d.id===id).img,img,id);
+assert.equal(ctx.MENU.filter(d=>d.active!==false).length,41);
+assert(ctx.LUNCH_SETS.every(s=>s.price===null&&s.orderable===false));
+for (const dish of [...ctx.MENU,...ctx.LUNCH_PREPARATIONS,...ctx.LUNCH_RECOMMENDATIONS]) for (const img of [dish.img,...Object.values(dish.preparationImages || {})].filter(Boolean)) for (const size of ["s","l"]) {
   assert((await stat(resolve(release,"img",size,img.replace(/\.(png|jpe?g|webp)$/i,".webp")))).size>0);
 }
 const css = await readFile(resolve(release,"shared-table.css"),"utf8");
@@ -45,4 +59,4 @@ const api = await readFile(resolve(release,"server/order-core.js"),"utf8");
 assert.match(api,/import "\.\.\/lunch-menu.js"/);
 const config = JSON.parse(await readFile(resolve(release,"vercel.json"),"utf8"));
 assert(config.headers[0].headers.some(h=>h.key==="Cache-Control"&&h.value==="no-store"));
-console.log("ROUND 9 PASS — exact production package, 35-item client/server agreement, assets, syntax, cache refresh, preview banner removal. Layout checks are structural, not browser screenshots.");
+console.log("ROUND 9 PASS — exact production package, October menu client/server agreement, assets, syntax, cache refresh, preview banner removal. Layout checks are structural, not browser screenshots.");

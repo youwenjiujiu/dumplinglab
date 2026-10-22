@@ -22,12 +22,13 @@ class Element {
 let focused;
 for(const [,id] of html.matchAll(/id="([^"]+)"/g)){assert(!nodes.has('#'+id),'unique IDs');nodes.set('#'+id,new Element('#'+id));}
 for(const [,name] of html.matchAll(/name="([^"]+)"/g)) fields[name]=new Element(name);
-fields.section.options=Object.keys({dumplings:1,noodles:1,sides:1,drinks:1,recommended:1}).map(value=>({value}));
+fields.section.options=Object.keys({dumplings:1,noodles:1,sides:1,cold:1,drinks:1,recommended:1}).map(value=>({value}));
 nodes.get('#editForm').elements=fields;
+nodes.get('#discountForm').elements=Object.fromEntries(['table','type','value','note'].map(k=>[k,new Element(k)]));nodes.get('#discountForm').elements.type.value='percent';
 nodes.set('.metrics',new Element('.metrics')); nodes.set('.editor-scroll',new Element('.editor-scroll'));
 nodes.get('#workspace').hidden=true;
 const nav=['catalog','history'].map(view=>{const e=new Element(view);e.dataset.view=view;return e;});
-const editorSections=['basic','price','stock','image'].map(section=>{const e=new Element(section);e.dataset.editorSection=section;return e;});
+const editorSections=['basic','printing','price','stock','image'].map(section=>{const e=new Element(section);e.dataset.editorSection=section;return e;});
 const metrics=['','available','low','sold'].map(filter=>{const e=new Element(filter);e.dataset.filter=filter;return e;});
 const items=[
   {id:'a',cn:'招牌饺子',name:'House dumpling',flavor:'',section:'dumplings',sort:0,active:true,soldOut:false,manualSoldOut:false,stock:17,reserved:3,available:14,stockUnit:'颗',price:5.8,variants:{five:{pieces:5},nine:{pieces:9}},portionPrices:{5:5.8,9:9.8},img:'a.png'},
@@ -37,7 +38,7 @@ const items=[
 ];
 let state={revision:1,items,audit:[{at:'2026-09-10T02:00:00Z',action:'edit',id:'b',details:{price:5.2,stock:null}}]},writes=[],failSave=false,unauthorized=false,pending=null;
 const win={listeners:{},addEventListener(k,fn){this.listeners[k]=fn;}};
-const ctx=vm.createContext({structuredClone,TextEncoder,Date,window:win,
+const ctx=vm.createContext({structuredClone,TextEncoder,Date,window:win,location:{hash:""},
   document:{body:new Element('body'),querySelector(s){assert(nodes.has(s),'known HTML selector '+s);return nodes.get(s)},querySelectorAll(s){if(s==='[data-view]')return nav;if(s==='[data-filter]')return metrics;if(s==='[data-editor-section]')return editorSections;throw Error(s)}},
   sessionStorage:{getItem(){return ''},setItem(){},removeItem(){}},btoa:s=>Buffer.from(s,'binary').toString('base64'),
   FormData:class{get(){return 'preview-only'}},
@@ -60,7 +61,7 @@ metrics[2].onclick();assert.match(node('list').innerHTML,/招牌饺子/);assert.
 node('search').value='NO MATCH';node('search').listeners.input();assert.equal(node('emptyState').hidden,false);
 node('clearEmpty').onclick();assert.equal(node('emptyState').hidden,true);assert.equal(node('status').value,'');
 nav[1].onclick();assert.equal(node('historyPanel').hidden,false);assert.equal(node('catalogPanel').hidden,true);assert.equal(nav[1].attrs['aria-current'],'page');nav[0].onclick();
-function edit(id){const b=new Element('edit');b.dataset.edit=id;node('list').onclick({target:{closest:()=>b}});}
+function edit(id,mode='all'){const b=new Element('edit');b.dataset.edit=id;b.dataset.mode=mode;node('list').onclick({target:{closest:sel=>sel==='[data-edit]'?b:null}});}
 edit('a');assert.equal(node('editor').open,true);assert.equal(fields.section.disabled,true);assert.equal(fields.stock.disabled,false);assert.equal(fields.price_5.value,'5.8');
 fields.cn.value='新版饺子';node('editForm').listeners.input();node('closeEditor').onclick();assert.equal(node('discardPrompt').hidden,false);assert.equal(node('editor').open,true);node('keepEditing').onclick();assert.equal(node('discardPrompt').hidden,true);
 let prevented=false;win.listeners.beforeunload({preventDefault(){prevented=true}});assert(prevented);
@@ -69,6 +70,12 @@ failSave=false;await node('editForm').onsubmit(event);assert.equal(node('editor'
 edit('b');assert.equal(fields.stock.disabled,true);assert.equal(fields.section.disabled,false);node('cancelEdit').onclick();assert.equal(node('editor').open,false);assert.equal(writes.length,1);
 edit('b');fields.unlimited.checked=false;fields.unlimited.onchange({target:fields.unlimited});assert.equal(fields.stock.required,true);assert.equal(fields.stock.disabled,false);fields.stock.value='20';node('closeEditor').onclick();node('discardChanges').onclick();assert.equal(node('editor').open,false);assert.equal(writes.length,1);
 edit('b');fields.price.value='6.2';let release;pending=new Promise(r=>{release=r});const save=node('editForm').onsubmit(event);assert.equal(node('save').disabled,true);assert.equal(fields.price.disabled,true);node('closeEditor').onclick();assert.equal(node('editor').open,true);release();await save;pending=null;assert.equal(fields.price.disabled,false);assert.equal(fields.stock.disabled,true);
+edit('b','printing');assert.equal(fields.printStation.value,'kitchen');
+assert.equal(editorSections.find(s=>s.dataset.editorSection==='printing').hidden,false);
+assert.equal(editorSections.find(s=>s.dataset.editorSection==='basic').hidden,true);
+fields.printStation.value='bar';await node('editForm').onsubmit(event);
+assert.deepEqual(writes.at(-1).patch,{printStation:'bar'},'Printer-only edit does not change other fields');
+edit('b','printing');assert.equal(fields.printStation.value,'bar');node('cancelEdit').onclick();
 node('logout').onclick();assert.equal(node('workspace').hidden,true);assert.equal(node('list').innerHTML,'');assert(nav.every(b=>b.disabled));
 unauthorized=true;await node('login').onsubmit(event);assert.equal(node('workspace').hidden,true);assert.equal(node('message').dataset.tone,'error');assert.equal(node('loginButton').disabled,false);
 unauthorized=false;let finish;pending=new Promise(r=>{finish=r});const login=node('login').onsubmit(event);node('logout').onclick();finish();await login;pending=null;assert.equal(node('workspace').hidden,true,'late responses cannot restore a signed-out session');

@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {createCatalogService} from '../../web/server/catalog-core.js';
+let record=null;const storage={async read(){return structuredClone(record)},async write(value,etag){assert.equal(etag,record?.etag);record={value:structuredClone(value),etag:String(Number(etag||0)+1)}},isConflict(){return false}};
+const service=createCatalogService(storage);let view=await service.admin();const tofu=view.items.find(d=>d.id==='lunch-v2-braised-tofu');assert.equal(tofu.recommended,false);
+const before=structuredClone(tofu);
+view=await service.save({id:tofu.id,revision:view.revision,patch:{recommended:true},base:{recommended:false}});
+assert.equal(view.items.find(d=>d.id===tofu.id).recommended,true);
+const live=(await service.public()).items.find(d=>d.id===tofu.id);assert.equal(live.price,before.price);assert.equal((await service.admin()).items.find(d=>d.id===tofu.id).stock,before.stock);assert.equal(live.printStation,before.printStation);assert.equal(live.cn,before.cn);
+assert.equal((await createCatalogService(storage).public()).items.find(d=>d.id===tofu.id).recommended,true,'Recommendation survives reload');
+for(const value of ['true',1,null,{},[]])await assert.rejects(service.save({id:tofu.id,revision:view.revision,patch:{recommended:value}}),/状态/);
+view=await service.save({id:tofu.id,revision:view.revision,patch:{recommended:false},base:{recommended:true}});assert.equal(view.items.find(d=>d.id===tofu.id).recommended,false);
+const created=await service.create({id:'custom-'+randomUUID(),patch:{cn:'新推荐菜',name:'New recommendation',section:'cold',price:4.5,recommended:true,active:true}});assert(created.items.some(d=>d.cn==='新推荐菜'&&d.recommended));
+assert((await service.admin()).audit.some(a=>a.details?.recommended===true));
+console.log('PASS merchant recommendation: typed boolean validation, public sync, persistent add/remove, new-dish support, unchanged names/prices/inventory/print routing, audit trail.');

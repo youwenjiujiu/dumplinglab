@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+import {randomUUID} from 'node:crypto';
+import {createCatalogService} from '../../web/server/catalog-core.js';
+let record=null;const storage={async read(){return structuredClone(record)},async write(value,etag){assert.equal(etag,record?.etag);record={value:structuredClone(value),etag:String(Number(etag||0)+1)}},isConflict(){return false}};
+const service=createCatalogService(storage),id='lunch-v2-pork-chive-shrimp';
+const save=async(dishId,patch)=>service.save({id:dishId,revision:(await service.admin()).revision,patch});
+const before=(await service.admin()).items.find(d=>d.id===id);
+await save(id,{imageUrl:'https://example.test/default.jpg',preparationImageUrls:{boiled:'https://example.test/boiled.png',peanut:'https://example.test/peanut.png','red-oil':'/api/catalog-image?id='+randomUUID()+'.webp'}});
+let d=(await createCatalogService(storage).public()).items.find(d=>d.id===id);assert.equal(d.preparationImageUrls.peanut,'https://example.test/peanut.png');assert.deepEqual(d.portionPrices,before.portionPrices);assert.equal(d.printStation,before.printStation);
+const source=await readFile(new URL('app.js',import.meta.url),'utf8');const photo=vm.runInNewContext(source.slice(source.indexOf('const combinationPresentation ='),source.indexOf('const description ='))+'\nphoto;', {LUNCH_PREPARATIONS,LUNCH_RECOMMENDATIONS});
+const style=prep=>d.styles.find(s=>d.variants[s].prep===prep);
+assert.equal(photo(d,'l',style('peanut')),'https://example.test/peanut.png','Method photo outranks generic upload');assert.notEqual(photo(d,'l',style('soup')),'https://example.test/default.jpg','Cover never replaces preparation art');assert.equal(photo(d,'l'),'https://example.test/default.jpg','Cover is used without a preparation');
+assert.equal(photo({imageUrl:d.imageUrl,preparationImageUrls:d.preparationImageUrls,prep:'boiled'}),'https://example.test/boiled.png','Recommendation chooses the method image');
+await save(id,{preparationImageUrls:{peanut:d.preparationImageUrls.peanut}});d=(await service.public()).items.find(d=>d.id===id);assert.notEqual(photo(d,'l',style('boiled')),'https://example.test/default.jpg');assert.equal(photo(d,'l',style('peanut')),'https://example.test/peanut.png');
+for(const photos of [[],null,{unknown:'https://example.test/a.jpg'},{boiled:'javascript:alert(1)'},{boiled:'/private/photo.png'},{boiled:12}])await assert.rejects(save(id,{preparationImageUrls:photos}));
+await assert.rejects(save('lunch-v2-pork-wonton',{preparationImageUrls:{boiled:'https://example.test/a.jpg'}}));
+const created=await service.create({id:'custom-'+randomUUID(),templateId:id,patch:{cn:'新饺子',name:'New dumpling',portionPrices:{5:6,9:10},active:true}});assert.deepEqual(created.items.find(d=>d.cn==='新饺子').preparationImageUrls,{},'New recipes never inherit other food pictures');
+console.log('PASS per-preparation photos: persist/upload URL validation, method-before-default rendering, recommendation image, one-method reset preserves others, invalid methods rejected, template isolation, unchanged price/print routing.');
+
+await save('lunch-v5-pork-corn',{imageUrl:'https://example.test/corn-cover.png'});
+const corn=(await service.public()).items.find(d=>d.id==='lunch-v5-pork-corn');
+assert.equal(corn.img,'lunch-chicken-corn-generated-v1.png','An uploaded cover never replaces the base asset');
+assert.notEqual(photo(corn,'l',corn.styles[0]),corn.imageUrl,'A product without a base asset still keeps cover and preparation separate');
+console.log('PASS independent cover: generic uploads never replace configured or built-in preparation images, including products with no base asset.');

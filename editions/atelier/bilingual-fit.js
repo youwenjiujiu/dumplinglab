@@ -1,7 +1,7 @@
 // Fit each language line independently; no text rewriting and no order-state access.
 (() => {
   if (!document.createRange?.().getBoundingClientRect) return;
-  const selectors = '.bilingual > [lang], .dish-name, .dish-english, .section-heading .translation, .detail-other:not(:has(.bilingual)), .detail-top h1, .filling-picker strong, .filling-picker small:not(:has(.bilingual)):not(.price-from), .receipt-item-copy > strong, .receipt-item-copy > small[lang], .preparation-label > strong, .preparation-label > small, .category-choice > strong, .category-choice > .translation';
+  const selectors = '.bilingual > [lang], .dish-english, .section-heading .translation, .detail-other:not(:has(.bilingual)), .detail-top h1, .filling-picker strong, .filling-picker small:not(:has(.bilingual)):not(.price-from), .receipt-item-copy > strong, .receipt-item-copy > small[lang], .preparation-label > strong, .preparation-label > small, .category-choice > strong, .category-choice > .translation';
   let frame=0;
   const observed=new WeakSet();
   const resize=new ResizeObserver(()=>schedule());

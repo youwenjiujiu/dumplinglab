@@ -45,7 +45,7 @@ const submitted = await Promise.allSettled([store.order(request), store.order({ 
 assert.equal(submitted.filter(r => r.status === "fulfilled").length, 1);
 assert.equal(submitted.find(r => r.status === "rejected").reason.status, 409);
 const success = submitted.find(r => r.status === "fulfilled").value;
-assert.equal(success.order.total, 58, "Server catalogue prices are authoritative");
+assert.equal(success.order.total, 63.8, "Server catalogue prices are authoritative, plus 10% dine-in service");
 assert.equal(success.cart.items[0].id, "lunch-v2-cold-veg-shreds", "Later addition remains");
 assert.equal((await store.order({ ...request, requestId: success.order.id })).order.id, success.order.id);
 await store.mutate(first);

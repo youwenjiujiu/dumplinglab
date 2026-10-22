@@ -1,4 +1,5 @@
 // Optimistic shared cart: independent operation IDs, durable retries, idempotent checkout.
+const retainedCartItem = (id,style) => isLunchItem(id,style) || /^custom-[a-f0-9-]{36}$/.test(id || '');
 class TableCart extends EventTarget {
   constructor(table, group, namespace = null) {
     super();
@@ -20,8 +21,8 @@ class TableCart extends EventTarget {
     const cached = read(this.key) || {};
     this.remote = cached.remote || { items: [], orders: [], opIds: [] };
     const savedPending = Array.isArray(cached.pending) ? cached.pending : [];
-    this.retiredPending = [...(cached.retiredPending || []), ...savedPending.filter(op => op.kind === "delta" && !isLunchItem(op.dishId, op.style))];
-    this.pending = savedPending.filter(op => op.kind !== "delta" || isLunchItem(op.dishId, op.style));
+    this.retiredPending = [...(cached.retiredPending || []), ...savedPending.filter(op => op.kind === "delta" && !retainedCartItem(op.dishId, op.style))];
+    this.pending = savedPending.filter(op => op.kind !== "delta" || retainedCartItem(op.dishId, op.style));
     this.order = cached.order || null;
     this.noteConflict = cached.noteConflict || null;
     this.lastOrderRequestId = cached.lastOrderRequestId || this.order?.requestId || null;
@@ -117,12 +118,12 @@ class TableCart extends EventTarget {
     catch { throw new Error("无法读取本桌选菜，请重试或扫描桌上二维码。"); }
     if (cached.order) throw new Error("本桌有一笔订单待确认，请扫描桌上二维码查看；当前选菜已保留。");
     const saved = Array.isArray(cached.pending) ? cached.pending : [];
-    const pending = [...saved.filter(op => op.kind !== "delta" || isLunchItem(op.dishId, op.style)),
+    const pending = [...saved.filter(op => op.kind !== "delta" || retainedCartItem(op.dishId, op.style)),
       ...this.pending.map(op => ({ ...op, table, group: this.group }))];
     const state = {
       remote: cached.remote || { items: [], orders: [], opIds: [] },
       pending: [...new Map(pending.map(op => [op.opId, op])).values()],
-      retiredPending: [...(cached.retiredPending || []), ...saved.filter(op => op.kind === "delta" && !isLunchItem(op.dishId, op.style)), ...this.retiredPending],
+      retiredPending: [...(cached.retiredPending || []), ...saved.filter(op => op.kind === "delta" && !retainedCartItem(op.dishId, op.style)), ...this.retiredPending],
       order: null,
       noteConflict: cached.noteConflict || null,
       lastOrderRequestId: cached.lastOrderRequestId || null,
@@ -171,7 +172,7 @@ class TableCart extends EventTarget {
     return out;
   }
   mutate(data) {
-    if (this.order) throw new Error("请先确认上一次订单是否成功，再继续加菜。");
+    if (this.order) throw Object.assign(new Error("请先确认上一次订单是否成功，再继续加菜。"), { code: 'OWN_PAYMENT' });
     if (this.remote.paymentPending) throw Object.assign(new Error("本组正在付款，请完成或取消付款后再修改菜品。"), { status: 409, code: 'PAYMENT_PENDING' });
     if (data.kind === "note" && this.noteConflict) {
       this.noteConflict.local = String(data.note || "").slice(0, 240);

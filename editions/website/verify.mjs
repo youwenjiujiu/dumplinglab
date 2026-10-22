@@ -91,7 +91,7 @@ for(const [search,saved,initial,blocked] of [['?lang=en','zh','en',false],['?lan
   assert.equal(document.documentElement.lang,lang);assert.equal(link.href,'/order?lang='+lang);
   assert.equal(alt.alt,lang==='zh'?'食物近景':'Food close-up');assert(nodes.logo.attrs['aria-label'].includes(lang==='zh'?'回到顶部':'Back to top'));
   assert.equal((nodes.featuredMenu.innerHTML.match(/<article /g)||[]).length,3);
-  assert(nodes.featuredMenu.innerHTML.includes('S$10.20'),'Wonton noodles include the SGD 3 noodle supplement and an explicit currency symbol');assert(nodes.featuredMenu.innerHTML.includes('S$5.80'));
+  assert(nodes.featuredMenu.innerHTML.includes('S$8.80'),'Wonton noodles include the SGD 3 noodle supplement and an explicit currency symbol');assert(nodes.featuredMenu.innerHTML.includes('S$5.80'));
   assert.match(nodes.featuredMenu.innerHTML,/Prawn &amp; Crab Roe Wonton Noodles/);
   assert(nodes.heroImage.src.includes('pork-shrimp-chive'),'Signature potstickers remain in the hero, independently of featured selection');
   assert((await stat(resolve(bundle,'.'+nodes.heroImage.src))).isFile());

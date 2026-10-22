@@ -9,14 +9,15 @@ const here=new URL('./',import.meta.url), origin=process.env.ATELIER_TEST_URL?.r
 const config=await fetch(`${origin}/api/online`,{signal:AbortSignal.timeout(5000)}).then(r=>r.json());
 if(config.config?.preview!==true)throw Error('Refusing QA: local simulated preview is required.');
 const suites=process.argv.includes('--no-browser')?[
-  'catalog-test.mjs','catalog-client-test.mjs','catalog-admin-test.mjs','gst-inclusive-test.mjs','error-copy-test.mjs','lunch-test.mjs','online-service-test.mjs','table-entry-test.mjs','production-test.mjs',
+  'catalog-test.mjs','catalog-client-test.mjs','catalog-admin-test.mjs','service-charge-test.mjs','error-copy-test.mjs','lunch-test.mjs','online-service-test.mjs','table-entry-test.mjs','production-test.mjs',
   'stripe-setup-test.mjs','paid-checkout-test.mjs','checkout-http-test.mjs','checkout-ui-test.mjs','checkout-recovery-test.mjs','checkout-design-test.mjs','addons-ui-test.mjs','brand-motion-test.mjs','pickup-progress-test.mjs','two-mode-entry-test.mjs','order-progress-design-test.mjs',
+  'menu-art-test.mjs','catalog-create-test.mjs','catalog-photo-test.mjs','cold-category-test.mjs','filling-first-test.mjs','fixed-fried-test.mjs','fixed-wonton-noodles-test.mjs','latest-menu-test.mjs','lunch-set-admin-test.mjs','october-menu-test.mjs','portion-size-test.mjs','preparation-photo-test.mjs','preparation-settings-test.mjs','printer-routing-test.mjs','recommendation-test.mjs','wonton-product-split-test.mjs','report-test.mjs','choice-options-test.mjs','shared-stock-test.mjs','promotion-test.mjs','payment-timeout-test.mjs','table-unlock-test.mjs',
 ]:browserEngine==='webkit'?[
   'menu-layout-restoration-test.mjs','entry-brand-browser-test.mjs','form-layout-browser-test.mjs',
   'navigation-draft-browser-test.mjs','cart-input-browser-test.mjs','fulfilment-browser-test.mjs',
   'mode-menu-position-browser-test.mjs','surface-paint-browser-test.mjs',
 ]:[
-  'gst-inclusive-test.mjs','error-copy-test.mjs','lunch-test.mjs','online-service-test.mjs','table-entry-test.mjs','shared-test.mjs','production-test.mjs',
+  'service-charge-test.mjs','error-copy-test.mjs','lunch-test.mjs','online-service-test.mjs','table-entry-test.mjs','shared-test.mjs','production-test.mjs',
   'stripe-setup-test.mjs','paid-checkout-test.mjs','checkout-http-test.mjs','checkout-ui-test.mjs',
   'menu-layout-restoration-test.mjs','entry-brand-browser-test.mjs','typography-browser-test.mjs','preparation-size-browser-test.mjs',
   'browse-efficiency-browser-test.mjs','ingredients-browser-test.mjs','form-layout-browser-test.mjs','empty-cart-browser-test.mjs',
