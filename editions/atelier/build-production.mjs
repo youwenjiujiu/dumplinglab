@@ -15,7 +15,7 @@ await copy(resolve(here, "generated/table-view-motion/developer/web-component/ta
 await copy(resolve(here, "generated/order-feedback/developer/web-component/order-feedback.js"), "micro-motion.js");
 await copy(resolve(here, "generated/receipt-print/developer/web-component/receipt-print.js"), "receipt-motion.js");
 await copy(resolve(here, "generated/table-sharing/developer/web-component/table-sharing.js"), "sharing-motion.js");
-for (const file of ["lunch-set-art.js", "lunch-set-admin.js", "menu-data.js", "lunch-archive.js", "lunch-menu.js", "catalog-client.js", "catalog-admin.html", "catalog-admin.js", "rewards-admin.js", "wallet-admin.js", "report-admin.js", "catalog-admin.css", "order-pricing.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
+for (const file of ["lunch-set-art.js", "lunch-set-admin.js", "menu-data.js", "lunch-archive.js", "lunch-menu.js", "catalog-client.js", "catalog-admin.html", "catalog-admin.js", "rewards-admin.js", "wallet-admin.js", "report-admin.js", "counter-admin.js", "catalog-admin.css", "order-pricing.js", "i18n.js", "staff.html", "package.json", "package-lock.json"]) await copy(resolve(web, file), file);
 for (const file of await readdir(resolve(web,"vendor/cutout"))) await copy(resolve(web,"vendor/cutout",file),`vendor/cutout/${file}`);
 for (const dir of ["api", "server", "img/s", "img/l"]) {
   for (const file of await readdir(resolve(web, dir))) {
@@ -44,6 +44,7 @@ for (const file of ['tray-noodle-silhouette-v1.svg','tray-lettuce-silhouette-v1.
 for (const file of ['pick-dumpling-v1.webp','pick-chopstick-far-v1.webp','pick-chopstick-near-v1.webp']) await copy(resolve(web,'brand',file),`brand/${file}`);
 for (const file of ['dumpling-crimp-v1.svg','dumpling-base-v1.svg']) await copy(resolve(web,'brand',file),`brand/${file}`);
 await copy(resolve(web, "brand/footer-storefront-v1.webp"), "brand/footer-storefront-v1.webp");
+await copy(resolve(web, "brand/restaurant-front-cutout-v1.webp"), "brand/restaurant-front-cutout-v1.webp");
 await copy(resolve(web,'brand/storefront-ink-v1.js'),'brand/storefront-ink-v1.js');
 await copy(resolve(web,'vendor/three.module.js'),'vendor/three.module.js');
 await copy(resolve(web, "brand/dish-serving-v2.js"), "brand/dish-serving-v2.js");

@@ -8,7 +8,7 @@ const SharedTable = (() => {
     seenOrders = null,
     activityTimer;
   const printedOrderIds = new Set();
-  const key = (i) => `${i.id}|${i.style || ""}`;
+  const key = (i) => `${i.id}|${i.style || ""}|${i.note || ""}`;
   const motion = () => globalThis.TableMotion;
   const author = (p) =>
     p.deviceId === store.device
@@ -21,15 +21,15 @@ const SharedTable = (() => {
     return `${labels.slice(0, 3).join(tr("、", ", "))}${labels.length > 3 ? tr("等", " + others") : ""}${tr("选的", " picked this")}`;
   }
   const smallQuantity = (i) =>
-    `<div class="quantity cart-quantity" role="group" aria-label="${escapeHTML(name(dish(i.id)) + tr("份数", " portions"))}" data-motion-key="qty:${escapeHTML(key(i))}"><button data-cart-delta="-1" data-id="${i.id}" data-style="${i.style || ""}" aria-label="${escapeHTML(tr("减少 ", "Remove ") + name(dish(i.id)))}">−</button><b>${i.qty}</b><button data-cart-delta="1" data-id="${i.id}" data-style="${i.style || ""}" aria-label="${escapeHTML(tr("增加 ", "Add ") + name(dish(i.id)))}" ${i.qty >= 20 ? "disabled" : ""}>+</button></div>`;
+    `<div class="quantity cart-quantity" role="group" aria-label="${escapeHTML(name(dish(i.id)) + tr("份数", " portions"))}" data-motion-key="qty:${escapeHTML(key(i))}"><button data-cart-delta="-1" data-id="${i.id}" data-style="${i.style || ""}" data-note="${escapeHTML(i.note || "")}" aria-label="${escapeHTML(tr("减少 ", "Remove ") + name(dish(i.id)))}">−</button><b>${i.qty}</b><button data-cart-delta="1" data-id="${i.id}" data-style="${i.style || ""}" data-note="${escapeHTML(i.note || "")}" aria-label="${escapeHTML(tr("增加 ", "Add ") + name(dish(i.id)))}" ${i.qty >= 20 ? "disabled" : ""}>+</button></div>`;
   function itemHTML(i) {
     const d = dish(i.id),
       k = escapeHTML(key(i));
-    return `<article class="shared-dish" data-cart-key="${k}"><button class="cart-dish-open" data-cart-dish="${d.id}" data-cart-key="${k}" aria-label="${escapeHTML(name(d))}"><span class="cart-photo" data-motion-key="photo:${k}">${d.img ? `<img src="${photo(d, "s", i.style)}" alt="" decoding="async">` : `<span>${categoryName(d.section)}</span>`}</span><span class="cart-dish-copy" data-motion-key="name:${k}"><strong>${dishNameHTML(d)}</strong>${i.style ? `<small>${styleHTML(i.style)}</small>` : ""}</span></button><span class="cart-author" data-motion-key="author:${k}">${escapeHTML(attribution(i))}</span><span class="cart-unit-price" data-motion-key="price:${k}">${foodMoney(itemPrice(d, i.style))}<small>${bi("/ 份", "/ each")}</small></span>${smallQuantity(i)}<button class="cart-remove" data-cart-remove="${i.qty}" data-id="${i.id}" data-style="${i.style || ""}" aria-label="${escapeHTML(tr("删除 ", "Remove ") + name(d))}">${bi("删除", "Remove")}</button></article>`;
+    return `<article class="shared-dish" data-cart-key="${k}"><button class="cart-dish-open" data-cart-dish="${d.id}" data-cart-key="${k}" aria-label="${escapeHTML(name(d))}"><span class="cart-photo" data-motion-key="photo:${k}">${d.img ? `<img src="${photo(d, "s", i.style)}" alt="" decoding="async">` : `<span>${categoryName(d.section)}</span>`}</span><span class="cart-dish-copy" data-motion-key="name:${k}"><strong>${dishNameHTML(d)}</strong>${i.style ? `<small>${styleHTML(i.style)}</small>` : ""}${i.note ? `<small class="cart-line-note">${escapeHTML(i.note)}</small>` : ""}</span></button><span class="cart-author" data-motion-key="author:${k}">${escapeHTML(attribution(i))}</span><span class="cart-unit-price" data-motion-key="price:${k}">${foodMoney(itemPrice(d, i.style))}<small>${bi("/ 份", "/ each")}</small></span>${smallQuantity(i)}<button class="cart-remove" data-cart-remove="${i.qty}" data-id="${i.id}" data-style="${i.style || ""}" data-note="${escapeHTML(i.note || "")}" aria-label="${escapeHTML(tr("删除 ", "Remove ") + name(d))}">${bi("删除", "Remove")}</button></article>`;
   }
   function receipt(order, confirmed = false) {
     const subtotal = order.total ?? total(order.items);
-    const pricing = order.pricingVersion ? order : confirmed ? null : { ...OrderPricing.quote(total(order.items), 'dinein', globalThis.DL_SETTINGS?.tableDiscounts?.[String(order.table || table || '').toUpperCase()]), mode: 'dinein' };
+    const pricing = order.pricingVersion ? order : confirmed ? null : { ...OrderPricing.quote(total(order.items), 'dinein', OrderPricing.discountFor(globalThis.DL_SETTINGS, order.table || table), discountLines(order.items)), mode: 'dinein' };
     const remote = ['takeaway', 'delivery'].includes(order.mode);
     // Read the order snapshot, never today's nickname: old receipts keep their author.
     const submitter = confirmed && order.actorName
@@ -42,7 +42,7 @@ const SharedTable = (() => {
       )
       .join(
         "",
-      )}</div><div class="receipt-lines">${order.items.map((i) => `<div><span class="receipt-item">${dish(i.id)?.img ? `<img class="receipt-line-photo" src="${photo(dish(i.id), "s", i.style)}" alt="" width="48" height="48">` : ""}<span class="receipt-item-copy"><strong>${dishNameHTML({ ...dish(i.id), cn: i.name || dish(i.id).cn, name: i.englishName || dish(i.id).name })}</strong>${i.style ? `<small>${styleHTML(i.style)}</small>` : ""}${i.promo === "bogo" ? `<small>${bi("买一赠一 · 赠送", "Buy 1 get 1 · Free")}</small>` : ""}</span></span><span>× ${i.qty}</span><b>${money((i.price ?? itemPrice(dish(i.id), i.style)) * i.qty)}</b></div>`).join("")}</div>${order.note ? `<p class="receipt-note">${bi("备注", "NOTE")} · ${escapeHTML(order.note)}</p>` : ""}${pricing ? Fulfilment.summary(pricing) : `<div class="receipt-sum"><span>${bi("订单金额", "Order total")}</span><strong>${money(subtotal)}</strong></div>`}<footer>${confirmed ? (production ? bi("订单已提交", "Order submitted") : bi("本地体验已收单 · 未发送至真实厨房", "Saved locally · Not sent to a real kitchen")) : bi("堂食另收 10% 服务费，请确认菜品、份数和做法。", "Dine-in adds a 10% service charge. Check dishes, portions and preparation.")}</footer></article>`;
+      )}</div><div class="receipt-lines">${order.items.map((i) => `<div><span class="receipt-item">${dish(i.id)?.img ? `<img class="receipt-line-photo" src="${photo(dish(i.id), "s", i.style)}" alt="" width="48" height="48">` : ""}<span class="receipt-item-copy"><strong>${dishNameHTML({ ...dish(i.id), cn: i.name || dish(i.id).cn, name: i.englishName || dish(i.id).name })}</strong>${i.style ? `<small>${styleHTML(i.style)}</small>` : ""}${i.promo === "bogo" ? `<small>${bi("买一赠一 · 赠送", "Buy 1 get 1 · Free")}</small>` : ""}${i.note ? `<small class="cart-line-note">${escapeHTML(i.note)}</small>` : ""}</span></span><span>× ${i.qty}</span><b>${money((i.price ?? itemPrice(dish(i.id), i.style)) * i.qty)}</b></div>`).join("")}</div>${order.note ? `<p class="receipt-note">${bi("备注", "NOTE")} · ${escapeHTML(order.note)}</p>` : ""}${pricing ? Fulfilment.summary(pricing) : `<div class="receipt-sum"><span>${bi("订单金额", "Order total")}</span><strong>${money(subtotal)}</strong></div>`}<footer>${confirmed ? (production ? bi("订单已提交", "Order submitted") : bi("本地体验已收单 · 未发送至真实厨房", "Saved locally · Not sent to a real kitchen")) : bi("堂食另收 10% 服务费，请确认菜品、份数和做法。", "Dine-in adds a 10% service charge. Check dishes, portions and preparation.")}</footer></article>`;
   }
   function emptyTicket(pending) {
     const hasSelection = !pending && store.items.length > 0;

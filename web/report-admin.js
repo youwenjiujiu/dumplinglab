@@ -45,6 +45,52 @@ globalThis.ReportAdmin = (() => {
     }).join('');
     return `<figure class="report-chart"><figcaption>每日实收</figcaption><div class="report-chart-wrap"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="每日实收营业额">${grid}${bars}</svg><div class="report-tip" hidden></div></div></figure>`;
   }
+  // 每一单点了什么：单号、桌号或自取号、付款时间、菜品和金额。
+  function orderList(report) {
+    const multiDay = report.range.from !== report.range.to;
+    const time = iso => new Date(iso).toLocaleString('zh-SG', {timeZone:'Asia/Singapore', ...(multiDay ? {month:'numeric', day:'numeric'} : {}), hour:'2-digit', minute:'2-digit', hour12:false});
+    const place = o => o.mode === 'dinein' ? `${o.table || '—'} 桌${o.group && o.group !== 'A' ? ' · ' + o.group : ''}` : o.mode === 'takeaway' ? `自取${o.pickupNumber ? ' ' + o.pickupNumber : ''}` : modes[o.mode] || o.mode;
+    const line = i => `<li><span>${esc(i.name)}${i.style ? `<small>${esc(i.style)}</small>` : ''}${i.note ? `<small>备注：${esc(i.note)}</small>` : ''}</span><b>×${i.qty}</b>${i.promo === 'bogo' ? '<em>赠</em>' : ''}</li>`;
+    return `<div class="report-orders"><div class="report-dishes-head"><h3>订单明细</h3><span class="muted">${report.orders.length} 单${report.ordersTruncated ? '（只显示最近 1000 单，缩短日期可看全部）' : ''}</span></div>
+      ${report.orders.map(o => `<article class="report-order"><header><strong>${o.no ? '#' + esc(o.no) : esc(o.id.slice(0, 8))}</strong><span>${esc(place(o))}</span><time datetime="${esc(o.at)}">${esc(time(o.at))}</time></header>
+        <ul>${o.items.map(line).join('')}</ul>${o.note ? `<p class="report-order-note">备注：${esc(o.note)}</p>` : ''}
+        <footer>${o.counterMethod ? `<span>柜台${o.counterMethod === 'cash' ? '现金' : '刷卡机'}</span>` : ''}${o.discountCents ? `<span>折扣 −${money(o.discountCents)}</span>` : ''}${o.refundCents ? `<span class="report-refund">退款 −${money(o.refundCents)}</span>` : ''}${o.canRefund && o.refundCents < o.totalCents ? `<button type="button" class="report-refund-open" data-refund-order="${esc(o.id)}">退款</button>` : ''}<strong>${money(o.totalCents)}</strong></footer></article>`).join('')}</div>`;
+  }
+  // 刷卡/PayNow 的单直接原路退回；结果未确认时保留同一个退款编号，再点也不会重复退。
+  function refundForm(article, order) {
+    const key = 'dl-order-refund-' + order.id, left = order.totalCents - order.refundCents;
+    let pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem(key)); } catch {}
+    const form = document.createElement('form');
+    form.className = 'report-refund-form';
+    form.innerHTML = `<label>退款金额 S$<input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" max="${(left / 100).toFixed(2)}" value="${((pending?.amountCents ?? left) / 100).toFixed(2)}" required></label>
+      <label>原因<input name="reason" maxlength="200" required placeholder="例如：菜品售罄" value="${esc(pending?.reason || '')}"></label>
+      <div><button type="submit" class="primary">确认退款</button><button type="button" data-refund-cancel>取消</button></div><p role="status"></p>`;
+    article.append(form);
+    const status = form.querySelector('[role=status]'), submit = form.querySelector('[type=submit]');
+    const label = () => { const c = Math.round(Number(form.amount.value) * 100); submit.textContent = c > 0 ? `确认退款 ${money(c)}` : '确认退款'; };
+    form.amount.oninput = label; label();
+    form.querySelector('[data-refund-cancel]').onclick = () => { form.remove(); article.querySelector('[data-refund-order]').hidden = false; };
+    form.onsubmit = async e => {
+      e.preventDefault();
+      if (submit.disabled) return;
+      const amountCents = Math.round(Number(form.amount.value) * 100), reason = form.reason.value.trim();
+      if (pending && (pending.amountCents !== amountCents || pending.reason !== reason)) { status.textContent = '上一笔退款结果还没确认，请用原来的金额和原因再点一次。'; return; }
+      pending ||= { refundId: crypto.randomUUID(), amountCents, reason };
+      try { sessionStorage.setItem(key, JSON.stringify(pending)); } catch {}
+      submit.disabled = true; status.textContent = '正在退款…';
+      try {
+        await request('/api/online', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'staff-refund', id: order.id, ...pending }) });
+        try { sessionStorage.removeItem(key); } catch {}
+        refresh();
+      } catch (err) {
+        // 结果未确认（503）时保留编号，其余是明确失败，可以换金额重来。
+        if (err.status && err.status !== 503) { try { sessionStorage.removeItem(key); } catch {} pending = null; }
+        status.textContent = err.message; submit.disabled = false;
+      }
+    };
+    form.amount.focus();
+  }
   function niceStep(v) { const p = 10 ** Math.floor(Math.log10(Math.max(v, 1))), n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
 
   function render(report) {
@@ -63,8 +109,10 @@ globalThis.ReportAdmin = (() => {
       <div class="report-dishes"><div class="report-dishes-head"><h3>热销菜品</h3><span class="muted">按售出份数排序 · 金额按下单时的菜价</span></div>
       <div class="table-wrap"><table class="report-table"><thead><tr><th scope="col">#</th><th scope="col">菜品</th><th scope="col" class="align-right">份数</th><th scope="col" class="align-right">菜品金额</th></tr></thead><tbody>
       ${rows.map((r, i) => `<tr><td class="report-rank">${i + 1}</td><td><strong>${esc(r.name)}</strong>${r.parts.length ? `<small class="report-parts">${esc(r.parts.join('，'))}</small>` : ''}<span class="report-share" style="--share:${(r.qty / topQty).toFixed(3)}"></span></td><td class="align-right report-num">${r.qty}</td><td class="align-right report-num">${money(r.salesCents)}</td></tr>`).join('')}
-      </tbody></table></div></div>`
+      </tbody></table></div></div>
+      ${orderList(report)}`
       : `<div class="empty-state"><h3>这段时间没有已付款的订单</h3><p>换一个日期范围看看。</p></div>`;
+    p.querySelectorAll('[data-refund-order]').forEach(b => { b.onclick = () => { b.hidden = true; refundForm(b.closest('.report-order'), report.orders.find(o => o.id === b.dataset.refundOrder)); }; });
     const tip = p.querySelector('.report-tip'), wrap = p.querySelector('.report-chart-wrap');
     if (wrap) {
       const show = e => { const g = e.target.closest('.report-bar'); if (!g) return; tip.textContent = g.dataset.tip; tip.hidden = false;

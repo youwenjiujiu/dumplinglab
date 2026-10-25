@@ -141,7 +141,7 @@ function render(evt){
     const heading=online ? (evt.mode==='delivery'?'外送':'打包自取') : `${esc(evt.table||'?')} 号桌 · ${esc(evt.group||'A')}组`;
     const lines=(evt.items||[]).map(it=>{
       const nm = it.name||it.id; const st = it.style?` · ${it.style}`:"";
-      return `${esc(nm)}${esc(st)} ×${esc(it.qty)}${it.promo==='bogo'?'（买一赠一 · 赠送）':''}`;
+      return `${esc(nm)}${esc(st)} ×${esc(it.qty)}${it.promo==='bogo'?'（买一赠一 · 赠送）':''}${it.note?`<br><strong>　备注：${esc(it.note)}</strong>`:''}`;
     }).join("<br>");
     el.innerHTML=`<div class="top"><span class="table">${heading}</span><span class="kind order">${online?'已付款 · ':''}新订单 #${esc(evt.no||"")}</span></div>
       <div class="time">${time}</div>
@@ -150,7 +150,7 @@ function render(evt){
       ${online?`<div class="note">${evt.fulfilment?.date ? `${esc(evt.fulfilment.date)} · ${esc(evt.fulfilment.slot)}<br>` : ''}${evt.customer?.name ? `${esc(evt.customer.name)} · ${esc(evt.customer.phone)}<br>` : ''}${esc(evt.fulfilment?.pickupAddress || [evt.customer?.address,evt.customer?.unit].filter(Boolean).join(' '))}</div>`:''}
       <div class="lines">${lines}</div>
       ${evt.note?`<div class="note">备注：${esc(evt.note)}</div>`:""}
-      ${evt.pricingVersion?`<div class="time">菜品 ${money(evt.subtotal)}${evt.discount?`（已减本桌折扣 ${money(evt.discount)}）`:''}${evt.mode==='delivery'?` · 配送费 9% ${money(evt.deliveryFee)}`:''}${evt.gst!==undefined?` · GST 9% ${money(evt.gst)}`:evt.mode==='dinein'?` · 服务费 10% ${money(evt.serviceCharge)}`:''}</div>`:''}
+      ${evt.pricingVersion?`<div class="time">菜品 ${money(evt.subtotal)}${evt.discount?`（已减折扣 ${money(evt.discount)}）`:''}${evt.mode==='delivery'?` · 配送费 9% ${money(evt.deliveryFee)}`:''}${evt.gst!==undefined?` · GST 9% ${money(evt.gst)}`:evt.mode==='dinein'?` · 服务费 10% ${money(evt.serviceCharge)}`:''}</div>`:''}
       <div class="total">${money(evt.total||0)}</div>
       <button class="done">${evt.pickup ? (evt.preparationStatus==='ready' ? '确认已交餐' : evt.preparationStatus==='preparing' ? '标记可取餐' : '开始制作') : '已完成'}</button>`;
   }

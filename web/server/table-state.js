@@ -9,7 +9,7 @@ export const TABLE_STATE_PREFIX = "dumplinglab-tables/v2/";
 // 买一赠一 splits a cart line into paid and free lines; compare total units per dish/style.
 const canonical = items => {
   const units = new Map();
-  for (const i of items) { const k = JSON.stringify([i.id, i.style || null]); units.set(k, (units.get(k) || 0) + i.qty); }
+  for (const i of items) { const k = JSON.stringify([i.id, i.style || null, i.note || null]); units.set(k, (units.get(k) || 0) + i.qty); }
   return JSON.stringify([...units].sort(([a], [b]) => a.localeCompare(b)));
 };
 const cleanNote = note => typeof note === "string" ? note.trim().slice(0, 240) : "";
@@ -142,7 +142,7 @@ export function createTableStore(storage, legacy) {
         if (!hold || hold.id !== order.id || hold.tokenHash !== order.tokenHash || order.status !== 'paid')
           throw new RequestError("付款订单与本桌不匹配。", 409);
         const selected = new Set(hold.cartOpIds);
-        const { tokenHash, memberId, paymentIntentId, refundRequests, localRefundCents, fingerprint, requestFingerprint, sessionId, clientSecret, paymentUrl, ...receipt } = order;
+        const { tokenHash, memberId, paymentIntentId, refundRequests, cardRefunds, localRefundCents, fingerprint, requestFingerprint, sessionId, clientSecret, paymentUrl, ...receipt } = order;
         receipt.contributors = contributorsFor(state.operations.filter(op => selected.has(op.id)));
         state.events.push(receipt);
         state.operations = state.operations.filter(op => !selected.has(op.id));

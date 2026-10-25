@@ -46,7 +46,7 @@
  // The marketing site is English-only. Ordering keeps its own language preference.
  const language='en';
  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const chosen=['red-oil-chaoshou','roe-wonton-noodles','chicken-fried'];
+ const chosen=['red-oil-chaoshou','roe-wonton-noodles','century-egg-noodles'];
  let catalogueUnavailable=globalThis.CatalogClient?.status==='unavailable',lastMenuMarkup=null,retryingCatalogue=false;
  const menuContainer=document.querySelector('#featuredMenu');
  // Match each lazy photo to its real column, including enlarged-text reflow.

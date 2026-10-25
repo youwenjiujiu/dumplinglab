@@ -12,6 +12,11 @@
   globalThis.MENU=data.items;
   globalThis.DL_SETTINGS=data.settings||{tableDiscounts:{}};
   if(Array.isArray(data.lunchSets))globalThis.LUNCH_SETS=data.lunchSets;
+  // Category order and staff-added categories come from the back office; lunch sets and 推荐 stay on top.
+  if(Array.isArray(data.sections)){
+   globalThis.SECTIONS=[...globalThis.SECTIONS.filter(k=>k==='lunchsets'||k==='recommended'),...data.sections.map(x=>x.key).filter(k=>k!=='recommended')];
+   for(const x of data.sections.filter(x=>!x.builtin)){globalThis.SECTION_LABELS[x.key]=x.en;if(typeof I18N!=='undefined')I18N.sections[x.key]=x.cn}
+  }
   globalThis.LUNCH_RECOMMENDATIONS=recommendations.filter(r=>r.pending|| (r.chooseFilling?data.items.some(d=>d.kind==='dumpling'&&d.active!==false&&d.preparations?.includes('boiled')):data.items.some(d=>d.id===r.dishId&&d.active!==false&&d.recommended&&(!d.variants||!r.prep||d.preparations.includes(r.prep))))).map(r=>{
    const d=data.items.find(d=>d.id===r.dishId),original=base.find(d=>d.id===r.dishId);if(!d)return r;
    return {...r,cn:original?.cn!==d.cn?d.cn:r.cn,name:original?.name!==d.name?d.name:r.name,imageUrl:d.imageUrl,preparationImageUrls:d.preparationImageUrls,pending:r.pending||d.soldOut||d.active===false};

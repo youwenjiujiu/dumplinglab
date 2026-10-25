@@ -1,5 +1,5 @@
 import "../menu-data.js";
-import { cleanGroup, RequestError } from "./order-core.js";
+import { cleanGroup, cleanItemNote, RequestError } from "./order-core.js";
 
 const CATALOG = new Map(globalThis.MENU.map(dish => [dish.id, dish]));
 const available = (id,style,catalog) => {
@@ -40,7 +40,8 @@ export function cleanCartOperation(input, catalog) {
   const style = dish.styles ? (typeof input.style === "string" && dish.styles.includes(input.style) ? input.style : null) : null;
   if (dish.styles && !style) throw new RequestError("菜品做法无效");
   if (!dish.styles && input.style) throw new RequestError("该菜品不提供自选做法");
-  return { ...base, kind: "delta", dishId: dish.id, style, delta };
+  const note = cleanItemNote(input.note);
+  return { ...base, kind: "delta", dishId: dish.id, style, delta, ...(note ? { note } : {}) };
 }
 
 export function reduceCartOperations(operations, catalog) {
@@ -54,8 +55,9 @@ export function reduceCartOperations(operations, catalog) {
       continue;
     }
     if (operation.kind !== "delta") continue;
-    const key = operation.style ? `${operation.dishId}|${operation.style}` : operation.dishId;
-    const current = items.get(key) || { id: operation.dishId, style: operation.style || null, qty: 0 };
+    // The same dish with a different per-portion note is its own line.
+    const key = `${operation.dishId}|${operation.style || ""}|${operation.note || ""}`;
+    const current = items.get(key) || { id: operation.dishId, style: operation.style || null, qty: 0, ...(operation.note ? { note: operation.note } : {}) };
     current.qty = Math.max(0, current.qty + operation.delta);
     if (current.qty) items.set(key, current); else items.delete(key);
   }

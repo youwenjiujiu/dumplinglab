@@ -96,7 +96,7 @@ def receipt(order, station, items, font_path, test_mode=True, per_dish=False):
     # 买一赠一 arrives as a paid line plus a $0 line; print them as one dish with the gift noted.
     merged = {}
     for item in items:
-        key = (item.get('id') or item.get('name'), item.get('style'))
+        key = (item.get('id') or item.get('name'), item.get('style'), item.get('note'))
         line = merged.setdefault(key, dict(item, qty=0, gift=0))
         line['qty'] += item['qty']
         line['gift'] += item['qty'] if item.get('promo') == 'bogo' else 0
@@ -110,6 +110,8 @@ def receipt(order, station, items, font_path, test_mode=True, per_dish=False):
             lines += [(place, huge), (dish(item), large)]
             if item.get('style'):
                 lines += [(str(item['style']), font)]
+            if item.get('note'):
+                lines += [('这份：'+str(item['note']), large)]
             if order.get('note'):
                 lines += [('备注：'+str(order['note']), font)]
             lines += [(station_name.split(' · ')[0]+' · 订单 '+str(order.get('no', order['id'][:8]))+' · '+paid, font)]
@@ -123,6 +125,8 @@ def receipt(order, station, items, font_path, test_mode=True, per_dish=False):
         lines += [(dish(item), large)]
         if item.get('style'):
             lines += [(str(item['style']), font)]
+        if item.get('note'):
+            lines += [('这份：'+str(item['note']), large)]
     if order.get('note'):
         lines += [('备注：'+str(order['note']), font)]
     lines += [('付款 '+paid, font), ('ID '+order['id'][:18], font)]
@@ -163,6 +167,9 @@ class Bridge:
                 data, picture = receipt(payload['order'], job['station'], payload['items'], self.config['font'], self.config.get('testMode', True), self.config.get('slipPerDish', False))
             except Exception as error:
                 self.finish(job, 'failed', 'Rendering failed: '+str(error));continue
+            if self.config.get('beep', True):
+                # 佳博 ESC B n t：响 n 声，每声 t×50ms。整单打完响一次，不按每道菜响。
+                data += b'\x1bB\x03\x03'
             output = Path(self.config['receipts']);output.mkdir(parents=True, exist_ok=True)
             picture.save(output/(job['key'].replace(':', '-')+'.png'))
             self.db.execute("UPDATE jobs SET status='sending',attempts=attempts+1,updated=? WHERE key=?", (time.time(), job['key']));self.db.commit()

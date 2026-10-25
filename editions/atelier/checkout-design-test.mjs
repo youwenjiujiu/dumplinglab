@@ -68,7 +68,7 @@ for (const language of ['zh','en']) {
   ctx.order.status='awaiting_payment';vm.runInContext('Fulfilment.showPaidOrder(order)',ctx);
   assert.equal(body.innerHTML,previous,'Unpaid snapshots cannot render paid confirmation');
 }
-assert(css.includes('height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0;'));
+assert(css.includes('height: var(--visible-height, 100vh); height: 100dvh; max-height: var(--visible-height, 100vh); max-height: 100dvh; margin: 0; border-radius: 0;'),'full-screen checkout with an old-browser fallback');
 assert(css.includes('.checkout-scroll, .order-result-scroll { flex: 1; min-height: 0; overflow-y: auto;'));
 assert(css.includes('.checkout-paybar { flex: none;'),'Dock is outside the scrolling content');
 assert(css.includes('env(safe-area-inset-bottom)')&&css.includes('prefers-reduced-motion'));

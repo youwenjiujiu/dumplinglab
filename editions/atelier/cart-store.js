@@ -79,13 +79,13 @@ class TableCart extends EventTarget {
   }
   get items() {
     const items = new Map(
-      this.remote.items.map((i) => [`${i.id}|${i.style || ""}`, { ...i }]),
+      this.remote.items.map((i) => [`${i.id}|${i.style || ""}|${i.note || ""}`, { ...i }]),
     );
     const seen = new Set(this.remote.opIds || []);
     for (const op of this.pending) {
       if (op.kind !== "delta" || seen.has(op.opId)) continue;
-      const key = `${op.dishId}|${op.style || ""}`,
-        item = items.get(key) || { id: op.dishId, style: op.style, qty: 0 };
+      const key = `${op.dishId}|${op.style || ""}|${op.note || ""}`,
+        item = items.get(key) || { id: op.dishId, style: op.style, qty: 0, ...(op.note ? { note: op.note } : {}) };
       item.qty = Math.max(0, item.qty + op.delta);
       items.set(key, item);
     }

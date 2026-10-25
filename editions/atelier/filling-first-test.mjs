@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {cleanItems} from '../../web/server/order-core.js';
-const fillings=MENU.filter(d=>d.active!==false&&d.singleChoice===true);assert.equal(fillings.length,6);assert.equal(LUNCH_CHOOSE_FILLING_FIRST,true);
+const fillings=MENU.filter(d=>d.active!==false&&d.singleChoice===true);assert.equal(fillings.length,6);assert.equal(LUNCH_CHOOSE_FILLING_FIRST,false);
 for(const d of fillings){
  // 2026-10-20 最新菜单：单点不卖煎，饺子 5/9 颗、云吞 5/10 颗，做法不加价。
  const methods=d.kind==='wonton'?['soup','red-oil','peanut']:['boiled','soup','red-oil','peanut'];

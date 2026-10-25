@@ -6,6 +6,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const SG = 8 * 3600000; // Business days follow Singapore time.
 export const sgDate = iso => new Date(Date.parse(iso) + SG).toISOString().slice(0, 10);
 const cents = n => Math.round(Number(n || 0) * 100);
+const ORDER_LIST_LIMIT = 1000;
 
 export function cleanRange(query, now = new Date()) {
   const today = sgDate(now.toISOString());
@@ -43,8 +44,17 @@ export function summarizeOrders(orders, query, now = new Date()) {
     const date = new Date(t).toISOString().slice(0, 10);
     days.push(byDay[date] || { date, orders: 0, netCents: 0 });
   }
+  // Every order with what it contained, newest first, so staff can look one up.
+  const orderList = paid.slice().sort((a, b) => Date.parse(b.paidAt || b.at) - Date.parse(a.paidAt || a.at)).slice(0, ORDER_LIST_LIMIT).map(o => ({
+    id: o.id, no: o.no || null, mode: o.mode, table: o.table || null, group: o.group || null, pickupNumber: o.pickup?.number || null,
+    at: o.paidAt || o.at, note: o.note || null, paymentMethod: o.paymentMethod || 'card',
+    canRefund: o.paymentMethod !== 'wallet' && Boolean(o.paymentIntentId),
+    ...(o.counterMethod ? { counterMethod: o.counterMethod } : {}),
+    totalCents: cents(o.total), refundCents: Math.min(cents(o.total), o.refundedCents || 0), discountCents: cents(o.discount) + (o.loyalty?.discountCents || 0),
+    items: (o.items || []).map(i => ({ name: i.name, style: i.style || null, qty: i.qty, priceCents: cents(i.price), ...(i.promo ? { promo: i.promo } : {}), ...(i.note ? { note: i.note } : {}) })),
+  }));
   return {
-    range,
+    range, orders: orderList, ordersTruncated: paid.length > ORDER_LIST_LIMIT,
     totals: { ...totals, netCents, averageCents: totals.orders ? Math.round(netCents / totals.orders) : 0 },
     byMode, byDay: days,
     dishes: Object.values(dishes).map(d => ({ ...d, styles: Object.entries(d.styles).sort((a, b) => b[1] - a[1]).map(([style, qty]) => ({ style, qty })) }))

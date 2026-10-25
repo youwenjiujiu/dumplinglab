@@ -70,7 +70,7 @@ assert.throws(()=>requireStaff({headers:{}},'test-password'),e=>e.status===401);
 requireStaff({headers:{authorization:'Basic '+Buffer.from('staff:test-password').toString('base64')}},'test-password');
 assert.throws(()=>imageType(Buffer.from('<svg/>')));assert.throws(()=>imageId('../../secrets'));
 {const settings=createCatalogService(memory());
-assert.deepEqual((await settings.public()).settings,{tableDiscounts:{}},'no table discounts by default');
+assert.deepEqual((await settings.public()).settings,{tableDiscounts:{},dayDiscounts:{}},'no discounts by default');
 await settings.saveSettings({action:'table-discount',table:'a1',discount:{type:'percent',value:20,note:'周五包场'}});
 await settings.saveSettings({action:'table-discount',table:'B2',discount:{type:'amount',value:50}});
 assert.deepEqual(await settings.tableDiscount('A1'),{type:'percent',value:20,note:'周五包场'});
@@ -79,7 +79,27 @@ for(const bad of [{type:'percent',value:0},{type:'percent',value:101},{type:'amo
 await assert.rejects(settings.saveSettings({action:'table-discount',table:'A 1',discount:{type:'percent',value:10}}),e=>e.status===400);
 await settings.saveSettings({action:'table-discount',table:'A1',discount:null});
 assert.equal(await settings.tableDiscount('A1'),null);
-assert.equal((await settings.admin()).audit.filter(a=>a.action==='settings').length,3);}
+assert.equal((await settings.admin()).audit.filter(a=>a.action==='settings').length,3);
+// A day discount covers every table that has no discount of its own, only on that Singapore date.
+const today=globalThis.OrderPricing.shopDate();
+await settings.saveSettings({action:'day-discount',date:today,discount:{type:'percent',value:15,note:'包场'}});
+assert.deepEqual(await settings.tableDiscount('C9'),{type:'percent',value:15,note:'包场',scope:'day'});
+assert.deepEqual(await settings.tableDiscount('B2'),{type:'amount',value:50},'a table discount wins');
+assert.equal(globalThis.OrderPricing.discountFor((await settings.public()).settings,'C9',new Date(Date.now()+86400000)),null,'not the next day');
+assert.deepEqual(globalThis.OrderPricing.quote(100,'dinein',await settings.tableDiscount('C9')).total,93.5);
+assert.equal(globalThis.OrderPricing.quote(100,'takeaway',await settings.tableDiscount('C9')).total,100,'pickup is not discounted');
+for(const date of ['2020-01-01','2026-02-30','tomorrow'])await assert.rejects(settings.saveSettings({action:'day-discount',date,discount:{type:'percent',value:10}}),e=>e.status===400);
+// Category discounts: drinks left out, noodles at their own rate; fixed amounts can only leave categories out.
+await settings.saveSettings({action:'day-discount',date:today,discount:{type:'percent',value:20,sections:{drinks:0,noodles:10}}});
+const lines=[{section:'dumplings',amount:20},{section:'noodles',amount:10},{section:'drinks',amount:5}];
+assert.equal(globalThis.OrderPricing.quote(35,'dinein',await settings.tableDiscount('C9'),lines).discount,5,'20% of dumplings + 10% of noodles, drinks full price');
+await settings.saveSettings({action:'day-discount',date:today,discount:{type:'percent',value:0,sections:{dumplings:50}}});
+assert.equal(globalThis.OrderPricing.quote(35,'dinein',await settings.tableDiscount('C9'),lines).discount,10,'only one category discounted');
+await settings.saveSettings({action:'day-discount',date:today,discount:{type:'amount',value:40,sections:{drinks:0}}});
+assert.equal(globalThis.OrderPricing.quote(35,'dinein',await settings.tableDiscount('C9'),lines).discount,30,'a fixed amount never exceeds the discounted categories');
+for(const bad of [{type:'percent',value:0},{type:'percent',value:10,sections:{drinks:101}},{type:'percent',value:10,sections:{wine:0}},{type:'amount',value:5,sections:{drinks:10}}])await assert.rejects(settings.saveSettings({action:'day-discount',date:today,discount:bad}),e=>e.status===400);
+await settings.saveSettings({action:'day-discount',date:today,discount:null});
+assert.equal(await settings.tableDiscount('C9'),null);}
 console.log('PASS catalogue: October menu products, price edits, validation, CAS conflicts, shared-piece inventory, concurrent last-stock claim, idempotent payment/cancel, protected admin, image validation; no production calls');
 
 // Reclassification keeps SKU identity, price and stock; variant categories stay protected.

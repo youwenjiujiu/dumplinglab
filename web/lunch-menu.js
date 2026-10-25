@@ -182,7 +182,7 @@
     return Boolean(d && !d.soldOut && (!d.styles ? !style : d.styles.includes(style)));
   };
   if (typeof I18N !== "undefined") {
-    Object.assign(I18N.sections, { recommended: "推荐", dumplings: "自选口味", noodles: "面条", sides: "配菜", cold: "凉菜", drinks: "饮品" });
+    Object.assign(I18N.sections, { recommended: "推荐", dumplings: "自选", noodles: "面条", sides: "配菜", cold: "凉菜", drinks: "饮品" });
     for (const d of MENU) I18N.dishes[d.id] = { flavor: "" };
   }
 })();
@@ -297,7 +297,7 @@
 // Pick a filling first, then the preparation allowed for that product.
 (()=>{
  globalThis.MENU_VERSION='lunch-2026-10-20-v8';
- globalThis.LUNCH_CHOOSE_FILLING_FIRST=true;
+ globalThis.LUNCH_CHOOSE_FILLING_FIRST=false;
  globalThis.LUNCH_SINGLE_PREPARATIONS=['boiled','soup','red-oil','peanut'];
  const soup=LUNCH_PREPARATIONS.find(p=>p.id==='soup');soup.cn='清汤';soup.en='Clear Broth';
  const image=LUNCH_PREPARATIONS.find(p=>p.id==='tossed').img;

@@ -93,6 +93,18 @@ const payment = {
     if (!/^cs_[A-Za-z0-9_]+$/.test(id || '')) throw new RequestError('付款编号无效');
     return stripePost(`checkout/sessions/${id}/expire`, new URLSearchParams(), `dl-expire-${id}`);
   },
+  // A 4xx means Stripe refused the refund (e.g. more than remains); anything else may have gone through.
+  async refund(r) {
+    const response = await fetch('https://api.stripe.com/v1/refunds', {
+      method: 'POST', headers: { authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'content-type': 'application/x-www-form-urlencoded', 'idempotency-key': `dl-order-refund-${r.id}`, 'Stripe-Version': '2026-08-26.dahlia' },
+      body: new URLSearchParams({ payment_intent: r.paymentIntentId, amount: String(r.amountCents), 'metadata[app]': 'dumplinglab', 'metadata[dumpling_order_id]': r.orderId, 'metadata[dumpling_refund_id]': r.id }),
+      signal: AbortSignal.timeout(15000),
+    });
+    const out = await response.json().catch(() => ({}));
+    if (response.status >= 400 && response.status < 500 && response.status !== 409 && response.status !== 429) throw Object.assign(new Error(out.error?.message || 'Stripe 拒绝了这笔退款'), { rejected: true });
+    if (!response.ok) throw new Error('Stripe unavailable');
+    return out;
+  },
   // Read-only: used when a link already expired on Stripe's side.
   async retrieve(id) {
     if (!/^cs_[A-Za-z0-9_]+$/.test(id || '')) throw new RequestError('付款编号无效');

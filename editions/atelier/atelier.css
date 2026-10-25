@@ -88,7 +88,7 @@ dialog[data-mode="table3d"] {
 }
 .scene-stage {
   position: relative;
-  height: clamp(310px, 44svh, 440px);
+  height: clamp(310px, 44vh, 440px); height: clamp(310px, 44svh, 440px);
 }
 .scene-stage canvas {
   width: 100%;
@@ -1097,7 +1097,7 @@ dialog {
   background: var(--paper);
   width: 560px;
   max-width: calc(100% - 32px);
-  max-height: 88dvh;
+  max-height: 88vh; max-height: 88dvh;
   border-radius: 15px;
   box-shadow: 0 30px 100px #20170d33;
   overflow: auto;
@@ -1869,7 +1869,7 @@ html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
   dialog {
     width: 100%;
     max-width: 100%;
-    max-height: 93dvh;
+    max-height: 93vh; max-height: 93dvh;
     margin: auto 0 0;
     border-radius: 20px 20px 0 0;
   }

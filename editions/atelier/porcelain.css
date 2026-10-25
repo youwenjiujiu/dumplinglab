@@ -224,7 +224,7 @@ dialog::backdrop { background: #242a2666; backdrop-filter: blur(7px); }
   .table-tray { left: 50%; width: calc(100% - 32px); max-width: 520px; bottom: calc(12px + env(safe-area-inset-bottom)); padding: 8px 14px; }
   dialog, #sheet[data-mode="cart"][open] { border-radius: 14px 14px 0 0; }
   .sheet-content, .cart-scroll { padding-inline: 22px; }
-  #sheet[data-mode="dish"] .detail-image { height: min(32dvh, 290px); margin-inline: 16px; }
+  #sheet[data-mode="dish"] .detail-image { height: min(32vh, 290px); height: min(32dvh, 290px); margin-inline: 16px; }
   #sheet[data-mode="dish"] .detail-top h1 { font-size: 25px; }
   #sheet[data-mode="dish"] .detail-price { font-size: 19px; }
   #sheet[data-mode="dish"] .dish-action { padding-inline: 16px; gap: 12px; }

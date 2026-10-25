@@ -75,11 +75,11 @@ body.search-open .filters button { border: 0; border-radius: 4px; padding: 4px 1
   html.keyboard-open #sheet[open] {
     position: fixed; inset: var(--visible-top, 0px) 0 auto;
     margin: 8px auto 0; height: auto; min-height: 0;
-    max-height: calc(var(--visible-height, 100dvh) - 16px);
+    max-height: calc(var(--visible-height, var(--visible-height, 100vh)) - 16px); max-height: calc(var(--visible-height, 100dvh) - 16px);
     overflow-y: auto;
   }
   html.keyboard-open #sheet[data-mode="cart"][open] {
-    height: calc(var(--visible-height, 100dvh) - 16px);
+    height: calc(var(--visible-height, var(--visible-height, 100vh)) - 16px); height: calc(var(--visible-height, 100dvh) - 16px);
     overflow: hidden;
   }
   html.keyboard-open #sheet.table-entry-sheet .sheet-content,
@@ -280,17 +280,16 @@ body.viewing-table .table-tray {
 .footer-links a { display: grid; place-items: center; width: 44px; min-height: 44px; color: inherit; text-decoration: none; font-size: 20px; }
 .footer-links a:hover { color: #fff; border-bottom-color: currentColor; }
 .footer-links a:focus-visible { outline: 2px solid #fff4e6; outline-offset: 4px; }
-.footer-storefront { display:block; position: relative; margin: 0 -30px; aspect-ratio: 1.4; max-height: 470px; overflow: hidden; }
+.footer-storefront { display:block; position: relative; margin: 8px auto 0; aspect-ratio: 694 / 562; max-width: 460px; overflow: hidden; }
 .footer-storefront[data-render-state="ready"] > .footer-storefront-fallback { visibility: hidden; }
-.footer-storefront-fallback { position:absolute; width:155.75%; left:-12.69%; top:50%; transform:translateY(-50%); clip-path:polygon(12.375% 12.75%,67.5% 12.75%,68.125% 31.875%,67.25% 33.125%,66.0625% 33.125%,66.0625% 83.25%,14.75% 83.25%,14.75% 33.125%,12.5% 31.75%); }
-.footer-storefront-fallback > img { display: block; width:100%; height:auto; filter: none; }
+.footer-storefront-fallback { position:absolute; inset:0; }
+.footer-storefront-fallback > img { display: block; width:100%; height:100%; object-fit: contain; }
 .footer-awning-logo { position: absolute; width: 18%; height: 11%; left: 26%; top: 20%; background: #fff9ef; mask: url('/brand/dumpling-lab-primary.png') center / contain no-repeat; -webkit-mask: url('/brand/dumpling-lab-primary.png') center / contain no-repeat; }
 .footer-signoff { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top:8px; padding-top: 12px; border-top: 1px solid #fff4e625; font-size: 9px; line-height: 1.6; color: #e5bfa9; }
 @media (max-width: 480px) {
   .colophon.restaurant-footer { padding: 8px 20px 14px; margin-top: 24px; }
   .footer-visit { gap: 14px; }
   .footer-signoff address { font-size:9px; letter-spacing:0; }
-  .footer-storefront { margin-inline: -20px; }
   .footer-signoff { font-size: 9px; }
 }
 /* Detail reads as a menu note, not a boxed form. */
@@ -394,8 +393,8 @@ img[src*="oyster-lettuce-clean-v2"] { filter: none !important; }
   display: flex;
   flex-direction: column;
   width: min(660px, calc(100vw - 24px));
-  height: min(940px, 96dvh);
-  max-height: 96dvh;
+  height: min(940px, 96vh); height: min(940px, 96dvh);
+  max-height: 96vh; max-height: 96dvh;
   overflow: hidden;
   animation: none;
 }
@@ -1592,7 +1591,7 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
   width: min(560px, calc(100% - 32px));
   max-width: calc(100% - 32px);
   height: fit-content;
-  max-height: calc(100dvh - 32px);
+  max-height: calc(var(--visible-height, 100vh) - 32px); max-height: calc(100dvh - 32px);
   border-radius: 22px;
   overflow-y: auto;
   animation: none;
@@ -1725,24 +1724,44 @@ html[lang="en"] .category-directory .category-choice strong { font: 400 19px/1.4
 .online-review-items b { font-weight: 400; white-space: nowrap; }
 /* A single order journey: fixed navigation, independently scrolling content,
    and a payment dock that never covers the last field. Menu geometry is untouched. */
-#sheet[data-mode="online"], #sheet[data-mode="pickup"], #sheet[data-mode="success"]:has(.order-result) {
+/* Older phone browsers (e.g. some Xiaomi) drop a whole selector list containing :has(),
+   so the order-result variants live in their own rules; vh lines are fallbacks for dvh. */
+#sheet[data-mode="online"], #sheet[data-mode="pickup"] {
   --order-accent: #b5232b;
   position: fixed; inset: 0; margin: auto;
   width: min(560px, calc(100% - 32px)); max-width: calc(100% - 32px);
-  height: min(880px, 94dvh); max-height: 94dvh;
+  height: min(880px, 94vh); height: min(880px, 94dvh); max-height: 94vh; max-height: 94dvh;
   border: 0; border-radius: 16px; overflow: hidden; background: #fff;
   animation: none;
 }
-#sheet[open][data-mode="online"], #sheet[open][data-mode="pickup"], #sheet[open][data-mode="success"]:has(.order-result) { display: flex; flex-direction: column; }
-#sheet:is([data-mode="online"], [data-mode="pickup"], [data-mode="success"]:has(.order-result)) .sheet-header {
+#sheet[data-mode="success"]:has(.order-result) {
+  --order-accent: #b5232b;
+  position: fixed; inset: 0; margin: auto;
+  width: min(560px, calc(100% - 32px)); max-width: calc(100% - 32px);
+  height: min(880px, 94vh); height: min(880px, 94dvh); max-height: 94vh; max-height: 94dvh;
+  border: 0; border-radius: 16px; overflow: hidden; background: #fff;
+  animation: none;
+}
+#sheet[open][data-mode="online"], #sheet[open][data-mode="pickup"] { display: flex; flex-direction: column; }
+#sheet[open][data-mode="success"]:has(.order-result) { display: flex; flex-direction: column; }
+#sheet:is([data-mode="online"], [data-mode="pickup"]) .sheet-header {
   position: relative; inset: auto; flex: none; width: auto; height: auto;
   min-height: 64px; padding: 8px 18px 8px 24px;
   justify-content: space-between; background: #fff; border-bottom: 1px solid #eeece9;
 }
-#sheet:is([data-mode="online"], [data-mode="pickup"], [data-mode="success"]:has(.order-result)) #sheetEyebrow {
+#sheet[data-mode="success"]:has(.order-result) .sheet-header {
+  position: relative; inset: auto; flex: none; width: auto; height: auto;
+  min-height: 64px; padding: 8px 18px 8px 24px;
+  justify-content: space-between; background: #fff; border-bottom: 1px solid #eeece9;
+}
+#sheet:is([data-mode="online"], [data-mode="pickup"]) #sheetEyebrow {
   display: block; color: var(--ink); font: 500 19px/1.3 var(--sans); letter-spacing: 0; text-transform: none;
 }
-#sheet:is([data-mode="online"], [data-mode="pickup"], [data-mode="success"]:has(.order-result)) #sheetBody { flex: 1; min-height: 0; overflow: hidden; }
+#sheet[data-mode="success"]:has(.order-result) #sheetEyebrow {
+  display: block; color: var(--ink); font: 500 19px/1.3 var(--sans); letter-spacing: 0; text-transform: none;
+}
+#sheet:is([data-mode="online"], [data-mode="pickup"]) #sheetBody { flex: 1; min-height: 0; overflow: hidden; }
+#sheet[data-mode="success"]:has(.order-result) #sheetBody { flex: 1; min-height: 0; overflow: hidden; }
 #sheet .checkout-page, #sheet .order-result { display: flex; flex-direction: column; height: 100%; min-height: 0; padding: 0; font-family: var(--sans); }
 .checkout-scroll, .order-result-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scroll-padding-block: 20px; background: #f5f4f2; }
 .checkout-location { display: flex; align-items: center; gap: 16px; padding: 24px; background: #fff; }
@@ -1857,7 +1876,7 @@ img[src*="-appetite-v"] { filter: none !important; }
 .addon-dialog { --order-accent: #e51b00; position: fixed; inset: 0; width: min(370px,calc(100vw - 64px)); max-width: none; height: fit-content; max-height: none; margin: auto; padding: 0 0 58px; border: 0; border-radius: 0; overflow: visible; background: transparent; box-shadow: none; font-family: var(--sans); color: #302a24; }
 .addon-dialog[open] { display: block; animation: none; }
 .addon-dialog::backdrop { background: rgb(0 0 0 / 42%); }
-.addon-popup-card { position: relative; display: flex; flex-direction: column; height: min(510px,calc(100dvh - 160px)); min-height: 260px; background: white; border-radius: 8px; }
+.addon-popup-card { position: relative; display: flex; flex-direction: column; height: min(510px,calc(var(--visible-height, 100vh) - 160px)); height: min(510px,calc(100dvh - 160px)); min-height: 260px; background: white; border-radius: 8px; }
 .addon-popup-head { position: relative; flex: none; display: flex; align-items: center; min-height: 96px; padding: 12px 126px 12px 20px; border-radius: 8px 8px 0 0; background: #fff; overflow: hidden; }
 .addon-popup-head h2 { position: relative; z-index: 1; display: flex; align-items: center; gap: 7px; margin: 0; font: 500 20px/1.3 var(--sans); color: #302a24; }
 .addon-popup-head h2:focus { outline: none; }
@@ -1958,10 +1977,16 @@ img[src*="-appetite-v"] { filter: none !important; }
 .dinein-paid > strong { display: block; font: 500 48px/1.2 var(--sans); color: var(--order-accent); }
 .dinein-paid > p:last-child { margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 @media (max-width: 680px) {
-  #sheet[data-mode="online"], #sheet[data-mode="pickup"], #sheet[data-mode="success"]:has(.order-result) {
-    inset: 0; width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0;
+  #sheet[data-mode="online"], #sheet[data-mode="pickup"] {
+    inset: 0; width: 100%; max-width: 100%; height: var(--visible-height, 100vh); height: 100dvh; max-height: var(--visible-height, 100vh); max-height: 100dvh; margin: 0; border-radius: 0;
+  }
+#sheet[data-mode="success"]:has(.order-result) {
+    inset: 0; width: 100%; max-width: 100%; height: var(--visible-height, 100vh); height: 100dvh; max-height: var(--visible-height, 100vh); max-height: 100dvh; margin: 0; border-radius: 0;
   }
   html.keyboard-open #sheet[data-mode="online"] { top: var(--visible-top, 0px); bottom: auto; height: var(--visible-height, 100dvh); max-height: var(--visible-height, 100dvh); }
+  /* Full screen under viewport-fit=cover: keep the title and close button below the iPhone status bar. */
+  #sheet:is([data-mode="online"], [data-mode="pickup"]) .sheet-header,
+  #sheet[data-mode="success"]:has(.order-result) .sheet-header { padding-top: max(8px, env(safe-area-inset-top)); }
   .checkout-location, .checkout-block { padding-inline: 20px; }
   .checkout-paybar, .order-result-footer { padding-inline: 20px; }
 }
@@ -2018,7 +2043,7 @@ img[src*="-appetite-v"] { filter: none !important; }
   .desktop-index {
     top: 92px;
     padding: 16px 0 0;
-    max-height: calc(100dvh - 116px);
+    max-height: calc(var(--visible-height, 100vh) - 116px); max-height: calc(100dvh - 116px);
     overflow-y: auto;
     scrollbar-width: thin;
     color: var(--ink);
@@ -2120,7 +2145,7 @@ img[src*="-appetite-v"] { filter: none !important; }
     position: relative;
     top: 0;
     margin-top: 0;
-    max-height: calc(100dvh - 116px);
+    max-height: calc(var(--visible-height, 100vh) - 116px); max-height: calc(100dvh - 116px);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 22px;
@@ -2244,8 +2269,8 @@ img[src*="-appetite-v"] { filter: none !important; }
 }
 /* 推荐: a quiet vertical note in the photo's empty left margin, clear of the dish name. */
 .dish-image { position: relative; }
-.dish-pick { position: absolute; left: 2px; top: 8px; z-index: 2; writing-mode: vertical-rl; font-family: var(--sans); font-size: 12px; font-weight: 600; line-height: 1; letter-spacing: .35em; color: var(--red, #b5232b); pointer-events: none; }
-html[lang="en"] .dish-pick { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; }
+.dish-pick { position: absolute; left: 4px; top: 6px; z-index: 2; display: block; width: 22px; height: 22px; color: var(--red, #b5232b); pointer-events: none; }
+.dish-pick svg { display: block; width: 100%; height: 100%; fill: currentColor; }
 /* Menu card stepper: − count + appears once a dish is in the cart. The minus
    matches the + circle; the count replaces the old 「本桌已有 N 份」 line. */
 .dish-minus { position: relative; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid #e8d1cf; border-radius: 50%; background: #fff; color: var(--red); font-size: 18px; line-height: 1; transition: transform 120ms cubic-bezier(0.23,1,0.32,1); }
@@ -2274,3 +2299,114 @@ html[lang="en"] .dish-pick { font-size: 10px; letter-spacing: .18em; text-transf
 .cart-dishes[data-layout="list"] .cart-remove { grid-column: 2; grid-row: 3; min-height: 32px; }
 /* Bottom bar says what tapping it does. */
 .table-tray #trayActionLabel { display: inline; font-size: 12px; font-weight: 500; }
+/* Phones: categories move to a left rail; dishes become one column of row cards. */
+@media (max-width: 760px) {
+  .workspace { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 0; padding: 0; --paper-gutter: 0px; }
+  .desktop-index {
+    display: block; position: sticky; top: 60px; z-index: 5; align-self: start;
+    height: calc(var(--visible-height, 100vh) - 60px); height: calc(100dvh - 60px);
+    overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain;
+    padding: 11px 0 140px; background: #fff; border-right: 1px solid #efebe6; color: var(--ink); /* first item lines up with the first section title */
+  }
+  .desktop-index::-webkit-scrollbar { display: none; }
+  .desktop-index .eyebrow, .desktop-index .side-note { display: none; }
+  .desktop-index nav { display: flex; flex-direction: column; gap: 0; margin: 0; }
+  .desktop-index .side-category {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    width: 100%; min-height: 58px; padding: 10px 8px; border-radius: 0;
+    font-size: 14px; line-height: 1.3; text-align: center; color: #6f665d; background: none;
+    transition: color 150ms var(--ease-out, ease-out);
+  }
+  .desktop-index .side-category small { display: none; }
+  html[lang="en"] .desktop-index .side-category { padding-inline: 8px; font-size: 11px; letter-spacing: 0; }
+  html[lang="en"] .desktop-index .side-category.active { font-weight: 500; }
+  html[lang="en"] .workspace { grid-template-columns: 96px minmax(0, 1fr); }
+  html[lang="en"] .desktop-index { padding-top: 7px; }
+  .desktop-index .side-category.active { background: none; color: var(--red); font-weight: 600; }
+  .desktop-index .side-category.active::after { content: none; }
+  .header-actions > .search-button { display: grid; place-items: center; width: 36px; height: 44px; color: var(--ink); }
+  .menu-toolbar { display: none; }
+  #menuList { margin-top: 0; border-radius: 0; }
+  .menu-section { padding: 18px 14px 14px; scroll-margin-top: 60px; }
+  .table-line { margin-inline: 0; }
+  .menu-section.chapter-mains .dish-grid { gap: 8px; }
+  .chapter-mains .dish-open { grid-template-columns: 40% minmax(0, 1fr); gap: 12px; }
+  .chapter-mains .dish-image { aspect-ratio: 1; }
+  .chapter-mains .dish-info { padding: 4px 0 40px; }
+  .chapter-mains .dish-name, html[lang="en"] .chapter-mains .dish-name { font-size: 17px; line-height: 1.35; }
+  .chapter-mains .dish-flavor { display: none; }
+  .recommendation-heading { flex-wrap: wrap; row-gap: 0; }
+  .recommendation-heading .section-suggestion { white-space: normal; }
+  /* Let the last category scroll to the top, so tapping it in the rail keeps it highlighted. */
+  #menuList > .menu-section:last-of-type { min-height: calc(var(--visible-height, 100vh) - 60px); min-height: calc(100dvh - 60px); }
+}
+/* After a preparation is chosen, fillings are option buttons with a small photo,
+   like a drink's flavour choices; tapping one opens the portion choice. */
+.filling-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.filling-chip {
+  position: relative; display: grid; grid-template-columns: 40px auto; grid-template-rows: auto auto; column-gap: 10px; align-items: center;
+  min-height: 56px; padding: 6px 14px 6px 6px; border: 1px solid #e3ddd6; border-radius: 10px; background: #fff;
+  text-align: left; color: var(--ink); font: 400 15px/1.3 var(--sans);
+}
+.filling-chip img { grid-row: 1 / 3; width: 40px; height: 40px; object-fit: contain; }
+.filling-chip small { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.filling-chip:active { transform: scale(.97); }
+.filling-chip.has-qty { border-color: var(--red); }
+.filling-chip b { position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--red); color: #fff8eb; font: 600 12px/20px var(--sans); text-align: center; }
+.filling-chip:disabled { opacity: .45; }
+@media (max-width: 760px) { .filling-chips { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+/* Search: a rounded field with 取消 beside it, popular searches before typing,
+   and a + on every result, as in delivery apps. */
+body.search-open .search-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; padding: 10px 16px; }
+body.search-open .search-panel .filters { grid-column: 1 / -1; }
+body.search-open .search-input { height: 40px; padding: 0 4px 0 12px; border: 0; border-radius: 999px; background: #f2efeb; gap: 8px; }
+body.search-open .search-input input { padding: 0; font-size: 16px; }
+body.search-open .search-input #searchIcon .icon { width: 18px; height: 18px; color: var(--muted); }
+body.search-open .search-input #clearSearch { min-width: 32px; height: 32px; font-size: 18px; color: var(--muted); }
+#cancelSearch { min-width: 44px; min-height: 44px; padding: 0 4px; font-size: 15px; white-space: nowrap; color: var(--red); }
+#searchPanel:not([hidden]) > #cancelSearch { display: block; }
+.search-hot { padding: 8px 16px 24px; }
+.search-hot h3 { margin: 6px 0 12px; font: 500 14px/1.4 var(--sans); color: var(--muted); }
+.search-hot > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.search-hot button { min-height: 36px; padding: 0 14px; border-radius: 999px; background: #f2efeb; color: var(--ink); font: 400 14px/1 var(--sans); }
+.search-hot button:active { transform: scale(.97); }
+.search-result { display: flex; align-items: center; gap: 8px; }
+.search-result-open { flex: 1; min-width: 0; min-height: 80px; }
+.search-result .search-add { position: relative; flex: none; display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid #e8d1cf; border-radius: 50%; color: var(--red); font-size: 18px; line-height: 1; }
+.search-result .search-add::after { content: ""; position: absolute; inset: -8px; }
+.search-result mark { background: none; color: var(--red); }
+body.search-open .filters { gap: 8px; margin-top: 10px; }
+body.search-open .filters button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: #f2efeb; color: var(--ink); font-size: 13px; }
+body.search-open .filters button[aria-pressed="true"], body.search-open .filters button.active { background: #fbeceb; color: var(--red); }
+/* Phones: the header icons sit an equal 14px apart, measured from what is visible;
+   each keeps a 44px tap area through an invisible ::after. */
+@media (max-width: 760px) {
+  .header-actions { gap: 14px; }
+  /* The drawings carry ~2-3px of blank margin; cancel it so the visible strokes are 14px apart. */
+  .masthead .header-actions .rewards-bar { margin: 0; }
+  .masthead .header-actions > .search-button { margin: 0 -1.9px 0 -2.7px; }
+  .masthead .header-actions .rewards-bar > button, .masthead .header-actions > .search-button, .masthead .header-actions .language-button {
+    position: relative; inset-inline-start: 0; width: auto; min-width: 0; padding: 0;
+  }
+  .header-actions > .search-button .icon { display: block; width: 20px; height: 20px; }
+  .header-actions .rewards-bar > button::after, .header-actions > .search-button::after, .header-actions .language-button::after {
+    content: ""; position: absolute; inset: 0 -7px;
+  }
+}
+
+.cart-dish-copy .cart-line-note, .receipt-item-copy .cart-line-note, .checkout-lines .cart-line-note { color: var(--red); }
+/* One-page dumpling builder: preparation, filling, portion, note, add. */
+.lunch-builder { display: grid; gap: 12px; }
+.lunch-builder .builder-title { margin: 10px 0 0; font: 500 15px/1.4 var(--sans); color: var(--muted); }
+.builder-preps, .builder-portions { display: flex; flex-wrap: wrap; gap: 8px; }
+.builder-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 14px; border: 1px solid #e3ddd6; border-radius: 10px; background: #fff; color: var(--ink); font: 400 14px/1.3 var(--sans); }
+.builder-preps .builder-chip { padding-left: 4px; }
+.builder-chip img { width: 34px; height: 34px; object-fit: contain; }
+.builder-chip[aria-pressed="true"], .filling-chip[aria-pressed="true"] { border-color: var(--red); background: #fbeceb; color: var(--red); }
+.builder-chip:active { transform: scale(.97); }
+.builder-note { display: grid; gap: 6px; margin-top: 4px; font: 500 15px/1.4 var(--sans); color: var(--muted); }
+.builder-note input { min-height: 44px; padding: 0 12px; border: 1px solid #e3ddd6; border-radius: 10px; background: #fff; color: var(--ink); font: 400 16px/1.3 var(--sans); }
+.builder-note input:focus { outline: none; border-color: var(--red); }
+.builder-add { min-height: 48px; margin-top: 6px; border-radius: 12px; font-size: 16px; }
+.builder-add:disabled { opacity: .5; }
+@media (max-width: 760px) { .builder-preps .builder-chip { flex: 1 1 calc(50% - 8px); } .builder-portions .builder-chip { flex: 1 1 0; justify-content: center; } }

@@ -30,6 +30,9 @@ export default async function handler(req, res) {
     if (input.action === 'cancel') return json(res, 200, { ok: true, ...await onlineService.cancel(input) });
     if (input.action === 'cancel-table') return json(res, 200, { ok: true, ...await onlineService.cancelForTable(input) });
     if (input.action === 'staff-cancel') { requireStaff(req); return json(res, 200, { ok: true, ...await onlineService.staffCancel(input.id) }); }
+    if (input.action === 'staff-quote') { requireStaff(req); return json(res, 200, { ok: true, order: await onlineService.staffQuote(input) }); }
+    if (input.action === 'staff-order') { requireStaff(req); return json(res, 200, { ok: true, order: await onlineService.staffOrder(input) }); }
+    if (input.action === 'staff-refund') { requireStaff(req); return json(res, 200, { ok: true, order: await onlineService.staffRefund(input) }); }
     if (!['quote','checkout','confirm-reward','confirm-wallet'].includes(input.action)) throw new RequestError('操作无效');
     if (input.mode === 'delivery') throw new RequestError('目前仅支持堂食和打包自取', 409);
     const member=await memberService().identity(req.headers);

@@ -22,7 +22,7 @@
 .rewards-dialog {
   margin: auto;
   width: min(440px, calc(100vw - 24px));
-  max-height: 88dvh;
+  max-height: 88vh; max-height: 88dvh;
   padding: 0;
   background: #fff;
   color: #302a24;
@@ -503,7 +503,6 @@
 @keyframes dumpling-greet{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-1px) rotate(1deg)}}
 @keyframes dumpling-wave{0%{transform:rotate(3deg)}45%{transform:rotate(-16deg)}70%{transform:rotate(5deg)}100%{transform:rotate(-12deg)}}
 @media(prefers-reduced-motion:reduce){.member-dumpling-person,.member-dumpling-person .dumpling-wave{animation:none}}
-.member-dumpling-mark{display:block;width:30px;height:28px;fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round;transform-origin:50% 75%;animation:dumpling-mark 2.4s ease-in-out infinite}
-.member-dumpling-mark path:first-child{fill:#fff;stroke-width:1.55}
+.member-dumpling-mark,.rewards-bar .member-dumpling-mark{display:block;width:20px;height:26px;fill:currentColor;stroke:none;transform-origin:50% 75%;animation:dumpling-mark 2.4s ease-in-out infinite}
 @keyframes dumpling-mark{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(3deg) translateY(-1px)}}
 @media(prefers-reduced-motion:reduce){.member-dumpling-mark{animation:none}}

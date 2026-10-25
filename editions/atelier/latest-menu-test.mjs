@@ -9,7 +9,7 @@ void specification;
 for(const [key,price] of Object.entries({'mince-scallion-noodles':9.8,'mince-chilli-noodles':9.8,'shaanxi-hot-oil-noodles':10.8,'century-egg-noodles':11.8,'mince-red-oil-noodles':9.8,'pork-rice':5.8,'braised-tofu':6.2,'braised-pork-belly':7.2,'pork-cutlet':7.2,'chicken-wings':6.2,'fried-wontons':6.2,'cold-veg-shreds':5.8,'choy-sum':6.8,'oyster-lettuce':6.8,'century-egg-tofu':5.2,'onsen-egg':1.5,'pickled-radish':1.5,'peanut-sesame-sauce':0.5,'chilli-oil':0.5,'cucumber-tofu-soup':1.2,'barley':3.5,'lemon-tea':4.2,'sour-plum':3.9,'soft-drink':3,'water':1}))assert.equal(find(key).price,price,key);
 for(const [key,price] of Object.entries({'pork-rice':9.8,'braised-tofu':10.8,'braised-pork-belly':12.5,'pork-cutlet':12.5,'chicken-wings':11.5,'fried-wontons':11.5}))assert.equal(find(key+'-large').price,price,key+' large');
 assert.deepEqual(LUNCH_SINGLE_PREPARATIONS,['boiled','soup','red-oil','peanut','fried']);
-assert.equal(LUNCH_CHOOSE_FILLING_FIRST,true);
+assert.equal(LUNCH_CHOOSE_FILLING_FIRST,false);
 const singles=active.filter(d=>d.singleChoice===true);assert.equal(singles.length,6);
 for(const d of singles)for(const prep of (d.kind==='wonton'?['soup','red-oil','peanut']:['boiled','soup','red-oil','peanut']))for(const pieces of (d.kind==='wonton'?[5,10]:[5,9]))assert(Object.values(d.variants).some(v=>v.prep===prep&&v.pieces===pieces),`${d.cn} ${prep} ${pieces}`);
 for(const d of singles)assert(!Object.values(d.variants).some(v=>v.prep==='fried'),`${d.cn} 单点不提供煎`);

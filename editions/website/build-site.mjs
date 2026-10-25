@@ -36,6 +36,8 @@ await writeFile(resolve(output,'vercel.json'),JSON.stringify({
   // Dish photography, including anything uploaded through the back office
   // after this release was built.
   {source:'/img/:path*',destination:`${ordering}/img/:path*`},
+  // Photos uploaded in the back office are served by the ordering API, not /img.
+  {source:'/api/catalog-image',destination:`${ordering}/api/catalog-image`},
  ],
  redirects:[
   {source:'/order',destination:`${ordering}/`,permanent:false},

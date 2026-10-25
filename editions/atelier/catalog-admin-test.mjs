@@ -17,6 +17,7 @@ class Element {
   showModal() { this.open=true; }
   close() { this.open=false; }
   reset() {}
+  querySelector(s) { return (this.children||={})[s]||=new Element(s); }
   querySelectorAll() { return [...Object.values(fields), ...['save','closeEditor','cancelEdit','keepEditing','discardChanges'].map(id=>nodes.get('#'+id))]; }
 }
 let focused;
@@ -25,6 +26,7 @@ for(const [,name] of html.matchAll(/name="([^"]+)"/g)) fields[name]=new Element(
 fields.section.options=Object.keys({dumplings:1,noodles:1,sides:1,cold:1,drinks:1,recommended:1}).map(value=>({value}));
 nodes.get('#editForm').elements=fields;
 nodes.get('#discountForm').elements=Object.fromEntries(['table','type','value','note'].map(k=>[k,new Element(k)]));nodes.get('#discountForm').elements.type.value='percent';
+nodes.get('#dayDiscountForm').elements=Object.fromEntries(['date','type','value','note'].map(k=>[k,new Element(k)]));nodes.get('#dayDiscountForm').elements.type.value='percent';
 nodes.set('.metrics',new Element('.metrics')); nodes.set('.editor-scroll',new Element('.editor-scroll'));
 nodes.get('#workspace').hidden=true;
 const nav=['catalog','history'].map(view=>{const e=new Element(view);e.dataset.view=view;return e;});
@@ -52,7 +54,7 @@ const ctx=vm.createContext({structuredClone,TextEncoder,Date,window:win,location
     return {ok:true,json:async()=>structuredClone(state)};
   }
 });
-vm.runInContext(source,ctx);
+vm.runInContext(await readFile(new URL('../../web/order-pricing.js',import.meta.url),'utf8'),ctx);vm.runInContext(source,ctx);
 const node=id=>nodes.get('#'+id), event={preventDefault(){},target:{reset(){}}};
 await node('login').onsubmit(event);
 assert.equal(node('workspace').hidden,false);assert.equal(node('countAll').textContent,4);assert.equal(node('countAvailable').textContent,2);assert.equal(node('countLow').textContent,1);assert.equal(node('countSold').textContent,1);

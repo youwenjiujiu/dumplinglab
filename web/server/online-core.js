@@ -1,7 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import QRCode from 'qrcode';
 import { cleanItems, cleanOrder, RequestError } from './order-core.js';
-import { cleanCartOpIds } from './cart-core.js';
+import { cleanCartOpIds, cleanTable } from './cart-core.js';
 import { cleanNickname } from './cart-meta.js';
 import { summarizeOrders } from './report-core.js';
 
@@ -71,12 +71,12 @@ export const PAYMENT_WINDOW_MS = 15 * 60000;
 export const preparationState = order => order.collectedAt || order.resolvedAt ? 'collected'
   : order.readyAt ? 'ready' : order.preparingAt ? 'preparing' : 'received';
 export const publicOrder = order => {
-  const { tokenHash: secret, fingerprint, requestFingerprint, memberId, paymentIntentId, refundRequests, localRefundCents, sessionId, clientSecret, ...view } = order;
+  const { tokenHash: secret, fingerprint, requestFingerprint, memberId, paymentIntentId, refundRequests, cardRefunds, localRefundCents, sessionId, clientSecret, ...view } = order;
   return { ...view, ...(order.mode === 'takeaway' && order.status === 'paid' ? { preparationStatus: preparationState(order) } : {}) };
 };
 export function createOnlineService({ storage, payment, checkAddress, config, dining, inventory, rewards, wallet, now = () => new Date() }) {
   const requestFingerprint = input => createHash('sha256').update(JSON.stringify({
-    mode:input.mode,items:input.items?.map(i=>[i.id,i.style||null,Number(i.qty)]),
+    mode:input.mode,items:input.items?.map(i=>[i.id,i.style||null,Number(i.qty),i.note||null]),
     customer:input.customer,date:input.date,slot:input.slot,pickupLocation:input.pickupLocation||null,note:input.note||'',
     table: input.table || null, group: input.group || null, cartOpIds: input.cartOpIds || null,
     ...(input.rewardSelection ? {rewardSelection:input.rewardSelection} : {}),
@@ -101,8 +101,21 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(order&&['paid','expired'].includes(order.status))await finalize(order);
     }
   }
+  // Priced exactly like a guest order of the same mode, table discount included.
+  async function counterOrder(input){
+    if(!['dinein','takeaway'].includes(input.mode))throw new RequestError('请选择堂食或自取');
+    if(input.mode==='dinein'&&!String(input.table||'').trim())throw new RequestError('请填写桌号');
+    const table=input.mode==='dinein'?cleanTable(input.table):null;
+    const menu=inventory?await inventory.menu():undefined,items=cleanItems(input.items,menu);
+    const sectionOf=id=>menu?.find(d=>d.id===id)?.section||null;
+    const lines=items.map(i=>({id:i.id,style:i.style||null,section:sectionOf(i.id),amount:i.price*i.qty}));
+    const discount=input.mode==='dinein'?await inventory?.tableDiscount?.(table):null;
+    return {type:'order',mode:input.mode,table:table?table.toUpperCase():null,group:table?'A':null,items,customer:{},fulfilment:{},
+      note:typeof input.note==='string'?input.note.trim().slice(0,240):'',...globalThis.OrderPricing.quote(items.reduce((sum,i)=>sum+i.price*i.qty,0),input.mode,discount,lines),paymentMethod:'counter'};
+  }
   async function checked(input, memberId) {
-    const order = cleanOnline(input, config, now(), inventory ? await inventory.menu() : undefined);
+    const menu = inventory ? await inventory.menu() : undefined;
+    const order = cleanOnline(input, config, now(), menu);
     if (order.mode === 'delivery') {
       const result = await checkAddress(order.customer.postalCode);
       if (!result || !Number.isFinite(result.distanceKm)) throw new RequestError('暂时无法核实配送地址，请稍后重试', 503);
@@ -113,11 +126,17 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     if(input.rewardSelection&&!memberId)throw new RequestError('请先登录后使用积分或兑换券',401);
     // The back office decides a table's discount; the client only displays it.
     const tableDiscount = order.mode === 'dinein' ? await inventory?.tableDiscount?.(order.table) : null;
-    if (tableDiscount) Object.assign(order, globalThis.OrderPricing.quote(order.foodTotal, order.mode, tableDiscount));
+    // Category discounts need each line's menu section.
+    const sectionOf = id => menu?.find(d => d.id === id)?.section || null;
+    const lines = order.items.map(i => ({ id: i.id, style: i.style || null, section: sectionOf(i.id), amount: i.price * i.qty }));
+    if (tableDiscount) Object.assign(order, globalThis.OrderPricing.quote(order.foodTotal, order.mode, tableDiscount, lines));
     if(memberId&&rewards){
       order.memberId=memberId;
       order.loyalty=await rewards.quote(memberId,order,input.rewardSelection||null);
-      Object.assign(order,globalThis.OrderPricing.quote((order.loyalty.grossFoodCents-order.loyalty.discountCents)/100,order.mode,tableDiscount));
+      // The reward pays for one unit of its dish, so that unit is not discounted again.
+      const l=order.loyalty, gift=l.discountCents?lines.find(x=>x.id===l.dishId&&x.style===(l.style||null)&&x.amount>0):null;
+      const rewardLines=lines.map(x=>x===gift?{...x,amount:Math.max(0,x.amount-l.discountCents/100)}:x);
+      Object.assign(order,globalThis.OrderPricing.quote((l.grossFoodCents-l.discountCents)/100,order.mode,tableDiscount,rewardLines));
     }
     if(input.paymentMethod&&!['stripe','wallet'].includes(input.paymentMethod))throw new RequestError('支付方式无效');
     if(input.paymentMethod==='wallet'){if(!wallet||!memberId)throw new RequestError('请先登录后使用余额',401);order.memberId=memberId;order.paymentMethod='wallet';order.walletAllocation=await wallet.check(order);if(rewards)order.loyalty=await rewards.quote(memberId,order,input.rewardSelection||null);}
@@ -128,7 +147,8 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     if(order.inventoryManaged)await inventory.settle(order,order.status);
     if(order.memberId&&rewards){const result=await rewards.settle(order,order.status);if(order.status==='paid'&&!order.rewardsSettled)order=await mutate(order.id,prior=>({...prior,rewardsSettled:true,rewardPointsEarned:result.earnedPoints}));}
     if(order.localRefundCents!==undefined&&!order.refundCompleted){if(order.paymentMethod==='wallet')await wallet.refundOrder(order,order.localRefundCents);if(order.memberId&&rewards)await rewards.refund(order,order.localRefundCents);order=await mutate(order.id,prior=>({...prior,refundedCents:Math.max(prior.refundedCents||0,order.localRefundCents),refundCompleted:prior.localRefundCents===order.localRefundCents}));}
-    if(order.mode==='dinein'){
+    // A counter order never went through a table's shared cart.
+    if(order.mode==='dinein'&&order.paymentMethod!=='counter'){
       if(order.status==='paid'){await dining.finishPayment(order);if(order.refundedCents!==undefined||order.freeRewardRefunded)await dining.syncRefund?.(order);if(!order.fulfilmentCommitted)order=await mutate(order.id,prior=>({...prior,fulfilmentCommitted:true}));}
       if(order.status==='expired')await dining.releasePayment(order);
     }
@@ -141,7 +161,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       // A link still being created is recovered by its idempotent request, then voided.
       // Stripe links end 46 minutes after the order starts, so an older order has none.
       const mayHaveLink=order.sessionId||(by!=='staff'&&now().getTime()-Date.parse(order.at)<46*60000);
-      if(order.total!==0&&order.paymentMethod!=='wallet'&&mayHaveLink){
+      if(order.total!==0&&order.paymentMethod!=='wallet'&&order.paymentMethod!=='counter'&&mayHaveLink){
         const id=order.sessionId||(await payment.create(order)).id;
         let session;
         try{session=await payment.expire(id)}catch(error){session=payment.retrieve?await payment.retrieve(id):null;if(!session)throw error}
@@ -259,6 +279,64 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(!validId(input.id)||!validId(input.refundId)||!Number.isSafeInteger(input.amountCents)||input.amountCents<0||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>200)throw new RequestError('请填写有效的退款金额和原因');
       const order=await mutate(input.id,prior=>{if(!prior||prior.status!=='paid'||(prior.paymentMethod!=='wallet'&&prior.total!==0))throw new RequestError('此订单须通过原支付渠道退款',409);const requests={...prior.refundRequests};if(requests[input.refundId]){if(requests[input.refundId].amountCents!==input.amountCents||requests[input.refundId].reason!==input.reason)throw new RequestError('退款请求不一致',409);return prior;}const amount=(prior.localRefundCents||0)+input.amountCents;if(amount>globalThis.OrderPricing.cents(prior.total)||(input.amountCents===0&&(prior.total!==0||prior.freeRewardRefunded)))throw new RequestError('超过可退金额',409);requests[input.refundId]={amountCents:input.amountCents,reason:input.reason,at:now().toISOString()};return {...prior,refundRequests:requests,localRefundCents:amount,refundCompleted:false,...(prior.total===0?{freeRewardRefunded:true}:{})};});return publicOrder(await finalize(order));
     },
+    async staffQuote(input){return publicOrder(await counterOrder(input));},
+    // Staff takes an order at the counter and collects cash or card there; it prints at once.
+    // Saved before the stock hold, so a retry with the same requestId continues instead of doubling.
+    async staffOrder(input){
+      if(!validId(input.requestId))throw new RequestError('订单编号无效');
+      if(!['dinein','takeaway'].includes(input.mode))throw new RequestError('请选择堂食或自取');
+      if(!['cash','card'].includes(input.counterMethod))throw new RequestError('请选择收款方式');
+      let order=(await storage.read(input.requestId))?.value;
+      if(!order){
+        const data=await counterOrder(input);
+        if(input.expectedTotal!==undefined&&globalThis.OrderPricing.cents(input.expectedTotal)!==globalThis.OrderPricing.cents(data.total))throw new RequestError('价格已更新，请重新核对',422);
+        order=await mutate(input.requestId,prior=>prior||{...data,id:input.requestId,counterMethod:input.counterMethod,
+          ...(inventory?{inventoryManaged:true}:{}),at:now().toISOString(),no:`S${input.requestId.slice(0,6).toUpperCase()}`,status:'awaiting_payment'});
+      }
+      if(order.paymentMethod!=='counter')throw new RequestError('订单编号冲突',409);
+      if(order.status==='expired')throw new RequestError('这单已取消，请重新点单',410);
+      if(order.status!=='paid'){
+        if(order.inventoryManaged){
+          try{await inventory.reserve(order)}catch(e){await mutate(order.id,prior=>prior.status==='paid'?prior:{...prior,status:'expired',cancelledBy:'stock'});throw e;}
+        }
+        order=await mutate(order.id,async prior=>prior.status==='paid'?prior:{...prior,status:'paid',paidAt:now().toISOString(),...(prior.mode==='takeaway'?{pickup:await pickupTicket(prior)}:{})});
+      }
+      return publicOrder(await finalize(order));
+    },
+    // Staff refund of a card/PayNow order straight to Stripe. The request is reserved on
+    // the order first, so a retry reuses the same Stripe idempotency key and two staff
+    // cannot together refund more than was paid. The charge.refunded webhook still
+    // reconciles the exact total and member points afterwards.
+    async staffRefund(input){
+      if(!validId(input.id)||!validId(input.refundId)||!Number.isSafeInteger(input.amountCents)||input.amountCents<=0||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>200)throw new RequestError('请填写有效的退款金额和原因');
+      if(!payment.refund)throw new RequestError('退款暂不可用',503);
+      const reason=input.reason.trim();
+      let order=await mutate(input.id,prior=>{
+        if(!prior||prior.type!=='order'||prior.status!=='paid')throw new RequestError('只有付款成功的订单可以退款',409);
+        if(prior.paymentMethod==='wallet'||!prior.paymentIntentId)throw new RequestError('这单不是刷卡付款，请在「余额」页退款',409);
+        const refunds={...prior.cardRefunds},old=refunds[input.refundId];
+        if(old){if(old.amountCents!==input.amountCents||old.reason!==reason)throw new RequestError('退款请求不一致',409);return prior;}
+        const held=Object.values(refunds).filter(r=>r.status!=='failed').reduce((s,r)=>s+r.amountCents,0);
+        const base=Math.max(prior.refundedCents||0,held);
+        if(base+input.amountCents>globalThis.OrderPricing.cents(prior.total))throw new RequestError('超过可退金额，最多还能退 S$'+((globalThis.OrderPricing.cents(prior.total)-base)/100).toFixed(2),409);
+        refunds[input.refundId]={amountCents:input.amountCents,reason,baseCents:base,status:'reserved',at:now().toISOString()};
+        return {...prior,cardRefunds:refunds};
+      });
+      const request=order.cardRefunds[input.refundId];
+      if(request.status==='succeeded')return publicOrder(order);
+      if(request.status==='failed')throw new RequestError('这笔退款已失败，请重新发起',409);
+      let refund;
+      try{refund=await payment.refund({id:input.refundId,orderId:order.id,paymentIntentId:order.paymentIntentId,amountCents:input.amountCents});}
+      catch(error){
+        // Only a definite rejection releases the reservation; anything else may have reached Stripe.
+        if(error.rejected){await mutate(order.id,prior=>({...prior,cardRefunds:{...prior.cardRefunds,[input.refundId]:{...prior.cardRefunds[input.refundId],status:'failed',error:error.message}}}));throw new RequestError('退款失败：'+error.message,409);}
+        throw new RequestError('退款结果未确认，请稍后再点一次（不会重复退）',503);
+      }
+      if(refund.status==='failed'||refund.status==='canceled'){await mutate(order.id,prior=>({...prior,cardRefunds:{...prior.cardRefunds,[input.refundId]:{...prior.cardRefunds[input.refundId],status:'failed',stripeRefundId:refund.id}}}));throw new RequestError('退款失败，请到 Stripe 查看原因',409);}
+      order=await mutate(order.id,prior=>({...prior,refundedCents:Math.max(prior.refundedCents||0,request.baseCents+input.amountCents),
+        cardRefunds:{...prior.cardRefunds,[input.refundId]:{...prior.cardRefunds[input.refundId],status:'succeeded',stripeRefundId:refund.id}}}));
+      return publicOrder(await finalize(order));
+    },
     // Staff view of payments started but not finished; each still holds stock.
     async pendingPayments(){
       return (await expireStale(await storage.all())).filter(o=>o.type==='order'&&o.status==='awaiting_payment')
@@ -346,7 +424,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(order.memberId&&rewards)await rewards.refund(order,charge.amount_refunded);
       return finalize(await mutate(id,prior=>({...prior,refundedCents:Math.max(prior.refundedCents||0,charge.amount_refunded)})));
     },
-    async feed() { return (await expireStale(await storage.all())).filter(o => o.mode !== 'dinein' && o.status === 'paid' && !o.resolvedAt && !o.freeRewardRefunded && (o.paymentMethod!=='wallet'||o.walletSettled) && (!o.refundedCents||o.refundedCents<globalThis.OrderPricing.cents(o.total))).map(publicOrder); },
+    async feed() { return (await expireStale(await storage.all())).filter(o => (o.mode !== 'dinein' || o.paymentMethod === 'counter') && o.status === 'paid' && !o.resolvedAt && !o.freeRewardRefunded && (o.paymentMethod!=='wallet'||o.walletSettled) && (!o.refundedCents||o.refundedCents<globalThis.OrderPricing.cents(o.total))).map(publicOrder); },
     // A pickup credential grants status-only access, not staff authority or PII.
     // It also lets receipts created before status tracking refresh safely.
     async progress(id, code) {
@@ -381,7 +459,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     async resolve(id) {
       if (!validId(id)) return false;
       const record = await storage.read(id);
-      if (!record || record.value.mode === 'dinein') return false;
+      if (!record || (record.value.mode === 'dinein' && record.value.paymentMethod !== 'counter')) return false;
       await mutate(id, order => {
         if (order.status !== 'paid') throw new RequestError('订单尚未付款', 409);
         return { ...order, resolvedAt: order.resolvedAt || now().toISOString(), ...(order.pickup ? {collectedAt:order.collectedAt || now().toISOString()} : {}) };

@@ -26,7 +26,7 @@ assert.equal(ctx.MENU.length,49);   // 41 on sale + 8 retired kept for old recei
 const onSale=ctx.MENU.filter(d=>d.active!==false);assert.equal(onSale.length,41);
 assert.equal(JSON.stringify(onSale.filter(d=>!d.img).map(d=>d.cn)),"[]","Do not publish a dish on sale without its photo");
 for(const d of onSale)for(const img of [d.img,...Object.values(d.preparationImages||{})].filter(Boolean))for(const size of ["s","l"])assert((await stat(resolve(release,"img",size,img.replace(/\.(png|jpe?g|webp)$/i,".webp")))).size>0,img);
-assert.equal(vm.runInContext("I18N.sections.dumplings",ctx),"自选口味");
+assert.equal(vm.runInContext("I18N.sections.dumplings",ctx),"自选");
 for (const path of scripts) execFileSync(process.execPath,["--check",resolve(release,"."+path)]);
 for (const dir of ['api','server']) for (const file of await readdir(resolve(release,dir))) {
   if (file.endsWith('.js')) execFileSync(process.execPath,['--check',resolve(release,dir,file)]);

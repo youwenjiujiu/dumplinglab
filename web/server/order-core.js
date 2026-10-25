@@ -20,6 +20,12 @@ const requiredText = (value, pattern, message) => {
   return text;
 };
 
+// A short request for one line, e.g. 少辣. Printed on that dish's slip.
+export const cleanItemNote = value => {
+  const note = typeof value === "string" ? value.replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, 60) : "";
+  return note || null;
+};
+
 export const cleanGroup = value => requiredText(value || "A", GROUP_RE, "用餐组编号无效").toUpperCase();
 
 export function parseBody(body) {
@@ -67,7 +73,8 @@ export function cleanItems(inputItems, catalog) {
     if (!dish.styles && item.style) throw new RequestError("该菜品不提供自选做法");
     const price = globalThis.lunchPrice(dish, style);
     if (!Number.isFinite(price)) throw new RequestError("菜品规格价格无效");
-    return { id: dish.id, name: dish.cn, englishName: dish.name, style, qty, price, service: "lunch", printStation: printStationFor(dish) };
+    const note = cleanItemNote(item.note);
+    return { id: dish.id, name: dish.cn, englishName: dish.name, style, qty, price, service: "lunch", printStation: printStationFor(dish), ...(note ? { note } : {}) };
   });
   // 买一赠一 lines are split so every snapshot line keeps one unit price; the free
   // units follow their paid line at $0.

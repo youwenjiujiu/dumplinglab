@@ -1,6 +1,7 @@
-// Original owner-approved storefront moves as one connected 2D object.
+// The shopfront moves in as one connected 2D object.
 const Base = globalThis.HTMLElement ?? class {};
 const DURATION = 2200;
+const PHOTO = '/brand/restaurant-front-cutout-v1.webp';
 const EASE = 'cubic-bezier(.4,0,.6,1)';
 export class DumplingStorefrontInk extends Base {
   constructor() {
@@ -20,37 +21,15 @@ export class DumplingStorefrontInk extends Base {
     try { await source.decode(); } catch { return; }
     if (!this.isConnected || generation !== this._generation) return;
     const shadow = this.shadowRoot || this.attachShadow({mode:'open'});
-    const art = '<image href="/brand/footer-storefront-v1.webp" width="1600" height="800" class="ink"/>';
+    // The restaurant's shopfront photo (same as the website), cut out without the neighbouring walls.
     shadow.innerHTML = `<style>
       :host{display:block;position:relative}
-      .scene{position:absolute;inset:3% 6% 0;pointer-events:none}
+      .scene{position:absolute;inset:0;pointer-events:none}
       svg{display:block;width:100%;height:100%;overflow:visible}
-      .ink{filter:none}
-      .logo{filter:brightness(0) invert(1)}
       .building{transform:translate(-48px,64px);opacity:0}
     </style>
-    <div class="scene" aria-hidden="true"><svg viewBox="192 88 904 672" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <clipPath id="ground"><rect x="192" y="666" width="904" height="94"/></clipPath>
-        <!-- End at the existing red frame/tile edge, not halfway through the
-             adjacent cream wall. Keep the awning's small natural overhang. -->
-        <clipPath id="facade"><path d="M236 265H1057V666H236Z"/></clipPath>
-        <clipPath id="awning"><path d="M198 102H1080L1090 255L1076 265H236L200 254Z"/></clipPath>
-        <!-- Same desktop ink extraction, written directly into alpha. Avoid
-             CSS-filtered luminance masks, which can expose the floor on iOS. -->
-        <filter id="pavement-alpha" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse" x="192" y="666" width="904" height="94">
-          <feColorMatrix type="matrix" values="0 0 0 0 .94117647  0 0 0 0 .77647059  0 0 0 0 .64313725  -.25512 -.85824 -.08664 0 1.1"/>
-        </filter>
-        <radialGradient id="warm"><stop stop-color="#ffe3b8" stop-opacity=".07"/><stop offset="1" stop-color="#ffe3b8" stop-opacity="0"/></radialGradient>
-      </defs>
-      <g class="layer ground" clip-path="url(#ground)"><image href="/brand/footer-storefront-v1.webp" width="1600" height="800" opacity=".5" filter="url(#pavement-alpha)"/></g>
-      <g class="building">
-      <g class="layer facade"><g clip-path="url(#facade)">${art}</g></g>
-      <g class="layer awning"><g clip-path="url(#awning)">${art}</g>
-        <image class="logo" href="/brand/dumpling-lab-primary.png" x="430" y="159" width="260" height="88" preserveAspectRatio="xMidYMid meet"/>
-      </g>
-      <g class="light"><ellipse fill="url(#warm)" cx="610" cy="422" rx="224" ry="158"/><ellipse fill="url(#warm)" cx="959" cy="422" rx="83" ry="147"/></g>
-      </g>
+    <div class="scene" aria-hidden="true"><svg viewBox="0 0 694 562" xmlns="http://www.w3.org/2000/svg">
+      <g class="building"><image href="${PHOTO}" width="694" height="562"/></g>
     </svg></div>`;
     const animate = (selector, frames, options) => {
       const animation = shadow.querySelector(selector).animate(frames, {fill:'both',easing:EASE,...options});

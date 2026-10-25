@@ -22,11 +22,8 @@ try {
   const {page,footer,host,requests}=await openFooter();
   await page.locator('dumpling-storefront-ink[data-phase="settled"]').waitFor();
   assert.equal(await host.locator('canvas').count(),0);
-  assert.equal(await host.locator('.facade .ink').evaluate(e=>getComputedStyle(e).filter),'none','Storefront retains its original colors, not inverted white lines');
-  assert.equal(await host.locator('.scene').evaluate(e=>getComputedStyle(e).mixBlendMode),'normal','No screen blending that washes out the illustration');
-  const edges=await host.evaluate(e=>{const right=id=>{const b=e.shadowRoot.querySelector(`#${id} path`).getBBox();return b.x+b.width;};return {facade:right('facade'),awning:right('awning')};});
-  assert.equal(edges.facade,1057,'Facade crop ends at the red frame, excluding the adjacent cream wall strip');
-  assert(edges.awning>edges.facade,'Preserve the awning overhang instead of a rectangular cutoff');
+  assert.equal(await host.locator('.building image').getAttribute('href'),'/brand/restaurant-front-cutout-v1.webp','The shopfront photo, the same one as the website, without the side walls');
+  assert.equal(await host.locator('.scene').evaluate(e=>getComputedStyle(e).mixBlendMode),'normal','No screen blending that washes out the photo');
   assert(!requests.some(u=>/storefront-(model|stage|footer)-v1|vendor\/three.module/.test(u)),'Footer must not load the removed 3D scene');
   assert.equal(await footer.locator('address').count(),1);
   assert.equal(await footer.locator('.footer-signoff address').count(),1,'Map address stays in the bottom-right signoff row');
@@ -36,17 +33,11 @@ try {
   assert.equal(await host.getAttribute('tabindex'),null,'Decorative illustration must not imply drag/click controls');
   await footer.screenshot({path:`${out}footer-mobile.png`});
   const bounds=await host.boundingBox();
-  const positions=()=>host.locator('.layer').evaluateAll(els=>els.map(e=>{const b=e.getBoundingClientRect();return {x:b.x,y:b.y,width:b.width,height:b.height};}));
-  const layerBounds=await positions();
   const motionFrames=[];
   for(const t of [0,450,950,1500,2200]) {
     await host.evaluate((e,t)=>e.seek(t),t);
     await page.waitForTimeout(30);
     assert.deepEqual(await host.boundingBox(),bounds,'Animation must not shift layout');
-    const current=await positions();
-    assert.deepEqual(current[0],layerBounds[0],'Pavement stays anchored while the house moves');
-    for(const axis of ['x','y'])assert(Math.abs((current[1][axis]-layerBounds[1][axis])-(current[2][axis]-layerBounds[2][axis]))<.001,'Roof and facade move together, with no seam separation');
-    assert((await host.locator('.layer').evaluateAll(els=>els.map(e=>getComputedStyle(e).transform))).every(t=>t==='none'),'No independent building-part transforms');
     motionFrames.push(await host.locator('.building').evaluate(e=>{const s=getComputedStyle(e),m=new DOMMatrix(s.transform);return {x:m.e,y:m.f,clip:s.clipPath,mask:s.maskImage};}));
     await host.screenshot({path:`${out}time-${t}.png`});
   }
@@ -72,5 +63,5 @@ try {
   assert.equal(await fallback.page.locator('#footerStorefront').evaluate(e=>getComputedStyle(e).filter),'none');
   await fallback.footer.screenshot({path:`${out}fallback.png`});
   assert.deepEqual(errors,[]);
-  console.log('PASS: connected house moves up/right, stationary ground, no wipe/mask animation or roof separation, no Three.js, one address, fixed layout, offscreen pause, one-shot, reduced motion, static fallback, SSR import.');
+  console.log('PASS: shopfront photo moves up/right as one piece, no wipe/mask animation or roof separation, no Three.js, one address, fixed layout, offscreen pause, one-shot, reduced motion, static fallback, SSR import.');
 } finally { await browser.close(); }

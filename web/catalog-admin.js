@@ -2,7 +2,7 @@
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const sections = {dumplings:'饺子／云吞',noodles:'面条',sides:'配菜',cold:'凉菜',drinks:'饮品',recommended:'固定搭配'};
+  let sections = {dumplings:'饺子／云吞',noodles:'面条',sides:'配菜',cold:'凉菜',drinks:'饮品',recommended:'固定搭配'};
   const fieldNames = {choiceOptions:'顾客可选项',cn:'中文名',name:'英文名',flavor:'描述',section:'分类',sort:'排序',active:'上下架',recommended:'推荐 👍',soldOut:'临时售罄',price:'价格',enabledPreparations:'开启做法',preparationExtras:'做法加价',portionSizes:'份量颗数',portionPrices:'规格价格',stock:'实有库存',imageUrl:'默认图片',preparationImageUrls:'按做法配图',description:'套餐介绍',descriptionEn:'英文介绍',visible:'菜单展示',start:'开始供应',end:'结束供应',drinkChoices:'饮品选项',fillingChoices:'馅料选项',noodleChoices:'面条选项',preparationChoices:'可选做法',sideDumplings:'配餐煎饺',includedColdDish:'固定凉菜',optionalNoodlesExtra:'加面价格',printStation:'出单打印机',promo:'单品活动'};
   let preparationPhotoDraft={}, optionsDraft=null, pending=[];
   let beforeCutout=null, cutoutWorker=null, cutoutTask=null, cutoutSequence=0, cutoutOperation=0, cutoutAbort=null;
@@ -38,31 +38,74 @@
         if ($('#editor').open) $('#editor').close();
         try { sessionStorage.removeItem('dl-staff-password'); } catch {}
       }
-      throw new Error(out.error || '操作失败，请重试');
+      throw Object.assign(new Error(out.error || '操作失败，请重试'), {status: r.status});
     }
     return out;
   }
   function setView(next) {
-    view = ['catalog','inventory','history','rewards','wallet','lunchsets','settings','report'].includes(next) ? next : 'catalog';
+    view = ['catalog','inventory','history','rewards','wallet','lunchsets','settings','report','counter'].includes(next) ? next : 'catalog';
     document.body.dataset.view = view;
-    $('#catalogPanel').hidden = ['history','rewards','wallet','lunchsets','settings','report'].includes(view); $('#historyPanel').hidden = view !== 'history';
-    $('.metrics').hidden = ['history','rewards','wallet','lunchsets','settings','report'].includes(view);
+    $('#catalogPanel').hidden = ['history','rewards','wallet','lunchsets','settings','report','counter'].includes(view); $('#historyPanel').hidden = view !== 'history';
+    $('.metrics').hidden = ['history','rewards','wallet','lunchsets','settings','report','counter'].includes(view);
     $('#settingsPanel').hidden = view !== 'settings';
     $('#pendingPanel').hidden = !['catalog','inventory'].includes(view) || !pending.length;
     $('#reportPanel').hidden = view !== 'report';
     if (view === 'report' && data) globalThis.ReportAdmin?.load(request, data.items);
+    $('#counterPanel').hidden = view !== 'counter';
+    if (view === 'counter' && data) globalThis.CounterAdmin?.load(request);
     $('#walletPanel').hidden=view!=='wallet';
     $('#lunchSetsPanel').hidden=view!=='lunchsets';
     if(view==='lunchsets'&&data)globalThis.LunchSetAdmin?.render({request,data,preparePhoto,onSaved:result=>{data=result;render();setView(view);stamp();message('午市套餐已保存并同步至顾客菜单')}});
     if(view==='wallet'&&data)globalThis.WalletAdmin?.load(request);
     $('#rewardsPanel').hidden = view !== 'rewards';
     if(view==='rewards'&&data)globalThis.RewardAdmin?.load(request,data.items);
-    $('#pageTitle').textContent = $('#breadcrumb').textContent = ({lunchsets:'午市套餐',catalog:'菜品管理',inventory:'库存管理',history:'操作记录',rewards:'积分与兑换',wallet:'充值与余额',settings:'堂食设置',report:'订单汇总'})[view];
-    $('#pageDescription').textContent = ({lunchsets:'设置套餐搭配、价格、供应时段及吸引顾客的套餐配图。',catalog:'改价格、调整销售状态，或编辑菜品完整资料。',inventory:'核对实有、预占与可售数量，按实际数量盘点库存。',history:'查看菜品更新与库存变动的时间和明细。',rewards:'设置消费积分与可兑换的配菜、饮品。',wallet:'核对充值、余额支付及退款记录。',settings:'给包场或熟客的桌子打折。',report:'营业额与热销菜品，按付款时间统计（新加坡时间）。'})[view];
+    $('#pageTitle').textContent = $('#breadcrumb').textContent = ({lunchsets:'午市套餐',catalog:'菜品管理',inventory:'库存管理',history:'操作记录',rewards:'积分与兑换',wallet:'充值与余额',settings:'堂食设置',report:'订单汇总',counter:'店员点单'})[view];
+    $('#pageDescription').textContent = ({lunchsets:'设置套餐搭配、价格、供应时段及吸引顾客的套餐配图。',catalog:'改价格、调整销售状态，或编辑菜品完整资料。',inventory:'核对实有、预占与可售数量，按实际数量盘点库存。',history:'查看菜品更新与库存变动的时间和明细。',rewards:'设置消费积分与可兑换的配菜、饮品。',wallet:'核对充值、余额支付及退款记录。',settings:'给包场或熟客的桌子打折。',report:'营业额与热销菜品，按付款时间统计（新加坡时间）。',counter:'客人在柜台付现金或刷卡，替他点单，出单直接送厨房和吧台。'})[view];
     $('#listTitle').textContent = view === 'inventory' ? '库存盘点' : '菜品列表';
     $$('[data-view]').forEach(b => b.setAttribute('aria-current', b.dataset.view === view ? 'page' : 'false'));
   }
+  // 分类来自服务器：自带的 6 个加上店员新增的，顺序也在后台定。
+  let sectionKeys = '';
+  function syncSections() {
+    if (!data?.sections) return;
+    const next = data.sections.map(s => s.key + ':' + s.cn).join();
+    if (next === sectionKeys) return;
+    sectionKeys = next; sections = Object.fromEntries(data.sections.map(s => [s.key, s.cn]));
+    const options = data.sections.map(s => `<option value="${esc(s.key)}">${esc(s.cn)}</option>`).join('');
+    for (const [select, lead] of [[$('#section'), '<option value="">全部分类</option>'], [form.elements.section, '']]) { const value = select.value; select.innerHTML = lead + options; select.value = sections[value] || !lead ? value : ''; }
+    discountSectionInputs();
+  }
+  function sectionsHTML() {
+    return `<ol class="section-list">${data.sections.map((s, i) => `<li data-section-key="${esc(s.key)}">
+      <span class="section-move"><button type="button" data-section-move="-1" aria-label="${esc(s.cn)}上移" ${i ? '' : 'disabled'}>↑</button><button type="button" data-section-move="1" aria-label="${esc(s.cn)}下移" ${i < data.sections.length - 1 ? '' : 'disabled'}>↓</button></span>
+      <span class="section-name"><strong>${esc(s.cn)}</strong><small>${esc(s.builtin ? '自带分类' : s.en)} · ${s.count} 道菜</small></span>
+      ${s.builtin ? '' : `<span class="section-actions"><button type="button" class="text-button" data-section-rename>改名</button><button type="button" class="text-button" data-section-delete ${s.count ? 'disabled title="分类里还有菜"' : ''}>删除</button></span>`}</li>`).join('')}</ol>
+      <form class="section-add"><label>中文名<input name="cn" maxlength="12" required placeholder="例如 甜品"></label><label>英文名<input name="en" maxlength="30" required placeholder="Desserts"></label><button type="submit" class="primary">添加分类</button><p role="status"></p></form>`;
+  }
+  async function sectionRequest(body, status) {
+    const epoch = authEpoch;
+    try { const result = await request('/api/catalog', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)}); if (epoch !== authEpoch) return false; data = result; render(); stamp(); $('#sectionsBody').innerHTML = sectionsHTML(); return true; }
+    catch (error) { if (epoch === authEpoch) (status || $('#sectionsBody [role=status]')).textContent = error.message; return false; }
+  }
+  $('#manageSections').onclick = () => { if (!data) return; $('#sectionsBody').innerHTML = sectionsHTML(); $('#sectionsDialog').showModal(); };
+  $('#closeSections').onclick = () => $('#sectionsDialog').close();
+  $('#sectionsBody').onclick = e => {
+    const b = e.target.closest('button'), row = b?.closest('[data-section-key]'); if (!row) return;
+    const key = row.dataset.sectionKey, s = data.sections.find(x => x.key === key);
+    if (b.dataset.sectionMove) { const keys = data.sections.map(x => x.key), i = keys.indexOf(key), j = i + Number(b.dataset.sectionMove); [keys[i], keys[j]] = [keys[j], keys[i]]; sectionRequest({action:'section-order', keys}); }
+    if (b.hasAttribute('data-section-delete') && confirm(`删除分类「${s.cn}」？`)) sectionRequest({action:'section-delete', key});
+    if (b.hasAttribute('data-section-rename')) {
+      row.querySelector('.section-name').innerHTML = `<form class="section-rename"><input name="cn" maxlength="12" required value="${esc(s.cn)}" aria-label="中文名"><input name="en" maxlength="30" required value="${esc(s.en)}" aria-label="英文名"><button type="submit" class="primary">保存</button></form>`;
+      row.querySelector('input').focus();
+    }
+  };
+  $('#sectionsBody').onsubmit = async e => {
+    e.preventDefault(); const f = e.target, key = f.closest('[data-section-key]')?.dataset.sectionKey;
+    const ok = await sectionRequest({action:'section-save', ...(key ? {key} : {}), cn:f.cn.value, en:f.en.value});
+    if (ok && !key) $('#sectionsBody [role=status]').textContent = `已添加「${f.cn.value.trim()}」，编辑菜品时可以选这个分类`;
+  };
   function render() {
+    syncSections();
     const query = $('#search').value.trim().toLowerCase(), section = $('#section').value, status = $('#status').value;
     const list = data.items.filter(d => (d.cn + ' ' + d.name).toLowerCase().includes(query) && (!section || d.section === section) && (!status || (status === 'inactive' ? d.active === false : status === 'recommended' ? d.recommended : status === 'sold' ? d.active && d.soldOut : status === 'low' ? low(d) : d.active && !d.soldOut)));
     $('#countAll').textContent = data.items.length;
@@ -74,8 +117,8 @@
     $('#resultCount').textContent = `显示 ${list.length} / ${data.items.length} 道菜品`;
     $('#resetFilters').hidden = !query && !section && !status;
     $('#emptyState').hidden = list.length > 0;
-    $('#list').innerHTML = list.map(d => `<tr>
-      <td><div class="product"><img src="${esc(image(d))}" alt="" loading="lazy"><div><strong>${esc(d.cn)}</strong><small>${esc(d.name)}</small></div></div></td>
+    $('#list').innerHTML = list.map(d => `<tr data-id="${esc(d.id)}">
+      <td><div class="product"><button type="button" class="drag-handle" data-drag aria-label="拖动调整${esc(d.cn)}的位置"><svg viewBox="0 0 12 18" aria-hidden="true"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/></svg></button><img src="${esc(image(d))}" alt="" loading="lazy"><div><strong>${esc(d.cn)}</strong><small>${esc(d.name)}</small></div></div></td>
       <td class="category-col"><span class="category-text">${esc(sections[d.section] || d.section)}</span><small class="print-station">${stationName(d)}</small></td>
       <td class="price price-col" data-label="售价 / SGD">$${d.price.toFixed(2)}${d.variants ? '<small>起</small>' : ''}${d.promo ? `<small class="promo-badge ${promoEnded(d.promo) ? 'ended' : ''}">${esc(promoText(d.promo))}</small>` : ''}</td>
       <td class="inventory stock-col ${low(d) ? 'low' : ''}" data-label="可售库存"><strong>${d.available === null ? '不限量' : `${d.available} <small class="unit">${esc(d.stockUnit)}</small>`}</strong>${d.stock !== null ? `<small>实有 ${d.stock} ${esc(d.stockUnit)}</small>` : ''}${low(d) ? '<small>库存偏低</small>' : ''}${d.reserved ? `<small>待付款预占 ${d.reserved} ${esc(d.stockUnit)}</small>` : ''}${d.stockPool ? `<small>与「${esc(data.items.find(x => x.id === d.stockPool)?.cn || '')}」共用库存</small>` : ''}${(d.choiceOptions?.items || []).some(o => o.active && o.stock !== null && o.stock !== undefined) ? `<small class="option-stock">${d.choiceOptions.items.filter(o => o.active).map(o => esc(o.cn) + ' ' + (o.stock === null || o.stock === undefined ? '不限' : o.available < 1 ? '售罄' : o.available)).join(' · ')}</small>` : ''}</td>
@@ -86,17 +129,45 @@
       const dish = data.items.find(d => d.id === a.id);
       if (a.action === 'settings') {
         const d = a.details || {};
-        const [title, detail] = [`堂食设置 · ${a.id} 桌折扣`, d.tableDiscount ? discountText(d.tableDiscount) : '已取消'];
+        const day = 'dayDiscount' in d, rule = day ? d.dayDiscount : d.tableDiscount;
+        const [title, detail] = [day ? `堂食设置 · ${a.id} 全场折扣` : `堂食设置 · ${a.id} 桌折扣`, rule ? discountText(rule) : '已取消'];
         return `<article class="audit-row"><span class="audit-icon" aria-hidden="true">⚙</span><div><strong>${esc(title)}</strong><p>${esc(detail)}</p></div><time datetime="${esc(a.at)}">${esc(new Date(a.at).toLocaleString('zh-SG', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}))}</time></article>`;
       }
-      const title = a.action === 'lunch-set-edit' ? `更新午市套餐 · ${data.lunchSets?.find(s=>s.key===a.id)?.cn||a.id}` : a.action === 'create' ? `新增菜品 · ${dish?.cn || a.id}` : a.action === 'edit' ? `更新菜品 · ${dish?.cn || a.id}` : ({consumed:'付款成功 · 扣减库存',released:'取消 / 过期 · 释放预占'})[a.action] || a.action;
+        if (a.action === 'reorder') return `<article class="audit-row"><span class="audit-icon" aria-hidden="true">↕</span><div><strong>调整菜品顺序</strong><p>${a.details?.count || 0} 道菜换了位置</p></div><time datetime="${esc(a.at)}">${esc(new Date(a.at).toLocaleString('zh-SG', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}))}</time></article>`;
+    const title = a.action === 'lunch-set-edit' ? `更新午市套餐 · ${data.lunchSets?.find(s=>s.key===a.id)?.cn||a.id}` : a.action === 'create' ? `新增菜品 · ${dish?.cn || a.id}` : a.action === 'edit' ? `更新菜品 · ${dish?.cn || a.id}` : ({consumed:'付款成功 · 扣减库存',released:'取消 / 过期 · 释放预占'})[a.action] || a.action;
       const details = ['edit','create','lunch-set-edit'].includes(a.action) ? Object.keys(a.details || {}).map(k => fieldNames[k] || k).join('、') : Object.entries(a.details || {}).map(([id, n]) => { const d = data.items.find(d => d.id === id); return `${d?.cn || id} ${n} ${d?.stockUnit || ''}`; }).join(' · ');
       return `<article class="audit-row"><span class="audit-icon" aria-hidden="true">${a.action === 'edit' ? '↗' : '↺'}</span><div><strong>${esc(title)}</strong><p>${esc(details || '资料已更新')}</p></div><time datetime="${esc(a.at)}">${esc(new Date(a.at).toLocaleString('zh-SG', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}))}</time></article>`;
     }).join('') || '<div class="empty-state"><h3>暂无操作记录</h3><p>发布菜品或发生库存变动后，会在这里留下记录。</p></div>';
   }
-  const discountText = d => (d.type === 'percent' ? `减 ${d.value}%（打 ${+(10 - d.value / 10).toFixed(2)} 折）` : `减 S$${d.value.toFixed(2)}`) + (d.note ? ` · ${d.note}` : '');
+  const rateText = v => v ? `减 ${v}%（打 ${+(10 - v / 10).toFixed(2)} 折）` : '不打折';
+  const sectionText = d => Object.entries(d.sections || {}).map(([k, v]) => `${sections[k] || k}${d.type === 'amount' ? '不参与' : ' ' + rateText(v)}`);
+  const discountText = d => [d.type === 'percent' ? (d.sections ? `其余${rateText(d.value)}` : rateText(d.value)) : `减 S$${d.value.toFixed(2)}`, ...sectionText(d), ...(d.note ? [d.note] : [])].join(' · ');
+  // Per-category discount: a percent per category (blank = same as above, 0 = none);
+  // with a fixed amount, a category can only be left out.
+  const discountSectionInputs = () => { for (const form of [$('#discountForm'), $('#dayDiscountForm')]) form.querySelector('[data-discount-sections]').innerHTML = `<legend>分类折扣（可选）</legend>` + Object.entries(sections).map(([k, n]) => `<label><span>${esc(n)}</span><input type="number" data-section="${k}" min="0" max="100" step="0.01" placeholder="同上"><span class="discount-skip"><input type="checkbox" data-section-skip="${k}">不参与</span></label>`).join(''); };
+  discountSectionInputs();
+  function readSections(form) {
+    const amount = form.elements.type.value === 'amount', out = {};
+    for (const k of Object.keys(sections)) {
+      if (amount) { if (form.querySelector(`[data-section-skip="${k}"]`).checked) out[k] = 0; }
+      else { const v = form.querySelector(`[data-section="${k}"]`).value; if (v !== '') out[k] = Number(v); }
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  function fillSections(form, d) {
+    for (const k of Object.keys(sections)) {
+      const v = d.sections?.[k];
+      form.querySelector(`[data-section="${k}"]`).value = d.type === 'percent' && v !== undefined ? v : '';
+      form.querySelector(`[data-section-skip="${k}"]`).checked = d.type === 'amount' && v === 0;
+    }
+  }
+  const dayName = date => { const d = new Date(date + 'T00:00:00Z'); return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日 周${'日一二三四五六'[d.getUTCDay()]}` + (date === OrderPricing.shopDate() ? ' · 今天' : ''); };
   function renderSettings() {
-    const s = data.settings || {tableDiscounts:{}};
+    const s = {tableDiscounts:{}, dayDiscounts:{}, ...data.settings};
+    const days = Object.entries(s.dayDiscounts).filter(([d]) => d >= OrderPricing.shopDate()).sort(([a], [b]) => a.localeCompare(b));
+    $('#dayDiscountList').innerHTML = days.length ? days.map(([t, d]) => `<article class="discount-row"><strong>${esc(dayName(t))}</strong><span>${esc(discountText(d))}</span><div><button type="button" class="edit-button" data-day-edit="${esc(t)}">修改</button><button type="button" class="edit-button" data-day-clear="${esc(t)}">取消折扣</button></div></article>`).join('') : '<p class="muted discount-empty">目前没有全场折扣。</p>';
+    const date = $('#dayDiscountForm').elements.date;
+    date.min = OrderPricing.shopDate(); date.value ||= date.min;
     const rows = Object.entries(s.tableDiscounts).sort(([a], [b]) => a.localeCompare(b, 'en', {numeric:true}));
     $('#discountList').innerHTML = rows.length ? rows.map(([t, d]) => `<article class="discount-row"><strong>${esc(t)}</strong><span>${esc(discountText(d))}</span><div><button type="button" class="edit-button" data-discount-edit="${esc(t)}">修改</button><button type="button" class="edit-button" data-discount-clear="${esc(t)}">取消折扣</button></div></article>`).join('') : '<p class="muted discount-empty">目前没有桌子打折。</p>';
   }
@@ -104,22 +175,44 @@
     const result = await request('/api/catalog', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)});
     data = result; render(); renderSettings(); stamp(); status.textContent = '';
   }
-  function discountMode() {
-    const f = $('#discountForm').elements, percent = f.type.value === 'percent';
-    $('#discountValueLabel').textContent = percent ? '减免 %' : '减免金额 S$';
+  function discountMode(form = $('#discountForm')) {
+    const f = form.elements, percent = f.type.value === 'percent';
+    form.dataset.discountType = f.type.value;
+    form.querySelector('[data-discount-label]').textContent = percent ? '减免 %' : '减免金额 S$';
     f.value.max = percent ? '100' : '9999'; f.value.placeholder = percent ? '如 20' : '如 50';
     const v = Number(f.value.value);
-    $('#discountHint').textContent = percent ? (v > 0 && v <= 100 ? `= 打 ${+(10 - v / 10).toFixed(2)} 折` : '输入 20 = 打 8 折') : '从这桌每张单的菜品金额里减';
+    form.querySelector('[data-discount-hint]').textContent = percent ? (v > 0 && v <= 100 ? `= 打 ${+(10 - v / 10).toFixed(2)} 折` : '输入 20 = 打 8 折') : form.id === 'dayDiscountForm' ? '从当天每张单的菜品金额里减' : '从这桌每张单的菜品金额里减';
   }
-  $('#discountForm').elements.type.onchange = discountMode;
-  $('#discountForm').elements.value.oninput = discountMode;
+  for (const form of [$('#discountForm'), $('#dayDiscountForm')]) form.elements.type.onchange = form.elements.value.oninput = () => discountMode(form);
+  $('#dayDiscountForm').onsubmit = async e => {
+    e.preventDefault();
+    const f = e.target.elements, status = $('#dayDiscountMessage'), button = $('#saveDayDiscount'), date = f.date.value;
+    button.disabled = true;
+    try {
+      await saveSettings({action:'day-discount', date, discount:{type:f.type.value, value:Number(f.value.value), sections:readSections(e.target), note:f.note.value}}, status);
+      e.target.reset(); f.date.value = OrderPricing.shopDate(); discountMode(e.target); status.dataset.tone = 'success'; status.textContent = `${dayName(date)} 全场折扣已保存`;
+    } catch (err) { status.dataset.tone = 'error'; status.textContent = err.message; }
+    finally { button.disabled = false; }
+  };
+  $('#dayDiscountList').onclick = async e => {
+    const edit = e.target.closest('[data-day-edit]'), clear = e.target.closest('[data-day-clear]'), status = $('#dayDiscountMessage');
+    if (edit) {
+      const t = edit.dataset.dayEdit, d = data.settings.dayDiscounts[t], form = $('#dayDiscountForm'), f = form.elements;
+      f.date.value = t; f.type.value = d.type; f.value.value = d.value; f.note.value = d.note || ''; fillSections(form, d); discountMode(form); f.value.focus();
+    }
+    if (clear) {
+      const t = clear.dataset.dayClear; clear.disabled = true;
+      try { await saveSettings({action:'day-discount', date:t, discount:null}, status); status.dataset.tone = 'success'; status.textContent = `${dayName(t)} 已取消全场折扣`; }
+      catch (err) { clear.disabled = false; status.dataset.tone = 'error'; status.textContent = err.message; }
+    }
+  };
   $('#discountForm').onsubmit = async e => {
     e.preventDefault();
     const f = e.target.elements, status = $('#discountMessage'), button = $('#saveDiscount');
     button.disabled = true;
     try {
       const table = f.table.value.trim().toUpperCase();
-      await saveSettings({action:'table-discount', table, discount:{type:f.type.value, value:Number(f.value.value), note:f.note.value}}, status);
+      await saveSettings({action:'table-discount', table, discount:{type:f.type.value, value:Number(f.value.value), sections:readSections(e.target), note:f.note.value}}, status);
       e.target.reset(); discountMode(); status.dataset.tone = 'success'; status.textContent = `${table} 桌折扣已保存`;
     } catch (err) { status.dataset.tone = 'error'; status.textContent = err.message; }
     finally { button.disabled = false; }
@@ -128,7 +221,7 @@
     const edit = e.target.closest('[data-discount-edit]'), clear = e.target.closest('[data-discount-clear]'), status = $('#discountMessage');
     if (edit) {
       const t = edit.dataset.discountEdit, d = data.settings.tableDiscounts[t], f = $('#discountForm').elements;
-      f.table.value = t; f.type.value = d.type; f.value.value = d.value; f.note.value = d.note || ''; discountMode(); f.value.focus();
+      f.table.value = t; f.type.value = d.type; f.value.value = d.value; f.note.value = d.note || ''; fillSections($('#discountForm'), d); discountMode(); f.value.focus();
     }
     if (clear) {
       const t = clear.dataset.discountClear; clear.disabled = true;
@@ -180,7 +273,7 @@
     if (data && !$('#workspace').hidden) { try { sessionStorage.setItem('dl-staff-password', password); } catch {} e.target.reset(); }
   };
   $('#logout').onclick = () => {
-    globalThis.LunchSetAdmin?.clear();globalThis.RewardAdmin?.clear();globalThis.WalletAdmin?.clear();globalThis.ReportAdmin?.clear();
+    globalThis.LunchSetAdmin?.clear();globalThis.RewardAdmin?.clear();globalThis.WalletAdmin?.clear();globalThis.ReportAdmin?.clear();globalThis.CounterAdmin?.clear();
     cancelCutout();authEpoch++; password = ''; data = null; selected = null;
     try { sessionStorage.removeItem('dl-staff-password'); } catch {}
     authenticated(false); if ($('#editor').open) $('#editor').close(); setView('catalog'); $('#list').innerHTML = ''; $('#audit').innerHTML = ''; message('已退出登录');
@@ -283,6 +376,44 @@
     $('#editorTitle').textContent = selected._new ? '新增菜品' : `${mode === 'price' ? '改价' : mode === 'stock' ? '盘点库存' : mode === 'image' ? '更换图片' : mode === 'printing' ? '设置出单' : mode === 'promo' ? '单品活动' : '编辑菜品'} · ${selected.cn}`;
     $('#photoMeta').textContent = ''; $('#photoPreview').src = image(selected); promoMode(); dirtyHint(); $('#save').textContent = selected._new ? '创建菜品' : '保存并发布'; if(!$('#editor').open) $('#editor').showModal(); $('.editor-scroll').scrollTop = 0; updatePhotoActions();
   }
+  // 拖动左侧把手调整顺序，顾客菜单按这个顺序显示。筛选时只在看得到的菜之间换位置。
+  async function saveOrder(visible) {
+    const full = data.items.map(d => d.id), slots = full.flatMap((id, i) => visible.includes(id) ? [i] : []);
+    slots.forEach((slot, n) => { full[slot] = visible[n]; });
+    const epoch = authEpoch;
+    try {
+      const result = await request('/api/catalog', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({action:'reorder', ids:full})});
+      if (epoch !== authEpoch) return; data = result; render(); stamp(); message('顺序已保存，顾客菜单已同步');
+    } catch (error) { if (epoch === authEpoch) { message(error.message, 'error'); render(); } }
+  }
+  const visibleOrder = () => [...$('#list').children].map(r => r.dataset.id);
+  $('#list').addEventListener('pointerdown', e => {
+    const handle = e.target.closest('[data-drag]'); if (!handle || !data || busy || e.button > 0) return;
+    e.preventDefault();
+    const list = $('#list'), row = handle.closest('tr'), start = visibleOrder().join();
+    // Listen on the window: moving the row in the DOM drops any pointer capture on the handle.
+    row.classList.add('dragging');
+    const move = ev => {
+      if (ev.pointerId !== e.pointerId) return;
+      if (ev.clientY < 80) scrollBy(0, -14); else if (ev.clientY > innerHeight - 80) scrollBy(0, 14);
+      const next = [...list.children].find(r => r !== row && ev.clientY < r.getBoundingClientRect().top + r.offsetHeight / 2);
+      if (next !== row.nextElementSibling && next !== row) list.insertBefore(row, next || null);
+    };
+    const end = ev => {
+      if (ev.pointerId !== e.pointerId) return;
+      removeEventListener('pointermove', move); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
+      row.classList.remove('dragging');
+      if (visibleOrder().join() !== start) saveOrder(visibleOrder());
+    };
+    addEventListener('pointermove', move); addEventListener('pointerup', end); addEventListener('pointercancel', end);
+  });
+  $('#list').addEventListener('keydown', e => {
+    const handle = e.target.closest('[data-drag]'); if (!handle || !data || busy || !['ArrowUp','ArrowDown'].includes(e.key)) return;
+    e.preventDefault();
+    const row = handle.closest('tr'), other = e.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling; if (!other) return;
+    if (e.key === 'ArrowUp') other.before(row); else other.after(row);
+    handle.focus(); saveOrder(visibleOrder()).then(() => $(`#list tr[data-id="${CSS.escape(row.dataset.id)}"] [data-drag]`)?.focus());
+  });
   $('#list').onclick = async e => {
     const toggle=e.target.closest('[data-recommend]');
     if(toggle&&data&&!busy){

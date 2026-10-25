@@ -19,7 +19,7 @@ with tempfile.TemporaryDirectory() as temp:
  bridge.enqueue(m.orders_from(doc),['test-drink']);bridge.process()
  deadline=time.time()+3
  while not received and time.time()<deadline:time.sleep(.01)
- assert len(received)==1;assert received[0].startswith(b'\x1b@');assert b'\x1dv0' in received[0]
+ assert len(received)==1;assert received[0].startswith(b'\x1b@');assert b'\x1dv0' in received[0];assert received[0].endswith(b'\x1bB\x03\x03') and received[0].count(b'\x1bB')==1,'one beep per order'
  assert bridge.db.execute('SELECT status FROM jobs').fetchone()[0]=='sent'
  bridge.enqueue(m.orders_from(doc),['test-drink']);bridge.process();assert len(received)==1
  bridge.db.execute("UPDATE jobs SET status='sending'");bridge.db.commit();bridge.db.close();bridge=m.Bridge(config);bridge.process();assert bridge.db.execute('SELECT status FROM jobs').fetchone()[0]=='uncertain';assert len(received)==1

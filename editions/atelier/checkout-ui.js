@@ -81,7 +81,7 @@ const CheckoutUI = (() => {
     });
   }
   function itemsHTML(order) {
-    const line = (i, qty) => `<article>${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="80" height="80">` : ''}<div><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}<small>× ${qty}</small></div><b>${money(i.price * qty)}</b></article>`;
+    const line = (i, qty) => `<article>${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="80" height="80">` : ''}<div><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}${i.note ? `<small class="cart-line-note">${escapeHTML(i.note)}</small>` : ''}<small>× ${qty}</small></div><b>${money(i.price * qty)}</b></article>`;
     // A voucher pays for exactly one unit of its dish. That unit is a gift, not
     // a purchase, so it gets its own quieter line at $0 rather than sitting in
     // the list at full price.

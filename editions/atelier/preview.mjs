@@ -176,7 +176,7 @@ const online = createOnlineService({
     isConflict: e=>e.conflict,
     async all() { await queue; return Object.values(db.online).map(r=>structuredClone(r.value)); },
   },
-  payment: { ensureReady() {}, async create(o) { return {id:`preview_${o.id}`,url:`/?preview_payment=${o.id}`}; }, async expire() { return {status:'expired',payment_status:'unpaid'}; } },
+  payment: { ensureReady() {}, async create(o) { return {id:`preview_${o.id}`,url:`/?preview_payment=${o.id}`}; }, async expire() { return {status:'expired',payment_status:'unpaid'}; }, async refund(r) { return {id:`re_preview_${r.id.slice(0,8)}`,status:'succeeded',amount:r.amountCents}; } },
   dining,
   async checkAddress(postal) {
     if (postal === '999999') return {distanceKm:11,address:'Outside test zone'};
@@ -293,7 +293,7 @@ const server = createServer(async (req, res) => {
       }
       if(url.pathname==='/api/catalog'){
         if(req.method==='GET'){if(url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await catalog.admin()})}return json(200,{ok:true,...await catalog.public()})}
-        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await (input.action==='lunch-set-save'?catalog.saveLunchSet(input):input.action==='create'?catalog.create(input):input.action==='table-discount'?catalog.saveSettings(input):catalog.save(input))})}
+        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await (input.action==='lunch-set-save'?catalog.saveLunchSet(input):input.action==='create'?catalog.create(input):input.action==='reorder'?catalog.reorder(input):['section-save','section-delete','section-order'].includes(input.action)?catalog.saveSection(input):['table-discount','day-discount'].includes(input.action)?catalog.saveSettings(input):catalog.save(input))})}
         return json(405,{error:'Method not allowed'});
       }
       if (url.pathname === '/api/online') {
@@ -310,6 +310,9 @@ const server = createServer(async (req, res) => {
           if (input.action === 'cancel') return json(200,{ok:true,...await online.cancel(input)});
           if (input.action === 'cancel-table') return json(200,{ok:true,...await online.cancelForTable(input)});
           if (input.action === 'staff-cancel') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,...await online.staffCancel(input.id)}); }
+          if (input.action === 'staff-quote') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,order:await online.staffQuote(input)}); }
+          if (input.action === 'staff-order') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,order:await online.staffOrder(input)}); }
+          if (input.action === 'staff-refund') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,order:await online.staffRefund(input)}); }
           if(input.action==='confirm-wallet')return json(200,{ok:true,...await online.confirmWallet(input,(await memberIdentity(req))?.id)});
           if(input.action==='confirm-reward')return json(200,{ok:true,...await online.confirmReward(input,(await memberIdentity(req))?.id)});
           if (input.action === 'preview-pay') {
@@ -392,7 +395,7 @@ const server = createServer(async (req, res) => {
     ]);
     const allowedAsset =
       /^\/(img|brand|fonts)\//.test(path) || /^\/vendor\/cutout\/[a-zA-Z0-9.-]+$/.test(path) ||
-      ["/lunch-set-art.js", "/lunch-set-admin.js", "/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/catalog-client.js", "/catalog-admin.html", "/catalog-admin.js", "/rewards-admin.js", "/wallet-admin.js", "/report-admin.js", "/catalog-admin.css", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
+      ["/lunch-set-art.js", "/lunch-set-admin.js", "/menu-data.js", "/lunch-archive.js", "/lunch-menu.js", "/catalog-client.js", "/catalog-admin.html", "/catalog-admin.js", "/rewards-admin.js", "/wallet-admin.js", "/report-admin.js", "/counter-admin.js", "/catalog-admin.css", "/order-pricing.js", "/i18n.js", "/staff.html", "/vendor/three.module.js"].includes(path);
     if (!localFiles.has(path) && !allowedAsset)
       return json(404, { error: "Not found" });
     const data = await readFile(
