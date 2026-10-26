@@ -2393,9 +2393,17 @@ body.search-open .filters button[aria-pressed="true"], body.search-open .filters
 .builder-note input:focus { outline: none; border-color: var(--red); }
 #lunchOptions .builder-note { gap: 10px; margin: 16px 0; font: 400 12px/1.4 var(--sans); }
 #lunchOptions .builder-note > span { padding-left: 2px; }
-/* Four fillings fit one row on a phone. */
-#lunchOptions [data-detail-filling] { padding-inline: 10px; }
-#lunchOptions .styles:has([data-detail-filling]) { gap: 6px; }
+/* Fillings: two equal columns, each with the filling's photo. */
+#lunchOptions .styles:has([data-detail-filling]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+/* English names are long: one per row. */
+html[lang="en"] #lunchOptions .styles:has([data-detail-filling]) { grid-template-columns: minmax(0, 1fr); }
+#lunchOptions [data-detail-filling] { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 6px 10px; text-align: center; }
+#lunchOptions [data-detail-filling] .chip-photo { flex: none; width: 96px; height: 96px; }
+#lunchOptions [data-detail-filling] img { width: 100%; height: 100%; object-fit: contain; }
+#lunchOptions [data-detail-filling] span:last-child { font-size: 16px; line-height: 1.25; }
+html[lang="en"] #lunchOptions [data-detail-filling] { flex-direction: row; gap: 12px; padding: 6px 12px 6px 6px; text-align: left; }
+html[lang="en"] #lunchOptions [data-detail-filling] .chip-photo { width: 72px; height: 72px; }
+@media (max-width: 360px) { html[lang="en"] #lunchOptions [data-detail-filling] { gap: 8px; } html[lang="en"] #lunchOptions [data-detail-filling] .chip-photo { width: 56px; height: 56px; } html[lang="en"] #lunchOptions [data-detail-filling] span:last-child { font-size: 15px; } }
 @media (max-width: 760px) { .builder-preps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .builder-preps .builder-chip { padding-inline: 4px; }
 /* Smallest phones: keep "Clear Broth", the 自选 title and "Add to our table" on one line. */

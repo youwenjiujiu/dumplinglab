@@ -121,7 +121,7 @@
       <td><div class="product"><button type="button" class="drag-handle" data-drag aria-label="拖动调整${esc(d.cn)}的位置"><svg viewBox="0 0 12 18" aria-hidden="true"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/></svg></button><img src="${esc(image(d))}" alt="" loading="lazy"><div><strong>${esc(d.cn)}</strong><small>${esc(d.name)}</small></div></div></td>
       <td class="category-col"><span class="category-text">${esc(sections[d.section] || d.section)}</span><small class="print-station">${stationName(d)}</small></td>
       <td class="price price-col" data-label="售价 / SGD">$${d.price.toFixed(2)}${d.variants ? '<small>起</small>' : ''}${d.promo ? `<small class="promo-badge ${promoEnded(d.promo) ? 'ended' : ''}">${esc(promoText(d.promo))}</small>` : ''}</td>
-      <td class="inventory stock-col ${low(d) ? 'low' : ''}" data-label="可售库存"><strong>${d.available === null ? '不限量' : `${d.available} <small class="unit">${esc(d.stockUnit)}</small>`}</strong>${d.stock !== null ? `<small>实有 ${d.stock} ${esc(d.stockUnit)}</small>` : ''}${low(d) ? '<small>库存偏低</small>' : ''}${d.reserved ? `<small>待付款预占 ${d.reserved} ${esc(d.stockUnit)}</small>` : ''}${d.stockPool ? `<small>与「${esc(data.items.find(x => x.id === d.stockPool)?.cn || '')}」共用库存</small>` : ''}${(d.choiceOptions?.items || []).some(o => o.active && o.stock !== null && o.stock !== undefined) ? `<small class="option-stock">${d.choiceOptions.items.filter(o => o.active).map(o => esc(o.cn) + ' ' + (o.stock === null || o.stock === undefined ? '不限' : o.available < 1 ? '售罄' : o.available)).join(' · ')}</small>` : ''}</td>
+      <td class="inventory stock-col ${low(d) ? 'low' : ''}" data-label="可售库存"><strong>${d.available === null ? '不限量' : `${d.available} <small class="unit">${esc(d.stockUnit)}</small>`}</strong>${d.stock !== null ? d.stockPool ? `<small>实有 ${d.stock} ${esc(d.stockUnit)}</small>` : `<button type="button" class="stock-edit" data-stock-edit="${esc(d.id)}" aria-label="修改${esc(d.cn)}实有库存">实有 ${d.stock} ${esc(d.stockUnit)}</button>` : ''}${low(d) ? '<small>库存偏低</small>' : ''}${d.reserved ? `<small>待付款预占 ${d.reserved} ${esc(d.stockUnit)}</small>` : ''}${d.stockPool ? `<small>与「${esc(data.items.find(x => x.id === d.stockPool)?.cn || '')}」共用库存</small>` : ''}${(d.choiceOptions?.items || []).some(o => o.active && o.stock !== null && o.stock !== undefined) ? `<small class="option-stock">${d.choiceOptions.items.filter(o => o.active).map(o => esc(o.cn) + ' ' + (o.stock === null || o.stock === undefined ? '不限' : o.available < 1 ? '售罄' : o.available)).join(' · ')}</small>` : ''}</td>
       <td class="status-col"><span class="tag ${d.active === false ? 'inactive' : d.soldOut ? 'sold' : ''}"><i class="dot"></i>${statusText(d)}</span></td>
       <td class="align-right edit-col"><div class="row-actions"><button class="edit-button recommend-toggle ${d.recommended?'is-recommended':''}" data-recommend="${esc(d.id)}" aria-pressed="${Boolean(d.recommended)}" aria-label="${d.recommended?'取消':'设置'}${esc(d.cn)}推荐">推荐 👍</button><button class="edit-button quick-print" data-edit="${esc(d.id)}" data-mode="printing" aria-label="设置${esc(d.cn)}出单打印机">出单</button><button class="edit-button quick-promo ${d.promo && !promoEnded(d.promo) ? 'is-on' : ''}" data-edit="${esc(d.id)}" data-mode="promo" aria-label="设置${esc(d.cn)}单品活动">活动</button><button class="edit-button quick-photo" data-edit="${esc(d.id)}" data-mode="image" aria-label="更换${esc(d.cn)}图片">换图</button><button class="edit-button quick-price" data-edit="${esc(d.id)}" data-mode="price" aria-label="修改${esc(d.cn)}价格">改价</button><button class="edit-button quick-stock" data-edit="${esc(d.id)}" data-mode="stock" aria-label="盘点${esc(d.cn)}库存">盘点</button><button class="edit-button" data-edit="${esc(d.id)}" aria-label="编辑${esc(d.cn)}">详情 <span aria-hidden="true">↗</span></button></div></td>
     </tr>`).join('');
@@ -414,7 +414,32 @@
     if (e.key === 'ArrowUp') other.before(row); else other.after(row);
     handle.focus(); saveOrder(visibleOrder()).then(() => $(`#list tr[data-id="${CSS.escape(row.dataset.id)}"] [data-drag]`)?.focus());
   });
+  // 列表里直接盘点：只改「实有」；可售 = 实有 − 待付款预占，由服务器算。共用库存、不限量的菜仍走「盘点」。
+  function editStock(button) {
+    const d = data.items.find(d => d.id === button.dataset.stockEdit); if (!d) return;
+    const input = Object.assign(document.createElement('input'), {type:'number', inputMode:'numeric', min:String(d.reserved || 0), max:'1000000', step:'1', value:String(d.stock), className:'stock-inline'});
+    input.setAttribute('aria-label', `${d.cn}实有库存（${d.stockUnit}）`);
+    button.replaceWith(input); input.focus(); input.select();
+    let done = false;
+    const finish = async (save, refocus = false) => {
+      if (done) return; done = true;
+      const value = Number(input.value);
+      if (!save || input.value.trim() === '' || value === d.stock) { render(); return; }
+      if (!Number.isInteger(value) || value < 0) { message('库存须为非负整数', 'error'); render(); return; }
+      input.disabled = true; const epoch = authEpoch;
+      try {
+        const result = await request('/api/catalog', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:d.id,revision:data.revision,patch:{stock:value},base:{stock:d.stock}})});
+        if (epoch !== authEpoch) return;
+        data = result; render(); stamp(); message(`${d.cn}实有库存已改为 ${value} ${d.stockUnit}`);
+        if (refocus) $(`[data-stock-edit="${CSS.escape(d.id)}"]`)?.focus();
+      } catch (error) { if (epoch === authEpoch) { message(error.message, 'error'); render(); } }
+    };
+    input.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); finish(true, true); } else if (e.key === 'Escape') { e.preventDefault(); finish(false); } };
+    input.onblur = () => finish(true);
+  }
   $('#list').onclick = async e => {
+    const stockButton=e.target.closest('[data-stock-edit]');
+    if(stockButton&&data&&!busy){editStock(stockButton);return;}
     const toggle=e.target.closest('[data-recommend]');
     if(toggle&&data&&!busy){
       const d=data.items.find(d=>d.id===toggle.dataset.recommend);if(!d)return;

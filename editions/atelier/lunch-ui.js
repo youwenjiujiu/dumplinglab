@@ -35,6 +35,11 @@ const recommendationPrice = r => {
     return LUNCH_PREPARATIONS.filter(p => (globalThis.LUNCH_SINGLE_PREPARATIONS || LUNCH_PREPARATIONS.map(p => p.id)).includes(p.id) && (!tossedOf(p.id) || p.id === first))
       .map(p => p.id === first ? { ...p, cn: "干拌", en: "Tossed" } : p);
   };
+  // A preparation card shows the restaurant's own photo of the filling its sheet opens with, once uploaded.
+  const preparationPhoto = p => {
+    const fillings = fillingsFor(p.id), f = fillings.find(f => !f.soldOut) || fillings[0];
+    return f?.preparationImageUrls?.[prep(p.id)?.sameAs || p.id] || photo(p, "s");
+  };
   const builderTitle = () => {
     const p = singlePreparations().find(p => p.id === detailPreset || tossedOf(p.id) && tossedOf(detailPreset));
     return p ? bi(p.cn.endsWith("饺") ? p.cn : `${p.cn}饺子`, `${p.en} Dumplings`) : "";
@@ -45,19 +50,22 @@ const recommendationPrice = r => {
     preparation = id; itemNote = "";
     openDish(d, styleFor(d, id), id, true);
   }
+  // Built-in photos that sit on a white backdrop have a transparent copy, so a selected (red) chip shows only the plate.
+  const CHIP_CUTOUTS = new Set(["filling-pork-chive-shrimp-boiled-cutaway-v1-appetite-v1", "filling-pork-celery-shrimp-boiled-cutaway-v1-appetite-v1", "filling-pork-scallion-boiled-cutaway-v1-appetite-v1", "wonton-soup-appetite-v2", "lunch-pork-wonton-generated-v1-appetite-v1"]);
+  const chipPhoto = f => photo(f, "s").replace(/^\/img\/s\/(.+)\.webp$/, (src, file) => CHIP_CUTOUTS.has(file) ? `/img/s/${file}-cutout.webp` : src);
   function builderControls(d, value, portions) {
-    const chip = (attribute, id, label, on, disabled = false) => `<button class="chip ${on ? "active" : ""}" ${attribute}="${id}" aria-pressed="${on}" ${disabled ? "disabled" : ""}>${escapeHTML(label)}</button>`;
+    const chip =(attribute, id, label, on, disabled = false, img = "") => `<button class="chip ${on ? "active" : ""}" ${attribute}="${id}" aria-pressed="${on}" ${disabled ? "disabled" : ""}>${img ? `<span class="chip-photo"><img src="${img}" alt="" loading="lazy"></span>` : ""}<span>${escapeHTML(label)}</span></button>`;
     const chips = (label, items, hidden = false) => `<fieldset class="lunch-options lunch-options-choice"><legend${hidden ? ' class="sr-only"' : ""}>${bi(...label)}</legend><div class="styles">${items.join("")}</div></fieldset>`;
     const tossed = tossedOf(value.prep);
     return (tossed ? chips(["口味", "Sauce"], [["spicy", "不加辣", "No chilli"], ["peanut", "不加花生酱", "No peanut sauce"]].map(([key, cn, en]) => chip("data-detail-prep", tossedToggle(tossed, key), tr(cn, en), !tossed[key])), true) : "")
-      + chips(["馅料", "Filling"], fillingsFor(value.prep).map(f => chip("data-detail-filling", f.id, name(f).replace(/ Dumplings$/, "") + (f.soldOut ? tr(" · 售罄", " · Sold out") : ""), f.id === d.id, f.soldOut)))
+      + chips(["馅料", "Filling"], fillingsFor(value.prep).map(f => chip("data-detail-filling", f.id, name(f).replace(/ Dumplings$/, "") + (f.soldOut ? tr(" · 售罄", " · Sold out") : ""), f.id === d.id, f.soldOut, chipPhoto(f))))
       + group(tr("份量", "Portion"), "pieces", portions, value.pieces, "lunch-option", true)
       + `<label class="builder-note"><span>${bi("备注", "Note")}</span><input data-builder-note maxlength="60" autocomplete="off" enterkeyhint="done" placeholder="${escapeHTML(tr("例如：少辣、不要葱", "e.g. less spicy, no scallion"))}" value="${escapeHTML(itemNote)}"></label>`;
   }
   document.addEventListener("input", e => { if (e.target.matches?.("[data-builder-note]")) itemNote = e.target.value; });
   function section() {
     if(globalThis.LUNCH_CHOOSE_FILLING_FIRST)return `<div class="lunch-steps filling-first-intro"><h3>${bi("先选口味，再选做法","Choose filling, then preparation")}</h3><p>${bi("点击下方口味，再选择做法和份量。","Choose a filling below, then preparation and portion size.")}</p></div>`;
-    return `<div class="lunch-steps lunch-builder"><div class="builder-preps" role="group" aria-label="${tr("做法", "Preparation")}">${singlePreparations().map(p => `<button type="button" class="builder-chip" data-lunch-prep="${p.id}" aria-haspopup="dialog"><img src="${photo(p, "s")}" alt="" loading="lazy"><span>${escapeHTML(tr(p.cn, p.en))}</span></button>`).join("")}</div></div>`;
+    return `<div class="lunch-steps lunch-builder"><div class="builder-preps" role="group" aria-label="${tr("做法", "Preparation")}">${singlePreparations().map(p => `<button type="button" class="builder-chip" data-lunch-prep="${p.id}" aria-haspopup="dialog"><img src="${preparationPhoto(p)}" alt="" loading="lazy"><span>${escapeHTML(tr(p.cn, p.en))}</span></button>`).join("")}</div></div>`;
   }
   const group = (label, key, values, selected, attribute = "lunch-option", showLegend = false) => `<fieldset class="lunch-options lunch-options-${key}"><legend${key === "pieces" && !showLegend ? ' class="sr-only"' : ''}>${bilingualText(label)}</legend><div>${values.map(v => `<button class="chip ${String(selected) === String(v.value) ? "active" : ""}" data-${attribute}="${key}" data-value="${v.value}" aria-pressed="${String(selected) === String(v.value)}">${bilingualText(v.label)}</button>`).join("")}</div></fieldset>`;
   function preparationBadge(d, style) {
