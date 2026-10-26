@@ -2407,3 +2407,7 @@ html[lang="en"] #lunchOptions [data-detail-filling] { line-height: 1.2; }
   html[lang] #sheet[data-mode="dish"] .detail-top h1 { font-size: 19px !important; }
   #sheet[data-mode="dish"] [data-action="add-detail"] { white-space: nowrap; }
 }
+
+/* Stripe's PayNow QR page fills the screen from the very top. With viewport-fit=cover its ×
+   sits under the iPhone status bar, so start the page below the safe area. */
+dialog:has(> div > iframe[name^="__privateStripeFrame"]) > div { position: absolute; inset: env(safe-area-inset-top) 0 0; }
