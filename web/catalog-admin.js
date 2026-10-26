@@ -89,6 +89,28 @@
   }
   $('#manageSections').onclick = () => { if (!data) return; $('#sectionsBody').innerHTML = sectionsHTML(); $('#sectionsDialog').showModal(); };
   $('#closeSections').onclick = () => $('#sectionsDialog').close();
+  // 自选 preparation cards: one photo each, saved at once. Without one, a card shows the
+  // 韭菜虾仁猪肉 photo for that preparation, else the stock illustration.
+  const BUILDER_CARDS = [['soup','清汤','soup','preparation-soup-generated-v3-appetite-v1'],['boiled','水煮','boiled','preparation-boiled-generated-v3-appetite-v1'],['fried','煎饺','fried','preparation-fried-generated-v3-appetite-v1'],['dry','干拌','red-oil','preparation-tossed-generated-v3-appetite-v3']];
+  function builderPhotosHTML() {
+    const own = data.settings?.builderPhotos || {}, chive = data.items.find(d => d.id === 'lunch-v2-pork-chive-shrimp');
+    return `<div class="preparation-photo-grid">${BUILDER_CARDS.map(([id, label, method, art]) => `<article class="preparation-photo-card"><img src="${esc(own[id] || chive?.preparationImageUrls?.[method] || `/img/s/${art}.webp`)}" alt="${label}图片预览"><strong>${label}</strong><label class="method-upload">${own[id] ? '更换图片' : '上传图片'}<input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" data-builder-file="${id}"></label><button type="button" class="text-button" data-builder-clear="${id}" ${own[id] ? '' : 'disabled'}>恢复原图</button></article>`).join('')}</div><p class="hint" role="status" aria-live="polite"></p>`;
+  }
+  const showBuilderPhotos = () => { $('#builderPhotosBody').innerHTML = builderPhotosHTML(); };
+  async function saveBuilderPhoto(prep, file) {
+    const status = $('#builderPhotosBody [role=status]'), name = BUILDER_CARDS.find(c => c[0] === prep)[1];
+    status.textContent = file ? '正在上传…' : '正在恢复…';
+    try {
+      let url = null;
+      if (file) { const photo = await preparePhoto(file); url = (await request('/api/catalog-image', {method:'POST', headers:{'content-type':photo.type}, body:photo})).url; }
+      await saveSettings({action:'builder-photo', prep, url}, status);
+      showBuilderPhotos(); $('#builderPhotosBody [role=status]').textContent = file ? `「${name}」卡片已换图，顾客菜单 30 秒内同步。` : `「${name}」卡片已恢复原图。`;
+    } catch (error) { status.textContent = error.message; }
+  }
+  $('#manageBuilderPhotos').onclick = () => { if (!data) return; showBuilderPhotos(); $('#builderPhotosDialog').showModal(); };
+  $('#closeBuilderPhotos').onclick = () => $('#builderPhotosDialog').close();
+  $('#builderPhotosBody').onchange = e => { const prep = e.target.dataset.builderFile; if (prep && e.target.files[0]) saveBuilderPhoto(prep, e.target.files[0]); };
+  $('#builderPhotosBody').onclick = e => { const prep = e.target.closest('[data-builder-clear]')?.dataset.builderClear; if (prep) saveBuilderPhoto(prep, null); };
   $('#sectionsBody').onclick = e => {
     const b = e.target.closest('button'), row = b?.closest('[data-section-key]'); if (!row) return;
     const key = row.dataset.sectionKey, s = data.sections.find(x => x.key === key);

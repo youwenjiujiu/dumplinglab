@@ -9,7 +9,9 @@ const text=(v,max)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/[<>\x00-\
 const initial=()=>({schema:1,revision:0,overrides:{},holds:{},audit:[]});
 // A table discount applies to every dine-in order from that table until staff cancel it;
 // a day discount applies to every dine-in table on that Singapore date.
-const settingsOf=state=>({tableDiscounts:{...state.settings?.tableDiscounts},dayDiscounts:{...state.settings?.dayDiscounts}});
+// builderPhotos: the owner's own photo on each 自选 preparation card.
+const BUILDER_CARDS=['soup','boiled','fried','dry'];
+const settingsOf=state=>({tableDiscounts:{...state.settings?.tableDiscounts},dayDiscounts:{...state.settings?.dayDiscounts},builderPhotos:{...state.settings?.builderPhotos}});
 const DISCOUNT_SECTIONS=['dumplings','noodles','sides','cold','drinks','recommended'];
 // Built-in categories keep their names; staff add their own (key sec-xxxxxxxx) and set the order.
 const BUILTIN_SECTIONS=[['dumplings','饺子／云吞','Your Choice'],['noodles','面条','Noodles'],['sides','配菜','Sides'],['cold','凉菜','Cold Dishes'],['drinks','饮品','Drinks'],['recommended','固定搭配','Recommended']];
@@ -205,6 +207,12 @@ export function createCatalogService(storage,{now=()=>new Date()}={}){
     const discount=input.discount===null?null:cleanDiscount(input.discount);
     // Past days are dropped on every save so the list only shows today and later.
     const state=await change(s=>{const all=Object.fromEntries(Object.entries({...s.settings?.dayDiscounts}).filter(([d])=>d>=today));if(discount)all[date]=discount;else delete all[date];if(Object.keys(all).length>60)throw new RequestError('折扣日期太多，请先取消不用的');s.settings={...s.settings,dayDiscounts:all};audit(s,'settings',date,{dayDiscount:discount})});
+    return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
+   }
+   if(input.action==='builder-photo'){
+    if(!BUILDER_CARDS.includes(input.prep))throw new RequestError('做法无效');
+    const url=input.url===null?'':validatePatch({},{patch:{imageUrl:input.url}}).imageUrl;
+    const state=await change(s=>{const all={...s.settings?.builderPhotos};if(url)all[input.prep]=url;else delete all[input.prep];s.settings={...s.settings,builderPhotos:all};audit(s,'settings',input.prep,{builderPhoto:url||null})});
     return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
    }
    if(input.action!=='table-discount')throw new RequestError('设置项无效');

@@ -35,8 +35,11 @@ const recommendationPrice = r => {
     return LUNCH_PREPARATIONS.filter(p => (globalThis.LUNCH_SINGLE_PREPARATIONS || LUNCH_PREPARATIONS.map(p => p.id)).includes(p.id) && (!tossedOf(p.id) || p.id === first))
       .map(p => p.id === first ? { ...p, cn: "干拌", en: "Tossed" } : p);
   };
-  // A preparation card shows the restaurant's own photo of the filling its sheet opens with, once uploaded.
+  // A preparation card shows the photo uploaded for it in 菜品管理 → 自选卡片图; failing that, the
+  // restaurant's own photo of the filling its sheet opens with.
   const preparationPhoto = p => {
+    const own = globalThis.DL_SETTINGS?.builderPhotos?.[p.id];
+    if (own) return own;
     const fillings = fillingsFor(p.id), f = fillings.find(f => !f.soldOut) || fillings[0];
     return f?.preparationImageUrls?.[prep(p.id)?.sameAs || p.id] || photo(p, "s");
   };
@@ -54,7 +57,7 @@ const recommendationPrice = r => {
   const CHIP_CUTOUTS = new Set(["filling-pork-chive-shrimp-boiled-cutaway-v1-appetite-v1", "filling-pork-celery-shrimp-boiled-cutaway-v1-appetite-v1", "filling-pork-scallion-boiled-cutaway-v1-appetite-v1", "wonton-soup-appetite-v2", "lunch-pork-wonton-generated-v1-appetite-v1"]);
   const chipPhoto = f => photo(f, "s").replace(/^\/img\/s\/(.+)\.webp$/, (src, file) => CHIP_CUTOUTS.has(file) ? `/img/s/${file}-cutout.webp` : src);
   function builderControls(d, value, portions) {
-    const chip =(attribute, id, label, on, disabled = false, img = "") => `<button class="chip ${on ? "active" : ""}" ${attribute}="${id}" aria-pressed="${on}" ${disabled ? "disabled" : ""}>${img ? `<span class="chip-photo"><img src="${img}" alt="" loading="lazy"></span>` : ""}<span>${escapeHTML(label)}</span></button>`;
+    const chip = (attribute, id, label, on, disabled = false, img = "") => `<button class="chip ${on ? "active" : ""}" ${attribute}="${id}" aria-pressed="${on}" ${disabled ? "disabled" : ""}>${img ? `<img src="${img}" alt="" loading="lazy">` : ""}${escapeHTML(label)}</button>`;
     const chips = (label, items, hidden = false) => `<fieldset class="lunch-options lunch-options-choice"><legend${hidden ? ' class="sr-only"' : ""}>${bi(...label)}</legend><div class="styles">${items.join("")}</div></fieldset>`;
     const tossed = tossedOf(value.prep);
     return (tossed ? chips(["口味", "Sauce"], [["spicy", "不加辣", "No chilli"], ["peanut", "不加花生酱", "No peanut sauce"]].map(([key, cn, en]) => chip("data-detail-prep", tossedToggle(tossed, key), tr(cn, en), !tossed[key])), true) : "")
