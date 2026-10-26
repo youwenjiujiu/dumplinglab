@@ -3,7 +3,7 @@ import {createCatalogService,catalogView} from '../../web/server/catalog-core.js
 import {cleanItems} from '../../web/server/order-core.js';
 let record=null;const storage={async read(){return structuredClone(record)},async write(value,etag){assert.equal(etag,record?.etag);record={value:structuredClone(value),etag:String(Number(etag||0)+1)}},isConflict(){return false}};
 let svc=createCatalogService(storage);const id='lunch-v2-pork-chive-shrimp',get=async()=> (await svc.menu()).find(d=>d.id===id),save=async patch=>svc.save({id,revision:(await svc.admin()).revision,patch});
-let d=await get();assert.deepEqual(d.preparations,['boiled','soup','red-oil','peanut'],'单点默认不卖煎');assert.deepEqual(d.availablePreparations,['boiled','soup','red-oil','peanut','fried'],'后台可以打开煎');assert.equal(LUNCH_RECOMMENDATIONS.find(r=>r.id==='chive-fried').dishId,'lunch-v10-pork-chive-shrimp-fried');
+let d=await get();assert.deepEqual(d.preparations,['boiled','soup','red-oil','dry','soy','peanut'],'单点默认不卖煎；红油花生酱拌、酱油拌跟随红油');assert.deepEqual(d.availablePreparations,['boiled','soup','red-oil','peanut','fried'],'后台可以打开煎');assert.equal(LUNCH_RECOMMENDATIONS.find(r=>r.id==='chive-fried').dishId,'lunch-v10-pork-chive-shrimp-fried');
 assert.equal((await svc.menu()).find(d=>d.id==='lunch-v10-pork-chive-shrimp-fried').active,true);
 const style=(dish,prep,pieces)=>dish.styles.find(s=>dish.variants[s].prep===prep&&dish.variants[s].pieces===pieces);
 for(const [method,extra] of Object.entries({boiled:0,soup:0,'red-oil':0,peanut:0}))for(const pieces of [5,9]){

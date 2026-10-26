@@ -3,8 +3,8 @@ const LunchMenu = (() => {
   let preparation = null;
   let step = "preparation";
   let flavor = { spicy:false, sesame:false, noodles:false };
-  // One-page choice after the preparation: filling, portion and a note for this portion.
-  let chosenFilling = null, chosenPieces = null, itemNote = "";
+  // The 自选 sheet keeps its note while the filling or sauce changes.
+  let itemNote = "";
   const prep = id => LUNCH_PREPARATIONS.find(p => p.id === id);
   const preparationDescription = id => ({ soup:tr("清汤鲜香", "In clear broth"), tossed:tr("酱汁拌匀", "Coated in sauce"), boiled:tr("清爽原味", "Plain, no sauce"), fried:tr("金黄脆底", "Golden crisp base") })[id] || "";
   const options = (d, style) => d.variants?.[style];
@@ -25,37 +25,43 @@ const recommendationPrice = r => {
     const price=recommendationPrice(r);
     return r.chooseFilling||hasPriceRange(dish(r.dishId),r.prep)?fromPrice(price):foodMoney(price);
   };
-  const builderFillings = () => MENU.filter(d => d.section === "dumplings" && visible(d));
-  const piecesOf = d => Object.keys(d.portionPrices || {}).map(Number).sort((a, b) => a - b);
-  function builder() {
-    const fillings = builderFillings(), d = fillings.find(x => x.id === chosenFilling) || null;
-    const pieces = d ? (piecesOf(d).includes(chosenPieces) ? chosenPieces : piecesOf(d)[0]) : null;
-    const style = d ? styleFor(d, preparation, pieces) : null, price = style ? lunchPrice(d, style) : null;
-    const preps = LUNCH_PREPARATIONS.filter(p => (globalThis.LUNCH_SINGLE_PREPARATIONS || LUNCH_PREPARATIONS.map(p => p.id)).includes(p.id));
-    return `<div class="lunch-steps lunch-builder">
-      <div class="builder-preps" role="group" aria-label="${tr("做法", "Preparation")}">${preps.map(p => `<button type="button" class="builder-chip" data-lunch-prep="${p.id}" aria-pressed="${preparation === p.id}"><img src="${photo(p, "s")}" alt="" loading="lazy"><span>${escapeHTML(tr(p.cn, p.en))}</span></button>`).join("")}</div>
-      <h3 class="builder-title" id="fillingStepTitle" tabindex="-1">${bi("馅料", "Filling")}</h3>
-      <div class="filling-chips" role="group" aria-label="${tr("馅料", "Filling")}">${fillings.map(f => { const n = groupQty(f); return `<button type="button" class="filling-chip ${n ? "has-qty" : ""}" data-builder-filling="${f.id}" aria-pressed="${f.id === chosenFilling}" ${f.soldOut ? "disabled" : ""}><img src="${photo(f, "s")}" alt="" loading="lazy"><span>${escapeHTML(name(f))}</span><small>${f.soldOut ? tr("售罄", "Sold out") : preparationPrice(f)}</small>${n ? `<b aria-label="${tr(`已点 ${n} 份`, `${n} in order`)}">${n}</b>` : ""}</button>`; }).join("")}</div>
-      ${d ? `<h3 class="builder-title">${bi("份量", "Portion")}</h3><div class="builder-portions" role="group" aria-label="${tr("份量", "Portion")}">${piecesOf(d).map(n => { const st = styleFor(d, preparation, n); return st ? `<button type="button" class="builder-chip" data-builder-pieces="${n}" aria-pressed="${n === pieces}">${tr(`${n} 颗 · ${foodMoney(lunchPrice(d, st))}`, `${n} pieces · ${foodMoney(lunchPrice(d, st))}`)}</button>` : ""; }).join("")}</div>` : ""}
-      <label class="builder-note"><span>${bi("备注", "Note")}</span><input data-builder-note maxlength="60" autocomplete="off" enterkeyhint="done" placeholder="${escapeHTML(tr("例如：少辣、不要葱", "e.g. less spicy, no scallion"))}" value="${escapeHTML(itemNote)}"></label>
-      <button type="button" class="primary builder-add" data-builder-add ${style ? "" : "disabled"}>${style ? tr(`加入 · ${foodMoney(price)}`, `Add · ${foodMoney(price)}`) : tr("先选一个馅料", "Choose a filling")}</button>
-    </div>`;
+  // 自选: each preparation opens a sheet like a drink's, choosing filling, portion and note there.
+  const fillingsFor = id => MENU.filter(d => d.section === "dumplings" && d.active !== false && d.singleChoice !== false && !d.fixedPreparation && d.preparations?.includes(id));
+  // The four tossed sauces show as one 干拌 choice; 免辣 / 免花生酱 then pick among them.
+  const tossedOf = id => (globalThis.LUNCH_TOSSED || []).find(t => t.id === id);
+  const tossedToggle = (t, key) => LUNCH_TOSSED.find(x => x.spicy === (key === "spicy" ? !t.spicy : t.spicy) && x.peanut === (key === "peanut" ? !t.peanut : t.peanut))?.id;
+  const singlePreparations = () => {
+    const first = globalThis.LUNCH_TOSSED?.[0]?.id;
+    return LUNCH_PREPARATIONS.filter(p => (globalThis.LUNCH_SINGLE_PREPARATIONS || LUNCH_PREPARATIONS.map(p => p.id)).includes(p.id) && (!tossedOf(p.id) || p.id === first))
+      .map(p => p.id === first ? { ...p, cn: "干拌", en: "Tossed" } : p);
+  };
+  const builderTitle = () => {
+    const p = singlePreparations().find(p => p.id === detailPreset || tossedOf(p.id) && tossedOf(detailPreset));
+    return p ? bi(p.cn.endsWith("饺") ? p.cn : `${p.cn}饺子`, `${p.en} Dumplings`) : "";
+  };
+  function openPreparation(id) {
+    const fillings = fillingsFor(id), d = fillings.find(f => !f.soldOut) || fillings[0];
+    if (!d) { toast(tr("这个做法暂时没有可选的馅料。", "No fillings for this preparation right now.")); return; }
+    preparation = id; itemNote = "";
+    openDish(d, styleFor(d, id), id, true);
   }
-  function refreshBuilder(focus) {
-    const node = document.querySelector(".lunch-builder");
-    if (!node) return;
-    node.outerHTML = builder();
-    if (focus) document.querySelector(focus)?.focus({ preventScroll: true });
+  function builderControls(d, value, portions) {
+    const chip = (attribute, id, label, on, disabled = false) => `<button class="chip ${on ? "active" : ""}" ${attribute}="${id}" aria-pressed="${on}" ${disabled ? "disabled" : ""}>${escapeHTML(label)}</button>`;
+    const chips = (label, items, hidden = false) => `<fieldset class="lunch-options lunch-options-choice"><legend${hidden ? ' class="sr-only"' : ""}>${bi(...label)}</legend><div class="styles">${items.join("")}</div></fieldset>`;
+    const tossed = tossedOf(value.prep);
+    return (tossed ? chips(["口味", "Sauce"], [["spicy", "免辣", "No chilli"], ["peanut", "免花生酱", "No peanut sauce"]].map(([key, cn, en]) => chip("data-detail-prep", tossedToggle(tossed, key), tr(cn, en), !tossed[key])), true) : "")
+      + chips(["馅料", "Filling"], fillingsFor(value.prep).map(f => chip("data-detail-filling", f.id, name(f) + (f.soldOut ? tr(" · 售罄", " · Sold out") : ""), f.id === d.id, f.soldOut)))
+      + group(tr("份量", "Portion"), "pieces", portions, value.pieces, "lunch-option", true)
+      + `<label class="builder-note"><span>${bi("备注", "Note")}</span><input data-builder-note maxlength="60" autocomplete="off" enterkeyhint="done" placeholder="${escapeHTML(tr("例如：少辣、不要葱", "e.g. less spicy, no scallion"))}" value="${escapeHTML(itemNote)}"></label>`;
   }
   document.addEventListener("input", e => { if (e.target.matches?.("[data-builder-note]")) itemNote = e.target.value; });
   function section() {
     if(globalThis.LUNCH_CHOOSE_FILLING_FIRST)return `<div class="lunch-steps filling-first-intro"><h3>${bi("先选口味，再选做法","Choose filling, then preparation")}</h3><p>${bi("点击下方口味，再选择做法和份量。","Choose a filling below, then preparation and portion size.")}</p></div>`;
-    if (step === "filling") return builder();
-    return `<div class="lunch-steps"><div class="lunch-preparations" role="group" aria-label="${tr("选择做法", "Preparation")}">${LUNCH_PREPARATIONS.filter(p=>(globalThis.LUNCH_SINGLE_PREPARATIONS||LUNCH_PREPARATIONS.map(p=>p.id)).includes(p.id)).map(p => `<button data-lunch-prep="${p.id}" aria-pressed="${preparation === p.id}"><span class="preparation-photo"><img src="${photo(p)}" alt="" loading="lazy"></span><span class="preparation-label"><strong>${bi(p.cn,p.en)}</strong><small class="preparation-description">${preparationDescription(p.id)}</small><span class="preparation-state" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3.2 3.2L15 6.5"/></svg></span></span></button>`).join("")}</div></div>`;
+    return `<div class="lunch-steps lunch-builder"><div class="builder-preps" role="group" aria-label="${tr("做法", "Preparation")}">${singlePreparations().map(p => `<button type="button" class="builder-chip" data-lunch-prep="${p.id}" aria-haspopup="dialog"><img src="${photo(p, "s")}" alt="" loading="lazy"><span>${escapeHTML(tr(p.cn, p.en))}</span></button>`).join("")}</div></div>`;
   }
-  const group = (label, key, values, selected, attribute = "lunch-option") => `<fieldset class="lunch-options lunch-options-${key}"><legend${key === "pieces" ? ' class="sr-only"' : ''}>${bilingualText(label)}</legend><div>${values.map(v => `<button class="chip ${String(selected) === String(v.value) ? "active" : ""}" data-${attribute}="${key}" data-value="${v.value}" aria-pressed="${String(selected) === String(v.value)}">${bilingualText(v.label)}</button>`).join("")}</div></fieldset>`;
+  const group = (label, key, values, selected, attribute = "lunch-option", showLegend = false) => `<fieldset class="lunch-options lunch-options-${key}"><legend${key === "pieces" && !showLegend ? ' class="sr-only"' : ''}>${bilingualText(label)}</legend><div>${values.map(v => `<button class="chip ${String(selected) === String(v.value) ? "active" : ""}" data-${attribute}="${key}" data-value="${v.value}" aria-pressed="${String(selected) === String(v.value)}">${bilingualText(v.label)}</button>`).join("")}</div></fieldset>`;
   function preparationBadge(d, style) {
-    const method = options(d, style)?.prep === "fried" ? null : d.fixedPreparation || (detailPreset && prep(options(d, style)?.prep));
+    const method = detailBuilder || options(d, style)?.prep === "fried" ? null : d.fixedPreparation || (detailPreset && prep(options(d, style)?.prep));
     return `<span id="detailPreparation" class="preparation-badge"${method ? "" : " hidden"}>${method ? bi(method.cn, method.en) : ""}</span>`;
   }
   function extrasControls(value, attribute = "lunch-option", lockedNoodles = false) {
@@ -67,9 +73,10 @@ const recommendationPrice = r => {
     if(!d.variants)return '';
     const value=options(d,detailStyle);
     if(d.fixedPieces)return `<div id="lunchOptions"><p class="detail-portion">${bi('每份固定 '+d.fixedPieces+' 颗云吞，已含面','Each serving includes '+d.fixedPieces+' wontons and noodles')}</p></div>`;
-    const methods=d.availablePreparations||globalThis.LUNCH_SINGLE_PREPARATIONS||d.preparations;
+    const methods=d.availablePreparations?expandPreparations(d.availablePreparations):globalThis.LUNCH_SINGLE_PREPARATIONS||d.preparations;
     const preparationOptions=methods.filter(id=>d.preparations.includes(id)).map(id=>{const p=prep(id),extra=d.preparationExtras?.[id]||0;return {value:id,label:tr(p.cn,p.en)+(extra?' +'+foodMoney(extra):'')}});
     const portions=Object.keys(d.portionPrices).map(Number).map(n=>{const price=itemPrice(d,styleFor(d,value.prep,n,value));return {value:n,label:tr(`${n} 颗 · ${foodMoney(price)}`,`${n} pieces · ${foodMoney(price)}`)}});
+    if(detailBuilder)return `<div id="lunchOptions">${builderControls(d,value,portions)}</div>`;
     return `<div id="lunchOptions">${d.fixedPreparation||detailPreset?'':group(tr('做法','Preparation'),'prep',preparationOptions,value.prep)}${group(tr('选份量','Portion'),'pieces',portions,value.pieces)}${d.fixedPreparation?'':extrasControls(value,'lunch-option',Boolean(detailPreset?.noodles))}</div>`;
   }
   function ingredients(d, style, previousKeys = null) {
@@ -78,8 +85,9 @@ const recommendationPrice = r => {
     const value = options(d, style);
     if (value?.prep === "soup") items.push({cn:"高汤", en:"Broth"});
     if (value?.noodles) items.push({cn:"面条", en:"Noodles"});
-    if (value?.prep === "peanut") items.push({cn:"花生酱",en:"Peanut sauce"});
-    if (value?.prep === "red-oil") items.push({cn:"四川红油",en:"Sichuan chilli oil"});
+    if (["peanut", "dry"].includes(value?.prep)) items.push({cn:"花生酱",en:"Peanut sauce"});
+    if (["red-oil", "dry"].includes(value?.prep)) items.push({cn:"四川红油",en:"Sichuan chilli oil"});
+    if (value?.prep === "soy") items.push({cn:"酱油",en:"Soy sauce"});
     if (value?.sesame) items.push({cn:"芝麻酱", en:"Sesame sauce"});
     // Spicy is an option, not proof of a specific oil, pepper or sauce recipe.
     if (value?.spicy && value.prep === "tossed") items.push({cn:"辣味调料", en:"Spicy seasoning"});
@@ -94,7 +102,7 @@ return `<section class="menu-section${matchMedia("(max-width: 760px)").matches ?
   }
   function openBoiledFillings() {
     openModal("filling", "");
-    $("#sheetBody").innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${bi("白灼饺子", "Boiled Dumplings")}</h2><p class="detail-other">${bi("选馅儿", "Choose your filling")}</p><div class="filling-picker">${MENU.filter(d=>["dumpling","wonton"].includes(d.kind) && d.singleChoice!==false && d.active!==false && d.preparations.includes("boiled")).map(d=>`<button ${d.soldOut?'disabled':''} data-boiled-filling="${d.id}"><img src="${photo(d)}" alt=""><span><strong>${dishNameHTML(d)}</strong><small>${otherName(d)}</small></span><span class="filling-price">${fromPrice(d.price)}</span><span aria-hidden="true">+</span></button>`).join("")}</div></div>`;
+    $("#sheetBody").innerHTML = `<div class="sheet-content"><h2 id="sheetTitle">${bi("水煮饺子", "Boiled Dumplings")}</h2><p class="detail-other">${bi("选馅儿", "Choose your filling")}</p><div class="filling-picker">${MENU.filter(d=>["dumpling","wonton"].includes(d.kind) && d.singleChoice!==false && d.active!==false && d.preparations.includes("boiled")).map(d=>`<button ${d.soldOut?'disabled':''} data-boiled-filling="${d.id}"><img src="${photo(d)}" alt=""><span><strong>${dishNameHTML(d)}</strong><small>${otherName(d)}</small></span><span class="filling-price">${fromPrice(d.price)}</span><span aria-hidden="true">+</span></button>`).join("")}</div></div>`;
   }
   function handle(button) {
     if (button.dataset.recommendation) {
@@ -109,33 +117,21 @@ return `<section class="menu-section${matchMedia("(max-width: 760px)").matches ?
       if (d?.preparations.includes("boiled")) openDish(d, styleFor(d,"boiled"), "boiled");
       return true;
     }
-    if (button.dataset.builderFilling) {
-      chosenFilling = button.dataset.builderFilling;
-      refreshBuilder(`[data-builder-filling="${chosenFilling}"]`);
-      return true;
-    }
-    if (button.dataset.builderPieces) {
-      chosenPieces = Number(button.dataset.builderPieces);
-      refreshBuilder(`[data-builder-pieces="${chosenPieces}"]`);
-      return true;
-    }
-    if (button.hasAttribute("data-builder-add")) {
-      const d = builderFillings().find(x => x.id === chosenFilling);
-      if (!d) return true;
-      const pieces = piecesOf(d).includes(chosenPieces) ? chosenPieces : piecesOf(d)[0], style = styleFor(d, preparation, pieces);
-      if (style && add(d, style, 1, itemNote.trim() || null)) { itemNote = ""; refreshBuilder("[data-builder-add]"); }
-      return true;
-    }
     if (button.dataset.lunchPrep) {
       if (!prep(button.dataset.lunchPrep)||(globalThis.LUNCH_SINGLE_PREPARATIONS&&!LUNCH_SINGLE_PREPARATIONS.includes(button.dataset.lunchPrep))) return true;
-      const switching = step === "filling";
-      preparation = button.dataset.lunchPrep;
-      flavor = { spicy: false, sesame: false, noodles: false };
-      step = "filling";
-      if (switching) { if (!builderFillings().some(d => d.id === chosenFilling)) chosenFilling = null; refreshBuilder(`[data-lunch-prep="${preparation}"]`); return true; }
-      renderMenu();
-      document.querySelector("#fillingStepTitle")?.focus({preventScroll:true});
-      document.querySelector("#section-dumplings")?.scrollIntoView({behavior:"instant",block:"start"});
+      openPreparation(button.dataset.lunchPrep);
+      return true;
+    }
+    if (button.dataset.detailFilling || button.dataset.detailPrep) {
+      if (!detailBuilder) return true;
+      const pieces = options(detail, detailStyle).pieces, next = button.dataset.detailFilling ? dish(button.dataset.detailFilling) : detail, method = button.dataset.detailPrep || detailPreset;
+      const key = styleFor(next, method, pieces) || styleFor(next, method);
+      if (!key) return true;
+      const focus = button.dataset.detailFilling ? `[data-detail-filling="${next.id}"]` : `[data-detail-prep]:nth-child(${[...button.parentElement.children].indexOf(button) + 1})`;
+      detail = next; detailPreset = preparation = method; detailStyle = key;
+      document.querySelector("#lunchOptions").outerHTML = controls(detail);
+      updateDetailSelection();
+      document.querySelector(focus)?.focus({ preventScroll: true });
       return true;
     }
     if (button.hasAttribute("data-lunch-back")) {
@@ -175,7 +171,7 @@ return `<section class="menu-section${matchMedia("(max-width: 760px)").matches ?
     if (!prices.length) return menuPrice(d);
     return new Set(prices).size > 1 ? fromPrice(Math.min(...prices)) : foodMoney(prices[0]);
   };
-  return { recommendationPrice, recommendationPriceLabel, openBoiledFillings, section, recommendationSection, controls, ingredients, preparationBadge, handle, visible, firstStyle, menuPrice, preparationPrice, options, readyFor, start, chosenPreparation };
+  return { builderTitle, recommendationPrice, recommendationPriceLabel, openBoiledFillings, section, recommendationSection, controls, ingredients, preparationBadge, handle, visible, firstStyle, menuPrice, preparationPrice, options, readyFor, start, chosenPreparation };
 })();
 
 // Project-local semantic adaptation of generated/ingredient-reveal-v1/motion-plan.json.

@@ -56,7 +56,7 @@ globalThis.ReportAdmin = (() => {
         <ul>${o.items.map(line).join('')}</ul>${o.note ? `<p class="report-order-note">备注：${esc(o.note)}</p>` : ''}
         <footer>${o.counterMethod ? `<span>柜台${o.counterMethod === 'cash' ? '现金' : '刷卡机'}</span>` : ''}${o.discountCents ? `<span>折扣 −${money(o.discountCents)}</span>` : ''}${o.refundCents ? `<span class="report-refund">退款 −${money(o.refundCents)}</span>` : ''}${o.canRefund && o.refundCents < o.totalCents ? `<button type="button" class="report-refund-open" data-refund-order="${esc(o.id)}">退款</button>` : ''}<strong>${money(o.totalCents)}</strong></footer></article>`).join('')}</div>`;
   }
-  // 刷卡/PayNow 的单直接原路退回；结果未确认时保留同一个退款编号，再点也不会重复退。
+  // 刷卡/PayNow 的单直接原路退回；柜台单只记账，钱在柜台退。结果未确认时保留同一个退款编号，再点也不会重复退。
   function refundForm(article, order) {
     const key = 'dl-order-refund-' + order.id, left = order.totalCents - order.refundCents;
     let pending = null;

@@ -1167,7 +1167,6 @@ dialog[open] {
 .close-button .icon { width: 18px; height: 18px; stroke-width: 1.6; }
 .close-button:focus-visible { outline-offset: 0; }
 html[data-input-mode="pointer"] .close-button:focus,
-html[data-input-mode="pointer"] #fillingStepTitle:focus { outline: none; }
 .sheet-content {
   padding: 26px 26px 32px;
 }

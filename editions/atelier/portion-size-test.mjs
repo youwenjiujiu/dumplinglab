@@ -9,7 +9,7 @@ await save({portionSizes:[6,12],portionPrices:{6:6.8,12:10.8}});
 service=createCatalogService(storage);d=(await service.menu()).find(d=>d.id===id);
 assert.deepEqual(d.portionPrices,{6:6.8,12:10.8});assert(Object.values(d.variants).every(v=>[6,12].includes(v.pieces)&&Number.isFinite(v.price)));
 assert(d.styles.some(s=>s.includes('12颗')));assert(!d.styles.some(s=>s.includes('9颗')));
-await save({portionPrices:{6:7,12:11}});d=(await service.menu()).find(d=>d.id===id);assert(Object.values(d.variants).every(v=>v.price===({6:7,12:11})[v.pieces]+d.preparationExtras[v.prep]));
+await save({portionPrices:{6:7,12:11}});d=(await service.menu()).find(d=>d.id===id);assert(Object.values(d.variants).every(v=>v.price===({6:7,12:11})[v.pieces]+d.preparationExtras[globalThis.LUNCH_PREPARATIONS.find(p=>p.id===v.prep).sameAs||v.prep]));
 await save({portionSizes:[5,9],portionPrices:{5:7,9:11}});d=(await service.menu()).find(d=>d.id===id);assert.deepEqual(Object.keys(d.portionPrices),['5','9']);
 for(const sizes of [[5,5],[9,5],[0,9],[5,101],[5.5,9]])await assert.rejects(save({portionSizes:sizes,portionPrices:{5:7,9:11}}));
 assert.equal((await service.public()).lunchSets.find(s=>s.key==='dumpling-set').pieces,9);

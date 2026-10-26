@@ -48,7 +48,7 @@ export function summarizeOrders(orders, query, now = new Date()) {
   const orderList = paid.slice().sort((a, b) => Date.parse(b.paidAt || b.at) - Date.parse(a.paidAt || a.at)).slice(0, ORDER_LIST_LIMIT).map(o => ({
     id: o.id, no: o.no || null, mode: o.mode, table: o.table || null, group: o.group || null, pickupNumber: o.pickup?.number || null,
     at: o.paidAt || o.at, note: o.note || null, paymentMethod: o.paymentMethod || 'card',
-    canRefund: o.paymentMethod !== 'wallet' && Boolean(o.paymentIntentId),
+    canRefund: o.paymentMethod === 'counter' || (o.paymentMethod !== 'wallet' && Boolean(o.paymentIntentId)),
     ...(o.counterMethod ? { counterMethod: o.counterMethod } : {}),
     totalCents: cents(o.total), refundCents: Math.min(cents(o.total), o.refundedCents || 0), discountCents: cents(o.discount) + (o.loyalty?.discountCents || 0),
     items: (o.items || []).map(i => ({ name: i.name, style: i.style || null, qty: i.qty, priceCents: cents(i.price), ...(i.promo ? { promo: i.promo } : {}), ...(i.note ? { note: i.note } : {}) })),

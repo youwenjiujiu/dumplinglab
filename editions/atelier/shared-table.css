@@ -2340,21 +2340,6 @@ img[src*="-appetite-v"] { filter: none !important; }
   /* Let the last category scroll to the top, so tapping it in the rail keeps it highlighted. */
   #menuList > .menu-section:last-of-type { min-height: calc(var(--visible-height, 100vh) - 60px); min-height: calc(100dvh - 60px); }
 }
-/* After a preparation is chosen, fillings are option buttons with a small photo,
-   like a drink's flavour choices; tapping one opens the portion choice. */
-.filling-chips { display: flex; flex-wrap: wrap; gap: 10px; }
-.filling-chip {
-  position: relative; display: grid; grid-template-columns: 40px auto; grid-template-rows: auto auto; column-gap: 10px; align-items: center;
-  min-height: 56px; padding: 6px 14px 6px 6px; border: 1px solid #e3ddd6; border-radius: 10px; background: #fff;
-  text-align: left; color: var(--ink); font: 400 15px/1.3 var(--sans);
-}
-.filling-chip img { grid-row: 1 / 3; width: 40px; height: 40px; object-fit: contain; }
-.filling-chip small { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.filling-chip:active { transform: scale(.97); }
-.filling-chip.has-qty { border-color: var(--red); }
-.filling-chip b { position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--red); color: #fff8eb; font: 600 12px/20px var(--sans); text-align: center; }
-.filling-chip:disabled { opacity: .45; }
-@media (max-width: 760px) { .filling-chips { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; } }
 /* Search: a rounded field with 取消 beside it, popular searches before typing,
    and a + on every result, as in delivery apps. */
 body.search-open .search-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; padding: 10px 16px; }
@@ -2395,18 +2380,17 @@ body.search-open .filters button[aria-pressed="true"], body.search-open .filters
 }
 
 .cart-dish-copy .cart-line-note, .receipt-item-copy .cart-line-note, .checkout-lines .cart-line-note { color: var(--red); }
-/* One-page dumpling builder: preparation, filling, portion, note, add. */
+/* 自选: preparation chips; each opens the dish sheet with filling, portion and note. */
 .lunch-builder { display: grid; gap: 12px; }
-.lunch-builder .builder-title { margin: 10px 0 0; font: 500 15px/1.4 var(--sans); color: var(--muted); }
-.builder-preps, .builder-portions { display: flex; flex-wrap: wrap; gap: 8px; }
+.builder-preps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .builder-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 14px; border: 1px solid #e3ddd6; border-radius: 10px; background: #fff; color: var(--ink); font: 400 14px/1.3 var(--sans); }
-.builder-preps .builder-chip { padding-left: 4px; }
-.builder-chip img { width: 34px; height: 34px; object-fit: contain; }
-.builder-chip[aria-pressed="true"], .filling-chip[aria-pressed="true"] { border-color: var(--red); background: #fbeceb; color: var(--red); }
+.builder-preps .builder-chip { flex-direction: column; justify-content: center; gap: 8px; padding: 14px 8px 16px; border-radius: 14px; font-size: 20px; }
+.builder-chip img { width: 34px; height: 34px; object-fit: contain; mix-blend-mode: multiply; }
+.builder-preps .builder-chip img { width: 104px; height: 104px; }
 .builder-chip:active { transform: scale(.97); }
 .builder-note { display: grid; gap: 6px; margin-top: 4px; font: 500 15px/1.4 var(--sans); color: var(--muted); }
 .builder-note input { min-height: 44px; padding: 0 12px; border: 1px solid #e3ddd6; border-radius: 10px; background: #fff; color: var(--ink); font: 400 16px/1.3 var(--sans); }
 .builder-note input:focus { outline: none; border-color: var(--red); }
-.builder-add { min-height: 48px; margin-top: 6px; border-radius: 12px; font-size: 16px; }
-.builder-add:disabled { opacity: .5; }
-@media (max-width: 760px) { .builder-preps .builder-chip { flex: 1 1 calc(50% - 8px); } .builder-portions .builder-chip { flex: 1 1 0; justify-content: center; } }
+#lunchOptions .builder-note { gap: 10px; margin: 16px 0; font: 400 12px/1.4 var(--sans); }
+#lunchOptions .builder-note > span { padding-left: 2px; }
+@media (max-width: 760px) { .builder-preps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

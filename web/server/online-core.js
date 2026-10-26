@@ -277,7 +277,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     },
     async refundLocal(input){
       if(!validId(input.id)||!validId(input.refundId)||!Number.isSafeInteger(input.amountCents)||input.amountCents<0||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>200)throw new RequestError('请填写有效的退款金额和原因');
-      const order=await mutate(input.id,prior=>{if(!prior||prior.status!=='paid'||(prior.paymentMethod!=='wallet'&&prior.total!==0))throw new RequestError('此订单须通过原支付渠道退款',409);const requests={...prior.refundRequests};if(requests[input.refundId]){if(requests[input.refundId].amountCents!==input.amountCents||requests[input.refundId].reason!==input.reason)throw new RequestError('退款请求不一致',409);return prior;}const amount=(prior.localRefundCents||0)+input.amountCents;if(amount>globalThis.OrderPricing.cents(prior.total)||(input.amountCents===0&&(prior.total!==0||prior.freeRewardRefunded)))throw new RequestError('超过可退金额',409);requests[input.refundId]={amountCents:input.amountCents,reason:input.reason,at:now().toISOString()};return {...prior,refundRequests:requests,localRefundCents:amount,refundCompleted:false,...(prior.total===0?{freeRewardRefunded:true}:{})};});return publicOrder(await finalize(order));
+      const order=await mutate(input.id,prior=>{if(!prior||prior.status!=='paid'||(prior.paymentMethod!=='wallet'&&prior.paymentMethod!=='counter'&&prior.total!==0))throw new RequestError('此订单须通过原支付渠道退款',409);const requests={...prior.refundRequests};if(requests[input.refundId]){if(requests[input.refundId].amountCents!==input.amountCents||requests[input.refundId].reason!==input.reason)throw new RequestError('退款请求不一致',409);return prior;}const amount=(prior.localRefundCents||0)+input.amountCents;if(amount>globalThis.OrderPricing.cents(prior.total)||(input.amountCents===0&&(prior.total!==0||prior.freeRewardRefunded)))throw new RequestError('超过可退金额',409);requests[input.refundId]={amountCents:input.amountCents,reason:input.reason,at:now().toISOString()};return {...prior,refundRequests:requests,localRefundCents:amount,refundCompleted:false,...(prior.total===0?{freeRewardRefunded:true}:{})};});return publicOrder(await finalize(order));
     },
     async staffQuote(input){return publicOrder(await counterOrder(input));},
     // Staff takes an order at the counter and collects cash or card there; it prints at once.
@@ -309,8 +309,10 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     // reconciles the exact total and member points afterwards.
     async staffRefund(input){
       if(!validId(input.id)||!validId(input.refundId)||!Number.isSafeInteger(input.amountCents)||input.amountCents<=0||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>200)throw new RequestError('请填写有效的退款金额和原因');
-      if(!payment.refund)throw new RequestError('退款暂不可用',503);
       const reason=input.reason.trim();
+      // Counter orders were paid at the till, so the money goes back there; this only records it.
+      if((await storage.read(input.id))?.value?.paymentMethod==='counter')return this.refundLocal({...input,reason});
+      if(!payment.refund)throw new RequestError('退款暂不可用',503);
       let order=await mutate(input.id,prior=>{
         if(!prior||prior.type!=='order'||prior.status!=='paid')throw new RequestError('只有付款成功的订单可以退款',409);
         if(prior.paymentMethod==='wallet'||!prior.paymentIntentId)throw new RequestError('这单不是刷卡付款，请在「余额」页退款',409);

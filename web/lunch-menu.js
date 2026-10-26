@@ -261,7 +261,7 @@
  }
  const recommendedOrder=['chive-fried','chicken-fried','red-oil-chaoshou','pork-soup','mince-chilli-noodles','century-egg-noodles','roe-wonton-noodles','boiled-dumplings'];
  LUNCH_RECOMMENDATIONS.sort((a,b)=>recommendedOrder.indexOf(a.id)-recommendedOrder.indexOf(b.id));
- const boiled=LUNCH_RECOMMENDATIONS.find(r=>r.id==='boiled-dumplings');if(boiled){boiled.cn='白灼所有口味';boiled.name='Boiled Dumplings & Wontons';}
+ const boiled=LUNCH_RECOMMENDATIONS.find(r=>r.id==='boiled-dumplings');if(boiled){boiled.cn='水煮饺子';boiled.name='Boiled Dumplings';}
 })();
 
 // The merchant can manage recommendations without changing dish names or IDs.
@@ -363,14 +363,23 @@ for(const s of globalThis.LUNCH_SETS||[])if(s.key==='dumpling-set')s.pieces=9;
  }
  globalThis.MENU_VERSION='lunch-2026-10-20-v11';
 })();
+// 2026-10-26 大厨：干拌饺子默认红油 + 花生酱；免辣 = 花生酱拌，免花生酱 = 红油拌，都不要 = 酱油拌。
+// 红油花生酱拌、酱油拌跟随红油拌的开关、加价和做法图片（sameAs），后台不另设。
+(()=>{
+ const image=LUNCH_PREPARATIONS.find(p=>p.id==='red-oil').img;
+ LUNCH_PREPARATIONS.push({id:'dry',cn:'红油花生酱拌',en:'Chilli Oil & Peanut Sauce',extra:0,img:image,sameAs:'red-oil'},{id:'soy',cn:'酱油拌',en:'Soy Sauce',extra:0,img:image,sameAs:'red-oil'});
+ globalThis.LUNCH_TOSSED=[{id:'dry',spicy:true,peanut:true},{id:'red-oil',spicy:true,peanut:false},{id:'peanut',spicy:false,peanut:true},{id:'soy',spicy:false,peanut:false}];
+ globalThis.LUNCH_SINGLE_PREPARATIONS=[...LUNCH_SINGLE_PREPARATIONS,'dry','soy'];
+})();
+globalThis.expandPreparations = ids => ids.flatMap(id=>[id,...LUNCH_PREPARATIONS.filter(p=>p.sameAs===id).map(p=>p.id)]);
 globalThis.configureMenuPreparations = d => {
  if(!d.availablePreparations)return d;
- const styles=[],variants={};
- for(const method of d.enabledPreparations)for(const pieces of Object.keys(d.portionPrices).map(Number)){
-  const p=LUNCH_PREPARATIONS.find(p=>p.id===method),key=`${p.cn} · ${pieces}颗`;
-  styles.push(key);variants[key]={prep:method,pieces,spicy:method==='red-oil',sesame:false,noodles:false,peanut:method==='peanut',price:Math.round((d.portionPrices[pieces]+d.preparationExtras[method])*100)/100,en:`${p.en} · ${pieces} pieces`};
+ const styles=[],variants={},methods=expandPreparations(d.enabledPreparations);
+ for(const method of methods)for(const pieces of Object.keys(d.portionPrices).map(Number)){
+  const p=LUNCH_PREPARATIONS.find(p=>p.id===method),key=`${p.cn} · ${pieces}颗`,tossed=LUNCH_TOSSED.find(t=>t.id===method);
+  styles.push(key);variants[key]={prep:method,pieces,spicy:Boolean(tossed?.spicy),sesame:false,noodles:false,peanut:Boolean(tossed?.peanut),price:Math.round((d.portionPrices[pieces]+d.preparationExtras[p.sameAs||method])*100)/100,en:`${p.en} · ${pieces} pieces`};
  }
- d.styles=styles;d.variants=variants;d.preparations=[...d.enabledPreparations];d.price=Math.min(...Object.values(variants).map(v=>v.price));return d;
+ d.styles=styles;d.variants=variants;d.preparations=methods;d.price=Math.min(...Object.values(variants).map(v=>v.price));return d;
 };
 for(const d of MENU)configureMenuPreparations(d);
 

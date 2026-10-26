@@ -34,4 +34,12 @@ await assert.rejects(online.staffOrder({requestId:randomUUID(),mode:'dinein',cou
 assert.equal(await online.resolve(dine.id),true);assert.deepEqual((await online.feed()).map(o=>o.id),[a.id]);
 // The report counts them with the rest.
 assert.equal((await online.report({})).totals.orders,2);
-console.log('PASS staff order: counter cash/card orders print at once, priced like guest orders, stock held once, out-of-stock refused, never touches Stripe.');
+// A counter order can be refunded from the report; it is only recorded, never sent to Stripe.
+const dineCents=Math.round(dine.total*100),rid=randomUUID();
+assert.equal((await online.report({})).orders.find(o=>o.id===dine.id).canRefund,true);
+assert.equal((await online.staffRefund({id:dine.id,refundId:rid,amountCents:dineCents,reason:'顾客取消'})).refundedCents,dineCents);
+assert.equal((await online.staffRefund({id:dine.id,refundId:rid,amountCents:dineCents,reason:'顾客取消'})).refundedCents,dineCents,'repeat is a no-op');
+await assert.rejects(online.staffRefund({id:a.id,refundId:randomUUID(),amountCents:Math.round(a.total*100)+1,reason:'x'}),/超过可退金额/);
+const r=await online.report({});assert.equal(r.orders.find(o=>o.id===dine.id).refundCents,dineCents);assert.equal(r.totals.refundCents,dineCents);
+assert.equal(stripeCalls,0,'refund never touches Stripe');
+console.log('PASS staff order: counter cash/card orders print at once, priced like guest orders, stock held once, out-of-stock refused, refundable without Stripe.');
