@@ -27,7 +27,7 @@ const recommendationPrice = r => {
   };
   // 自选: each preparation opens a sheet like a drink's, choosing filling, portion and note there.
   const fillingsFor = id => MENU.filter(d => d.section === "dumplings" && d.active !== false && d.singleChoice !== false && !d.fixedPreparation && d.preparations?.includes(id));
-  // The four tossed sauces show as one 干拌 choice; 免辣 / 免花生酱 then pick among them.
+  // The four tossed sauces show as one 干拌 choice; 不加辣 / 不加花生酱 then pick among them.
   const tossedOf = id => (globalThis.LUNCH_TOSSED || []).find(t => t.id === id);
   const tossedToggle = (t, key) => LUNCH_TOSSED.find(x => x.spicy === (key === "spicy" ? !t.spicy : t.spicy) && x.peanut === (key === "peanut" ? !t.peanut : t.peanut))?.id;
   const singlePreparations = () => {
@@ -49,8 +49,8 @@ const recommendationPrice = r => {
     const chip = (attribute, id, label, on, disabled = false) => `<button class="chip ${on ? "active" : ""}" ${attribute}="${id}" aria-pressed="${on}" ${disabled ? "disabled" : ""}>${escapeHTML(label)}</button>`;
     const chips = (label, items, hidden = false) => `<fieldset class="lunch-options lunch-options-choice"><legend${hidden ? ' class="sr-only"' : ""}>${bi(...label)}</legend><div class="styles">${items.join("")}</div></fieldset>`;
     const tossed = tossedOf(value.prep);
-    return (tossed ? chips(["口味", "Sauce"], [["spicy", "免辣", "No chilli"], ["peanut", "免花生酱", "No peanut sauce"]].map(([key, cn, en]) => chip("data-detail-prep", tossedToggle(tossed, key), tr(cn, en), !tossed[key])), true) : "")
-      + chips(["馅料", "Filling"], fillingsFor(value.prep).map(f => chip("data-detail-filling", f.id, name(f) + (f.soldOut ? tr(" · 售罄", " · Sold out") : ""), f.id === d.id, f.soldOut)))
+    return (tossed ? chips(["口味", "Sauce"], [["spicy", "不加辣", "No chilli"], ["peanut", "不加花生酱", "No peanut sauce"]].map(([key, cn, en]) => chip("data-detail-prep", tossedToggle(tossed, key), tr(cn, en), !tossed[key])), true) : "")
+      + chips(["馅料", "Filling"], fillingsFor(value.prep).map(f => chip("data-detail-filling", f.id, name(f).replace(/ Dumplings$/, "") + (f.soldOut ? tr(" · 售罄", " · Sold out") : ""), f.id === d.id, f.soldOut)))
       + group(tr("份量", "Portion"), "pieces", portions, value.pieces, "lunch-option", true)
       + `<label class="builder-note"><span>${bi("备注", "Note")}</span><input data-builder-note maxlength="60" autocomplete="off" enterkeyhint="done" placeholder="${escapeHTML(tr("例如：少辣、不要葱", "e.g. less spicy, no scallion"))}" value="${escapeHTML(itemNote)}"></label>`;
   }

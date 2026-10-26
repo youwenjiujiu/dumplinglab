@@ -10,19 +10,13 @@ const group = /^[a-z0-9-]{1,16}$/i.test(q.get("group") || "")
   ? q.get("group").toUpperCase()
   : "A";
 // Show one language at a time; keep selection and ordering state independent.
-// A guest who has chosen once keeps that choice. Otherwise follow the phone:
-// the restaurant is in Singapore, so anyone whose device is not set to Chinese
-// is served English rather than a menu they have to translate first.
-const deviceLanguage = () =>
-  [navigator.language, ...(navigator.languages || [])].some((tag) => /^zh\b/i.test(tag || ""))
-    ? "zh"
-    : "en";
+// A guest who has chosen once keeps that choice; otherwise the menu opens in Chinese.
 let language = q.get("lang") === "en" ? "en" : q.get("lang") === "zh" ? "zh" : (() => {
   try {
     const chosen = localStorage.getItem("atelier-language");
     if (chosen === "en" || chosen === "zh") return chosen;
   } catch { /* Works without persistence. */ }
-  return deviceLanguage();
+  return "zh";
 })();
 const tr = (zh, en) => String(language === "en" && en ? en : zh ?? "");
 const errorText = error => OrderErrors.message(error, language);
