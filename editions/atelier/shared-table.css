@@ -2397,3 +2397,10 @@ body.search-open .filters button[aria-pressed="true"], body.search-open .filters
 #lunchOptions [data-detail-filling] { padding-inline: 10px; }
 #lunchOptions .styles:has([data-detail-filling]) { gap: 6px; }
 @media (max-width: 760px) { .builder-preps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.builder-preps .builder-chip { padding-inline: 4px; }
+/* Smallest phones: keep "Clear Broth", the 自选 title and "Add to our table" on one line. */
+@media (max-width: 360px) {
+  .builder-preps .builder-chip { padding-inline: 2px; font-size: 16px; }
+  html[lang] #sheet[data-mode="dish"] .detail-top h1 { font-size: 19px !important; }
+  #sheet[data-mode="dish"] [data-action="add-detail"] { white-space: nowrap; }
+}
