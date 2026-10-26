@@ -25,7 +25,8 @@ assert.equal((await svc.menu()).find(d=>d.id==='lunch-v7-prawn-roe-wonton-noodle
 console.log('PASS independent fried product plus configurable filling, preparation switches, surcharges on both portions and server order validation, restart persistence, configurable counts, disabled method rejection, photo retention and reverse photo migration, independent wonton noodles unchanged.');
 
 const before=await get(),friedId='lunch-v10-pork-chive-shrimp-fried';
-await svc.save({id:friedId,revision:(await svc.admin()).revision,patch:{stock:17,imageUrl:'https://example.test/separate-fried.png',portionPrices:{5:8,9:12}}});
+await assert.rejects(svc.save({id:friedId,revision:(await svc.admin()).revision,patch:{stock:17}}),/共用库存/,'煎饺库存跟韭菜虾仁猪肉走');
+await svc.save({id:friedId,revision:(await svc.admin()).revision,patch:{imageUrl:'https://example.test/separate-fried.png',portionPrices:{5:8,9:12}}});
 assert.deepEqual((await get()).portionPrices,before.portionPrices);assert.equal((await get()).stock,before.stock);
-const separate=(await svc.menu()).find(d=>d.id===friedId);assert.equal(separate.stock,17);assert.equal(separate.variants[style(separate,'fried',5)].price,8,'推荐里的煎饺不另加煎的费用');assert.equal(separate.imageUrl,'https://example.test/separate-fried.png');
-console.log('PASS separate fried product price/image/stock updates never change the configurable filling.');
+const separate=(await svc.menu()).find(d=>d.id===friedId);assert.equal(separate.stock,before.stock,'煎饺显示韭菜虾仁猪肉的库存');assert.equal(separate.variants[style(separate,'fried',5)].price,8,'推荐里的煎饺不另加煎的费用');assert.equal(separate.imageUrl,'https://example.test/separate-fried.png');
+console.log('PASS separate fried product price/image updates never change the configurable filling; its stock is the filling stock.');

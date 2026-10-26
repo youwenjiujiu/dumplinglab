@@ -485,13 +485,12 @@ globalThis.choiceOptionFor = (d, style) => d?.choiceOptions?.items?.find(o => o.
 })();
 
 // 共用库存（店里按实物备料）：
-// 鲜虾蟹籽云吞面用云吞的库存，一碗扣 5 颗；韭菜虾仁猪肉如果在后台打开「煎」，
-// 煎的那部分扣煎饺库存（煎饺和水煮的饺子形状不同，分开备料）；
+// 鲜虾蟹籽云吞面用云吞的库存，一碗扣 5 颗；韭菜虾仁猪肉煎饺和韭菜虾仁猪肉其他做法共用一个库存；
 // 配菜大小份共用一个库存：鸡翅按个数算（3 个 / 6 个），其余按小份算，大份扣 2 份。
 (() => {
  const find = id => MENU.find(d => d.id === id);
  find('lunch-v7-prawn-roe-wonton-noodles').stockPool = 'lunch-v2-prawn-roe-wonton';
- find('lunch-v2-pork-chive-shrimp').stockPoolByPrep = { fried: 'lunch-v10-pork-chive-shrimp-fried' };
+ find('lunch-v10-pork-chive-shrimp-fried').stockPool = 'lunch-v2-pork-chive-shrimp';
  for (const d of MENU.filter(d => d.sizeGroup && d.id === d.sizeGroup[0])) {
   const large = find(d.sizeGroup[1]), wings = d.id === 'lunch-v2-chicken-wings';
   Object.assign(d, { stockUnits: wings ? 3 : 1, stockUnitName: wings ? '个' : '小份' });

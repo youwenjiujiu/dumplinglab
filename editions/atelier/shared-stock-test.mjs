@@ -22,10 +22,11 @@ let L=await item(large),S=await item(small);assert.equal(L.stock,12);assert.equa
 const wings=order([L,null,1],[S,null,1]);await svc.reserve(wings);assert.equal((await item(small)).available,3,'6 + 3 wings held');
 assert.equal((await item(large)).soldOut,true,'3 wings left cannot make a 6-piece plate');assert.equal((await item(small)).soldOut,false);
 await svc.settle(wings,'expired');assert.equal((await item(small)).available,12,'expiry releases shared stock');
-// 3. Fried chive dumplings use the potsticker stock, not the boiled-dumpling stock.
+// 3. Chive potstickers share the chive dumpling count, whichever way they are ordered.
 const chive='lunch-v2-pork-chive-shrimp',fried='lunch-v10-pork-chive-shrimp-fried';
-await save(chive,{stock:30,enabledPreparations:['boiled','fried'],preparationExtras:{boiled:0,soup:0,'red-oil':0,peanut:0,fried:0}});await save(fried,{stock:9});
-const c=await item(chive);const f=order([c,style(c,'fried',9),1]);await svc.reserve(f);
-assert.equal((await item(fried)).available,0,'fried portion drew potstickers');assert.equal((await item(chive)).available,30,'boiled stock untouched');
-await assert.rejects(svc.reserve(order([c,style(c,'fried',5),1])),/库存不足/);
-console.log('PASS shared stock: wonton noodles use wonton count (5 per bowl), sized sides share one count (wings by piece), fried chive dumplings use potsticker stock, member stock edits refused, expiry releases and payment deducts the shared count.');
+await save(chive,{stock:30,enabledPreparations:['boiled','fried'],preparationExtras:{boiled:0,soup:0,'red-oil':0,peanut:0,fried:0}});
+await assert.rejects(save(fried,{stock:9}),/共用库存/);
+const c=await item(chive),p=await item(fried);await svc.reserve(order([c,style(c,'fried',9),1],[p,style(p,'fried',9),1]));
+assert.equal((await item(chive)).available,12,'both fried orders drew the chive count');assert.equal((await item(fried)).available,12,'potsticker shows the shared count');
+await assert.rejects(svc.reserve(order([p,style(p,'fried',9),2])),/库存不足/);
+console.log('PASS shared stock: wonton noodles use wonton count (5 per bowl), sized sides share one count (wings by piece), chive potstickers share the chive count, member stock edits refused, expiry releases and payment deducts the shared count.');

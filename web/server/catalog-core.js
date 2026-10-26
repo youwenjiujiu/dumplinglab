@@ -74,8 +74,8 @@ function restoreSharedFried(state){
  state.migrations={...state.migrations,sharedFried11:true};return state;
 }
 // Shared stock: a dish may draw from another dish's stock (wonton noodles use the
-// wonton count; large sides use the small side's count; fried chive dumplings use
-// the potsticker count). Units per portion are pieces for dumplings, else stockUnits.
+// wonton count; large sides use the small side's count; chive potstickers use
+// the chive dumpling count). Units per portion are pieces for dumplings, else stockUnits.
 // Each option (a drink, a beer flavour) may carry its own count, held under dishId#optionKey.
 export const optionStockKey=(dishId,key)=>`${dishId}#${key}`;
 export const stockPoolOf=(d,style)=>{const v=d.variants?.[style];return {owner:(v&&d.stockPoolByPrep?.[v.prep])||d.stockPool||d.id,per:v?.pieces||d.stockUnits||1};};
