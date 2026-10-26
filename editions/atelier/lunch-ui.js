@@ -55,14 +55,15 @@ const recommendationPrice = r => {
   }
   // Built-in photos that sit on a white backdrop have a transparent copy, so a selected (red) chip shows only the plate.
   const CHIP_CUTOUTS = new Set(["filling-pork-chive-shrimp-boiled-cutaway-v1-appetite-v1", "filling-pork-celery-shrimp-boiled-cutaway-v1-appetite-v1", "filling-pork-scallion-boiled-cutaway-v1-appetite-v1", "wonton-soup-appetite-v2", "lunch-pork-wonton-generated-v1-appetite-v1"]);
-  // A filling chip shows the same photo the sheet shows once that filling is picked.
-  const chipPhoto = (f, id) => photo(f, "s", styleFor(f, id)).replace(/^\/img\/s\/(.+)\.webp$/, (src, file) => CHIP_CUTOUTS.has(file) ? `/img/s/${file}-cutout.webp` : src);
+  // In the 自选 sheet a filling is shown by its own photo (菜品主图), on its chip and as the big photo.
+  const fillingPhoto = (f, size = "l") => photo(f, size);
+  const chipPhoto = f => fillingPhoto(f, "s").replace(/^\/img\/s\/(.+)\.webp$/, (src, file) => CHIP_CUTOUTS.has(file) ? `/img/s/${file}-cutout.webp` : src);
   function builderControls(d, value, portions) {
     const chip = (attribute, id, label, on, disabled = false, img = "") => `<button class="chip ${on ? "active" : ""}" ${attribute}="${id}" aria-pressed="${on}" ${disabled ? "disabled" : ""}>${img ? `<img src="${img}" alt="" loading="lazy">` : ""}${escapeHTML(label)}</button>`;
     const chips = (label, items, hidden = false) => `<fieldset class="lunch-options lunch-options-choice"><legend${hidden ? ' class="sr-only"' : ""}>${bi(...label)}</legend><div class="styles">${items.join("")}</div></fieldset>`;
     const tossed = tossedOf(value.prep);
     return (tossed ? chips(["口味", "Sauce"], [["spicy", "不加辣", "No chilli"], ["peanut", "不加花生酱", "No peanut sauce"]].map(([key, cn, en]) => chip("data-detail-prep", tossedToggle(tossed, key), tr(cn, en), !tossed[key])), true) : "")
-      + chips(["馅料", "Filling"], fillingsFor(value.prep).map(f => chip("data-detail-filling", f.id, name(f).replace(/ Dumplings$/, "") + (f.soldOut ? tr(" · 售罄", " · Sold out") : ""), f.id === d.id, f.soldOut, chipPhoto(f, value.prep))))
+      + chips(["馅料", "Filling"], fillingsFor(value.prep).map(f => chip("data-detail-filling", f.id, name(f).replace(/ Dumplings$/, "") + (f.soldOut ? tr(" · 售罄", " · Sold out") : ""), f.id === d.id, f.soldOut, chipPhoto(f))))
       + group(tr("份量", "Portion"), "pieces", portions, value.pieces, "lunch-option", true)
       + `<label class="builder-note"><span>${bi("备注", "Note")}</span><input data-builder-note maxlength="60" autocomplete="off" enterkeyhint="done" placeholder="${escapeHTML(tr("例如：少辣、不要葱", "e.g. less spicy, no scallion"))}" value="${escapeHTML(itemNote)}"></label>`;
   }
@@ -183,7 +184,7 @@ return `<section class="menu-section${matchMedia("(max-width: 760px)").matches ?
     if (!prices.length) return menuPrice(d);
     return new Set(prices).size > 1 ? fromPrice(Math.min(...prices)) : foodMoney(prices[0]);
   };
-  return { builderTitle, recommendationPrice, recommendationPriceLabel, openBoiledFillings, section, recommendationSection, controls, ingredients, preparationBadge, handle, visible, firstStyle, menuPrice, preparationPrice, options, readyFor, start, chosenPreparation };
+  return { builderTitle, fillingPhoto, recommendationPrice, recommendationPriceLabel, openBoiledFillings, section, recommendationSection, controls, ingredients, preparationBadge, handle, visible, firstStyle, menuPrice, preparationPrice, options, readyFor, start, chosenPreparation };
 })();
 
 // Project-local semantic adaptation of generated/ingredient-reveal-v1/motion-plan.json.

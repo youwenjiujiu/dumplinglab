@@ -2396,6 +2396,8 @@ body.search-open .filters button[aria-pressed="true"], body.search-open .filters
 /* Each filling chip leads with a small photo of the filling. */
 #lunchOptions [data-detail-filling] { display: flex; align-items: center; justify-content: flex-start; gap: 8px; padding-inline: 8px 10px; text-align: left; }
 #lunchOptions [data-detail-filling] img { flex: none; width: 28px; height: 28px; object-fit: contain; }
+/* A picked filling only turns its name red; the photo stays on white. */
+#lunchOptions [data-detail-filling].active { background: transparent; border-color: rgb(226, 224, 220); color: rgb(181, 35, 43); }
 #lunchOptions .styles:has([data-detail-filling]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 /* English names are long: two a row like Chinese, a long name takes two lines. */
 html[lang="en"] #lunchOptions [data-detail-filling] { line-height: 1.2; }
