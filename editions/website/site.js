@@ -77,7 +77,9 @@
   img.addEventListener('error',()=>update(true));img.addEventListener('load',()=>update(false));
   if(img.complete&&img.currentSrc&&!img.naturalWidth)update(true);
  }
- const imagePath=(r,size='l',transparent=false)=>'/img/'+size+'/'+(transparent?r.img:globalThis.DL_MENU_ART?.[r.img]||r.img).replace(/\.(png|jpe?g|webp)$/i,'.webp');
+ // The website keeps its own photos of some dishes, apart from the ordering menu's.
+ const sitePhotos={'century-egg-noodles':{l:'/site/media/menu-century-egg-noodles-real-v1.webp',s:'/site/media/menu-century-egg-noodles-real-v1-720.webp'}};
+ const imagePath=(r,size='l',transparent=false)=>sitePhotos[r.id]?.[size]||'/img/'+size+'/'+(transparent?r.img:globalThis.DL_MENU_ART?.[r.img]||r.img).replace(/\.(png|jpe?g|webp)$/i,'.webp');
  function renderMenu(){
   const records=globalThis.LUNCH_RECOMMENDATIONS||[];
   const active=r=>r&&!r.chooseFilling&&MENU.some(d=>d.id===r.dishId&&d.active!==false);
@@ -88,8 +90,8 @@
   const signature=records.find(r=>r.id==='chive-fried');
   const hero=available(signature)?signature:unique.find(available),heroImage=document.querySelector('#heroImage');
   if(hero){
-   const dish=MENU.find(d=>d.id===hero.dishId),name=language==='zh'?hero.cn:hero.name;
-   heroImage.src=dish.imageUrl||imagePath(hero,'l',true);heroImage.alt=name;
+   const name=language==='zh'?hero.cn:hero.name;
+   heroImage.src=imagePath(hero,'l',true);heroImage.alt=name;
    document.querySelector('#heroDishName').textContent=name;
    document.querySelector('#heroDishLink').setAttribute('aria-label',name);
   }else{
@@ -102,8 +104,8 @@
    const dish=MENU.find(d=>d.id===r.dishId);
    const amount=dish.price+(r.noodles?LUNCH_NOODLE_EXTRA:0);
    const name=language==='zh'?r.cn:r.name;
-   const responsive=dish.imageUrl?'':` srcset="${esc(imagePath(r,'s'))} 720w, ${esc(imagePath(r,'l'))} 1254w" sizes="(max-width: 760px) 43vw, (max-width: 1760px) calc((90vw - 64px) / 3), calc((100vw - 240px) / 3)"`;
-   return `<article class="food-item" data-dish-id="${esc(dish.id)}"><a class="food-image" href="/order?lang=${language}" aria-label="${esc(name)}" data-missing-label="${language==='zh'?'图片暂不可用\n查看菜单 ↗︎':'Photo unavailable\nSee menu ↗︎'}"><img src="${esc(dish.imageUrl||imagePath(r))}"${responsive} alt="${esc(name)}" width="540" height="470" loading="lazy" decoding="async"></a><div class="food-caption"><div><h3><a href="/order?lang=${language}">${esc(name)}</a></h3>${!available(r)?`<span class="food-stock">${language==='zh'?'暂时售罄':'Currently sold out'}</span>`:''}</div><span class="food-price">${language==='en'?'<small>From </small>':''}S$${amount.toFixed(2)}${language==='zh'?'<small> 起</small>':''}</span></div></article>`;
+   const responsive=` srcset="${esc(imagePath(r,'s'))} 720w, ${esc(imagePath(r,'l'))} 1254w" sizes="(max-width: 760px) 43vw, (max-width: 1760px) calc((90vw - 64px) / 3), calc((100vw - 240px) / 3)"`;
+   return `<article class="food-item" data-dish-id="${esc(dish.id)}"><a class="food-image" href="/order?lang=${language}" aria-label="${esc(name)}" data-missing-label="${language==='zh'?'图片暂不可用\n查看菜单 ↗︎':'Photo unavailable\nSee menu ↗︎'}"><img src="${esc(imagePath(r))}"${responsive} alt="${esc(name)}" width="540" height="470" loading="lazy" decoding="async"></a><div class="food-caption"><div><h3><a href="/order?lang=${language}">${esc(name)}</a></h3>${!available(r)?`<span class="food-stock">${language==='zh'?'暂时售罄':'Currently sold out'}</span>`:''}</div><span class="food-price">${language==='en'?'<small>From </small>':''}S$${amount.toFixed(2)}${language==='zh'?'<small> 起</small>':''}</span></div></article>`;
   }).join('')||`<div class="menu-empty"><p class="eyebrow">DUMPLING LAB / MENU</p><p>${language==='zh'?'精选菜品暂未展示。最新供应情况，请查看完整菜单。':'Featured dishes are not displayed right now. See the full menu for current availability.'}</p></div>`;
   if(lastMenuMarkup!==markup){
    const focused=document.activeElement,inside=menuContainer.contains?.(focused);

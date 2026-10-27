@@ -13,7 +13,7 @@ const courses=[
 for(const course of courses)course.fallbackImage=course.image;
 Object.assign(courses[0],{dishId:'lunch-v10-pork-chive-shrimp-fried',image:'/site/media/hero-potstickers-v1.webp',word:['CRISPY\nDUMPLINGS','焦香四溢\n一口多汁'],tags:[['Crisp edges','焦脆的边'],['Pork & shrimp','猪肉 · 虾仁'],['Chives','韭菜鲜香']]});
 Object.assign(courses[1],{dishId:'lunch-v4-red-oil-chaoshou',image:'/site/media/hero-chilli-wontons-v1.webp',word:['HOT\nWONTONS','红油一拌\n好戏开场'],tags:[['Chilli oil','红油'],['Silky folds','柔软的皮'],['One more bite','再来一口']]});
-Object.assign(courses[2],{dishId:'lunch-v2-century-egg-noodles',image:'/site/media/hero-century-egg-noodles-v3.webp',word:['CENTURY EGG\nNOODLES','销魂皮蛋\n好好嗦面'],tags:[['Century egg','皮蛋浓香'],['Fresh scallions','葱花清香'],['Tossed noodles','拌面']]});
+Object.assign(courses[2],{dishId:'lunch-v2-century-egg-noodles',image:'/site/media/hero-century-egg-noodles-real-v1.webp',word:['CENTURY EGG\nNOODLES','销魂皮蛋\n好好嗦面'],tags:[['Century egg','皮蛋浓香'],['Fresh scallions','葱花清香'],['Tossed noodles','拌面']]});
 let current=0,requested=0,available=[0,1,2],selectedToken=0,animations=[],ghost=null,catalogueSignature='',selectionStatus='',detailSoundPlayed=false;
 const savedMotion=()=>{try{return globalThis.localStorage?.getItem('dumplinglab:motion')}catch{return null}};
 const rememberMotion=paused=>{try{globalThis.localStorage?.setItem('dumplinglab:motion',paused?'paused':'playing')}catch{}};
@@ -61,7 +61,7 @@ function record(index){
  const r=catalogue().find(r=>r.id===c.id),dish=globalThis.MENU?.find(d=>d.id===(r?.dishId||c.dishId));
  const initialized=Array.isArray(globalThis.MENU)&&Array.isArray(globalThis.LUNCH_RECOMMENDATIONS);
  const active=initialized?!!dish&&dish.active!==false:true;
- return {...c,name:r?[r.name,r.cn]:c.name,image:dish?.imageUrl||c.image,active,soldOut:!!dish?.soldOut};
+ return {...c,name:r?[r.name,r.cn]:c.name,image:c.image,active,soldOut:!!dish?.soldOut};
 }
 function preload(src){
  if(!imageCache.has(src))imageCache.set(src,new Promise((resolve,reject)=>{

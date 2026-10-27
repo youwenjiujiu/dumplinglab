@@ -122,7 +122,7 @@ return `<section class="menu-section${matchMedia("(max-width: 760px)").matches ?
     if (button.dataset.recommendation) {
       const r = LUNCH_RECOMMENDATIONS.find(r=>r.id===button.dataset.recommendation);
       if (!r || r.pending) return true;
-      if (r.chooseFilling) openBoiledFillings();
+      if (r.chooseFilling) openPreparation(r.prep);
       else { const d=dish(r.dishId); if(!d.variants)openDish(d);else {const key=d.fixedPreparation?d.styles[0]:styleFor(d,r.prep,Math.min(...Object.keys(d.portionPrices).map(Number)),{noodles:r.noodles});if(key)openDish(d,key,r.noodles?{prep:r.prep,noodles:true}:r.prep);} }
       return true;
     }

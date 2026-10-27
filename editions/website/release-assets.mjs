@@ -10,6 +10,7 @@ export const websiteMedia=[
  'ingredient-chives-v2.webp','ingredient-noodles-v1.webp','ingredient-prawn-v2.webp','ingredient-chilli-oil-v1.webp',
  'ingredient-pork-v1.webp','ingredient-wrappers-v1.webp','ingredient-century-egg-v1.webp','ingredient-scallions-v1.webp',
 'hero-century-egg-noodles-v3.webp','hero-century-egg-noodles-v3-800.webp',
+ 'hero-century-egg-noodles-real-v1.webp','hero-century-egg-noodles-real-v1-800.webp','menu-century-egg-noodles-real-v1.webp','menu-century-egg-noodles-real-v1-720.webp',
  ...['hero-potstickers-v1','hero-chilli-wontons-v1','hero-wonton-noodles-v2'].flatMap(name=>[name+'.webp',name+'-800.webp']),
  ...['wide','mobile'].flatMap(size=>[`boiled-film-${size}-v1.mp4`,`boiled-film-${size}-v1-poster.webp`]),
  'hero-callout-pops-5-source-v1.wav','hero-callout-pops-6-source-v1.wav','hero-closeup-glide-source-v1.wav','dumpling-cursor-v1.png','pick-dumpling-dipped-v1.webp',
