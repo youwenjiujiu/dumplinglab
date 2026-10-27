@@ -293,7 +293,7 @@ const server = createServer(async (req, res) => {
       }
       if(url.pathname==='/api/catalog'){
         if(req.method==='GET'){if(url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await catalog.admin()})}return json(200,{ok:true,...await catalog.public()})}
-        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await (input.action==='lunch-set-save'?catalog.saveLunchSet(input):input.action==='create'?catalog.create(input):input.action==='reorder'?catalog.reorder(input):['section-save','section-delete','section-order'].includes(input.action)?catalog.saveSection(input):['table-discount','day-discount','builder-photo'].includes(input.action)?catalog.saveSettings(input):catalog.save(input))})}
+        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await (input.action==='lunch-set-save'?catalog.saveLunchSet(input):input.action==='create'?catalog.create(input):input.action==='reorder'?catalog.reorder(input):['section-save','section-delete','section-order'].includes(input.action)?catalog.saveSection(input):['table-discount','day-discount','builder-photo','recommend-order'].includes(input.action)?catalog.saveSettings(input):catalog.save(input))})}
         return json(405,{error:'Method not allowed'});
       }
       if (url.pathname === '/api/online') {

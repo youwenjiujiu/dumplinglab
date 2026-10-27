@@ -89,6 +89,27 @@
   }
   $('#manageSections').onclick = () => { if (!data) return; $('#sectionsBody').innerHTML = sectionsHTML(); $('#sectionsDialog').showModal(); };
   $('#closeSections').onclick = () => $('#sectionsDialog').close();
+  // 推荐 order: the same cards customers see, moved one place at a time and saved at once.
+  const recommendations = () => globalThis.liveRecommendations?.(data.items, data.settings) || [];
+  const recommendPhoto = r => r.imageUrl || r.preparationImageUrls?.[r.prep] || (r.img ? '/img/s/' + (globalThis.DL_MENU_ART?.[r.img] || r.img).replace(/\.(png|jpe?g|webp)$/i, '.webp') : '');
+  function recommendHTML() {
+    const list = recommendations();
+    if (!list.length) return '<p class="muted">推荐里还没有菜。在菜品列表里点「推荐 👍」加入。</p>';
+    return `<ol class="section-list">${list.map((r, i) => `<li data-recommend-key="${esc(r.id)}">
+      <span class="section-move"><button type="button" data-recommend-move="-1" aria-label="${esc(r.cn)}上移" ${i ? '' : 'disabled'}>↑</button><button type="button" data-recommend-move="1" aria-label="${esc(r.cn)}下移" ${i < list.length - 1 ? '' : 'disabled'}>↓</button></span>
+      ${recommendPhoto(r) ? `<img class="recommend-photo" src="${esc(recommendPhoto(r))}" alt="">` : ''}<span class="section-name"><strong>${esc(r.cn)}</strong>${r.soldOut ? '<small>售罄</small>' : ''}</span></li>`).join('')}</ol><p role="status"></p>`;
+  }
+  $('#manageRecommendOrder').onclick = () => { if (!data) return; $('#recommendBody').innerHTML = recommendHTML(); $('#recommendDialog').showModal(); };
+  $('#closeRecommend').onclick = () => $('#recommendDialog').close();
+  $('#recommendBody').onclick = async e => {
+    const b = e.target.closest('[data-recommend-move]'); if (!b || b.disabled) return;
+    const keys = recommendations().map(r => r.id), i = keys.indexOf(b.closest('li').dataset.recommendKey), j = i + Number(b.dataset.recommendMove);
+    if (i < 0 || j < 0 || j >= keys.length) return;
+    [keys[i], keys[j]] = [keys[j], keys[i]];
+    const epoch = authEpoch;
+    try { const result = await request('/api/catalog', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({action:'recommend-order', keys})}); if (epoch !== authEpoch) return; data = result; render(); stamp(); $('#recommendBody').innerHTML = recommendHTML(); }
+    catch (error) { if (epoch === authEpoch) $('#recommendBody [role=status]').textContent = error.message; }
+  };
   // 自选 preparation cards: one photo each, saved at once. Without one, a card shows the
   // 韭菜虾仁猪肉 photo for that preparation, else the stock illustration.
   const BUILDER_CARDS = [['soup','清汤','soup','preparation-soup-generated-v3-appetite-v1'],['boiled','水煮','boiled','preparation-boiled-generated-v3-appetite-v1'],['fried','煎饺','fried','preparation-fried-generated-v3-appetite-v1'],['dry','干拌','red-oil','preparation-tossed-generated-v3-appetite-v3']];

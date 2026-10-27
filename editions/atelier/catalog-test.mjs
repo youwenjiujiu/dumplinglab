@@ -70,7 +70,7 @@ assert.throws(()=>requireStaff({headers:{}},'test-password'),e=>e.status===401);
 requireStaff({headers:{authorization:'Basic '+Buffer.from('staff:test-password').toString('base64')}},'test-password');
 assert.throws(()=>imageType(Buffer.from('<svg/>')));assert.throws(()=>imageId('../../secrets'));
 {const settings=createCatalogService(memory());
-assert.deepEqual((await settings.public()).settings,{tableDiscounts:{},dayDiscounts:{},builderPhotos:{}},'no discounts or card photos by default');
+assert.deepEqual((await settings.public()).settings,{tableDiscounts:{},dayDiscounts:{},builderPhotos:{},recommendOrder:[]},'no discounts, card photos or 推荐 order by default');
 await settings.saveSettings({action:'table-discount',table:'a1',discount:{type:'percent',value:20,note:'周五包场'}});
 await settings.saveSettings({action:'table-discount',table:'B2',discount:{type:'amount',value:50}});
 assert.deepEqual(await settings.tableDiscount('A1'),{type:'percent',value:20,note:'周五包场'});
@@ -86,6 +86,9 @@ await settings.saveSettings({action:'builder-photo',prep:'boiled',url:cardPhoto}
 await assert.rejects(settings.saveSettings({action:'builder-photo',prep:'tossed',url:cardPhoto}),/做法无效/);
 await assert.rejects(settings.saveSettings({action:'builder-photo',prep:'soup',url:'http://example.test/a.png'}),/HTTPS/);
 await settings.saveSettings({action:'builder-photo',prep:'boiled',url:null});assert.deepEqual((await settings.public()).settings.builderPhotos,{});
+await settings.saveSettings({action:'recommend-order',keys:['pork-soup','chive-fried']});assert.deepEqual((await settings.public()).settings.recommendOrder,['pork-soup','chive-fried']);
+await assert.rejects(settings.saveSettings({action:'recommend-order',keys:['a','a']}),/推荐顺序无效/);
+await assert.rejects(settings.saveSettings({action:'recommend-order',keys:'chive-fried'}),/推荐顺序无效/);
 // A day discount covers every table that has no discount of its own, only on that Singapore date.
 const today=globalThis.OrderPricing.shopDate();
 await settings.saveSettings({action:'day-discount',date:today,discount:{type:'percent',value:15,note:'包场'}});

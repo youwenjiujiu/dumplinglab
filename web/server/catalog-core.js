@@ -11,7 +11,7 @@ const initial=()=>({schema:1,revision:0,overrides:{},holds:{},audit:[]});
 // a day discount applies to every dine-in table on that Singapore date.
 // builderPhotos: the owner's own photo on each 自选 preparation card.
 const BUILDER_CARDS=['soup','boiled','fried','dry'];
-const settingsOf=state=>({tableDiscounts:{...state.settings?.tableDiscounts},dayDiscounts:{...state.settings?.dayDiscounts},builderPhotos:{...state.settings?.builderPhotos}});
+const settingsOf=state=>({tableDiscounts:{...state.settings?.tableDiscounts},dayDiscounts:{...state.settings?.dayDiscounts},builderPhotos:{...state.settings?.builderPhotos},recommendOrder:[...(state.settings?.recommendOrder||[])]});
 const DISCOUNT_SECTIONS=['dumplings','noodles','sides','cold','drinks','recommended'];
 // Built-in categories keep their names; staff add their own (key sec-xxxxxxxx) and set the order.
 const BUILTIN_SECTIONS=[['dumplings','饺子／云吞','Your Choice'],['noodles','面条','Noodles'],['sides','配菜','Sides'],['cold','凉菜','Cold Dishes'],['drinks','饮品','Drinks'],['recommended','固定搭配','Recommended']];
@@ -209,6 +209,13 @@ export function createCatalogService(storage,{now=()=>new Date()}={}){
     const state=await change(s=>{const all=Object.fromEntries(Object.entries({...s.settings?.dayDiscounts}).filter(([d])=>d>=today));if(discount)all[date]=discount;else delete all[date];if(Object.keys(all).length>60)throw new RequestError('折扣日期太多，请先取消不用的');s.settings={...s.settings,dayDiscounts:all};audit(s,'settings',date,{dayDiscount:discount})});
     return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
    }
+   // recommendOrder: the 推荐 cards' IDs in the owner's order; cards not listed follow in their usual order.
+   if(input.action==='recommend-order'){
+    const keys=input.keys;
+    if(!Array.isArray(keys)||keys.length>100||keys.some(k=>typeof k!=='string'||!/^[a-z0-9-]{1,100}$/.test(k))||new Set(keys).size!==keys.length)throw new RequestError('推荐顺序无效');
+    const state=await change(s=>{s.settings={...s.settings,recommendOrder:[...keys]};audit(s,'settings','recommended',{recommendOrder:keys.length})});
+    return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
+   }
    if(input.action==='builder-photo'){
     if(!BUILDER_CARDS.includes(input.prep))throw new RequestError('做法无效');
     const url=input.url===null?'':validatePatch({},{patch:{imageUrl:input.url}}).imageUrl;
@@ -229,7 +236,7 @@ export function createCatalogService(storage,{now=()=>new Date()}={}){
     const current=lunchSetsView(s).find(x=>x.key===input.key),next={...current,...patch};
     if(next.end<=next.start)throw new RequestError('结束时间必须晚于开始时间');
     s.lunchSets||={};s.lunchSets[input.key]={...s.lunchSets[input.key],...patch};audit(s,'lunch-set-edit',input.key,patch);
-   });return {...catalogView(state),audit:state.audit};
+   });return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
   },
   async create(input){
    if(!/^custom-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(input.id||''))throw new RequestError('新增菜品编号无效');
@@ -250,20 +257,20 @@ export function createCatalogService(storage,{now=()=>new Date()}={}){
     s.custom[input.id]={item:original,fingerprint};s.overrides[input.id]={...patch,active:patch.active??false};
     audit(s,'create',input.id,patch);
    });
-   return {...catalogView(state),audit:state.audit};
+   return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
   },
   // Menu categories: add or rename a staff category, delete an empty one, or set the order.
   async saveSection(input){
    if(input.action==='section-order'){
     const keys=input.keys;if(!Array.isArray(keys)||new Set(keys).size!==keys.length)throw new RequestError('分类顺序无效');
     const state=await change(s=>{const all=sectionsOf(s).map(x=>x.key);if(keys.length!==all.length||keys.some(k=>!all.includes(k)))throw new RequestError('分类已更新，请刷新',409);if(keys.join()===all.join())return false;s.sections={...s.sections,order:[...keys]};audit(s,'section-order','sections',{})});
-    return {...catalogView(state),audit:state.audit};
+    return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
    }
    if(input.action==='section-delete'){
     if(!CUSTOM_SECTION.test(input.key||''))throw new RequestError('自带分类不能删除');
     const state=await change(s=>{const view=catalogView(s),x=view.sections.find(x=>x.key===input.key);if(!x)return false;if(x.count)throw new RequestError(`「${x.cn}」里还有 ${x.count} 道菜，先把菜移到别的分类`,409);
      const custom={...s.sections.custom};delete custom[input.key];s.sections={...s.sections,custom,order:(s.sections.order||[]).filter(k=>k!==input.key)};audit(s,'section-delete',input.key,{cn:x.cn})});
-    return {...catalogView(state),audit:state.audit};
+    return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
    }
    const cn=sectionName(input.cn,12,'中文名'),en=sectionName(input.en,30,'英文名');
    if(input.key!==undefined&&!CUSTOM_SECTION.test(input.key))throw new RequestError('自带分类不能改名');
@@ -271,7 +278,7 @@ export function createCatalogService(storage,{now=()=>new Date()}={}){
    const state=await change(s=>{const custom={...s.sections?.custom};if(input.key&&!custom[key])throw new RequestError('这个分类已删除，请刷新',409);
     if(sectionsOf(s).some(x=>x.key!==key&&x.cn===cn))throw new RequestError(`已经有「${cn}」这个分类`,409);
     custom[key]={cn,en};s.sections={...s.sections,custom};audit(s,input.key?'section-rename':'section-create',key,{cn,en})});
-   return {...catalogView(state),audit:state.audit};
+   return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
   },
   // Drag-and-drop order from the back office: the full list of dish ids, top to bottom.
   async reorder(input){
@@ -285,7 +292,7 @@ export function createCatalogService(storage,{now=()=>new Date()}={}){
     if(!moved)return false;
     audit(s,'reorder','menu',{count:moved});
    });
-   return {...catalogView(state),audit:state.audit};
+   return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
   },
   async save(input){
    const original=catalogView(await load()).items.find(d=>d.id===input.id);if(!original)throw new RequestError('菜品不存在',404);
@@ -306,7 +313,7 @@ export function createCatalogService(storage,{now=()=>new Date()}={}){
     if(patch.section&&!sectionsOf(s).some(x=>x.key===patch.section))throw new RequestError('这个分类已删除，请刷新',409);
     s.overrides[input.id]={...effectivePatch(original,s.overrides[input.id]),...patch,menuRevision:original.menuRevision};audit(s,'edit',input.id,patch)
    });
-   return {...catalogView(state),audit:state.audit};
+   return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
   },
   async reserve(order){
    await change(s=>{
