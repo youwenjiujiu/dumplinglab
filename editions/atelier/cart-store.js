@@ -159,9 +159,9 @@ class TableCart extends EventTarget {
       headers: body ? { "content-type": "application/json" } : {},
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
-      // Placing, confirming or cancelling a payment talks to Stripe and can take several seconds on a
-      // busy lunch; giving up early shows a false "connection interrupted" while the order goes through.
-      signal: AbortSignal.timeout(body && path === "/api/online" ? 30000 : 9000),
+      // Checkout also reads the shared cart/config and flushes pending edits before creating payment.
+      // Give every cart/payment step the same deadline; a nine-second preflight can fail on slow 4G.
+      signal: AbortSignal.timeout(/^\/api\/(?:cart|online)(?:\?|$)/.test(path) ? 30000 : 9000),
     });
     const out = await res.json();
     if (!res.ok || !out.ok) {

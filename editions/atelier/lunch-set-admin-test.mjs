@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
 import {createCatalogService} from '../../web/server/catalog-core.js';
 let record=null;
 const storage={async read(){return structuredClone(record)},async write(value,etag){assert.equal(etag,record?.etag);record={value:structuredClone(value),etag:String(Number(etag||0)+1)}},isConflict(){return false}};
@@ -6,17 +7,19 @@ const service=createCatalogService(storage);
 let view=await service.admin();assert.equal(view.lunchSets.length,2);
 const save=async(key,patch)=>service.saveLunchSet({key,patch,revision:(await service.admin()).revision});
 view=await save('dumpling-set',{cn:'工作日饺子套餐',name:'Weekday Dumpling Set',price:null,description:'现做饺子，搭配爽口凉菜',start:'11:30',end:'14:30',drinkChoices:['barley'],fillingChoices:['pork-chive-shrimp'],preparationKeys:['boiled','peanut'],includedColdDish:'cold-veg-shreds',optionalNoodlesExtra:2.5,imageUrl:'https://example.test/meal.webp',visible:true});
-let set=view.lunchSets[0];assert.equal(set.price,null);assert.equal(set.orderable,false);assert.equal(set.start,'11:30');assert.deepEqual(set.drinkChoices,['barley']);assert.equal(set.options.drinkChoices.length,3,'Removed choices can be reselected later');
+let set=view.lunchSets[0];assert.equal(set.price,null);assert.equal(set.orderable,false);assert.equal(set.start,'11:30');assert.deepEqual(set.drinkChoices,['lunch-v2-barley']);assert.deepEqual(set.options.drinkChoices,view.items.filter(d=>d.active!==false&&d.section==='drinks').map(d=>d.id),'All menu drinks remain available after saving a subset');
 assert.deepEqual(set.preparationChoices.map(p=>p.key),['boiled','peanut']);
 assert.equal((await service.public()).lunchSets[0].imageUrl,'https://example.test/meal.webp');
 assert.equal((await createCatalogService(storage).admin()).lunchSets[0].cn,'工作日饺子套餐','Settings persist on service reload');
 await save('dumpling-set',{price:15.8,drinkChoices:['barley','lemon-tea','sour-plum']});
 set=(await service.public()).lunchSets[0];assert.equal(set.price,15.8);assert.equal(set.orderable,false,'Saving a price cannot enable an unfinished checkout');
-for(const patch of [{price:0},{price:-1},{price:1.001},{price:'15'},{orderable:true},{start:'25:00'},{start:'16:00',end:'11:00'},{drinkChoices:[]},{drinkChoices:['water']},{includedColdDish:'pork-rice'},{imageUrl:'javascript:alert(1)'},{cn:'<script>'},{visible:'true'}])await assert.rejects(save('dumpling-set',patch));
+for(const patch of [{price:0},{price:-1},{price:1.001},{price:'15'},{orderable:true},{start:'25:00'},{start:'16:00',end:'11:00'},{drinkChoices:[]},{drinkChoices:['choy-sum']},{drinkChoices:['water','lunch-v2-water']},{includedColdDish:'pork-rice'},{imageUrl:'javascript:alert(1)'},{cn:'<script>'},{visible:'true'}])await assert.rejects(save('dumpling-set',patch));
 await assert.rejects(save('noodle-set',{optionalNoodlesExtra:2.5}));
 await assert.rejects(service.saveLunchSet({key:'dumpling-set',revision:0,patch:{price:null}}),e=>e.status===409);
-await save('noodle-set',{visible:false,sideFillingChoices:['chicken-cabbage'],noodleChoices:['mince-scallion-noodles']});
-const hidden=(await service.public()).lunchSets[1];assert.equal(hidden.visible,false);assert.equal(hidden.sideDumplings.pieces,4);assert.equal(hidden.noodleChoices.length,1);
+await save('noodle-set',{visible:false,sideFillingChoices:[],noodleChoices:['mince-scallion-noodles'],drinkChoices:['water','soft-drink']});
+const hidden=(await service.public()).lunchSets[1];assert.equal(hidden.visible,false);assert.equal(hidden.sideDumplings,null);assert.equal(hidden.noodleChoices.length,1);
+assert.deepEqual(hidden.drinkChoices,['lunch-v2-water','lunch-v2-soft-drink']);
+await assert.rejects(save('noodle-set',{sideFillingChoices:['chicken-cabbage']}),/不再包含煎饺/);
 assert.equal((await service.admin()).audit[0].action,'lunch-set-edit');
 // 小菜: the dumpling set starts with its cold dish; both sets take any 配菜/凉菜, or none.
 assert.deepEqual(view.lunchSets[0].sideChoices,['lunch-v2-cold-veg-shreds']);assert.deepEqual((await service.public()).lunchSets[1].sideChoices,[]);
@@ -24,4 +27,15 @@ await save('noodle-set',{sideChoices:['lunch-v2-choy-sum','lunch-v2-cold-veg-shr
 assert.deepEqual((await service.public()).lunchSets[1].sideChoices,['lunch-v2-choy-sum','lunch-v2-cold-veg-shreds']);
 await save('dumpling-set',{sideChoices:[]});assert.deepEqual((await service.public()).lunchSets[0].sideChoices,[]);
 for(const sideChoices of [['lunch-v2-water'],['missing-dish'],['lunch-v2-choy-sum','lunch-v2-choy-sum'],'lunch-v2-choy-sum'])await assert.rejects(save('noodle-set',{sideChoices}),/小菜/);
-console.log('PASS lunch-set administration: persistent settings/photos/prices/options/hours, full choice restoration, input validation, revision conflict, hidden display, immutable no-checkout state.');
+// Older saved fried-dumpling configuration cannot restore the removed component.
+record.value.lunchSets['noodle-set'].sideDumplings={pieces:4,fillingChoices:['chicken-cabbage'],preparation:'fried'};
+assert.equal((await createCatalogService(storage).admin()).lunchSets[1].sideDumplings,null);
+const id='custom-'+randomUUID();
+await service.create({id,patch:{cn:'测试饮品',name:'Test Drink',price:3,section:'drinks',active:true}});
+assert((await service.admin()).lunchSets.every(s=>s.options.drinkChoices.includes(id)),'New menu drinks are available in both set editors');
+await save('noodle-set',{drinkChoices:[id]});
+assert.deepEqual((await createCatalogService(storage).public()).lunchSets[1].drinkChoices,[id]);
+await service.save({id,revision:(await service.admin()).revision,patch:{active:false}});
+assert(!(await service.admin()).lunchSets[1].options.drinkChoices.includes(id));
+await assert.rejects(save('noodle-set',{drinkChoices:[id]}),/饮品/);
+console.log('PASS lunch-set administration: no fried-dumpling requirement, all active menu drinks/custom drinks, legacy settings, save/reload, sides, validation and unchanged checkout availability.');

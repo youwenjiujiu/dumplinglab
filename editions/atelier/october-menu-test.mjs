@@ -17,7 +17,7 @@ assert.equal(by('pork-corn').cn,'猪肉玉米');
 assert.equal(LUNCH_SETS.length,2);
 for(const set of LUNCH_SETS){assert.equal(set.price,null);assert.equal(set.orderable,false);assert.throws(()=>cleanItems([{id:set.key,qty:1}]),/菜单/)}
 assert.equal(LUNCH_SETS[0].includedColdDish,'cold-veg-shreds');assert.equal(LUNCH_SETS[0].optionalNoodlesExtra,2.5);
-assert.equal(LUNCH_SETS[1].sideDumplings.pieces,4);
+assert.equal(LUNCH_SETS[1].sideDumplings,null);
 assert.equal(LUNCH_SET_AVAILABILITY.start,'11:00');assert.equal(LUNCH_SET_AVAILABILITY.end,'15:00');assert.equal(LUNCH_SET_AVAILABILITY.requiresRestaurantOpen,true);
 const state={schema:1,revision:0,holds:{},audit:[],overrides:{[by('chicken-cabbage').id]:{portionPrices:{5:99,9:999},imageUrl:'https://example.test/photo.png',stock:25},[by('sour-plum').id]:{price:9}}};
 const migrated=catalogView(state).items.find(d=>d.id===by('chicken-cabbage').id);

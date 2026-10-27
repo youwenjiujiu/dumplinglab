@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     const member = await auth.identity(req.headers);
     if (!member) throw new RequestError("请先登录", 401);
     if (req.method === "GET") {
-      await onlineService.expireFreeRewards();
+      await onlineService.expireFreeRewards(member.id, { includeRewards: false });
       return json(res, 200, {
         ok: true,
         enabled: true,

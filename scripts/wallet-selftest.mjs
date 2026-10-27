@@ -318,14 +318,14 @@ assert((await dining.feed()).events.some((e) => e.id === dine.requestId));
 await online.refundLocal({
   id: dine.requestId,
   refundId: randomUUID(),
-  amountCents: 350,
+  amountCents: 385,
   reason: "堂食退款",
 });
 assert(!(await dining.feed()).events.some((e) => e.id === dine.requestId));
 const receipt = (await dining.cart("A1", "A")).orders.find(
   (o) => o.id === dine.requestId,
 );
-assert.equal(receipt.refundedCents, 350);
+assert.equal(receipt.refundedCents, 385);
 assert.equal(receipt.memberId, undefined);
 assert.equal(receipt.refundRequests, undefined);
 console.log(

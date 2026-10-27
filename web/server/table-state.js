@@ -57,9 +57,8 @@ export function createTableStore(storage, legacy) {
   }
   return {
     async cart(table, group, version = "") {
-      const menu = await legacy.menu?.();
       table = cleanTable(table); group = cleanGroup(group);
-      const { value } = await read(table, group);
+      const [menu, { value }] = await Promise.all([legacy.menu?.(), read(table, group)]);
       const cart = snapshot(value,menu);
       // Unmigrated legacy state has no stable revision; always return its contents.
       return value.revision !== "initial" && cart.version === version ? { unchanged: true, version } : cart;
@@ -109,8 +108,10 @@ export function createTableStore(storage, legacy) {
       });
       return { order: event, cart: snapshot(state,menu) };
     },
-    async reservePayment(order) {
-      const menu = await legacy.menu?.();
+    async reservePayment(order, menu = undefined) {
+      // The checkout service can supply its own server-read pricing snapshot.
+      // Inventory reservation still rechecks current prices/stock inside CAS.
+      menu ||= await legacy.menu?.();
       const ids = cleanCartOpIds(order.cartOpIds), selectedIds = new Set(ids);
       await transact(order.table, order.group, state => {
         if (state.paymentHold) {

@@ -3,6 +3,7 @@ import './order-core.js';
 import {lunchSetsView,lunchSetPatch} from './lunch-sets-core.js';
 import {createHash,randomBytes} from 'node:crypto';
 import {RequestError, cleanItems, printStationFor} from './order-core.js';
+import {waitForStorageRetry} from './storage-conflict.js';
 const base=structuredClone(globalThis.MENU);
 const money=v=>{if(typeof v!=='number'||!Number.isFinite(v)||v<0.01||v>9999||Math.abs(v*100-Math.round(v*100))>1e-7)throw new RequestError('价格需为 0.01–9999，最多两位小数');return v};
 const text=(v,max)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/[<>\x00-\x1f]/.test(v))throw new RequestError('名称或文字格式无效');return v.trim()};
@@ -107,7 +108,7 @@ export function catalogView(state=initial()){
   const reserved=held(state,owner),stock=ownerPatch.stock??null,smallest=d.variants?Math.min(...Object.values(d.variants).map(v=>v.pieces)):d.stockUnits||1;
   return {...d,recommended:Boolean(d.recommended),preparationImageUrls:{...d.preparationImageUrls},printStation:printStationFor(d),manualSoldOut:Boolean(patch.soldOut),active:patch.active??original.active??true,stock,reserved,available:stock===null?null:Math.max(0,stock-reserved),stockUnit:d.stockUnitName||(d.variants?'颗':'份'),soldOut:Boolean(patch.soldOut)||Boolean(d.optionsSoldOut)||(stock!==null&&stock-reserved<smallest)};
  }).sort((a,b)=>a.sort-b.sort);
- return {revision:state.revision,items,lunchSets:lunchSetsView(state),sections:sectionsOf(state,items)};
+ return {revision:state.revision,items,lunchSets:lunchSetsView(state,items),sections:sectionsOf(state,items)};
 }
 // A per-dish promotion: percent off, a fixed special price, or 买一赠一. It may end
 // at a set time; the stored list prices are never changed by it.
@@ -191,12 +192,13 @@ function validatePatch(original,input){
 }
 export function createCatalogService(storage,{now=()=>new Date()}={}){
  async function load(){return (await storage.read())?.value||initial()}
- async function change(fn){for(let n=0;n<16;n++){const current=await storage.read(),state=restoreSharedFried(migrateFixedFriedProducts(migrateWontonProducts(structuredClone(current?.value||initial()))));const result=fn(state);if(result===false)return state;state.revision++;try{await storage.write(state,current?.etag);return state}catch(e){if(!storage.isConflict(e))throw e}}throw new RequestError('其他人正在更新，请刷新重试',409)}
+ async function change(fn){for(let n=0;n<16;n++){const current=await storage.read(),state=restoreSharedFried(migrateFixedFriedProducts(migrateWontonProducts(structuredClone(current?.value||initial()))));const result=fn(state);if(result===false)return state;state.revision++;try{await storage.write(state,current?.etag);return state}catch(e){if(!storage.isConflict(e))throw e;await waitForStorageRetry(n)}}throw new RequestError('其他人正在更新，请刷新重试',409)}
  function audit(s,action,id,details){s.audit=[{at:now().toISOString(),action,id,details},...s.audit].slice(0,200)}
  return {
   async public(){const state=await load(),view=catalogView(state);return {revision:view.revision,lunchSets:view.lunchSets,sections:view.sections.map(({count,...x})=>x),items:withPromotions(view.items,now()).map(({stock,reserved,...d})=>d),settings:settingsOf(state)}},
   async admin(){const state=await load();return {...catalogView(state),settings:settingsOf(state),audit:state.audit}},
   async menu(){return withPromotions(catalogView(await load()).items,now())},
+  async checkoutSnapshot(table){const state=await load();return {menu:withPromotions(catalogView(state).items,now()),discount:table?globalThis.OrderPricing.discountFor(settingsOf(state),table,now()):null}},
   async tableDiscount(table){return globalThis.OrderPricing.discountFor(settingsOf(await load()),table,now())},
   async saveSettings(input){
    if(input.action==='day-discount'){

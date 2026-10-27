@@ -23,8 +23,8 @@ export default async function handler(req, res) {
     if (req.method !== "GET") return method(res, "GET, POST");
     const auth = memberService();
     if (!auth.configured) return json(res, 200, { ok: true, enabled: false });
-    await onlineService.expireFreeRewards();
     const member = await auth.identity(req.headers);
+    if (member) await onlineService.expireFreeRewards(member.id, { includeWallet: false });
     return json(res, 200, {
       ok: true,
       enabled: true,

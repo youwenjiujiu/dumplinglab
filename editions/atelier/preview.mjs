@@ -237,7 +237,7 @@ const server = createServer(async (req, res) => {
       if(url.pathname==='/api/wallet'){
         if((req.method==='GET'&&url.searchParams.get('admin')==='1')||['refund-topup','refund-order','settings'].includes(input?.action)){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...(req.method==='GET'?{...await wallet.admin(),orders:await online.localPayments()}:{result:input.action==='settings'?await wallet.saveSettings(input):input.action==='refund-topup'?await wallet.refundTopup(input):await online.refundLocal(input)})});}
         if(!testMembers)return json(200,{ok:true,enabled:false});const member=await memberIdentity(req);if(!member)throw new RequestError('请先登录',401);
-        if(req.method==='GET'){await online.expireFreeRewards();return json(200,{ok:true,enabled:true,preview:true,...(url.searchParams.get('id')?{topup:await wallet.topup(url.searchParams.get('id'),member.id)}:await wallet.view(member.id))});}
+        if(req.method==='GET'){await online.expireFreeRewards(member.id,{includeRewards:false});return json(200,{ok:true,enabled:true,preview:true,...(url.searchParams.get('id')?{topup:await wallet.topup(url.searchParams.get('id'),member.id)}:await wallet.view(member.id))});}
         if(input.action==='topup')return json(200,{ok:true,preview:true,topup:await wallet.createTopup(input,member.id)});
         if(input.action==='cancel-topup')return json(200,{ok:true,...await wallet.cancelTopup(input.id,member.id)});
         if(input.action==='preview-topup-paid'){const t=await wallet.topup(input.id,member.id);await wallet.paymentEvent({id:`cs_preview_topup_${t.id}`,currency:'sgd',amount_total:t.amountCents,payment_status:'paid',payment_intent:`pi_preview_topup_${t.id}`,metadata:{wallet_topup_id:t.id}});return json(200,{ok:true});}
@@ -288,8 +288,7 @@ const server = createServer(async (req, res) => {
         if(req.method==='POST'||url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...(req.method==='POST'?await rewards.save(input,await catalog.menu()):await rewards.admin())});}
         if(req.method!=='GET')return json(405,{ok:false,error:'Method not allowed'});
         if(!testMembers&&!memberAuth(req).configured)return json(200,{ok:true,enabled:false});
-        await online.expireFreeRewards();
-        const member=await memberIdentity(req);return json(200,{ok:true,enabled:true,member,...await rewards.view(member?.id,await catalog.menu())});
+        const member=await memberIdentity(req);if(member)await online.expireFreeRewards(member.id,{includeWallet:false});return json(200,{ok:true,enabled:true,member,...await rewards.view(member?.id,await catalog.menu())});
       }
       if(url.pathname==='/api/catalog'){
         if(req.method==='GET'){if(url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await catalog.admin()})}return json(200,{ok:true,...await catalog.public()})}

@@ -500,3 +500,9 @@ globalThis.choiceOptionFor = (d, style) => d?.choiceOptions?.items?.find(o => o.
   Object.assign(large, { stockPool: d.id, stockUnits: wings ? 6 : 2, stockUnitName: d.stockUnitName });
  }
 })();
+
+// 面条套餐不再配送煎饺；套餐饮品候选来自完整饮品菜单。
+for (const set of globalThis.LUNCH_SETS || []) {
+  if (set.key === 'noodle-set') set.sideDumplings = null;
+  set.drinkChoices = MENU.filter(d => d.active !== false && d.section === 'drinks').map(d => d.id);
+}

@@ -227,7 +227,7 @@ if (globalThis.customElements && !customElements.get('dl-ingredient-reveal')) {
 
 // Unpriced lunch sets are inspectable menu previews, never purchasable SKUs.
 (()=>{
- const item=key=>MENU.find(d=>d.id.endsWith('-'+key)&&d.active!==false);
+ const item=key=>MENU.find(d=>(d.id===key||d.id.endsWith('-'+key))&&d.active!==false);
  const label=key=>{const d=item(key);return d?name(d):key};
  const select=(title,values)=>`<label class="lunch-set-field"><span>${title}</span><select>${values.map(v=>`<option value="${escapeHTML(v.value)}">${escapeHTML(v.label)}</option>`).join('')}</select></label>`;
  const choices=keys=>keys.map(key=>({value:key,label:label(key)}));
@@ -237,7 +237,7 @@ if (globalThis.customElements && !customElements.get('dl-ingredient-reveal')) {
  // 小菜: one is included; several let the customer pick one.
  const sides=s=>(s.sideChoices||[]).map(id=>MENU.find(d=>d.id===id&&d.active!==false)).filter(Boolean);
  const sideText=s=>{const list=sides(s);return list.length===1?[name(list[0]),name(list[0])]:list.length?['小菜','side dish']:null};
- const summary=s=>{const side=sideText(s),parts=s.key==='dumpling-set'?[[s.pieces+'颗饺子／云吞',s.pieces+' dumplings/wontons']]:[['面条','Noodles'],['4颗煎饺','4 pan-fried dumplings']];if(side)parts.push(side);parts.push(['饮品','drink']);return tr(parts.map(p=>p[0]).join(' + '),parts.map(p=>p[1]).join(' + '))};
+ const summary=s=>{const side=sideText(s),parts=s.key==='dumpling-set'?[[s.pieces+'颗饺子／云吞',s.pieces+' dumplings/wontons']]:[['面条','Noodles']];if(side)parts.push(side);parts.push(['饮品','drink']);return tr(parts.map(p=>p[0]).join(' + '),parts.map(p=>p[1]).join(' + '))};
  const sideField=s=>{const list=sides(s);return list.length===1?`<p>${bi('含小菜：','Included side: ')}${escapeHTML(name(list[0]))}</p>`:list.length?select(bi('小菜','Side dish'),list.map(d=>({value:d.id,label:name(d)}))):''};
  LunchMenu.lunchSetSection=()=>{
   const sets=(globalThis.LUNCH_SETS||[]).filter(s=>s.visible!==false);if(!sets.length)return '';
@@ -250,7 +250,7 @@ if (globalThis.customElements && !customElements.get('dl-ingredient-reveal')) {
   LunchMenu.currentSet=s.key;openModal('lunchset',title(s));
   const fields=s.key==='dumpling-set'
    ? select(bi('馅料 · '+s.pieces+'颗','Filling · '+s.pieces+' pieces'),choices(s.fillingChoices))+select(bi('做法','Preparation'),s.preparationChoices.map(p=>({value:p.key,label:tr(p.cn,({boiled:"Plain boiled",soup:"Clear broth","red-oil":"Sichuan chilli oil",peanut:"Peanut sauce"})[p.key])})))+sideField(s)+select(bi('加面 · 仅限本套餐','Noodles · this set only'),[{value:'no',label:tr('不加面','No noodles')},{value:'yes',label:tr('加面 +'+foodMoney(s.optionalNoodlesExtra),'Add noodles +'+foodMoney(s.optionalNoodlesExtra))}])
-   : select(bi('面条','Noodles'),choices(s.noodleChoices))+select(bi('煎饺 · 4颗','Pan-fried dumplings · 4 pieces'),choices(s.sideDumplings.fillingChoices))+sideField(s);
+   : select(bi('面条','Noodles'),choices(s.noodleChoices))+sideField(s);
   $('#sheetBody').innerHTML=`<div class="set-detail-art">${globalThis.LunchSetArt?.render(s,MENU)||''}</div><div class="sheet-content"><h2 id="sheetTitle">${escapeHTML(title(s))}</h2><p class="detail-other">${bi('营业日 ','Business days ')}${escapeHTML(schedule(s))} · ${price(s)}</p><div class="lunch-set-fields">${fields}${select(bi('饮品','Drink'),choices(s.drinkChoices))}</div><p class="lunch-set-hint">${bi('当前仅预览套餐搭配，暂未开放套餐下单。','Preview choices only. Set ordering is not yet available.')}</p></div><div class="dish-action"><button class="primary" disabled>${bi('暂未开放套餐下单','Set ordering unavailable')}</button></div>`;
   return true;
  };

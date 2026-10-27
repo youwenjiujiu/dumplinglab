@@ -4,6 +4,7 @@ import { cleanItems, cleanOrder, RequestError } from './order-core.js';
 import { cleanCartOpIds, cleanTable } from './cart-core.js';
 import { cleanNickname } from './cart-meta.js';
 import { summarizeOrders } from './report-core.js';
+import { waitForStorageRetry } from './storage-conflict.js';
 
 export const SLOTS = ['11:30-12:30', '12:30-13:30', '13:30-14:30', '17:00-18:00'];
 export const validId = value => typeof value === 'string' && /^[a-f0-9-]{36}$/.test(value);
@@ -86,19 +87,31 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     for (let n = 0; n < 8; n++) {
       const current = await storage.read(id);
       const value = await fn(current?.value);
+      if (value === current?.value) return value;
       try { await storage.write(id, value, current?.etag); return value; }
-      catch (e) { if (!storage.isConflict(e)) throw e; }
+      catch (e) { if (!storage.isConflict(e)) throw e; await waitForStorageRetry(n); }
     }
     throw new RequestError('订单正在更新，请稍后重试', 409);
   }
-  async function expireFreeRewards(){
-    const ids=new Set([...(await rewards?.expiredFreeReservations?.()||[]),...(await wallet?.expiredReservations?.()||[])]);
-    for(const id of ids){
-      const order=await mutate(id,prior=>{
-        if(!prior||(prior.total!==0&&prior.paymentMethod!=='wallet')||prior.status!=='awaiting_payment')return prior;
-        return {...prior,status:'expired'};
-      });
-      if(order&&['paid','expired'].includes(order.status))await finalize(order);
+  const localPaymentExpired = order => order?.status === 'awaiting_payment' &&
+    (order.paymentMethod === 'wallet' || (order.total === 0 && order.loyalty?.discountCents)) &&
+    now().getTime() - Date.parse(order.at) >= 30 * 60000;
+  async function expireLocalPayment(order) {
+    if (!localPaymentExpired(order)) return order;
+    // Recheck inside CAS: a concurrent confirmation must never become expired.
+    const updated = await mutate(order.id, prior => localPaymentExpired(prior) ? { ...prior, status: 'expired' } : prior);
+    return updated && ['paid', 'expired'].includes(updated.status) ? finalize(updated) : updated;
+  }
+  async function expireFreeRewards(memberId = null, { includeRewards = true, includeWallet = true } = {}) {
+    const groups = await Promise.all([
+      includeRewards ? rewards?.expiredFreeReservations?.(memberId) : [],
+      includeWallet ? wallet?.expiredReservations?.(memberId) : [],
+    ]);
+    for (const id of new Set(groups.flatMap(ids => ids || []))) {
+      const order = (await storage.read(id))?.value;
+      if (!order || (memberId && order.memberId !== memberId)) continue;
+      if (['paid', 'expired'].includes(order.status)) await finalize(order);
+      else await expireLocalPayment(order);
     }
   }
   // Priced exactly like a guest order of the same mode, table discount included.
@@ -113,8 +126,9 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     return {type:'order',mode:input.mode,table:table?table.toUpperCase():null,group:table?'A':null,items,customer:{},fulfilment:{},
       note:typeof input.note==='string'?input.note.trim().slice(0,240):'',...globalThis.OrderPricing.quote(items.reduce((sum,i)=>sum+i.price*i.qty,0),input.mode,discount,lines),paymentMethod:'counter'};
   }
-  async function checked(input, memberId) {
-    const menu = inventory ? await inventory.menu() : undefined;
+  async function checked(input, memberId, pricingSnapshot) {
+    const snapshot = pricingSnapshot || await inventory?.checkoutSnapshot?.(input.mode === 'dinein' ? cleanTable(input.table) : null);
+    const menu = snapshot ? snapshot.menu : inventory ? await inventory.menu() : undefined;
     const order = cleanOnline(input, config, now(), menu);
     if (order.mode === 'delivery') {
       const result = await checkAddress(order.customer.postalCode);
@@ -125,7 +139,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     }
     if(input.rewardSelection&&!memberId)throw new RequestError('请先登录后使用积分或兑换券',401);
     // The back office decides a table's discount; the client only displays it.
-    const tableDiscount = order.mode === 'dinein' ? await inventory?.tableDiscount?.(order.table) : null;
+    const tableDiscount = order.mode === 'dinein' ? snapshot ? snapshot.discount : await inventory?.tableDiscount?.(order.table) : null;
     // Category discounts need each line's menu section.
     const sectionOf = id => menu?.find(d => d.id === id)?.section || null;
     const lines = order.items.map(i => ({ id: i.id, style: i.style || null, section: sectionOf(i.id), amount: i.price * i.qty }));
@@ -175,6 +189,12 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
   // Runs whenever staff screens or the printer read orders (every few seconds while
   // the printer bridge is on). A customer paying at that moment keeps the order.
   async function expireStale(orders){
+    // Staff polling also releases expired local payments without making every
+    // guest quote/status read scan the restaurant's rewards and wallet ledgers.
+    for (const order of orders) if (localPaymentExpired(order)) {
+      try { Object.assign(order, await expireLocalPayment(order)); }
+      catch (error) { console.error('Local payment timeout failed', order.id, error.message); }
+    }
     const stale=orders.filter(o=>o?.type==='order'&&o.status==='awaiting_payment'&&o.paymentMethod!=='wallet'&&o.total!==0&&now().getTime()-Date.parse(o.at)>=PAYMENT_WINDOW_MS);
     for(const o of stale){try{await voidPayment(o,'timeout');o.status='expired'}catch(error){if(error.status!==409)console.error('Payment timeout failed',o.id,error.message)}}
     return orders;
@@ -218,29 +238,35 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
         items:(o.items || []).map(i => ({id:i.id,name:i.name,englishName:i.englishName,style:i.style,qty:i.qty,price:i.price})),
       })), next:rows.length > 20 ? key(page.at(-1)) : null };
     },
-    async quote(input, memberId=null) { await expireFreeRewards();return publicOrder(await checked(input,memberId)); },
+    async quote(input, memberId=null) {
+      if (memberId) await expireFreeRewards(memberId, { includeWallet: input.paymentMethod === 'wallet' });
+      return publicOrder(await checked(input,memberId));
+    },
     async checkout(input, memberId=null) {
       // One log line per checkout with the time each step took, to keep an eye on slow lunches.
       const started=Date.now(),steps=[];let last=started;const step=name=>{const t=Date.now();steps.push(name+'='+(t-last));last=t};
       try{return await this.checkoutSteps(input,memberId,step)}finally{console.log('[checkout]',(Date.now()-started)+'ms',steps.join(' '))}
     },
     async checkoutSteps(input, memberId, step) {
-      await expireFreeRewards();step('expireRewards');
       // Recover an existing payment before applying changing date/availability rules.
-      const saved = validId(input.requestId) ? (await storage.read(input.requestId))?.value : null;step('readSaved');
+      let saved = validId(input.requestId) ? (await storage.read(input.requestId))?.value : null;step('readSaved');
       if (saved) {
         authorize(saved, input.token);
         if(saved.memberId&&saved.memberId!==memberId)throw new RequestError('请使用原会员账号继续付款',401);
         if (saved.requestFingerprint && saved.requestFingerprint !== requestFingerprint(input)) throw new RequestError('订单内容已更改，请先确认上一笔付款', 409);
+        saved = await expireLocalPayment(saved);
         if (saved.status === 'paid') return { order: publicOrder(await finalize(saved)) };
         if (saved.status === 'expired') throw new RequestError('付款已过期，请重新确认订单', 410);
       }
-      const data = saved || await checked(input,memberId);step('checked');
+      if (!saved && memberId) await expireFreeRewards(memberId, { includeWallet: input.paymentMethod === 'wallet' });
+      step('expireRewards');
+      const pricingSnapshot = !saved ? await inventory?.checkoutSnapshot?.(input.mode === 'dinein' ? cleanTable(input.table) : null) : null;
+      const data = saved || await checked(input,memberId,pricingSnapshot);step('checked');
       if (!saved && input.expectedTotal !== undefined && globalThis.OrderPricing.cents(input.expectedTotal) !== globalThis.OrderPricing.cents(data.total)) throw new RequestError('价格已更新，请重新核对订单', 422);
       payment.ensureReady();
       if (data.mode === 'dinein') {
         if (!dining) throw new RequestError('堂食付款尚未开放', 503);
-        if (!saved) await dining.reservePayment(data);
+        if (!saved) await dining.reservePayment(data, pricingSnapshot?.menu);
       }
       step('table');
       const fingerprint = createHash('sha256').update(JSON.stringify(data)).digest('hex');
@@ -406,9 +432,9 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       return { cancelled: true };
     },
     async get(id, token) {
-      await expireFreeRewards();
       if (!validId(id)) throw new RequestError('订单编号无效');
-      const record = (await storage.read(id))?.value; authorize(record, token);
+      let record = (await storage.read(id))?.value; authorize(record, token);
+      if (localPaymentExpired(record)) return publicOrder(await expireLocalPayment(record));
       return publicOrder(['paid','expired'].includes(record.status)?await finalize(record):record);
     },
     async paymentEvent(session) {

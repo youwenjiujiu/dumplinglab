@@ -25,7 +25,7 @@ const catalog = createCatalogService(documentStore()),
   rewards = createRewardsService(ledgerStore, { now: () => clock });
 const menu = await catalog.menu(),
   drink = menu.find((d) => d.id === "lunch-v2-barley"),
-  food = menu.find((d) => d.id === "lunch-v2-soft-egg");
+  food = menu.find((d) => d.id === "lunch-v5-onsen-egg");
 await rewards.save(
   {
     revision: 0,
@@ -36,12 +36,13 @@ await rewards.save(
 );
 const records = new Map();
 let paymentCreates = 0,
-  settleFails = 0;
+  settleFails = 0, reservationGate = null;
 const online = createOnlineService({
   now: () => clock,
   inventory: catalog,
   rewards: {
     ...rewards,
+    reserve: async (...args) => { if (reservationGate) await reservationGate(); return rewards.reserve(...args); },
     settle: async (...args) => {
       if (settleFails-- > 0) throw new Error("Transient ledger outage");
       return rewards.settle(...args);
@@ -200,9 +201,14 @@ const vinputs = [
   ),
   make(undefined, { rewardSelection: { type: "voucher", id: voucher.id } }),
 ];
+// Hold both contenders at reservation, independent of pricing/read optimizations.
+let arrivals = 0, releaseReservations;
+const reservationsReady = new Promise(resolve => { releaseReservations = resolve; });
+reservationGate = async () => { if (++arrivals === 2) releaseReservations(); await reservationsReady; };
 const vr = await Promise.allSettled(
   vinputs.map((i) => online.checkout(i, "member-two")),
 );
+reservationGate = null;
 assert.equal(vr.filter((r) => r.status === "fulfilled").length, 1);
 for (const i of vinputs) await online.cancel(i);
 const vin = make(
@@ -213,14 +219,14 @@ const vin = make(
   { rewardSelection: { type: "voucher", id: voucher.id } },
 );
 const vp = await paid(vin, "member-two");
-assert.equal(vp.total, 3.8);
+assert.equal(vp.total, 3);
 assert.equal(vp.rewardPointsEarned, 3);
 assert.equal((await rewards.view("member-two")).vouchers[0].status, "used");
 const charge = {
   metadata: { dumpling_order_id: vp.id },
   payment_intent: `pi_${vp.id}`,
   currency: "sgd",
-  amount: 380,
+  amount: 300,
   amount_refunded: 90,
 };
 await assert.rejects(
@@ -229,15 +235,15 @@ await assert.rejects(
 );
 await online.refundEvent(charge);
 assert.equal((await rewards.view("member-two")).points, 2);
-await online.refundEvent({ ...charge, amount_refunded: 380 });
+await online.refundEvent({ ...charge, amount_refunded: 300 });
 await online.refundEvent(charge);
-await online.refundEvent({ ...charge, amount_refunded: 380 });
+await online.refundEvent({ ...charge, amount_refunded: 300 });
 assert.equal((await rewards.view("member-two")).points, 0);
 assert.equal(
   (await rewards.view("member-two")).vouchers[0].status,
   "available",
 );
-assert.equal((await online.get(vp.id, vin.token)).refundedCents, 380);
+assert.equal((await online.get(vp.id, vin.token)).refundedCents, 300);
 // A retry via receipt GET repairs a webhook interrupted after payment confirmation.
 const recovering = make();
 await online.checkout(recovering, "member-three");
@@ -263,8 +269,8 @@ const rc = {
   metadata: { dumpling_order_id: rp.id },
   payment_intent: `pi_${rp.id}`,
   currency: "sgd",
-  amount: 190,
-  amount_refunded: 190,
+  amount: 150,
+  amount_refunded: 150,
 };
 await online.refundEvent(rc);
 await online.refundEvent(rc);

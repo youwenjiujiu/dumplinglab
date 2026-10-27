@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { RequestError } from "./order-core.js";
+import { waitForStorageRetry } from './storage-conflict.js';
 const validId = (v) => typeof v === "string" && /^[a-f0-9-]{36}$/.test(v);
 const memberKey = (v) =>
   typeof v === "string" &&
@@ -103,6 +104,7 @@ export function createWalletService(
         return s;
       } catch (e) {
         if (!storage.isConflict(e)) throw e;
+        await waitForStorageRetry(i);
       }
     }
     fail("账户正在更新，请重试");
@@ -653,11 +655,12 @@ export function createWalletService(
         h.refundedCents = cumulative;
       });
     },
-    async expiredReservations() {
+    async expiredReservations(memberId = null) {
       const s = await read();
       return Object.entries(s.holds)
         .filter(
           ([, h]) =>
+            (!memberId || h.memberId === memberId) &&
             h.status === "reserved" &&
             Date.parse(h.expiresAt) <= now().getTime(),
         )

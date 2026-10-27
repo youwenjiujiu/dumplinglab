@@ -1,4 +1,5 @@
-import { get, put, BlobPreconditionFailedError } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
+import { isStorageConflict } from './storage-conflict.js';
 import { rewardsService } from "./rewards-production.js";
 import { createWalletService } from "./wallet-core.js";
 import { ensureStorage } from "./order-store.js";
@@ -100,9 +101,7 @@ export const walletService = createWalletService(
           : { allowOverwrite: false }),
       });
     },
-    isConflict: (e) =>
-      e instanceof BlobPreconditionFailedError ||
-      /already exists/i.test(e.message || ""),
+    isConflict: isStorageConflict,
   },
   payment,
   { rewards: rewardsService },

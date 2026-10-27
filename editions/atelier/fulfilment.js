@@ -28,7 +28,7 @@ class OnlineCart extends TableCart {
     this.polling = true;
     try {
       if (!this.order?.requestId) { await this.refreshProgress(); return; }
-      const res = await fetch(`/api/online?id=${this.order.requestId}`, { headers: { authorization: `Bearer ${this.order.token}` }, cache: 'no-store', signal: AbortSignal.timeout(9000) });
+      const res = await fetch(`/api/online?id=${this.order.requestId}`, { headers: { authorization: `Bearer ${this.order.token}` }, cache: 'no-store', signal: AbortSignal.timeout(30000) });
       const out = await res.json();
       if (!res.ok || !out.ok) return;
       if (out.order.status === 'paid') {

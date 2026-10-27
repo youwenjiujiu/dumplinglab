@@ -1,5 +1,6 @@
 import {catalogService} from './catalog-production.js';
-import { get, put, list, BlobPreconditionFailedError } from "@vercel/blob";
+import { get, put, list } from "@vercel/blob";
+import { isStorageConflict } from './storage-conflict.js';
 import { createTableStore } from "./table-state.js";
 import { ensureStorage, readOrderHistory, readFeed, resolveEvent } from "./order-store.js";
 
@@ -28,7 +29,7 @@ export const tableStore = createTableStore({
       ...(etag ? { allowOverwrite: true, ifMatch: etag } : { allowOverwrite: false }),
     });
   },
-  isConflict: error => error instanceof BlobPreconditionFailedError || /already exists/i.test(error.message || ""),
+  isConflict: isStorageConflict,
   async all(prefix) {
     ensureStorage();
     const paths = await blobs(prefix);

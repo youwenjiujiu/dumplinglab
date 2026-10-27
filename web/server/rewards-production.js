@@ -1,4 +1,5 @@
-import { get, put, BlobPreconditionFailedError } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
+import { isStorageConflict } from './storage-conflict.js';
 import { ensureStorage } from "./order-store.js";
 import { createRewardsService } from "./rewards-core.js";
 const path = "dumplinglab-rewards/v1/state.json";
@@ -30,7 +31,5 @@ export const rewardsService = createRewardsService({
         : { allowOverwrite: false }),
     });
   },
-  isConflict: (e) =>
-    e instanceof BlobPreconditionFailedError ||
-    /already exists/i.test(e.message || ""),
+  isConflict: isStorageConflict,
 });

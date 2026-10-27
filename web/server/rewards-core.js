@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { RequestError } from "./order-core.js";
+import { waitForStorageRetry } from './storage-conflict.js';
 const initial = () => ({
   schema: 1,
   revision: 0,
@@ -51,6 +52,7 @@ export function createRewardsService(storage, { now = () => new Date() } = {}) {
         return s;
       } catch (e) {
         if (!storage.isConflict(e)) throw e;
+        await waitForStorageRetry(i);
       }
     }
     fail("会员账户正在更新，请重试");
@@ -148,11 +150,12 @@ export function createRewardsService(storage, { now = () => new Date() } = {}) {
     };
   }
   return {
-    async expiredFreeReservations() {
+    async expiredFreeReservations(memberId = null) {
       const s = await read();
       return Object.entries(s.holds)
         .filter(
           ([, h]) =>
+            (!memberId || h.memberId === memberId) &&
             h.status === "reserved" &&
             h.freeExpiresAt &&
             Date.parse(h.freeExpiresAt) <= now().getTime(),

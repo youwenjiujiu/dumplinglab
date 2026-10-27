@@ -230,7 +230,8 @@ const CheckoutUI = (() => {
       if (!owner.order && !owner.items.length) return showCart();
       if (!dining && !view.config.locations?.length) throw new Error(tr('自取门店尚未配置，选菜已保留', 'Pickup location is not configured. Your selection is saved.'));
       if (!dining && view.config.locations.length > 1 && !owner.order) throw new Error(tr('请先确认自取门店', 'Please confirm the pickup location first'));
-      try { await globalThis.RewardsUI?.refresh(); } catch(e) { if(!owner.order&&globalThis.RewardsUI?.input(owner).memberExpected)throw e; }
+      // The quote verifies identity, rewards and totals on the server. Refreshing
+      // the account/wallet panels here adds unrelated requests before payment.
       view.input = owner.order || { ...freshCredentials(), ...globalThis.RewardsUI?.input(owner), ...globalThis.WalletUI?.input(owner), mode: dining ? 'dinein' : 'takeaway',
         items: structuredClone(owner.items), note: owner.note,
         ...(dining ? { table: owner.table, group: owner.group, cartOpIds: [...owner.remote.opIds], actorName: owner.nickname } : { pickupLocation: view.config.locations[0].id }) };
@@ -264,7 +265,7 @@ const CheckoutUI = (() => {
   }
   async function readPayment(owner) {
     const pending = owner.order;
-    const response = await fetch(`/api/online?id=${encodeURIComponent(pending.requestId)}`, { headers: { authorization: `Bearer ${pending.token}` }, cache: 'no-store', signal: AbortSignal.timeout(9000) });
+    const response = await fetch(`/api/online?id=${encodeURIComponent(pending.requestId)}`, { headers: { authorization: `Bearer ${pending.token}` }, cache: 'no-store', signal: AbortSignal.timeout(30000) });
     const result = await response.json();
     if (!response.ok || !result.ok) throw Object.assign(new Error(result.error || 'Unable to check payment'), { status: response.status });
     return result;

@@ -1,4 +1,5 @@
-import { get, put, list, BlobPreconditionFailedError } from '@vercel/blob';
+import { get, put, list } from '@vercel/blob';
+import { isStorageConflict } from './storage-conflict.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { RequestError } from './order-core.js';
 import { ensureStorage } from './order-store.js';
@@ -24,7 +25,7 @@ const storage = {
       contentType: 'application/json', cacheControlMaxAge: 60,
       ...(etag ? { allowOverwrite: true, ifMatch: etag } : { allowOverwrite: false }) });
   },
-  isConflict: e => e instanceof BlobPreconditionFailedError || /already exists/i.test(e.message || ''),
+  isConflict: isStorageConflict,
   async all() {
     ensureStorage(); const orders = []; let cursor;
     do {
