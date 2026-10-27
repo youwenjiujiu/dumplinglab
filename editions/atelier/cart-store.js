@@ -159,7 +159,9 @@ class TableCart extends EventTarget {
       headers: body ? { "content-type": "application/json" } : {},
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
-      signal: AbortSignal.timeout(9000),
+      // Placing, confirming or cancelling a payment talks to Stripe and can take several seconds on a
+      // busy lunch; giving up early shows a false "connection interrupted" while the order goes through.
+      signal: AbortSignal.timeout(body && path === "/api/online" ? 30000 : 9000),
     });
     const out = await res.json();
     if (!res.ok || !out.ok) {

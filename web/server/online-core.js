@@ -220,9 +220,14 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     },
     async quote(input, memberId=null) { await expireFreeRewards();return publicOrder(await checked(input,memberId)); },
     async checkout(input, memberId=null) {
-      await expireFreeRewards();
+      // One log line per checkout with the time each step took, to keep an eye on slow lunches.
+      const started=Date.now(),steps=[];let last=started;const step=name=>{const t=Date.now();steps.push(name+'='+(t-last));last=t};
+      try{return await this.checkoutSteps(input,memberId,step)}finally{console.log('[checkout]',(Date.now()-started)+'ms',steps.join(' '))}
+    },
+    async checkoutSteps(input, memberId, step) {
+      await expireFreeRewards();step('expireRewards');
       // Recover an existing payment before applying changing date/availability rules.
-      const saved = validId(input.requestId) ? (await storage.read(input.requestId))?.value : null;
+      const saved = validId(input.requestId) ? (await storage.read(input.requestId))?.value : null;step('readSaved');
       if (saved) {
         authorize(saved, input.token);
         if(saved.memberId&&saved.memberId!==memberId)throw new RequestError('请使用原会员账号继续付款',401);
@@ -230,18 +235,20 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
         if (saved.status === 'paid') return { order: publicOrder(await finalize(saved)) };
         if (saved.status === 'expired') throw new RequestError('付款已过期，请重新确认订单', 410);
       }
-      const data = saved || await checked(input,memberId);
+      const data = saved || await checked(input,memberId);step('checked');
       if (!saved && input.expectedTotal !== undefined && globalThis.OrderPricing.cents(input.expectedTotal) !== globalThis.OrderPricing.cents(data.total)) throw new RequestError('价格已更新，请重新核对订单', 422);
       payment.ensureReady();
       if (data.mode === 'dinein') {
         if (!dining) throw new RequestError('堂食付款尚未开放', 503);
         if (!saved) await dining.reservePayment(data);
       }
+      step('table');
       const fingerprint = createHash('sha256').update(JSON.stringify(data)).digest('hex');
       let order = saved || await mutate(data.id, prior => {
         if (prior) { authorize(prior, input.token); if (prior.fingerprint !== fingerprint) throw new RequestError('订单内容已更改，请重新确认', 409); return prior; }
         return { ...data, ...(inventory?{inventoryManaged:true}:{}), fingerprint, requestFingerprint:requestFingerprint(input), at: now().toISOString(), no: data.no || `W${data.id.slice(0, 8).toUpperCase()}`, status: 'awaiting_payment' };
       });
+      step('saveOrder');
       if(order.inventoryManaged){
         try{await inventory.reserve(order)}catch(e){
           // An order/table hold already exists. Keep the client's credentials so
@@ -249,7 +256,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
           if([400,422].includes(e.status))throw new RequestError(e.message,409);
           throw e;
         }
-        order=(await storage.read(order.id))?.value||order;
+        step('stock');order=(await storage.read(order.id))?.value||order;step('reread');
         if(order.status==='expired'){await inventory.settle(order,'expired');throw new RequestError('付款已取消，请重新确认',410)}
         if(order.status==='paid')return {order:publicOrder(await finalize(order))};
       }
@@ -264,8 +271,8 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if (!order.sessionId) {
         // Don't reissue an uncertain payment after Stripe's key-retention window.
         if (now().getTime()-Date.parse(order.at)>23*3600000) throw new RequestError('原付款状态需门店核实，请勿重新付款', 503);
-        const session = await payment.create(order);
-        order = await mutate(order.id, prior => ({ ...prior, sessionId: session.id, paymentUrl: session.url, clientSecret: session.client_secret }));
+        const session = await payment.create(order);step('stripe');
+        order = await mutate(order.id, prior => ({ ...prior, sessionId: session.id, paymentUrl: session.url, clientSecret: session.client_secret }));step('saveSession');
       }
       return { order: publicOrder(order), paymentUrl: order.paymentUrl, clientSecret: order.clientSecret };
     },
