@@ -15,7 +15,7 @@ for(const d of singles)for(const prep of (d.kind==='wonton'?['soup','red-oil','p
 for(const d of singles)assert(!Object.values(d.variants).some(v=>v.prep==='fried'),`${d.cn} 单点不提供煎`);
 const chicken=find('chicken-cabbage');assert.equal(chicken.singleChoice,false);assert.equal(chicken.section,'recommended');assert(Object.values(chicken.variants).every(v=>v.prep==='fried'));
 assert(LUNCH_RECOMMENDATIONS.some(r=>r.dishId===chicken.id&&r.prep==='fried'));
-assert.deepEqual(LUNCH_RECOMMENDATIONS.map(r=>r.cn),['韭菜虾仁猪肉煎饺','鸡肉包菜煎饺','红油抄手','清汤鲜肉云吞','肉末辣椒板面','销魂皮蛋面','鲜虾蟹籽云吞面','水煮饺子']);
+assert.deepEqual(LUNCH_RECOMMENDATIONS.map(r=>r.cn),['韭菜虾仁猪肉煎饺','鸡肉包菜煎饺','红油抄手','清汤鲜肉云吞','肉末辣椒板面','销魂皮蛋面','鲜虾蟹籽云吞面','干拌鲜虾蟹籽云吞','水煮饺子']);
 assert.throws(()=>cleanItems([{id:chicken.id,style:'水煮 · 5颗',qty:1}]),/做法/);
 for(const key of ['pork-wonton','prawn-roe-wonton']){const d=find(key),style=d.styles.find(s=>d.variants[s].prep==='soup'&&d.variants[s].pieces===10);assert.equal(cleanItems([{id:d.id,style,qty:1}])[0].price,d.portionPrices[10],'单点做法不加价')}
 const catalog=createCatalogService({async read(){return null},async write(){},isConflict(){return false}});assert.equal((await catalog.menu()).filter(d=>d.singleChoice).length,6);

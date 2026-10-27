@@ -225,7 +225,9 @@
  LUNCH_RECOMMENDATIONS.push(...['mince-chilli-noodles','century-egg-noodles'].map(key=>{const d=byKey(key);return {id:key,dishId:d.id,cn:active.find(a=>a.id===d.id).cn,name:active.find(a=>a.id===d.id).name,img:d.img}}));
  // No unconfirmed standalone chaoshou price is invented. Keep its shortcut visible but disabled.
  const chaoshou=prior.find(d=>d.id==='lunch-v4-red-oil-chaoshou');
- if(chaoshou)LUNCH_RECOMMENDATIONS.push({id:'red-oil-chaoshou',dishId:chaoshou.id,cn:chaoshou.cn,name:chaoshou.name,img:chaoshou.img,pending:true});
+ if(chaoshou)LUNCH_RECOMMENDATIONS.push({id:'red-oil-chaoshou',dishId:chaoshou.id,cn:chaoshou.cn,name:chaoshou.name,prep:'red-oil',img:chaoshou.img,pending:true});
+ // 干拌鲜虾蟹籽云吞 is the 红油花生酱拌 wontons with their own photo; same dish, same stock.
+ LUNCH_RECOMMENDATIONS.push({id:'dry-roe-wonton',dishId:'lunch-v2-prawn-roe-wonton',cn:'干拌鲜虾蟹籽云吞',name:'Tossed Prawn & Crab Roe Wontons',prep:'dry',img:'prawn-roe-wonton-dry-v1.png',ownPhoto:true});
  globalThis.LUNCH_SETS=update.lunchSets;globalThis.LUNCH_SET_AVAILABILITY=update.availability;
  globalThis.SECTIONS=['lunchsets',...SECTIONS];globalThis.SECTION_LABELS.lunchsets='Lunch Sets';
  if(typeof I18N!=='undefined')I18N.sections.lunchsets='午市套餐';
@@ -259,7 +261,7 @@
   d.variants=Object.fromEntries(d.styles.map(s=>[s,d.variants[s]]));
   d.preparations=[...new Set(Object.values(d.variants).map(v=>v.prep))];
  }
- const recommendedOrder=['chive-fried','chicken-fried','red-oil-chaoshou','pork-soup','mince-chilli-noodles','century-egg-noodles','roe-wonton-noodles','boiled-dumplings'];
+ const recommendedOrder=['chive-fried','chicken-fried','red-oil-chaoshou','pork-soup','mince-chilli-noodles','century-egg-noodles','roe-wonton-noodles','dry-roe-wonton','boiled-dumplings'];
  LUNCH_RECOMMENDATIONS.sort((a,b)=>recommendedOrder.indexOf(a.id)-recommendedOrder.indexOf(b.id));
  const boiled=LUNCH_RECOMMENDATIONS.find(r=>r.id==='boiled-dumplings');if(boiled){boiled.cn='水煮饺子';boiled.name='Boiled Dumplings';}
 })();
@@ -485,12 +487,13 @@ globalThis.choiceOptionFor = (d, style) => d?.choiceOptions?.items?.find(o => o.
 })();
 
 // 共用库存（店里按实物备料）：
-// 鲜虾蟹籽云吞面用云吞的库存，一碗扣 5 颗；韭菜虾仁猪肉煎饺和韭菜虾仁猪肉其他做法共用一个库存；
+// 鲜虾蟹籽云吞面用云吞的库存，一碗扣 5 颗；红油抄手用鲜肉云吞的库存，按颗数扣；韭菜虾仁猪肉煎饺和韭菜虾仁猪肉其他做法共用一个库存；
 // 配菜大小份共用一个库存：鸡翅按个数算（3 个 / 6 个），其余按小份算，大份扣 2 份。
 (() => {
  const find = id => MENU.find(d => d.id === id);
  find('lunch-v7-prawn-roe-wonton-noodles').stockPool = 'lunch-v2-prawn-roe-wonton';
  find('lunch-v10-pork-chive-shrimp-fried').stockPool = 'lunch-v2-pork-chive-shrimp';
+ find('lunch-v4-red-oil-chaoshou').stockPool = 'lunch-v2-pork-wonton';
  for (const d of MENU.filter(d => d.sizeGroup && d.id === d.sizeGroup[0])) {
   const large = find(d.sizeGroup[1]), wings = d.id === 'lunch-v2-chicken-wings';
   Object.assign(d, { stockUnits: wings ? 3 : 1, stockUnitName: wings ? '个' : '小份' });

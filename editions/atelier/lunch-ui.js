@@ -18,7 +18,7 @@ const LunchMenu = (() => {
 const recommendationPrice = r => {
  const d=dish(r.dishId);
  if(r.chooseFilling)return Math.min(...MENU.filter(d=>d.kind==='dumpling'&&d.active!==false&&d.preparations.includes('boiled')).map(d=>Math.min(...Object.values(d.variants).filter(v=>v.prep==='boiled').map(v=>v.price))));
- return d.variants?Math.min(...Object.values(d.variants).filter(v=>v.prep===r.prep).map(v=>v.price)):d.price;
+ return d.variants?Math.min(...Object.values(d.variants).filter(v=>!r.prep||v.prep===r.prep).map(v=>v.price)):d.price;
 };
   const hasPriceRange = (d, method) => new Set(Object.values(d.variants||{}).filter(v=>!method||v.prep===method).map(v=>v.price)).size>1;
   const recommendationPriceLabel = r => {

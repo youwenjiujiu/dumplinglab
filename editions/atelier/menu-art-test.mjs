@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import '../../web/menu-data.js';
 import '../../web/lunch-menu.js';
 import '../../web/brand/menu-appetite-v1.js';
-const expected=new Set([...MENU.filter(d=>d.active!==false).flatMap(d=>[d.img,...Object.values(d.preparationImages||{})]),...LUNCH_RECOMMENDATIONS.map(r=>r.img),...LUNCH_PREPARATIONS.filter(p=>LUNCH_SINGLE_PREPARATIONS.includes(p.id)).map(p=>p.img)].filter(Boolean));
+const expected=new Set([...MENU.filter(d=>d.active!==false).flatMap(d=>[d.img,...Object.values(d.preparationImages||{})]),...LUNCH_RECOMMENDATIONS.filter(r=>!r.ownPhoto).map(r=>r.img),...LUNCH_PREPARATIONS.filter(p=>LUNCH_SINGLE_PREPARATIONS.includes(p.id)).map(p=>p.img)].filter(Boolean));
 // Retired dishes keep their mapping so old receipts still show the reviewed photo.
 assert.deepEqual([...expected].filter(img=>!DL_MENU_ART[img]),[],'Every current dish/preparation image has a reviewed replacement');
 const source=await readFile(new URL('app.js',import.meta.url),'utf8');
@@ -14,7 +14,8 @@ for(const [original,replacement] of Object.entries(DL_MENU_ART)){
   for(const size of ['s','l'])await access(new URL('../../web/img/'+size+'/'+replacement.replace(/\.[^.]+$/,'.webp'),import.meta.url));
   assert.equal(photo({img:original},'s'),'/img/s/'+replacement.replace(/\.[^.]+$/,'.webp'));
 }
-for(const r of LUNCH_RECOMMENDATIONS.filter(r=>r.dishId)){
+// An owner photo for one recommendation (ownPhoto) is shown on its card and in its sheet instead.
+for(const r of LUNCH_RECOMMENDATIONS.filter(r=>r.dishId&&!r.ownPhoto)){
  const d=MENU.find(d=>d.id===r.dishId);
  for(const style of (d.styles||[]).filter(s=>d.variants[s].prep===r.prep&&Boolean(d.variants[s].noodles)===Boolean(r.noodles)))assert.equal(photo(r,'l'),photo(d,'l',style));
 }
