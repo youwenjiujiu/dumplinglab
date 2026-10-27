@@ -91,7 +91,8 @@
   $('#closeSections').onclick = () => $('#sectionsDialog').close();
   // 推荐 order: the same cards customers see, moved one place at a time and saved at once.
   const recommendations = () => globalThis.liveRecommendations?.(data.items, data.settings) || [];
-  const recommendPhoto = r => r.imageUrl || r.preparationImageUrls?.[r.prep] || (r.img ? '/img/s/' + (globalThis.DL_MENU_ART?.[r.img] || r.img).replace(/\.(png|jpe?g|webp)$/i, '.webp') : '');
+  // Same choice as the customer card: the preparation's photo, else (without a preparation) the dish photo, else the built-in picture.
+  const recommendPhoto = r => (r.prep ? r.preparationImageUrls?.[globalThis.LUNCH_PREPARATIONS?.find(p => p.id === r.prep)?.sameAs || r.prep] : r.imageUrl) || (r.img ? '/img/s/' + (globalThis.DL_MENU_ART?.[r.img] || r.img).replace(/\.(png|jpe?g|webp)$/i, '.webp') : r.imageUrl || '');
   function recommendHTML() {
     const list = recommendations();
     if (!list.length) return '<p class="muted">推荐里还没有菜。在菜品列表里点「推荐 👍」加入。</p>';
