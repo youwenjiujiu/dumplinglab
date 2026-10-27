@@ -7,7 +7,7 @@
   if(set.imageUrl)return `<div class="lunch-set-art uploaded"><img src="${esc(set.imageUrl)}" alt="${esc(set.cn||set.name)}" loading="lazy"></div>`;
   const find=key=>items.find(d=>d.active!==false&&d.id.endsWith('-'+key));
   const main=find(set.key==='dumpling-set'?set.fillingChoices?.[0]:set.noodleChoices?.[0]);
-  const side=find(set.key==='dumpling-set'?set.includedColdDish:set.sideDumplings?.fillingChoices?.[0]);
+  const side=set.key==='dumpling-set'?items.find(d=>d.active!==false&&d.id===set.sideChoices?.[0])||find(set.includedColdDish):find(set.sideDumplings?.fillingChoices?.[0]);
   const drink=find(set.drinkChoices?.[0]);
   return `<div class="lunch-set-art composed" aria-label="${esc(set.cn||set.name)}"><span class="set-art-glow"></span>${[[main,'main'],[side,'side'],[drink,'drink']].map(([d,cls])=>image(d)?`<img class="set-art-${cls}" src="${esc(image(d))}" alt="${esc(d.cn)}" loading="lazy">`:'').join('')}<span class="set-art-caption">组合示意 · Serving suggestion</span></div>`;
  }};

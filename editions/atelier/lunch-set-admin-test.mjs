@@ -18,4 +18,10 @@ await assert.rejects(service.saveLunchSet({key:'dumpling-set',revision:0,patch:{
 await save('noodle-set',{visible:false,sideFillingChoices:['chicken-cabbage'],noodleChoices:['mince-scallion-noodles']});
 const hidden=(await service.public()).lunchSets[1];assert.equal(hidden.visible,false);assert.equal(hidden.sideDumplings.pieces,4);assert.equal(hidden.noodleChoices.length,1);
 assert.equal((await service.admin()).audit[0].action,'lunch-set-edit');
+// 小菜: the dumpling set starts with its cold dish; both sets take any 配菜/凉菜, or none.
+assert.deepEqual(view.lunchSets[0].sideChoices,['lunch-v2-cold-veg-shreds']);assert.deepEqual((await service.public()).lunchSets[1].sideChoices,[]);
+await save('noodle-set',{sideChoices:['lunch-v2-choy-sum','lunch-v2-cold-veg-shreds']});
+assert.deepEqual((await service.public()).lunchSets[1].sideChoices,['lunch-v2-choy-sum','lunch-v2-cold-veg-shreds']);
+await save('dumpling-set',{sideChoices:[]});assert.deepEqual((await service.public()).lunchSets[0].sideChoices,[]);
+for(const sideChoices of [['lunch-v2-water'],['missing-dish'],['lunch-v2-choy-sum','lunch-v2-choy-sum'],'lunch-v2-choy-sum'])await assert.rejects(save('noodle-set',{sideChoices}),/小菜/);
 console.log('PASS lunch-set administration: persistent settings/photos/prices/options/hours, full choice restoration, input validation, revision conflict, hidden display, immutable no-checkout state.');
