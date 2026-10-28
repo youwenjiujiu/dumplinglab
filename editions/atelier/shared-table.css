@@ -2432,3 +2432,4 @@ dialog:has(> div > iframe[name^="__privateStripeFrame"]) > div { position: absol
 .rewards-dialog h2,.rewards-dialog button,.rewards-dialog label,.rewards-dialog p,.rewards-dialog small{white-space:pre-line}
 .paper-row > span > small{display:block!important}
 .cart-dishes[data-layout="table"] .shared-dish{grid-row:span 5}
+.menu-section .dish-english{white-space:normal!important;font-size:11px!important;overflow-wrap:normal;word-break:normal}
