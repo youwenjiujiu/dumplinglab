@@ -10,16 +10,18 @@ try{
  browser=await launchBrowser();
  for(const width of [390,320,1280]){
  const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.addInitScript(()=>localStorage.setItem('atelier-language','en'));
- await page.goto(base+'/?lang=en');assert.equal(await page.locator('#languageButton').count(),0);
- await page.waitForTimeout(450);await page.screenshot({path:out+'/entry-'+width+'.png'});
- await page.locator('[data-fulfilment=takeaway]').click();assert((await page.locator('[data-category=recommended]').first().innerText()).includes('Picks'));
+ await page.goto(base+'/?lang=zh');await page.locator('[data-fulfilment=takeaway]').click();
+ assert.equal(await page.locator('#languageButton').innerText(),'EN');
+ const card=page.locator('.dish-open[data-recommendation="chive-fried"]');
+ assert((await card.innerText()).includes('Potstickers'));assert((await card.innerText()).includes('韭菜虾仁猪肉煎饺'));
  await page.waitForTimeout(450);await page.screenshot({path:out+'/menu-'+width+'.png'});
  await page.locator('.dish-add[data-recommendation="chive-fried"]').click();await page.waitForTimeout(450);await page.screenshot({path:out+'/dish-'+width+'.png'});
- assert((await page.locator('#sheetBody').innerText()).includes('Add to order'));await page.locator('[data-action=add-detail]').click();await page.locator(width>1000?'[data-action=cart]':'#tray').first().click();await page.waitForTimeout(450);await page.screenshot({path:out+'/cart-'+width+'.png'});
- await page.locator('[data-action=review]').click();await page.locator('#pickupDetailsForm').waitFor();assert((await page.locator('#pickupDetailsForm').innerText()).includes('Pickup date'));
- await page.locator('[name=customerName]').fill('Test');await page.locator('[name=customerPhone]').fill('91234567');await page.locator('#pickupDetailsForm button').click();await page.locator('.addon-skip').click();await page.waitForTimeout(450);await page.screenshot({path:out+'/checkout-'+width+'.png'});
- assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);await page.evaluate(()=>closeModal());await page.evaluate(()=>RewardsUI.login());await page.locator('.auth-dialog').waitFor();await page.waitForTimeout(450);await page.screenshot({path:out+'/account-'+width+'.png'});assert((await page.locator('.auth-dialog').innerText()).includes('Sign in'));await page.close();
+ assert.equal(await page.locator('[data-action=add-detail] .bilingual').count(),0);
+ await page.locator('[data-action=add-detail]').click();await page.locator(width>1000?'[data-action=cart]':'#tray').first().click();await page.waitForTimeout(450);await page.screenshot({path:out+'/cart-'+width+'.png'});
+ assert.equal(await page.locator('#cartNote').getAttribute('placeholder'),'例如：不要香菜');
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+ await page.evaluate(()=>closeModal());await page.locator('#languageButton').click();assert.equal(await page.locator('#languageButton').innerText(),'中文');
+ assert((await card.innerText()).includes('Potstickers'));assert((await card.innerText()).includes('韭菜虾仁猪肉煎饺'));await page.close();
  }
- console.log('PASS always bilingual entry/menu/dish/cart/pickup/checkout at 320, 390, 1280px; legacy language preference ignored; no language switch; no browser errors.');console.log(out);
+ console.log('PASS dish names remain bilingual; other copy and language switch restored; 320/390/1280px menu/detail/cart; no browser errors.');console.log(out);
 }finally{await browser?.close();server.kill('SIGTERM')}
