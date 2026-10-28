@@ -249,7 +249,20 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     },
     async endTableSession(input) {
       await this.recoverTablePayment(input.table, input.group);
-      return dining.endSession(input.table, input.group, input.tableSession);
+      const ended = await dining.endSession(input.table, input.group, input.tableSession);
+      // The table commit is authoritative; retrying the same session completes any
+      // interrupted bookkeeping without touching the next party's orders.
+      const orders = await storage.all();
+      for (const order of orders) {
+        if (order.mode === 'dinein' && order.table === ended.table && (order.group || 'A') === ended.group &&
+            order.status === 'paid' && Date.parse(order.at) <= Date.parse(ended.endedAt) && !order.resolvedAt)
+          await mutate(order.id, prior => ({...prior, resolvedAt:prior.resolvedAt || ended.endedAt}));
+      }
+      return ended;
+    },
+    async workbenchOrders() {
+      const counter = (await storage.all()).filter(o => o.mode === 'dinein' && o.paymentMethod === 'counter' && o.status === 'paid');
+      return dining.activeDiningOrders(counter.map(publicOrder));
     },
     async memberOrders(memberId, before = '') {
       if (!memberId) throw new RequestError('请先登录', 401);

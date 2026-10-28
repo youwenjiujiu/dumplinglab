@@ -158,14 +158,32 @@ export function createTableStore(storage, legacy, { now = () => Date.now() } = {
     async endSession(table, group, expectedSession) {
       table = cleanTable(table); group = cleanGroup(group);
       const { state } = await transact(table, group, state => {
+        if (expectedSession && state.lastEndedSession === expectedSession) return { changed: false };
         checkSession(state, expectedSession);
         if (!expectedSession) throw new RequestError('请先核对本桌状态。', 409);
         if (state.paymentHold) throw paymentLocked('本组有未确认付款，不能清台。');
-        state.tableSession = randomUUID();
+        state.lastEndedSession = sessionOf(state);
         state.endedAt = new Date(now()).toISOString();
+        for (const event of state.events) {
+          if (belongs(state, event)) event.resolvedAt ||= state.endedAt;
+        }
+        state.tableSession = randomUUID();
         return { changed: true };
       });
-      return { table, group, tableSession: sessionOf(state) };
+      return { table, group, tableSession: sessionOf(state), endedAt: state.endedAt };
+    },
+    async activeDiningOrders(orders = []) {
+      const states = await storage.all(TABLE_STATE_PREFIX);
+      const byTable = new Map(states.map(s => [JSON.stringify([s.table,s.group]),s]));
+      const receipts = states.flatMap(s => s.events.filter(e => e.type === 'order' && belongs(s,e))
+        .map(e => ({...e, tableSession:sessionOf(s)})));
+      for (const order of orders) {
+        if (!today(order)) continue;
+        const state = byTable.get(JSON.stringify([order.table,order.group || 'A']));
+        if (state?.endedAt && Date.parse(order.at) <= Date.parse(state.endedAt)) continue;
+        receipts.push({...order, tableSession:sessionOf(state || {})});
+      }
+      return receipts;
     },
     async paymentHold(table, group) {
       return (await read(table, group)).value.paymentHold?.id || null;

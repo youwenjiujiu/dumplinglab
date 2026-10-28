@@ -358,7 +358,7 @@ const server = createServer(async (req, res) => {
       if (url.pathname === "/api/feed" && req.method === "GET") {
         await queue;
         const events=[...(await dining.feed()).events,...await online.feed()];
-        return json(200, { events,activeIds:events.map(e=>e.id),cursor:Date.now() });
+        return json(200, { events,activeIds:events.map(e=>e.id),cursor:Date.now(),...(url.searchParams.get('workbench')==='1'?{diningOrders:await online.workbenchOrders()}:{}) });
       }
       if (url.pathname === '/api/pickup' && req.method === 'POST') {
         if (!['inspect','collect'].includes(input.action)) throw new RequestError('无效操作');

@@ -8,6 +8,7 @@ export default async function handler(req, res) {
   try {
     requireStaff(req);
     const [feed, online] = await Promise.all([tableStore.feed(), onlineService.feed()]);
-    return json(res, 200, { ...feed, events: [...feed.events, ...online], activeIds: [...feed.activeIds, ...online.map(o => o.id)] });
+    const diningOrders = new URL(req.url, 'https://local').searchParams.get('workbench') === '1' ? await onlineService.workbenchOrders() : undefined;
+    return json(res, 200, { ...feed, ...(diningOrders ? {diningOrders} : {}), events: [...feed.events, ...online], activeIds: [...feed.activeIds, ...online.map(o => o.id)] });
   } catch (error) { return fail(res, error); }
 }

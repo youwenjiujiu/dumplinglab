@@ -45,6 +45,7 @@
 :root{--bg:#f5f6f8;--card:#fff;--line:#e7e8eb;--sesame:#952f2b;--ink:#25282d}
 .order-shell header{position:static;flex-wrap:wrap;background:white;gap:14px;padding:22px 28px}.order-shell header h1{font-size:22px}.order-shell #list{max-width:1100px;margin:auto;padding:24px}.order-shell .pickup-check{padding:24px 28px;background:white}.order-shell .pickup-check form{max-width:680px}.order-shell .pickup-check button,.order-shell #enable{background:#952f2b;color:white;border-radius:7px;min-height:44px}.order-shell .item .lines{color:#444950}.order-shell .item .done{background:#fbefee;color:#952f2b;min-height:44px}.order-shell .empty{color:#72767d}.order-shell .item .time{color:#72767d}.order-shell .item .note{color:#72767d}.order-shell .pickup-check input{background:white}.order-shell #pickupResult{max-width:680px}
 .order-actions{display:flex;gap:10px;margin-top:10px}.order-shell .item .order-actions .done{margin-top:0;flex:1;width:auto}.order-actions .clear-table{flex:1;min-height:44px;border:1px solid var(--line);border-radius:12px;background:white;color:var(--ink);font-size:13px;font-weight:600}.order-actions button:active{transform:scale(.97)}.clear-result{font-size:13px;line-height:1.6;margin-top:8px}.clear-result:empty{display:none}
+.dining-help{max-width:1100px;margin:24px auto 0;padding:0 24px;color:#72767d;font-size:14px}.dining-state{font-size:13px;color:#72767d}.dining-order{padding:14px 0}.dining-order+.dining-order{border-top:1px solid var(--line)}.order-shell .item.dining{animation:none}.order-shell .end-dining{width:100%;min-height:48px;background:#952f2b;color:white;border:0;border-radius:8px;font-size:15px;font-weight:600}.end-dining:disabled{opacity:.6}.item .top{gap:12px;flex-wrap:wrap}
 @media(max-width:600px){.order-shell header,.order-shell .pickup-check{padding:18px 16px}.order-shell #list{padding:16px}.order-shell .pickup-check form{flex-wrap:wrap}.order-shell .pickup-check input{flex-basis:100%}}
 </style>
 </head>
@@ -68,7 +69,7 @@
   <div class="st"><span class="dot" id="dot"></span><span id="stTxt">连接中…</span></div>
   <button id="enable">开启响铃</button>
 </header>
-<section class="pickup-check"><label for="endTable">结束就餐 / 清台</label><form id="endTableForm"><input id="endTable" required maxlength="12" placeholder="桌号，例如 C2" aria-label="桌号"><input id="endGroup" required maxlength="16" value="A" aria-label="点餐组" style="max-width:72px"><button type="submit">清台</button></form><div id="endTableResult" role="status" aria-live="polite"></div></section>
+<p class="dining-help">堂食按桌查看，客人离开后点一次「结束就餐」。</p>
 <section class="pickup-check"><label for="pickupInput">核验取餐码</label><form id="pickupForm"><input id="pickupInput" autocomplete="off" placeholder="扫描顾客二维码，或粘贴取餐码链接"><button>核验</button></form><div id="pickupResult" role="status" aria-live="polite"></div></section>
 <div id="list"><div class="empty" id="empty">等待顾客呼叫与下单…<br><small>把这个页面开在收银台的手机或平板上</small></div></div>
 
@@ -99,25 +100,32 @@ async function staffFetch(url,options={},mayPrompt=true){
 }
 dot.parentElement.onclick=()=>{ authCancelled=false; staffPassword=""; sessionStorage.removeItem("dl-staff-password"); stTxt.textContent="等待登录…"; };
 
-async function clearTable(table,group,result,button,orderId=null){
-  button.disabled=true;result.textContent='核对中…';
+const closedDining = new Set();
+const diningKey = order => 'dining:'+JSON.stringify([order.table,order.group||'A',order.tableSession]);
+async function endDining(orders,el,button){
+  const order=orders[0], result=el.querySelector('.clear-result');
+  button.disabled=true;button.textContent='结束中…';
   try{
-    const current=await fetch(`/api/cart?table=${encodeURIComponent(table)}&group=${encodeURIComponent(group)}`,{cache:'no-store'});
-    const snapshot=await current.json();if(!current.ok)throw Error(snapshot.error||'无法读取本桌');
-    if(orderId&&!snapshot.cart.orders.some(o=>o.id===orderId))throw Error('这笔订单不属于当前就餐，请使用上方清台入口核对桌号。');
-    if(snapshot.cart.paymentPending)throw Error('本组有未确认付款，请先核实，暂不能清台。');
-    if(!confirm(`确认 ${table} 桌 ${group} 组客人已离席？清台后，新客看不到本轮订单和选菜，后台账单保留。`)){result.textContent='未清台';return;}
-    const response=await staffFetch('/api/online',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'end-table-session',table,group,tableSession:snapshot.cart.tableSession})});
-    const out=await response.json();if(!response.ok)throw Error(out.error||'清台失败');
-    result.textContent=`${table} 桌 ${group} 组已清台，可以接待下一组客人。`;
-    if(orderId)button.dataset.cleared='true';
-  }catch(error){result.textContent=error.message;}finally{button.disabled=button.dataset.cleared==='true';}
-};
-
-document.getElementById('endTableForm').onsubmit=async e=>{
-  e.preventDefault();
-  await clearTable(document.getElementById('endTable').value.trim().toUpperCase(),document.getElementById('endGroup').value.trim().toUpperCase(),document.getElementById('endTableResult'),e.target.querySelector('button'));
-};
+    const response=await staffFetch('/api/online',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'end-table-session',table:order.table,group:order.group||'A',tableSession:order.tableSession})});
+    const out=await response.json();if(!response.ok)throw Error(out.error||'未能结束就餐，请重试');
+    const key=diningKey(order);closedDining.add(key);cards.get(key)?.remove();cards.delete(key);ensureEmpty();
+  }catch(error){result.textContent=error.message;button.disabled=false;button.textContent='结束就餐';}
+}
+function renderDining(orders){
+  orders.sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+  const order=orders[0],key=diningKey(order),signature=JSON.stringify(orders),previous=cards.get(key);
+  const isNew=orders.some(o=>!seen.has(o.id));orders.forEach(o=>seen.add(o.id));
+  if(closedDining.has(key)||previous?.dataset.signature===signature)return false;
+  // Preserve an in-flight end action and its error/result during polling.
+  if(previous?.querySelector('button:disabled'))return false;
+  document.getElementById('empty')?.remove();
+  const el=document.createElement('section');el.className='item order dining';el.dataset.signature=signature;
+  el.innerHTML=`<div class="top"><span class="table">${esc(order.table)} 号桌${order.group&&order.group!=='A'?` · ${esc(order.group)}组`:''}</span><span class="dining-state">用餐中 · ${orders.length} 笔订单</span></div>
+    ${orders.map(o=>`<div class="dining-order"><div class="time">${new Date(o.at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})} · #${esc(o.no||o.id.slice(0,8))}</div><div class="lines">${(o.items||[]).map(i=>`${esc(i.name||i.id)}${i.style?` · ${esc(i.style)}`:''} ×${esc(i.qty)}${i.promo==='bogo'?'（赠送）':''}${i.note?`<br><strong>备注：${esc(i.note)}</strong>`:''}`).join('<br>')}</div>${o.note?`<div class="note">备注：${esc(o.note)}</div>`:''}<div class="total">${money(o.total||0)}</div></div>`).join('')}
+    <div class="order-actions"><button class="end-dining">结束就餐</button></div><div class="clear-result" role="status" aria-live="polite"></div>`;
+  el.querySelector('button').onclick=()=>endDining(orders,el,el.querySelector('button'));
+  cards.set(key,el);if(previous)previous.replaceWith(el);else list.prepend(el);return isNew;
+}
 
 document.getElementById("enable").onclick=()=>{
   ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();
@@ -174,10 +182,8 @@ function render(evt){
       ${evt.note?`<div class="note">备注：${esc(evt.note)}</div>`:""}
       ${evt.pricingVersion?`<div class="time">菜品 ${money(evt.subtotal)}${evt.discount?`（已减折扣 ${money(evt.discount)}）`:''}${evt.mode==='delivery'?` · 配送费 9% ${money(evt.deliveryFee)}`:''}${evt.gst!==undefined?` · GST 9% ${money(evt.gst)}`:evt.mode==='dinein'?` · 服务费 10% ${money(evt.serviceCharge)}`:''}</div>`:''}
       <div class="total">${money(evt.total||0)}</div>
-      <div class="order-actions"><button class="done">${evt.pickup ? (evt.preparationStatus==='ready' ? '确认已交餐' : evt.preparationStatus==='preparing' ? '标记可取餐' : '开始制作') : '已完成'}</button>${!online&&evt.table ? '<button class="clear-table">清台</button>' : ''}</div><div class="clear-result" role="status" aria-live="polite"></div>`;
+      <div class="order-actions"><button class="done">${evt.pickup ? (evt.preparationStatus==='ready' ? '确认已交餐' : evt.preparationStatus==='preparing' ? '标记可取餐' : '开始制作') : '已完成'}</button></div><div class="clear-result" role="status" aria-live="polite"></div>`;
   }
-  const clearButton=el.querySelector('.clear-table');
-  if(clearButton)clearButton.onclick=()=>clearTable(evt.table,evt.group||'A',el.querySelector('.clear-result'),clearButton,evt.id);
   el.querySelector(".done").onclick=async()=>{
     const button=el.querySelector(".done"), label=button.textContent; button.disabled=true; button.textContent="保存中…";
     try{
@@ -195,11 +201,16 @@ function render(evt){
 
 async function poll(){
   try{
-    const res=await staffFetch(`/api/feed?after=${Math.max(0,cursor-1)}`,{cache:"no-store"});
+    const res=await staffFetch(`/api/feed?workbench=1&after=${Math.max(0,cursor-1)}`,{cache:"no-store"});
     const out=await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.error||`HTTP ${res.status}`);
-    const active=new Set(out.activeIds||[]);
+    if(!Array.isArray(out.diningOrders))throw Error('工作台正在更新，请稍后刷新');
+    const groups=new Map();
+    for(const order of out.diningOrders){const key=diningKey(order);if(!closedDining.has(key)){if(!groups.has(key))groups.set(key,[]);groups.get(key).push(order);}}
+    const individual=(out.events||[]).filter(e=>e.type==='call'||['takeaway','delivery'].includes(e.mode));
+    const active=new Set([...individual.map(e=>e.id),...groups.keys()]);
     for(const [id,el] of cards) if(!active.has(id)){ cards.delete(id); el.remove(); }
-    for(const evt of out.events||[]) if(render(evt)&&!firstLoad){ ding(evt.type==="call"?3:1); flash(); if(navigator.vibrate) navigator.vibrate(evt.type==="call"?[100,60,100]:60); }
+    for(const orders of groups.values())if(renderDining(orders)&&!firstLoad){ding();flash();}
+    for(const evt of individual) if(render(evt)&&!firstLoad){ ding(evt.type==="call"?3:1); flash(); if(navigator.vibrate) navigator.vibrate(evt.type==="call"?[100,60,100]:60); }
     cursor=Math.max(cursor,Number(out.cursor)||0); firstLoad=false; ensureEmpty();
     dot.classList.add("on"); stTxt.textContent="已连接";
   }catch(error){ dot.classList.remove("on"); stTxt.textContent=error.message||"重连中…"; }
