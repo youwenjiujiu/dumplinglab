@@ -60,10 +60,16 @@ def main():
         target = args.target
     else:
         downloads = Path.home() / 'Downloads'
-        candidates = [p for p in downloads.iterdir() if p.is_dir() and existing(p)]
-        if len(candidates) != 1:
-            raise ValueError('无法唯一确定原出单文件夹，请把这个窗口截图发给我们。没有改动任何文件。')
-        target = candidates[0]
+        candidates = [p for p in downloads.iterdir() if p.is_dir() and existing(p)] if downloads.is_dir() else []
+        if len(candidates) == 1:
+            target = candidates[0]
+        else:
+            selected = subprocess.run(['/usr/bin/osascript', '-e', 'POSIX path of (choose folder with prompt "请选择原来一直用于出单的「Dumpling Lab 出单」文件夹（不是新下载的更新包）")'], capture_output=True, text=True)
+            if selected.returncode or not selected.stdout.strip():
+                raise ValueError('已取消，未更新也未启动出单程序。')
+            target = Path(selected.stdout.strip())
+            if not existing(target):
+                raise ValueError('选中的文件夹没有原配置和打印记录。请重新双击更新，选择原来一直用于出单的文件夹。')
     install(target, payload)
     print('更新完成，原配置和打印记录已保留。正在启动新版…', flush=True)
     if not args.no_start:
