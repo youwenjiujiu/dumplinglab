@@ -37,3 +37,24 @@ assert.equal(records.get(id).value.refundedCents,total);
 // Wallet-paid and unpaid orders are refused here.
 await assert.rejects(online.staffRefund({id:randomUUID(),refundId:randomUUID(),amountCents:100,reason:'x'}),/付款成功/);
 console.log('PASS staff refund: straight to Stripe, partial refunds, no over-refund, retries reuse one idempotency id, rejections release the hold, webhook reconciles.');
+
+// Item quantities are reserved atomically, including uncertain provider results.
+const itemId=randomUUID();
+const itemOrder={...structuredClone(order),id:itemId,inventoryManaged:false,status:'paid',paymentIntentId:'pi_items',total:19.8,discount:2,items:[{id:'a',name:'面',price:10,qty:2}],cardRefunds:{},refundedCents:0};
+records.set(itemId,{value:itemOrder,etag:randomUUID()});
+const itemRequest={id:itemId,refundId:randomUUID(),reason:'售罄',amountCents:990,items:[{line:0,qty:1}]};
+stripe='down';await assert.rejects(online.staffRefund(itemRequest),/未确认/);
+await assert.rejects(online.staffRefund({...itemRequest,refundId:randomUUID(),amountCents:1980,items:[{line:0,qty:2}]}),/份数不足/);
+stripe='ok';await online.staffRefund(itemRequest);
+const callCount=calls.length;await online.staffRefund(itemRequest);assert.equal(calls.length,callCount);
+await assert.rejects(online.staffRefund({...itemRequest,items:[{line:0,qty:2}]}),/请求不一致/);
+await assert.rejects(online.staffRefund({...itemRequest,refundId:randomUUID(),amountCents:1000}),/金额已变化/);
+await online.staffRefund({...itemRequest,refundId:randomUUID()});
+await assert.rejects(online.staffRefund({...itemRequest,refundId:randomUUID()}),/份数不足/);
+const {refundItems}=await import('../../web/server/refund-items.js');
+assert.equal(refundItems(records.get(itemId).value).rows[0].used,2);
+assert.equal(refundItems(records.get(id).value).unavailable,'此单已有按金额退款，请继续按金额退款');
+const allocation=refundItems({total:10.01,items:[{id:'a',price:5,qty:3},{id:'b',price:0,qty:1}]});
+assert.equal(allocation.rows.flatMap(r=>r.unitCents).reduce((s,c)=>s+c,0),1001);
+assert.deepEqual(allocation.rows[1].unitCents,[0]);
+console.log('PASS item refunds: service/discount allocation, quantities reserved, uncertain retry, duplicate prevention, amount tampering, rounding, free items.');

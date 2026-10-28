@@ -1,5 +1,6 @@
 // Sales summary for the back office: revenue and best-selling dishes over a
 // date range. Reads the paid order snapshots only; never recalculates prices.
+import { refundItems } from './refund-items.js';
 import { RequestError } from './order-core.js';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -50,6 +51,7 @@ export function summarizeOrders(orders, query, now = new Date()) {
     at: o.paidAt || o.at, note: o.note || null, paymentMethod: o.paymentMethod || 'card',
     canRefund: o.paymentMethod === 'counter' || (o.paymentMethod !== 'wallet' && Boolean(o.paymentIntentId)),
     ...(o.counterMethod ? { counterMethod: o.counterMethod } : {}),
+    refundItems: refundItems(o),
     totalCents: cents(o.total), refundCents: Math.min(cents(o.total), o.refundedCents || 0), discountCents: cents(o.discount) + (o.loyalty?.discountCents || 0),
     items: (o.items || []).map(i => ({ name: i.name, style: i.style || null, qty: i.qty, priceCents: cents(i.price), ...(i.promo ? { promo: i.promo } : {}), ...(i.note ? { note: i.note } : {}) })),
   }));

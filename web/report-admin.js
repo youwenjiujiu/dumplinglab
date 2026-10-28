@@ -61,23 +61,37 @@ globalThis.ReportAdmin = (() => {
     const key = 'dl-order-refund-' + order.id, left = order.totalCents - order.refundCents;
     let pending = null;
     try { pending = JSON.parse(sessionStorage.getItem(key)); } catch {}
+    const plan = order.refundItems, rows = plan?.rows || [];
+    let byItem = Boolean(rows.length && !plan.unavailable && (!pending || pending.items));
     const form = document.createElement('form');
     form.className = 'report-refund-form';
-    form.innerHTML = `<label>退款金额 S$<input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" max="${(left / 100).toFixed(2)}" value="${((pending?.amountCents ?? left) / 100).toFixed(2)}" required></label>
+    form.innerHTML = `<label class="refund-mode">退款方式<select name="refundMode" ${pending ? 'disabled' : ''}><option value="items" ${byItem ? 'selected' : ''} ${!rows.length || plan?.unavailable ? 'disabled' : ''}>按菜品退款</option><option value="amount" ${!byItem ? 'selected' : ''}>按金额退款</option></select></label>
+      <fieldset class="refund-items" ${!byItem ? 'hidden' : ''}><legend>选择菜品和退款份数</legend>${rows.map(r => `<label class="refund-item"><span>${esc(r.name)}${r.style ? `<small>${esc(r.style)}</small>` : ''}<small>可退 ${r.qty-r.used} 份</small></span><select data-refund-line="${r.line}" aria-label="${esc(r.name)}退款份数" ${pending ? 'disabled' : ''}>${Array.from({length:r.qty-r.used+1},(_,q)=>`<option value="${q}" ${pending?.items?.some(i=>i.line===r.line&&i.qty===q)?'selected':''}>${q} 份</option>`).join('')}</select></label>`).join('')}<small>按实付金额分摊优惠及费用，含对应服务费；赠品不退现金。</small></fieldset>
+      ${plan?.unavailable ? `<p class="refund-help">${esc(plan.unavailable)}</p>` : ''}
+      <label>退款金额 S$<input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" max="${(left / 100).toFixed(2)}" value="${((pending?.amountCents ?? left) / 100).toFixed(2)}" required></label>
       <label>原因<input name="reason" maxlength="200" required placeholder="例如：菜品售罄" value="${esc(pending?.reason || '')}"></label>
       <div><button type="submit" class="primary">确认退款</button><button type="button" data-refund-cancel>取消</button></div><p role="status"></p>`;
     article.append(form);
     const status = form.querySelector('[role=status]'), submit = form.querySelector('[type=submit]');
-    const label = () => { const c = Math.round(Number(form.amount.value) * 100); submit.textContent = c > 0 ? `确认退款 ${money(c)}` : '确认退款'; };
-    form.amount.oninput = label; label();
+    const selected = () => [...form.querySelectorAll('[data-refund-line]')].filter(el=>Number(el.value)>0).map(el=>({line:Number(el.dataset.refundLine),qty:Number(el.value)}));
+    const label = () => {
+      form.amount.readOnly = byItem || Boolean(pending);
+      form.reason.readOnly = Boolean(pending);
+      form.querySelector('.refund-items').hidden = !byItem;
+      if (pending) form.amount.value = (pending.amountCents/100).toFixed(2);
+      else if (byItem) form.amount.value = (selected().reduce((sum,i)=>{const r=rows[i.line];return sum+r.unitCents.slice(r.used,r.used+i.qty).reduce((s,c)=>s+c,0)},0)/100).toFixed(2);
+      const c = Math.round(Number(form.amount.value) * 100); submit.textContent = c > 0 ? `确认退款 ${money(c)}` : '确认退款'; };
+    form.amount.oninput = label; form.refundMode.onchange = () => { byItem = form.refundMode.value === 'items'; label(); }; form.querySelectorAll('[data-refund-line]').forEach(el=>el.onchange=label); label();
     form.querySelector('[data-refund-cancel]').onclick = () => { form.remove(); article.querySelector('[data-refund-order]').hidden = false; };
     form.onsubmit = async e => {
       e.preventDefault();
       if (submit.disabled) return;
       const amountCents = Math.round(Number(form.amount.value) * 100), reason = form.reason.value.trim();
       if (pending && (pending.amountCents !== amountCents || pending.reason !== reason)) { status.textContent = '上一笔退款结果还没确认，请用原来的金额和原因再点一次。'; return; }
-      pending ||= { refundId: crypto.randomUUID(), amountCents, reason };
+      if (amountCents <= 0) { status.textContent = '请选择需要退款的菜品份数'; return; }
+      pending ||= { refundId: crypto.randomUUID(), amountCents, reason, ...(byItem ? {items:selected()} : {}) };
       try { sessionStorage.setItem(key, JSON.stringify(pending)); } catch {}
+      form.querySelectorAll('select').forEach(el=>el.disabled=true); form.amount.readOnly=true; form.reason.readOnly=true;
       submit.disabled = true; status.textContent = '正在退款…';
       try {
         await request('/api/online', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'staff-refund', id: order.id, ...pending }) });
@@ -87,6 +101,7 @@ globalThis.ReportAdmin = (() => {
         // 结果未确认（503）时保留编号，其余是明确失败，可以换金额重来。
         if (err.status && err.status !== 503) { try { sessionStorage.removeItem(key); } catch {} pending = null; }
         status.textContent = err.message; submit.disabled = false;
+        if (!pending) { form.querySelectorAll('select').forEach(el=>el.disabled=false); label(); }
       }
     };
     form.amount.focus();
