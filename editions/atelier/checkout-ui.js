@@ -23,7 +23,7 @@ const CheckoutUI = (() => {
       <button class="online-back" type="button" data-checkout-back>${bi('返回菜单', 'Back to menu')}</button></div>`;
   }
   async function readCart(owner) {
-    const out = await owner.api(`/api/cart?table=${encodeURIComponent(owner.table)}&group=${encodeURIComponent(owner.group)}`);
+    const out = await owner.api(`/api/cart?table=${encodeURIComponent(owner.table)}&group=${encodeURIComponent(owner.group)}&tableSession=${encodeURIComponent(owner.remote?.tableSession || "")}`);
     owner.remote = out.cart;
     if (owner.order && !owner.order.token && out.cart.orders?.some(o => o.id === owner.order.requestId)) owner.order = null;
     owner.emit();
@@ -234,7 +234,7 @@ const CheckoutUI = (() => {
       // the account/wallet panels here adds unrelated requests before payment.
       view.input = owner.order || { ...freshCredentials(), ...globalThis.RewardsUI?.input(owner), ...globalThis.WalletUI?.input(owner), mode: dining ? 'dinein' : 'takeaway',
         items: structuredClone(owner.items), note: owner.note,
-        ...(dining ? { table: owner.table, group: owner.group, cartOpIds: [...owner.remote.opIds], actorName: owner.nickname } : { pickupLocation: view.config.locations[0].id }) };
+        ...(dining ? { table: owner.table, group: owner.group, tableSession: owner.remote.tableSession, cartOpIds: [...owner.remote.opIds], actorName: owner.nickname } : { pickupLocation: view.config.locations[0].id }) };
       let result;
       if (owner.order) {
         try { result = await readPayment(owner); }

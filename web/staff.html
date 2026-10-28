@@ -67,6 +67,7 @@
   <div class="st"><span class="dot" id="dot"></span><span id="stTxt">连接中…</span></div>
   <button id="enable">开启响铃</button>
 </header>
+<section class="pickup-check"><label for="endTable">结束就餐 / 清台</label><form id="endTableForm"><input id="endTable" required maxlength="12" placeholder="桌号，例如 C2" aria-label="桌号"><input id="endGroup" required maxlength="16" value="A" aria-label="点餐组" style="max-width:72px"><button type="submit">清台</button></form><div id="endTableResult" role="status" aria-live="polite"></div></section>
 <section class="pickup-check"><label for="pickupInput">核验取餐码</label><form id="pickupForm"><input id="pickupInput" autocomplete="off" placeholder="扫描顾客二维码，或粘贴取餐码链接"><button>核验</button></form><div id="pickupResult" role="status" aria-live="polite"></div></section>
 <div id="list"><div class="empty" id="empty">等待顾客呼叫与下单…<br><small>把这个页面开在收银台的手机或平板上</small></div></div>
 
@@ -96,6 +97,22 @@ async function staffFetch(url,options={},mayPrompt=true){
   return response;
 }
 dot.parentElement.onclick=()=>{ authCancelled=false; staffPassword=""; sessionStorage.removeItem("dl-staff-password"); stTxt.textContent="等待登录…"; };
+
+document.getElementById('endTableForm').onsubmit=async e=>{
+  e.preventDefault();
+  const table=document.getElementById('endTable').value.trim().toUpperCase(),group=document.getElementById('endGroup').value.trim().toUpperCase();
+  const result=document.getElementById('endTableResult'),button=e.target.querySelector('button');
+  button.disabled=true;result.textContent='核对中…';
+  try{
+    const current=await fetch(`/api/cart?table=${encodeURIComponent(table)}&group=${encodeURIComponent(group)}`,{cache:'no-store'});
+    const snapshot=await current.json();if(!current.ok)throw Error(snapshot.error||'无法读取本桌');
+    if(snapshot.cart.paymentPending)throw Error('本组有未确认付款，请先核实，暂不能清台。');
+    if(!confirm(`确认 ${table} 桌 ${group} 组客人已离席？清台后，新客看不到本轮订单和选菜，后台账单保留。`)){result.textContent='未清台';return;}
+    const response=await staffFetch('/api/online',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'end-table-session',table,group,tableSession:snapshot.cart.tableSession})});
+    const out=await response.json();if(!response.ok)throw Error(out.error||'清台失败');
+    result.textContent=`${table} 桌 ${group} 组已清台，可以接待下一组客人。`;
+  }catch(error){result.textContent=error.message;}finally{button.disabled=false;}
+};
 
 document.getElementById("enable").onclick=()=>{
   ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();

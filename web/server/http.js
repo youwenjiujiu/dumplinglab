@@ -17,7 +17,7 @@ export function method(res, allowed) {
 export function fail(res, error) {
   const expected = error instanceof RequestError || error instanceof StorageUnavailableError || error instanceof StaffAuthError || (error.status >= 400 && error.status < 500);
   if (!expected) console.error(error);
-  return json(res, error.status || 500, { error: expected ? error.message : "服务暂时不可用，请稍后重试", ...(['PAYMENT_PENDING', 'CHECKOUT_CART_CHANGED'].includes(error.code) ? { code: error.code } : {}), ...(error.code === "NOTE_CONFLICT" ? { code: error.code, cart: error.cart } : {}) });
+  return json(res, error.status || 500, { error: expected ? error.message : "服务暂时不可用，请稍后重试", ...(['PAYMENT_PENDING', 'CHECKOUT_CART_CHANGED', 'TABLE_SESSION_ENDED'].includes(error.code) ? { code: error.code } : {}), ...(error.code === "NOTE_CONFLICT" ? { code: error.code, cart: error.cart } : {}) });
 }
 
 /* The site answers on several Vercel aliases. A POST is same-origin — and so

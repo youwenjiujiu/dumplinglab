@@ -13,7 +13,7 @@ const ID_RE = /^[a-f0-9-]{16,64}$/i;
 export const cleanTable = value => {
   const table = typeof value === "string" ? value.trim() : "";
   if (!TABLE_RE.test(table)) throw new RequestError("缺少有效的桌号");
-  return table;
+  return table.toUpperCase();
 };
 
 export function cleanCartOpIds(value) {

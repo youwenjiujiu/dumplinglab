@@ -27,6 +27,7 @@ export default async function handler(req, res) {
     }
     if (req.method !== 'POST') return method(res, 'GET, POST');
     const input = bodyOf(req);
+    if (input.action === 'end-table-session') { requireStaff(req); return json(res, 200, { ok: true, ...await onlineService.endTableSession(input) }); }
     if (input.action === 'cancel') return json(res, 200, { ok: true, ...await onlineService.cancel(input) });
     if (input.action === 'cancel-table') return json(res, 200, { ok: true, ...await onlineService.cancelForTable(input) });
     if (input.action === 'staff-cancel') { requireStaff(req); return json(res, 200, { ok: true, ...await onlineService.staffCancel(input.id) }); }

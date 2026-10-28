@@ -23,3 +23,8 @@ assert.equal(state.events.length,2,'late paid receipt retained in ledger');
 assert.equal(state.paymentHold,undefined);
 assert.equal((await store.cart('D3','A')).orders.length,0);
 console.log('PASS table day: Singapore date isolation, stale operation rejection, day-aware version, preserved staff ledger and safe late payment.');
+const beforeClear=await store.cart('D3','A');await store.endSession('D3','A',beforeClear.tableSession);
+const sameDay=await store.cart('D3','A');clock+=86400000;
+await assert.rejects(store.cart('D3','A','',sameDay.tableSession),e=>e.code==='TABLE_SESSION_ENDED');
+assert.notEqual((await store.cart('D3','A')).tableSession,sameDay.tableSession);
+console.log('PASS session expiry: even explicitly cleared tables rotate their guest session at Singapore midnight.');

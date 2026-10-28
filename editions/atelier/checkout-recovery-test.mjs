@@ -127,9 +127,9 @@ cart.api=async(path,input)=>{
   if(!input)gets++;
   return {cart:{items:[],orders:[],opIds:[],paymentPending:isLocked,version:String(gets)}};
 };
-await cart.poll();assert.equal(gets,1);assert.equal(cart.pending.length,1);assert.equal(cart.remote.paymentPending,true);
+await cart.poll();assert.equal(gets,2);assert.equal(cart.pending.length,1);assert.equal(cart.remote.paymentPending,true);
 assert.throws(()=>cart.mutate({kind:'delta',dishId:'barley',delta:1}),e=>e.code==='PAYMENT_PENDING');
-isLocked=false;await cart.poll();assert.equal(gets,2);assert.equal(cart.pending.length,0);assert.equal(cart.remote.paymentPending,false);
+isLocked=false;await cart.poll();assert.equal(gets,3);assert.equal(cart.pending.length,0);assert.equal(cart.remote.paymentPending,false);
 
 // The real HTTP error envelope exposes only the safe lock code, not credentials.
 let response;

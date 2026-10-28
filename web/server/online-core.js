@@ -34,7 +34,7 @@ export function cleanOnline(input, config, now = new Date(), catalog) {
   if (!validId(input.requestId)) throw new RequestError('订单编号无效');
   if (input.mode === 'dinein') {
     const order = cleanOrder({ ...input, no: String(parseInt(input.requestId.replace(/-/g, '').slice(0, 6), 16) % 9000 + 1000) }, catalog);
-    return { ...order, table: order.table.toUpperCase(), tokenHash: tokenHash(input.token),
+    return { ...order, ...(input.tableSession ? {tableSession:input.tableSession} : {}), table: order.table.toUpperCase(), tokenHash: tokenHash(input.token),
       cartOpIds: cleanCartOpIds(input.cartOpIds), actorName: cleanNickname(input.actorName), customer: {}, fulfilment: {} };
   }
   const items = cleanItems(input.items, catalog);
@@ -223,6 +223,33 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
   }
   return {
     expireFreeRewards,
+    async recoverPayment(record) {
+      if (['paid','expired'].includes(record.status)) return finalize(record);
+      if (localPaymentExpired(record)) return expireLocalPayment(record);
+      if (record.paymentMethod === 'wallet' || record.total === 0 || now().getTime()-Date.parse(record.at)<PAYMENT_WINDOW_MS) return record;
+      if (record.sessionId && payment.retrieve) {
+        const session = await payment.retrieve(record.sessionId);
+        if (session.payment_status === 'paid') return this.paymentEvent(session);
+      }
+      if (!record.sessionId && now().getTime()-Date.parse(record.at)>=46*60000) throw new RequestError('原付款状态需门店核实，请勿重新付款',409);
+      await voidPayment(record, 'timeout');
+      return (await storage.read(record.id)).value;
+    },
+    async recoverTablePayment(table, group) {
+      const hold = await dining?.paymentReservation?.(table, group);
+      if (!hold) return;
+      let record = (await storage.read(hold.id))?.value;
+      if (!record) {
+        if (now().getTime()-Date.parse(hold.at)<PAYMENT_WINDOW_MS) return;
+        // Tombstone first: a delayed creator cannot resurrect a released hold.
+        record = await mutate(hold.id, prior => prior || {...hold, status:'expired', cancelledBy:'incomplete-creation', cancelledAt:now().toISOString()});
+      }
+      await this.recoverPayment(record);
+    },
+    async endTableSession(input) {
+      await this.recoverTablePayment(input.table, input.group);
+      return dining.endSession(input.table, input.group, input.tableSession);
+    },
     async memberOrders(memberId, before = '') {
       if (!memberId) throw new RequestError('请先登录', 401);
       if (typeof before !== 'string' || before.length > 200) throw new RequestError('分页参数无效');
@@ -254,7 +281,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
         authorize(saved, input.token);
         if(saved.memberId&&saved.memberId!==memberId)throw new RequestError('请使用原会员账号继续付款',401);
         if (saved.requestFingerprint && saved.requestFingerprint !== requestFingerprint(input)) throw new RequestError('订单内容已更改，请先确认上一笔付款', 409);
-        saved = await expireLocalPayment(saved);
+        saved = await this.recoverPayment(saved);
         if (saved.status === 'paid') return { order: publicOrder(await finalize(saved)) };
         if (saved.status === 'expired') throw new RequestError('付款已过期，请重新确认订单', 410);
       }
@@ -266,7 +293,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       payment.ensureReady();
       if (data.mode === 'dinein') {
         if (!dining) throw new RequestError('堂食付款尚未开放', 503);
-        if (!saved) await dining.reservePayment(data, pricingSnapshot?.menu);
+        if (!saved) { await this.recoverTablePayment(data.table, data.group); await dining.reservePayment(data, pricingSnapshot?.menu); }
       }
       step('table');
       const fingerprint = createHash('sha256').update(JSON.stringify(data)).digest('hex');
@@ -385,7 +412,8 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(!dining)throw new RequestError('堂食付款尚未开放',503);
       const id=await dining.paymentHold(input.table,input.group);
       if(!id)return {cancelled:true};
-      const order=(await storage.read(id))?.value;
+      let order=(await storage.read(id))?.value;
+      if(!order){await this.recoverTablePayment(input.table,input.group);order=(await storage.read(id))?.value;}
       if(!order)throw new RequestError('付款正在创建，请几秒后再试',409);
       if(order.status==='paid')throw new RequestError('同桌已经付款成功，请查看已下单',409);
       await voidPayment(order,'table');
@@ -434,8 +462,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     async get(id, token) {
       if (!validId(id)) throw new RequestError('订单编号无效');
       let record = (await storage.read(id))?.value; authorize(record, token);
-      if (localPaymentExpired(record)) return publicOrder(await expireLocalPayment(record));
-      return publicOrder(['paid','expired'].includes(record.status)?await finalize(record):record);
+      return publicOrder(await this.recoverPayment(record));
     },
     async paymentEvent(session) {
       // Neither comedy's orderId nor the legacy restaurant's order_id is ours.

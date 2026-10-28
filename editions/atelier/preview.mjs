@@ -306,6 +306,7 @@ const server = createServer(async (req, res) => {
           return json(200,{ok:true,config:{preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,dineinEnabled:true,takeawayEnabled:true,deliveryEnabled:false,deliveryMinimum:100,deliveryRate:0.09,serviceRate:0.1,radiusKm:10}});
         }
         if (req.method === 'POST') {
+          if (input.action === 'end-table-session') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,...await online.endTableSession(input)}); }
           if (input.action === 'cancel') return json(200,{ok:true,...await online.cancel(input)});
           if (input.action === 'cancel-table') return json(200,{ok:true,...await online.cancelForTable(input)});
           if (input.action === 'staff-cancel') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,...await online.staffCancel(input.id)}); }
@@ -325,7 +326,10 @@ const server = createServer(async (req, res) => {
         return json(405,{ok:false,error:'Method not allowed'});
       }
       if (url.pathname === "/api/cart" && req.method === "GET") {
-        return json(200, {ok:true,cart:await dining.cart(url.searchParams.get('table'),url.searchParams.get('group'),url.searchParams.get('version'))});
+        const args=[url.searchParams.get('table'),url.searchParams.get('group'),url.searchParams.get('version'),url.searchParams.get('tableSession')];
+        let cart=await dining.cart(...args);
+        if(cart.paymentPending&&Date.now()-Date.parse(cart.paymentStartedAt)>=15*60000){await online.recoverTablePayment(args[0],args[1]);cart=await dining.cart(args[0],args[1],'',args[3]);}
+        return json(200,{ok:true,cart});
       }
       if (url.pathname === "/api/cart" && req.method === "POST") {
         return json(200, {ok:true,cart:await dining.mutate(input)});
@@ -434,7 +438,7 @@ const server = createServer(async (req, res) => {
       ok: false,
       error: e.status ? e.message : "Local preview error",
       ...(process.env.DL_PREVIEW_TRACE==="1"&&!e.status?{trace:String(e.stack||e).slice(0,600)}:{}),
-      ...(["PAYMENT_PENDING", "CHECKOUT_CART_CHANGED"].includes(e.code) ? { code: e.code } : {}),
+      ...(["PAYMENT_PENDING", "CHECKOUT_CART_CHANGED", "TABLE_SESSION_ENDED"].includes(e.code) ? { code: e.code } : {}),
       ...(e.code === "NOTE_CONFLICT" ? { code: e.code, cart: e.cart } : {}),
     });
   }

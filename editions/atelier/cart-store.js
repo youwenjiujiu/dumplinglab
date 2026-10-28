@@ -19,11 +19,12 @@ class TableCart extends EventTarget {
       try { return JSON.parse(raw); } catch { return null; }
     };
     const cached = read(this.key) || {};
-    this.remote = cached.remote || { items: [], orders: [], opIds: [] };
+    this.remote = (cached.sessionEnded ? null : cached.remote) || { items: [], orders: [], opIds: [] };
     const savedPending = Array.isArray(cached.pending) ? cached.pending : [];
     this.retiredPending = [...(cached.retiredPending || []), ...savedPending.filter(op => op.kind === "delta" && !retainedCartItem(op.dishId, op.style))];
     this.pending = savedPending.filter(op => op.kind !== "delta" || retainedCartItem(op.dishId, op.style));
     this.order = cached.order || null;
+    this.archivedPayment = cached.archivedPayment || null;
     this.noteConflict = cached.noteConflict || null;
     this.lastOrderRequestId = cached.lastOrderRequestId || this.order?.requestId || null;
     this.device = read("atelier-device") || crypto.randomUUID();
@@ -53,6 +54,8 @@ class TableCart extends EventTarget {
     this.writeStorage(
       this.key,
       JSON.stringify({
+        sessionEnded: Boolean(this.sessionEnded),
+        archivedPayment: this.archivedPayment,
         remote: this.remote,
         pending: this.pending,
         retiredPending: this.retiredPending,
@@ -172,11 +175,24 @@ class TableCart extends EventTarget {
       error.status = res.status;
       error.code = out.code;
       error.cart = out.cart;
+      if (error.code === "TABLE_SESSION_ENDED") this.endSession();
       throw error;
     }
     return out;
   }
+  endSession() {
+    this.sessionEnded = true;
+    this.archivedPayment = this.order || this.archivedPayment;
+    this.order = null;
+    this.retiredPending.push(...this.pending);
+    this.pending = [];
+    this.remote = { items: [], orders: [], opIds: [] };
+    this.noteConflict = null;
+    this.status = "ended";
+    this.emit();
+  }
   mutate(data) {
+    if (this.sessionEnded) throw new Error("本轮就餐已结束，请重新扫码。");
     if (this.order) throw Object.assign(new Error("请先确认上一次订单是否成功，再继续加菜。"), { code: 'OWN_PAYMENT' });
     if (this.remote.paymentPending) throw Object.assign(new Error("本组正在付款，请完成或取消付款后再修改菜品。"), { status: 409, code: 'PAYMENT_PENDING' });
     if (data.kind === "note" && this.noteConflict) {
@@ -193,6 +209,7 @@ class TableCart extends EventTarget {
       actorName: this.nickname,
       table: this.table,
       group: this.group,
+      tableSession: this.remote.tableSession,
     });
     this.status = "syncing";
     this.emit();
@@ -200,14 +217,20 @@ class TableCart extends EventTarget {
   }
   async flush() {
     if (this.busy) return this.busy;
-    if (!this.pending.length || !this.table) return;
+    if (!this.pending.length || !this.table || this.sessionEnded) return;
     this.busy = (async () => {
       try {
+        if (!this.remote.tableSession && !this.remote.version) {
+          const fresh = await this.api(`/api/cart?table=${encodeURIComponent(this.table)}&group=${encodeURIComponent(this.group)}`);
+          this.remote = fresh.cart;
+          for (const op of this.pending) if (!op.tableSession) op.tableSession = this.remote.tableSession;
+        }
         while (this.pending.length) {
           const op = this.pending[0];
           let out;
           try { out = await this.api("/api/cart", op); }
           catch (error) {
+            if (error.code === "TABLE_SESSION_ENDED") { this.endSession(); throw error; }
             if (error.code !== "NOTE_CONFLICT" || !error.cart) throw error;
             this.remote = error.cart;
             this.noteConflict = { local: this.pending.filter((p) => p.kind === "note").at(-1)?.note ?? op.note ?? "", remote: error.cart.note || "" };
@@ -233,7 +256,7 @@ class TableCart extends EventTarget {
     return this.busy;
   }
   async poll() {
-    if (!this.table || this.polling || document.hidden) return;
+    if (!this.table || this.polling || this.sessionEnded || document.hidden) return;
     this.polling = true;
     try {
       try { await this.flush(); }
@@ -245,7 +268,7 @@ class TableCart extends EventTarget {
       // No POST can race the GET snapshot: mutation stays optimistic until next flush.
       const generationAtStart = this.generation;
       const out = await this.api(
-        `/api/cart?table=${encodeURIComponent(this.table)}&group=${encodeURIComponent(this.group)}&version=${encodeURIComponent(this.remote.version || "")}`,
+        `/api/cart?table=${encodeURIComponent(this.table)}&group=${encodeURIComponent(this.group)}&version=${encodeURIComponent(this.remote.version || "")}&tableSession=${encodeURIComponent(this.remote.tableSession || "")}`,
       );
       if (
         !this.busy &&
@@ -257,7 +280,8 @@ class TableCart extends EventTarget {
         this.order = null;
       if (this.noteConflict) this.noteConflict.remote = this.remote.note || "";
       this.status = this.pending.length ? "syncing" : "synced";
-    } catch {
+    } catch (error) {
+      if (error.code === "TABLE_SESSION_ENDED") { this.endSession(); return; }
       this.status = this.status === "rejected" ? "rejected" : "offline";
     } finally {
       this.polling = false;
@@ -266,7 +290,7 @@ class TableCart extends EventTarget {
   }
   start() {
     this.poll();
-    this.timer = setInterval(() => this.poll(), 1200);
+    this.timer = setInterval(() => this.poll(), 500);
   }
   resolveNote(choice, localValue) {
     if (!this.noteConflict) return;
