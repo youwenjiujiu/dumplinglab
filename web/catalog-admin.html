@@ -17,7 +17,7 @@
     <button type="button" data-view="inventory" disabled><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Z M3 7l9 4 9-4 M12 11v10"/></svg>库存管理</button>
     <button type="button" data-view="wallet" disabled><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v15H3V5Zm12 5h6v6h-6v-6Z"/></svg>充值与余额</button>
     <button type="button" data-view="rewards" disabled><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z"/></svg>积分与兑换</button>
-    <button type="button" data-view="settings" disabled><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10 M18 7h2 M4 17h4 M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>堂食设置</button>
+    <button type="button" data-view="settings" disabled><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10 M18 7h2 M4 17h4 M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>店铺设置</button>
     <button type="button" data-view="history" disabled><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8 M3 4v6h6 M12 7v5l3 2"/></svg>操作记录</button>
   </nav>
   <div class="sidebar-bottom"><a href="/" target="_blank" rel="noopener">查看顾客菜单 <span aria-hidden="true">↗</span></a><p>49 Circular Road · Singapore</p></div>
@@ -48,7 +48,10 @@
       <section id="rewardsPanel" class="panel" hidden aria-label="积分与兑换"></section>
       <section id="reportPanel" class="panel" hidden aria-label="订单汇总"></section>
       <section id="counterPanel" class="panel" hidden aria-label="店员点单"></section>
-      <section id="settingsPanel" class="panel" hidden aria-label="堂食设置">
+      <section id="settingsPanel" class="panel" hidden aria-label="店铺设置">
+        <div class="settings-block"><h2>自提时间</h2><p>新加坡时间。客人可选未来 7 天内的取餐时间，每 15 分钟一个选项。</p>
+        <form id="pickupHoursForm"><h3>常规时段（每天）</h3><div class="pickup-hours-inputs"><label>午间开始<input type="time" name="start1" required></label><label>午间结束<input type="time" name="end1" required></label><label>晚间开始<input type="time" name="start2" required></label><label>晚间结束<input type="time" name="end2" required></label></div><button class="primary" type="submit">保存常规时段</button><p id="pickupHoursStatus" role="status"></p></form>
+        <form id="pickupExceptionForm"><h3>特殊日期</h3><label>日期<input type="date" name="date" required></label><label><input type="checkbox" name="closed"> 当天暂停自提</label><div class="pickup-hours-inputs"><label>时段一开始<input type="time" name="start1" value="11:30"></label><label>时段一结束<input type="time" name="end1" value="14:30"></label><label>时段二开始<input type="time" name="start2" value="17:30"></label><label>时段二结束<input type="time" name="end2" value="21:00"></label></div><p>只营业一个时段时，留空另一组时间。</p><button class="primary" type="submit">保存特殊日期</button><p id="pickupExceptionStatus" role="status"></p></form><div id="pickupExceptionList"></div></div>
         <div class="panel-heading"><div><h2>全场折扣</h2><span class="muted">只用于堂食：这一天所有桌子、每张单都自动打折。设了本桌折扣的桌子按本桌折扣算。</span></div></div>
         <form id="dayDiscountForm" class="settings-block discount-form">
           <label>日期<input name="date" type="date" required></label>

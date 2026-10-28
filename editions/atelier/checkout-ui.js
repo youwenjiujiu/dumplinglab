@@ -39,6 +39,7 @@ const CheckoutUI = (() => {
     }
   }
   function dispose() {
+    active?.cancelDetails?.();
     active?.picker?.close();
     const email = active?.node.querySelector('[data-checkout-email]');
     if (typeof email?.value === 'string') contactEmail = email.value.slice(0, 254);
@@ -96,6 +97,7 @@ const CheckoutUI = (() => {
     const { order, config } = view, dining = order.mode === 'dinein', extras = addons(order);
     view.node.innerHTML = `<h2 id="sheetTitle" class="sr-only">${bi('确认订单', 'Your order')}</h2><div class="checkout-scroll">
       <section class="checkout-location"><img src="/brand/header-${dining ? 'dinein' : 'takeaway'}-v1.svg" width="44" height="40" alt=""><div><p class="eyebrow">DUMPLING LAB</p><h3>${dining ? `${bi('堂食', 'Dine-in')} · ${escapeHTML(order.table)}` : bi('打包自取', 'Pickup')}</h3><p>${dining ? `${bi('点餐组', 'Group')} ${escapeHTML(order.group)} · ${bi('请确认桌号后付款', 'Check your table before paying')}` : `${escapeHTML(order.fulfilment.pickupName || '')}<br>${escapeHTML(order.fulfilment.pickupAddress || '')}`}</p></div></section>
+      ${!dining ? `<section class="checkout-block pickup-contact"><h3>${bi('自提资料','Pickup details')}</h3><p>${escapeHTML(order.customer?.name||'')} · ${escapeHTML(order.customer?.phone||'')}<br>${escapeHTML(order.fulfilment.date||'')} ${escapeHTML(order.fulfilment.slot||'')}</p></section>` : ''}
       <section class="checkout-block"><h3>${bi('本次点单', 'Order summary')}<button class="checkout-text-action" type="button" data-checkout-edit>${bi('修改', 'Edit')}</button></h3><div class="checkout-lines">${itemsHTML(order)}</div>${order.note ? `<p class="checkout-note">${bi('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}</section>
       ${globalThis.RewardsUI?.checkoutHTML(order)||''}
       ${extras}
@@ -197,6 +199,31 @@ const CheckoutUI = (() => {
       view.express?.destroy(); view.express = null; container.hidden = true;
     }
   }
+  function pickupDetails(view) {
+    const key = 'atelier:pickup-contact';
+    let draft = {};
+    try { draft = JSON.parse(sessionStorage.getItem(key) || '{}'); } catch {}
+    const days = view.config.pickupDays || [];
+    view.node.innerHTML = `<div class="checkout-scroll pickup-details"><h2 id="sheetTitle">${bi('自提资料','Pickup details')}</h2><form id="pickupDetailsForm">
+      <label class="online-field"><span>${bi('取餐人姓名','Pickup name')}</span><input name="customerName" autocomplete="name" required maxlength="60" value="${escapeHTML(draft.customerName || '')}"></label>
+      <label class="online-field"><span>${bi('手机号码','Mobile number')}</span><input name="customerPhone" type="tel" autocomplete="tel" required maxlength="24" placeholder="91234567 / +65 91234567" value="${escapeHTML(draft.customerPhone || '')}"></label>
+      <label class="online-field"><span>${bi('取餐日期','Pickup date')}</span><select name="pickupDate" required>${days.map(d=>`<option value="${d.date}" ${d.date===draft.pickupDate?'selected':''}>${d.date}</option>`).join('')}</select></label>
+      <label class="online-field"><span>${bi('取餐时间（新加坡时间）','Pickup time (Singapore)')}</span><select name="pickupTime" required></select></label>
+      <p class="field-error" data-checkout-error role="alert">${days.length?'':bi('暂无可选自提时间，请联系门店。','No pickup times available. Please contact the store.')}</p>
+      <button class="primary" type="submit" ${days.length?'':'disabled'}>${bi('继续核对订单','Continue to review')}</button></form></div>`;
+    const form=view.node.querySelector('form');
+    const times=()=>{const day=days.find(d=>d.date===form.elements.pickupDate.value);form.elements.pickupTime.innerHTML=(day?.slots||[]).map(t=>`<option value="${t}" ${t===draft.pickupTime?'selected':''}>${t}</option>`).join('')};
+    times();
+    const remember=()=>{draft=Object.fromEntries(new FormData(form));try{sessionStorage.setItem(key,JSON.stringify(draft))}catch{}};
+    form.addEventListener('input',remember);
+    form.elements.pickupDate.addEventListener('change',()=>{times();remember()});
+    return new Promise(resolve=>{view.cancelDetails=()=>resolve(null);form.onsubmit=async e=>{
+      e.preventDefault();if(!current(view)||!form.reportValidity())return;remember();const button=form.querySelector('button');button.disabled=true;
+      const input={...view.input,customer:{name:draft.customerName.trim(),phone:draft.customerPhone.trim()},pickupDate:draft.pickupDate,pickupTime:draft.pickupTime};
+      try{const result=await view.owner.api('/api/online',{...input,action:'quote'});if(!current(view))return;view.input=input;view.cancelDetails=null;resolve(result)}
+      catch(e){error(view,errorText(e));button.disabled=false}
+    }});
+  }
   async function open({skipAddons = false} = {}) {
     dispose();
     const owner = store;
@@ -242,7 +269,9 @@ const CheckoutUI = (() => {
           if (e.status !== 404) throw e;
           result = await sendCheckout(owner, owner.order);
         }
-      } else result = await owner.api('/api/online', { ...view.input, action: 'quote' });
+      } else if (!dining) result = await pickupDetails(view);
+      else result = await owner.api('/api/online', { ...view.input, action: 'quote' });
+      if (!result || !current(view)) return;
       view.order = result.order;
       if (!current(view)) return;
       if (view.order.status === 'paid' || view.order.status === 'expired') {

@@ -14,7 +14,7 @@ def existing(folder):
         return None
 
 
-def install(target, payload):
+def install(target, payload, bridge_only=False):
     ledger = existing(target)
     if not ledger:
         raise ValueError('没有找到原来的配置和打印记录，未进行更新。')
@@ -23,7 +23,7 @@ def install(target, payload):
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise ValueError('原出单程序还开着。请等当前打印结束，在旧窗口按 Control+C，然后再双击本更新程序。')
-        names = ['printer-bridge.py', '双击启动出单.command']
+        names = ['printer-bridge.py'] if bridge_only else ['printer-bridge.py', '双击启动出单.command']
         for name in names:
             if not (payload / name).is_file():
                 raise ValueError('更新包不完整，请重新解压。')
@@ -54,6 +54,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--target', type=Path)
     parser.add_argument('--no-start', action='store_true')
+    parser.add_argument('--bridge-only', action='store_true')
     args = parser.parse_args()
     payload = Path(__file__).resolve().parent
     if args.target:
@@ -70,10 +71,13 @@ def main():
             target = Path(selected.stdout.strip())
             if not existing(target):
                 raise ValueError('选中的文件夹没有原配置和打印记录。请重新双击更新，选择原来一直用于出单的文件夹。')
-    install(target, payload)
-    print('更新完成，原配置和打印记录已保留。正在启动新版…', flush=True)
+    install(target, payload, args.bridge_only)
+    print('更新完成，原配置和打印记录已保留。'+('请使用原文件夹里的启动文件。' if args.no_start else '正在启动新版…'), flush=True)
     if not args.no_start:
-        os.execv('/bin/bash', ['bash', str(target / '双击启动出单.command')])
+        launcher = target / ('运行出单.sh' if args.bridge_only and (target/'运行出单.sh').is_file() else '双击启动出单.command')
+        if not launcher.is_file():
+            print('代码已更新。请双击原文件夹里的启动文件。',flush=True);return
+        os.execv('/bin/bash', ['bash', str(launcher)])
 
 
 if __name__ == '__main__':

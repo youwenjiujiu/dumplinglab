@@ -1,3 +1,4 @@
+import {checkPickupTime} from './pickup-hours.js';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import QRCode from 'qrcode';
 import { validateRefundItems } from './refund-items.js';
@@ -30,6 +31,12 @@ const text = (value, max, label) => {
   if (!out || out.length > max || /[\u0000-\u001f<>]/.test(out)) throw new RequestError(`请填写有效的${label}`);
   return out;
 };
+export function pickupContact(customer = {}) {
+  const name = text(customer?.name, 60, '姓名');
+  const phone = text(customer?.phone, 24, '手机号码').replace(/[ ()-]/g, '');
+  if (!/^(?:[89]\d{7}|\+[1-9]\d{6,14})$/.test(phone)) throw new RequestError('请填写8位新加坡手机号，或带国家区号的手机号');
+  return {name, phone};
+}
 export function cleanOnline(input, config, now = new Date(), catalog) {
   if (!input || !['dinein', 'takeaway', 'delivery'].includes(input.mode)) throw new RequestError('请选择用餐方式');
   if (!validId(input.requestId)) throw new RequestError('订单编号无效');
@@ -41,7 +48,7 @@ export function cleanOnline(input, config, now = new Date(), catalog) {
   const items = cleanItems(input.items, catalog);
   const pricing = globalThis.OrderPricing.quote(items.reduce((sum, i) => sum + i.price * i.qty, 0), input.mode);
   const c = input.customer || {};
-  const customer = {};
+  const customer = input.mode === 'takeaway' ? pickupContact(c) : {};
   const fulfilment = {};
   if (input.mode === 'delivery') {
     customer.name = text(c.name, 60, '姓名');
@@ -61,7 +68,7 @@ export function cleanOnline(input, config, now = new Date(), catalog) {
     fulfilment.pickupLocation = location.id;
     fulfilment.pickupAddress = location.address;
     fulfilment.pickupName = location.name;
-    fulfilment.timing = 'asap';
+    Object.assign(fulfilment, config.pickupHours ? checkPickupTime(input,config.pickupHours,now) : {timing:'asap'});
   }
   return { id: input.requestId, tokenHash: tokenHash(input.token), type: 'order',
     mode: input.mode, table: null, group: null, items, customer, fulfilment,
@@ -79,7 +86,7 @@ export const publicOrder = order => {
 export function createOnlineService({ storage, payment, checkAddress, config, dining, inventory, rewards, wallet, now = () => new Date() }) {
   const requestFingerprint = input => createHash('sha256').update(JSON.stringify({
     mode:input.mode,items:input.items?.map(i=>[i.id,i.style||null,Number(i.qty),i.note||null]),
-    customer:input.customer,date:input.date,slot:input.slot,pickupLocation:input.pickupLocation||null,note:input.note||'',
+    customer:input.customer,pickupDate:input.pickupDate,pickupTime:input.pickupTime,date:input.date,slot:input.slot,pickupLocation:input.pickupLocation||null,note:input.note||'',
     table: input.table || null, group: input.group || null, cartOpIds: input.cartOpIds || null,
     ...(input.rewardSelection ? {rewardSelection:input.rewardSelection} : {}),
     ...(input.paymentMethod==='wallet'?{paymentMethod:'wallet'}:{}),
@@ -130,7 +137,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
   async function checked(input, memberId, pricingSnapshot) {
     const snapshot = pricingSnapshot || await inventory?.checkoutSnapshot?.(input.mode === 'dinein' ? cleanTable(input.table) : null);
     const menu = snapshot ? snapshot.menu : inventory ? await inventory.menu() : undefined;
-    const order = cleanOnline(input, config, now(), menu);
+    const order = cleanOnline(input, {...config,...(snapshot?.pickupHours?{pickupHours:snapshot.pickupHours}:{})}, now(), menu);
     if (order.mode === 'delivery') {
       const result = await checkAddress(order.customer.postalCode);
       if (!result || !Number.isFinite(result.distanceKm)) throw new RequestError('暂时无法核实配送地址，请稍后重试', 503);
@@ -362,7 +369,8 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(!['cash','card'].includes(input.counterMethod))throw new RequestError('请选择收款方式');
       let order=(await storage.read(input.requestId))?.value;
       if(!order){
-        const data=await counterOrder(input);
+        const contact=input.mode==='takeaway'?pickupContact(input.customer):{};
+        const data={...await counterOrder(input),customer:contact};
         if(input.expectedTotal!==undefined&&globalThis.OrderPricing.cents(input.expectedTotal)!==globalThis.OrderPricing.cents(data.total))throw new RequestError('价格已更新，请重新核对',422);
         order=await mutate(input.requestId,prior=>prior||{...data,id:input.requestId,counterMethod:input.counterMethod,
           ...(inventory?{inventoryManaged:true}:{}),at:now().toISOString(),no:`S${input.requestId.slice(0,6).toUpperCase()}`,status:'awaiting_payment'});

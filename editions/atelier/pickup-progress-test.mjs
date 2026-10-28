@@ -13,7 +13,7 @@ const dependencies={config,now:()=>clock,storage:{
   isConflict:e=>e.conflict,async all(){return [...records.values()].map(r=>r.value);},
 },payment:{ensureReady(){},async create(o){return {id:'test-'+o.id,url:'https://checkout.stripe.com/test'};}},checkAddress(){throw Error('Delivery out of scope');}};
 let service=createOnlineService(dependencies);
-const input={requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'takeaway',pickupLocation:'test',items:[{id:globalThis.MENU.find(d=>!d.styles&&!d.soldOut&&d.price>=5).id,qty:1}]};
+const input={requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'takeaway',customer:{name:'Pickup QA',phone:'91234567'},pickupDate:new Date(Date.now()+86400000+8*3600000).toISOString().slice(0,10),pickupTime:'11:30',pickupLocation:'test',items:[{id:globalThis.MENU.find(d=>!d.styles&&!d.soldOut&&d.price>=5).id,qty:1}]};
 const pending=await service.checkout(input);
 await assert.rejects(service.advance(input.requestId,'preparing'),e=>e.status===409);
 await assert.rejects(service.progress(input.requestId,'0'.repeat(32)),e=>e.status===404);

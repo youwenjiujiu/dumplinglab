@@ -6,7 +6,7 @@
   const fieldNames = {choiceOptions:'顾客可选项',cn:'中文名',name:'英文名',flavor:'描述',section:'分类',sort:'排序',active:'上下架',recommended:'推荐 👍',soldOut:'临时售罄',price:'价格',enabledPreparations:'开启做法',preparationExtras:'做法加价',portionSizes:'份量颗数',portionPrices:'规格价格',stock:'实有库存',imageUrl:'默认图片',preparationImageUrls:'按做法配图',description:'套餐介绍',descriptionEn:'英文介绍',visible:'菜单展示',start:'开始供应',end:'结束供应',drinkChoices:'饮品选项',fillingChoices:'馅料选项',noodleChoices:'面条选项',preparationChoices:'可选做法',sideDumplings:'配餐煎饺',includedColdDish:'固定凉菜',optionalNoodlesExtra:'加面价格',printStation:'出单打印机',promo:'单品活动'};
   let preparationPhotoDraft={}, optionsDraft=null, pending=[];
   let beforeCutout=null, cutoutWorker=null, cutoutTask=null, cutoutSequence=0, cutoutOperation=0, cutoutAbort=null;
-  let password = '', data = null, selected = null, busy = false, view = location.hash==='#lunchsets'?'lunchsets':'catalog', authEpoch = 0, editRevision = 0, returnFocus = null;
+  let password = '', data = null, selected = null, busy = false, view = ['lunchsets','settings'].includes(location.hash.slice(1))?location.hash.slice(1):'catalog', authEpoch = 0, editRevision = 0, returnFocus = null;
   try { password = sessionStorage.getItem('dl-staff-password') || ''; } catch {}
   const form = $('#editForm');
   const auth = () => 'Basic ' + btoa(String.fromCharCode(...new TextEncoder().encode('staff:' + password)));
@@ -59,8 +59,8 @@
     if(view==='wallet'&&data)globalThis.WalletAdmin?.load(request);
     $('#rewardsPanel').hidden = view !== 'rewards';
     if(view==='rewards'&&data)globalThis.RewardAdmin?.load(request,data.items);
-    $('#pageTitle').textContent = $('#breadcrumb').textContent = ({lunchsets:'午市套餐',catalog:'菜品管理',inventory:'库存管理',history:'操作记录',rewards:'积分与兑换',wallet:'充值与余额',settings:'堂食设置',report:'订单汇总',counter:'店员点单'})[view];
-    $('#pageDescription').textContent = ({lunchsets:'设置套餐搭配、价格、供应时段及吸引顾客的套餐配图。',catalog:'改价格、调整销售状态，或编辑菜品完整资料。',inventory:'核对实有、预占与可售数量，按实际数量盘点库存。',history:'查看菜品更新与库存变动的时间和明细。',rewards:'设置消费积分与可兑换的配菜、饮品。',wallet:'核对充值、余额支付及退款记录。',settings:'给包场或熟客的桌子打折。',report:'营业额与热销菜品，按付款时间统计（新加坡时间）。',counter:'客人在柜台付现金或刷卡，替他点单，出单直接送厨房和吧台。'})[view];
+    $('#pageTitle').textContent = $('#breadcrumb').textContent = ({lunchsets:'午市套餐',catalog:'菜品管理',inventory:'库存管理',history:'操作记录',rewards:'积分与兑换',wallet:'充值与余额',settings:'店铺设置',report:'订单汇总',counter:'店员点单'})[view];
+    $('#pageDescription').textContent = ({lunchsets:'设置套餐搭配、价格、供应时段及吸引顾客的套餐配图。',catalog:'改价格、调整销售状态，或编辑菜品完整资料。',inventory:'核对实有、预占与可售数量，按实际数量盘点库存。',history:'查看菜品更新与库存变动的时间和明细。',rewards:'设置消费积分与可兑换的配菜、饮品。',wallet:'核对充值、余额支付及退款记录。',settings:'设置自提时间、特殊日期和堂食折扣。',report:'营业额与热销菜品，按付款时间统计（新加坡时间）。',counter:'客人在柜台付现金或刷卡，替他点单，出单直接送厨房和吧台。'})[view];
     $('#listTitle').textContent = view === 'inventory' ? '库存盘点' : '菜品列表';
     $$('[data-view]').forEach(b => b.setAttribute('aria-current', b.dataset.view === view ? 'page' : 'false'));
   }
@@ -208,6 +208,11 @@
   const dayName = date => { const d = new Date(date + 'T00:00:00Z'); return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日 周${'日一二三四五六'[d.getUTCDay()]}` + (date === OrderPricing.shopDate() ? ' · 今天' : ''); };
   function renderSettings() {
     const s = {tableDiscounts:{}, dayDiscounts:{}, ...data.settings};
+    const hours=s.pickupHours||{daily:[['11:30','14:30'],['17:30','21:00']],exceptions:{}};
+    const fields=$('#pickupHoursForm').elements;
+    hours.daily.slice(0,2).forEach(([start,end],i)=>{fields['start'+(i+1)].value=start;fields['end'+(i+1)].value=end});
+    $('#pickupExceptionForm').elements.date.min=OrderPricing.shopDate();
+    $('#pickupExceptionList').innerHTML=Object.entries(hours.exceptions).filter(([d])=>d>=OrderPricing.shopDate()).sort(([a],[b])=>a.localeCompare(b)).map(([date,rows])=>`<article class="discount-row"><strong>${esc(date)}</strong><span>${rows.length?rows.map(r=>r.join('–')).join(' / '):'暂停自提'}</span><button type="button" class="edit-button" data-pickup-remove="${esc(date)}">恢复常规时段</button></article>`).join('');
     const days = Object.entries(s.dayDiscounts).filter(([d]) => d >= OrderPricing.shopDate()).sort(([a], [b]) => a.localeCompare(b));
     $('#dayDiscountList').innerHTML = days.length ? days.map(([t, d]) => `<article class="discount-row"><strong>${esc(dayName(t))}</strong><span>${esc(discountText(d))}</span><div><button type="button" class="edit-button" data-day-edit="${esc(t)}">修改</button><button type="button" class="edit-button" data-day-clear="${esc(t)}">取消折扣</button></div></article>`).join('') : '<p class="muted discount-empty">目前没有全场折扣。</p>';
     const date = $('#dayDiscountForm').elements.date;
@@ -219,6 +224,14 @@
     const result = await request('/api/catalog', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify(body)});
     data = result; render(); renderSettings(); stamp(); status.textContent = '';
   }
+  const pickupWindows=form=>[1,2].map(i=>[form.elements['start'+i].value,form.elements['end'+i].value]).filter(r=>r.some(Boolean));
+  for(const id of ['pickupHoursForm','pickupExceptionForm'])$('#'+id).onsubmit=async e=>{
+    e.preventDefault();const form=e.target,status=$(id==='pickupHoursForm'?'#pickupHoursStatus':'#pickupExceptionStatus'),button=form.querySelector('button');button.disabled=true;
+    try{const hours=structuredClone(data.settings.pickupHours);if(id==='pickupHoursForm')hours.daily=pickupWindows(form);else hours.exceptions[form.elements.date.value]=form.elements.closed.checked?[]:pickupWindows(form);
+      await saveSettings({action:'pickup-hours',pickupHours:hours},status);status.textContent='已保存，新的自提订单立即使用这些时段。';
+    }catch(error){status.textContent=error.message}finally{button.disabled=false}
+  };
+  $('#pickupExceptionList').onclick=async e=>{const button=e.target.closest('[data-pickup-remove]');if(!button)return;button.disabled=true;const status=$('#pickupExceptionStatus');try{const hours=structuredClone(data.settings.pickupHours);delete hours.exceptions[button.dataset.pickupRemove];await saveSettings({action:'pickup-hours',pickupHours:hours},status);status.textContent='已恢复常规时段。'}catch(error){status.textContent=error.message;button.disabled=false}};
   function discountMode(form = $('#discountForm')) {
     const f = form.elements, percent = f.type.value === 'percent';
     form.dataset.discountType = f.type.value;

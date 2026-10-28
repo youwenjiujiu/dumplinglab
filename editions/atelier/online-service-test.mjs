@@ -57,9 +57,11 @@ assert.equal(deliveryQuote.total,Math.round((deliveryQuote.subtotal+deliveryQuot
 await assert.rejects(service.quote({...delivery,customer:{...delivery.customer,postalCode:'999999'}}),/10 km/);
 await assert.rejects(service.quote({...delivery,items:[{id:dish.id,qty:1}]}),/100/);
 assert.throws(()=>cleanOnline({...delivery,date:'2026-09-07'},config,now),/日期/);
-const immediate=cleanOnline(make({customer:undefined,date:undefined,slot:undefined}),config,now);
+const immediate=cleanOnline(make({date:undefined,slot:undefined}),config,now);
 assert.equal(immediate.fulfilment.timing,'asap');
-assert.deepEqual(immediate.customer,{});
+assert.deepEqual(immediate.customer,{name:'Test Customer',phone:'91234567'});
+assert.throws(()=>cleanOnline(make({customer:undefined}),config,now),/姓名/);
+assert.throws(()=>cleanOnline(make({customer:{name:'Test',phone:''}}),config,now),/手机/);
 assert.equal(immediate.fulfilment.date,undefined);
 assert.throws(()=>cleanOnline(make({pickupLocation:'fake'}),config,now),/门店/);
 assert.throws(()=>cleanOnline(make({items:[{id:dish.id,qty:21}]}),config,now),/数量/);
@@ -87,7 +89,7 @@ assert.equal(denied.code,401,'possession of a pickup QR is not staff authority')
 if(previousStaffPassword===undefined)delete process.env.DL_STAFF_PASSWORD;else process.env.DL_STAFF_PASSWORD=previousStaffPassword;
 const invalid=await webhook.fetch(new Request('https://test/api/payment-webhook',{method:'POST',body:raw}));assert.equal(invalid.status,400);
 delete process.env.STRIPE_WEBHOOK_SECRET;
-const batch=Array.from({length:5},()=>make({customer:undefined,date:undefined,slot:undefined}));
+const batch=Array.from({length:5},()=>make({date:undefined,slot:undefined}));
 const pending=await Promise.all(batch.map(i=>service.checkout(i)));
 await Promise.all(pending.map(({order:o})=>service.paymentEvent({id:`cs_${o.id}`,metadata:{dumpling_order_id:o.id},currency:'sgd',amount_total:Math.round(o.total*100),payment_status:'paid'})));
 const numbers=await Promise.all(batch.map(async i=>(await service.get(i.requestId,i.token)).pickup.number));

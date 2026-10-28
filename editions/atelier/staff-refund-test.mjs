@@ -9,7 +9,7 @@ const online=createOnlineService({inventory:catalog,config:{origin:'https://exam
  storage:{async read(id){return structuredClone(records.get(id)||null)},async write(id,value,etag){if(records.get(id)?.etag!==etag)throw Object.assign(new Error('Conflict'),{conflict:true});records.set(id,{value:structuredClone(value),etag:randomUUID()})},isConflict:e=>e.conflict,async all(){return [...records.values()].map(r=>structuredClone(r.value))}},
  payment:{ensureReady(){},async create(o){return {id:'cs_'+o.id.replaceAll('-',''),client_secret:'secret'}},async expire(){return {status:'expired',payment_status:'unpaid'}},
   async refund(r){calls.push(r);if(stripe==='down')throw new Error('timeout');if(stripe==='reject')throw Object.assign(new Error('Refund exceeds charge'),{rejected:true});return {id:'re_'+calls.length,status:'succeeded'}}}});
-const input={requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'takeaway',pickupLocation:'shop',items:[{id:dish.id,qty:2}]};
+const input={requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'takeaway',customer:{name:'Pickup QA',phone:'91234567'},pickupDate:new Date(Date.now()+86400000+8*3600000).toISOString().slice(0,10),pickupTime:'11:30',pickupLocation:'shop',items:[{id:dish.id,qty:2}]};
 await online.checkout(input);const id=input.requestId,order=records.get(id).value,total=Math.round(order.total*100);
 await online.paymentEvent({id:'cs_'+id.replaceAll('-',''),metadata:{dumpling_order_id:id},currency:'sgd',amount_total:total,payment_status:'paid',payment_intent:'pi_'+id});
 const refund=(amountCents,refundId=randomUUID())=>online.staffRefund({id,refundId,amountCents,reason:'售罄'});

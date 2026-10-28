@@ -4,7 +4,7 @@
 source may be a local orders.json (testing) or the live order site, e.g.
 "https://order.dumplinglab.sg": then paid orders are read from /api/feed with the
 staff password from DL_STAFF_PASSWORD (or "password" in the config)."""
-import argparse, datetime, fcntl, hashlib, json, logging, math, os, socket, sqlite3, subprocess, time
+import argparse, datetime, fcntl, hashlib, json, logging, math, os, socket, sqlite3, subprocess, tempfile, time
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
@@ -135,13 +135,20 @@ def receipt(order, station, items, font_path, test_mode=True, per_dish=False):
         line['qty'] += item['qty']
         line['gift'] += item['qty'] if item.get('promo') == 'bogo' else 0
     items = list(merged.values())
+    contact = []
+    if order.get('mode') == 'takeaway':
+        customer = order.get('customer') or {}
+        fulfilment = order.get('fulfilment') or {}
+        if fulfilment.get('date') and fulfilment.get('slot'):
+            contact.append(('取餐：'+str(fulfilment['date'])+' '+str(fulfilment['slot']), detail))
+        contact += [('取餐人：'+str(customer.get('name') or '未填写'), detail), ('电话：'+str(customer.get('phone') or '未填写'), detail)]
     dish = lambda item: str(item.get('name', '菜品'))+' × '+str(item['qty'])+('（含赠 '+str(item['gift'])+'）' if item['gift'] else '')
     if per_dish:
         # 午市分开出餐：每道菜一张，送餐的人看桌号就知道送去哪。
         slips = []
         for item in items:
             lines = [('测试单 / DO NOT PREPARE', font)] if test_mode else []
-            lines += [(place, huge), (dish(item), large)]
+            lines += [(place, huge)] + contact + [(dish(item), large)]
             if item.get('style'):
                 lines += [(str(item['style']), detail)]
             if item.get('note'):
@@ -155,6 +162,7 @@ def receipt(order, station, items, font_path, test_mode=True, per_dish=False):
     if test_mode:
         lines += [('测试单 / DO NOT PREPARE', font)]
     lines += [('订单 '+str(order.get('no', order['id'][:8]))+'  '+place, large)]
+    lines += contact
     for item in items:
         lines += [(dish(item), large)]
         if item.get('style'):
@@ -211,7 +219,7 @@ class Bridge:
             except ValueError as error:
                 self.finish(job, 'failed', str(error));continue
             output.joinpath(job['key'].replace(':', '-')+'.bin').write_bytes(data)
-            logging.info('%s sending bytes=%s slips=%s sha256=%s transport=paced-v1', job['key'], len(data), sum(s for _, s in frames), hashlib.sha256(data).hexdigest())
+            logging.info('%s sending bytes=%s slips=%s sha256=%s transport=direct-v2', job['key'], len(data), sum(s for _, s in frames), hashlib.sha256(data).hexdigest())
             self.db.execute("UPDATE jobs SET status='sending',attempts=attempts+1,updated=? WHERE key=?", (time.time(), job['key']));self.db.commit()
             try:
                 connection = socket.create_connection((config['host'], config.get('port', 9100)), timeout=3)
@@ -222,7 +230,7 @@ class Bridge:
                 self.db.commit();logging.error('%s connection failed: %s', job['key'], error);continue
             try:
                 with connection:
-                    connection.settimeout(10);send_paced(connection, frames)
+                    connection.settimeout(10);connection.sendall(data)
             except OSError as error:
                 self.finish(job, 'uncertain', 'Send outcome unknown; do not auto-retry: '+str(error));continue
             self.finish(job, 'sent', '')
@@ -234,13 +242,23 @@ class Bridge:
 
 def main():
     parser = argparse.ArgumentParser();parser.add_argument('--config', required=True);parser.add_argument('--include-order', action='append', default=[]);parser.add_argument('--watch', action='store_true');args = parser.parse_args()
+    # One process across all copied folders on this Mac; the ledger lock alone
+    # cannot stop an older copy using another database from writing to the same printer.
+    process_lock = open(Path(tempfile.gettempdir())/('dumplinglab-printer-'+str(os.getuid())+'.lock'),'a')
+    try:fcntl.flock(process_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+    except BlockingIOError:raise SystemExit('已有出单程序运行，请使用原窗口，不要重复启动。')
+    processes = subprocess.run(['ps','-axo','pid=,command='],capture_output=True,text=True,check=True)
+    for row in processes.stdout.splitlines():
+        parts=row.strip().split(None,1)
+        if len(parts)==2 and parts[0]!=str(os.getpid()) and 'printer-bridge.py' in parts[1] and 'python' in parts[1].lower():
+            raise SystemExit('检测到另一份出单程序，请先关闭旧出单窗口；未发送任何订单。')
     config = json.loads(Path(args.config).read_text());Path(config['ledger']).parent.mkdir(parents=True, exist_ok=True)
     lock = open(config['ledger']+'.lock', 'a')
     try:fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:raise SystemExit('A printer bridge already owns this ledger')
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
     live = config['source'].startswith('https://')
-    bridge = Bridge(config);logging.info('Printer bridge paced-v1. Watching %s paid orders; history cutoff=%s; testMode=%s', 'live' if live else 'local', bridge.since, config.get('testMode', True))
+    bridge = Bridge(config);logging.info('Printer bridge direct-v2 (优化版：无固定限速，自提联系人). Watching %s paid orders; history cutoff=%s; testMode=%s', 'live' if live else 'local', bridge.since, config.get('testMode', True))
     while True:
         try:
             bridge.enqueue(orders_from(load_source(config)), args.include_order);bridge.process()

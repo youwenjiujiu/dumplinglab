@@ -1,3 +1,4 @@
+import {pickupOptions} from '../../web/server/pickup-hours.js';
 // Local-only preview. Reuses catalogue validation; never forwards orders to production.
 import { createServer } from "node:http";
 import { createHash, createHmac, randomUUID } from "node:crypto";
@@ -299,7 +300,7 @@ const server = createServer(async (req, res) => {
       }
       if(url.pathname==='/api/catalog'){
         if(req.method==='GET'){if(url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await catalog.admin()})}return json(200,{ok:true,...await catalog.public()})}
-        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await (input.action==='lunch-set-save'?catalog.saveLunchSet(input):input.action==='create'?catalog.create(input):input.action==='reorder'?catalog.reorder(input):['section-save','section-delete','section-order'].includes(input.action)?catalog.saveSection(input):['table-discount','day-discount','builder-photo','recommend-order'].includes(input.action)?catalog.saveSettings(input):catalog.save(input))})}
+        if(req.method==='POST'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...await (input.action==='lunch-set-save'?catalog.saveLunchSet(input):input.action==='create'?catalog.create(input):input.action==='reorder'?catalog.reorder(input):['section-save','section-delete','section-order'].includes(input.action)?catalog.saveSection(input):['table-discount','day-discount','builder-photo','recommend-order','pickup-hours'].includes(input.action)?catalog.saveSettings(input):catalog.save(input))})}
         return json(405,{error:'Method not allowed'});
       }
       if (url.pathname === '/api/online') {
@@ -310,7 +311,7 @@ const server = createServer(async (req, res) => {
           const id = url.searchParams.get('id');
           if (id && url.searchParams.get('progress') === '1') return json(200,{ok:true,progress:await online.progress(id,req.headers['x-pickup-code'])});
           if (id) return json(200,{ok:true,order:await online.get(id,String(req.headers.authorization||'').replace(/^Bearer /,''))});
-          return json(200,{ok:true,config:{preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,dineinEnabled:true,takeawayEnabled:true,deliveryEnabled:false,deliveryMinimum:100,deliveryRate:0.09,serviceRate:0.1,radiusKm:10}});
+          return json(200,{ok:true,config:{pickupHours:await catalog.pickupHours(),pickupDays:pickupOptions(await catalog.pickupHours()),preview:true,locations:previewLocations,dates:bookingDates(),slots:SLOTS,dineinEnabled:true,takeawayEnabled:true,deliveryEnabled:false,deliveryMinimum:100,deliveryRate:0.09,serviceRate:0.1,radiusKm:10}});
         }
         if (req.method === 'POST') {
           if (input.action === 'end-table-session') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,...await online.endTableSession(input)}); }

@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         return json(res, 200, {ok:true, ...await onlineService.memberOrders(member?.id, req.query?.before || '')});
       }
       const id = req.query?.id;
-      if (!id) return json(res, 200, { ok: true, config: onlineConfig() });
+      if (!id) return json(res, 200, { ok: true, config: await onlineConfig() });
       if (req.query?.progress === '1') return json(res, 200, { ok: true,
         progress: await onlineService.progress(id, req.headers['x-pickup-code']) });
       const token = String(req.headers.authorization || '').replace(/^Bearer /, '');

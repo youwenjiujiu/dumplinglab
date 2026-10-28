@@ -1,3 +1,4 @@
+import {pickupOptions} from './pickup-hours.js';
 import { get, put, list } from '@vercel/blob';
 import { isStorageConflict } from './storage-conflict.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -46,8 +47,9 @@ function settings() {
 // Credentials alone must never open checkout before the restaurant is ready.
 const ready = () => Boolean(process.env.DL_PAYMENTS_ENABLED === 'true' && process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLISHABLE_KEY && process.env.STRIPE_WEBHOOK_SECRET &&
   /^https:\/\//.test(process.env.DL_ORDER_ORIGIN || '') && process.env.DL_GST_REGISTERED === 'true');
-export function onlineConfig() {
-  return { ...settings(), dates: bookingDates(), slots: SLOTS, preview: false,
+export async function onlineConfig() {
+  const pickupHours=await catalogService.pickupHours();
+  return { ...settings(), pickupHours, pickupDays:pickupOptions(pickupHours), dates: bookingDates(), slots: SLOTS, preview: false,
     dineinEnabled: ready(), publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null,
     takeawayEnabled: ready() && settings().locations.length > 0,
     deliveryEnabled: false,

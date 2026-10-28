@@ -21,7 +21,7 @@ globalThis.CounterAdmin = (() => {
   function ticketHTML() {
     const q = quote;
     return `<div class="counter-mode" role="group" aria-label="用餐方式">${[['dinein', '堂食'], ['takeaway', '自取']].map(([k, l]) => `<button type="button" data-mode="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div>
-      ${mode === 'dinein' ? `<label class="counter-table">桌号<input name="counterTable" autocomplete="off" maxlength="12" value="${esc(panel().dataset.table || '')}" placeholder="例如 A3"></label>` : ''}
+      ${mode === 'dinein' ? `<label class="counter-table">桌号<input name="counterTable" autocomplete="off" maxlength="12" value="${esc(panel().dataset.table || '')}" placeholder="例如 A3"></label>` : `<label class="counter-table">取餐人姓名<input name="counterName" required maxlength="60" autocomplete="name" value="${esc(panel().dataset.customerName||'')}"></label><label class="counter-table">手机号码<input name="counterPhone" type="tel" required maxlength="24" autocomplete="tel" placeholder="91234567 / +65 91234567" value="${esc(panel().dataset.customerPhone||'')}"></label>`}
       ${lines.length ? `<ul class="counter-lines">${lines.map((l, n) => `<li><span>${esc(dish(l.id)?.cn || l.id)}${l.style ? `<small>${esc(l.style)}</small>` : ''}</span>
         <span class="counter-qty"><button type="button" data-line="${n}" data-delta="-1" aria-label="减一份">−</button><b>${l.qty}</b><button type="button" data-line="${n}" data-delta="1" aria-label="加一份">+</button></span>
         <b class="counter-line-total">${money(priceOf(dish(l.id), l.style) * l.qty)}</b></li>`).join('')}</ul>` : '<p class="counter-empty">点左边的菜加入本单</p>'}
@@ -37,7 +37,7 @@ globalThis.CounterAdmin = (() => {
     p.querySelector('.counter-ticket').innerHTML = ticketHTML();
     if (status) p.querySelector('.counter-status').textContent = status;
   }
-  const input = () => ({ mode, table: mode === 'dinein' ? (panel().dataset.table || '').trim() : undefined, items: lines.map(l => ({ id: l.id, style: l.style, qty: l.qty })), note: panel().dataset.note || '' });
+  const input = () => ({ mode, customer:mode==='takeaway'?{name:panel().dataset.customerName||'',phone:panel().dataset.customerPhone||''}:undefined, table: mode === 'dinein' ? (panel().dataset.table || '').trim() : undefined, items: lines.map(l => ({ id: l.id, style: l.style, qty: l.qty })), note: panel().dataset.note || '' });
   // 价格以服务器为准（折扣、服务费、买一赠一），每次改动后重新算。
   async function requote() {
     const run = ++quoteRun, i = input();
@@ -50,13 +50,14 @@ globalThis.CounterAdmin = (() => {
   function changed() { requestId = null; quote = null; render(); requote(); }
   async function submit() {
     if (busy || !quote) return;
+    if(mode==='takeaway' && ![...panel().querySelectorAll('[name=counterName],[name=counterPhone]')].every(el=>el.reportValidity()))return;
     busy = true; requestId ||= crypto.randomUUID();
     const button = panel().querySelector('[data-counter-submit]'); button.disabled = true;
     panel().querySelector('.counter-status').textContent = '正在出单…';
     try {
       const out = await request('/api/online', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'staff-order', requestId, counterMethod: method, expectedTotal: quote.total, ...input() }) });
       const o = out.order;
-      lines = []; quote = null; requestId = null; busy = false; panel().dataset.note = ''; panel().dataset.table = '';
+      lines = []; quote = null; requestId = null; busy = false; panel().dataset.note = ''; panel().dataset.table = '';panel().dataset.customerName='';panel().dataset.customerPhone='';
       render(`已出单 #${o.no}${o.pickup?.number ? ` · 自取号 ${o.pickup.number}` : o.table ? ` · ${o.table} 桌` : ''} · ${money(o.total)}`);
     } catch (e) {
       busy = false;
@@ -82,6 +83,8 @@ globalThis.CounterAdmin = (() => {
       if (b.hasAttribute('data-counter-submit')) submit();
     };
     p.oninput = e => {
+      if(e.target.name==='counterName'){p.dataset.customerName=e.target.value;requestId=null;}
+      if(e.target.name==='counterPhone'){p.dataset.customerPhone=e.target.value;requestId=null;}
       if (e.target.name === 'counterNote') { p.dataset.note = e.target.value; requestId = null; }
       if (e.target.name === 'counterTable') { p.dataset.table = e.target.value; requestId = null; }
     };

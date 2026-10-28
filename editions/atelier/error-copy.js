@@ -17,6 +17,8 @@
     ['此地址超出 10 km 配送范围', 'This address is outside our 10 km delivery area.'],
     ['配送菜品小计需满 $100（不含配送费）', 'Delivery requires at least $100 of food, excluding the delivery fee.'],
     ['请选择有效的预订日期和时段；次日订单前晚 21:00 截止', 'Choose an available date and time. Next-day orders close at 9 pm Singapore time.'],
+    ['请填写8位新加坡手机号，或带国家区号的手机号', 'Enter an 8-digit Singapore mobile number, or include the country code.'],
+    ['请选择有效的自提日期和时间', 'Choose an available pickup date and time.'],
     ['请填写新加坡联系电话', 'Enter a valid Singapore contact number.'],
     ['请填写六位邮编', 'Enter a six-digit postal code.'],
     ['未找到该邮编，请检查地址', 'Postal code not found. Check the delivery address.'],

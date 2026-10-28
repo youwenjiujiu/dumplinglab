@@ -1,3 +1,4 @@
+import {DEFAULT_PICKUP_HOURS,cleanPickupHours} from './pickup-hours.js';
 // One CAS-protected catalogue/inventory ledger. No client-owned stock counts.
 import './order-core.js';
 import {lunchSetsView,lunchSetPatch} from './lunch-sets-core.js';
@@ -12,7 +13,7 @@ const initial=()=>({schema:1,revision:0,overrides:{},holds:{},audit:[]});
 // a day discount applies to every dine-in table on that Singapore date.
 // builderPhotos: the owner's own photo on each 自选 preparation card.
 const BUILDER_CARDS=['soup','boiled','fried','dry'];
-const settingsOf=state=>({tableDiscounts:{...state.settings?.tableDiscounts},dayDiscounts:{...state.settings?.dayDiscounts},builderPhotos:{...state.settings?.builderPhotos},recommendOrder:[...(state.settings?.recommendOrder||[])]});
+const settingsOf=state=>({pickupHours:structuredClone(state.settings?.pickupHours||DEFAULT_PICKUP_HOURS),tableDiscounts:{...state.settings?.tableDiscounts},dayDiscounts:{...state.settings?.dayDiscounts},builderPhotos:{...state.settings?.builderPhotos},recommendOrder:[...(state.settings?.recommendOrder||[])]});
 const DISCOUNT_SECTIONS=['dumplings','noodles','sides','cold','drinks','recommended'];
 // Built-in categories keep their names; staff add their own (key sec-xxxxxxxx) and set the order.
 const BUILTIN_SECTIONS=[['dumplings','饺子／云吞','Your Choice'],['noodles','面条','Noodles'],['sides','配菜','Sides'],['cold','凉菜','Cold Dishes'],['drinks','饮品','Drinks'],['recommended','固定搭配','Recommended']];
@@ -198,9 +199,15 @@ export function createCatalogService(storage,{now=()=>new Date()}={}){
   async public(){const state=await load(),view=catalogView(state);return {revision:view.revision,lunchSets:view.lunchSets,sections:view.sections.map(({count,...x})=>x),items:withPromotions(view.items,now()).map(({stock,reserved,...d})=>d),settings:settingsOf(state)}},
   async admin(){const state=await load();return {...catalogView(state),settings:settingsOf(state),audit:state.audit}},
   async menu(){return withPromotions(catalogView(await load()).items,now())},
-  async checkoutSnapshot(table){const state=await load();return {menu:withPromotions(catalogView(state).items,now()),discount:table?globalThis.OrderPricing.discountFor(settingsOf(state),table,now()):null}},
+  async checkoutSnapshot(table){const state=await load();return {pickupHours:settingsOf(state).pickupHours,menu:withPromotions(catalogView(state).items,now()),discount:table?globalThis.OrderPricing.discountFor(settingsOf(state),table,now()):null}},
   async tableDiscount(table){return globalThis.OrderPricing.discountFor(settingsOf(await load()),table,now())},
+  async pickupHours(){return settingsOf(await load()).pickupHours},
   async saveSettings(input){
+   if(input.action==='pickup-hours'){
+    const pickupHours=cleanPickupHours(input.pickupHours);
+    const state=await change(s=>{s.settings={...s.settings,pickupHours};audit(s,'settings','pickup-hours',{pickupHours})});
+    return {...catalogView(state),settings:settingsOf(state),audit:state.audit};
+   }
    if(input.action==='day-discount'){
     const date=typeof input.date==='string'?input.date:'',today=globalThis.OrderPricing.shopDate(now());
     const day=Date.parse(date+'T00:00:00Z');

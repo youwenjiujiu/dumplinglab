@@ -78,7 +78,7 @@ const online = createOnlineService({
 const make = (items = [{ id: drink.id, qty: 1 }], extra = {}) => ({
   requestId: randomUUID(),
   token: randomBytes(32).toString("hex"),
-  mode: "takeaway",
+  mode: "takeaway",customer:{name:'Pickup QA',phone:'91234567'},pickupDate:new Date(Date.now()+86400000+8*3600000).toISOString().slice(0,10),pickupTime:'11:30',
   pickupLocation: "test",
   items,
   ...extra,

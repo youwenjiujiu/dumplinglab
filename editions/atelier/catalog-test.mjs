@@ -36,7 +36,7 @@ const records=new Map();let creates=0,expired=0;
 const service=createOnlineService({inventory,config:{locations:[{id:'test',name:'Test',address:'Test'}],origin:'https://example.test'},storage:{
  async read(id){return structuredClone(records.get(id)||null)},async write(id,value,etag){if(records.get(id)?.etag!==etag)throw Object.assign(new Error('Conflict'),{conflict:true});records.set(id,{value:structuredClone(value),etag:String(Number(etag||0)+1)})},isConflict:e=>e.conflict,async all(){return [...records.values()].map(r=>r.value)}
 },payment:{ensureReady(){},async create(o){creates++;return {id:'cs_'+o.id,client_secret:'test'}},async expire(){expired++;return {status:'expired',payment_status:'unpaid'}}}});
-const request=()=>({requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'takeaway',pickupLocation:'test',items:[{id:simple.id,qty:1}]});
+const request=()=>({requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'takeaway',customer:{name:'Pickup QA',phone:'91234567'},pickupDate:new Date(Date.now()+86400000+8*3600000).toISOString().slice(0,10),pickupTime:'11:30',pickupLocation:'test',items:[{id:simple.id,qty:1}]});
 const first=request();assert.equal((await service.quote(first)).total,8.5);
 const checkout=await service.checkout(first);assert.equal((await inventory.admin()).items.find(d=>d.id===simple.id).available,0);
 await assert.rejects(service.checkout(request()),/售罄/);
@@ -70,7 +70,7 @@ assert.throws(()=>requireStaff({headers:{}},'test-password'),e=>e.status===401);
 requireStaff({headers:{authorization:'Basic '+Buffer.from('staff:test-password').toString('base64')}},'test-password');
 assert.throws(()=>imageType(Buffer.from('<svg/>')));assert.throws(()=>imageId('../../secrets'));
 {const settings=createCatalogService(memory());
-assert.deepEqual((await settings.public()).settings,{tableDiscounts:{},dayDiscounts:{},builderPhotos:{},recommendOrder:[]},'no discounts, card photos or 推荐 order by default');
+assert.deepEqual((await settings.public()).settings,{pickupHours:{daily:[['11:30','14:30'],['17:30','21:00']],exceptions:{}},tableDiscounts:{},dayDiscounts:{},builderPhotos:{},recommendOrder:[]},'no discounts, card photos or 推荐 order by default');
 await settings.saveSettings({action:'table-discount',table:'a1',discount:{type:'percent',value:20,note:'周五包场'}});
 await settings.saveSettings({action:'table-discount',table:'B2',discount:{type:'amount',value:50}});
 assert.deepEqual(await settings.tableDiscount('A1'),{type:'percent',value:20,note:'周五包场'});

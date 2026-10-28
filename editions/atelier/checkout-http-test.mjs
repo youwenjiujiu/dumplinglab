@@ -33,7 +33,7 @@ try {
   assert.equal(cart.items.length,0);assert.equal(cart.orders.length,1);assert.equal(cart.orders[0].status,'paid');
   assert.equal((await api('/api/feed')).events.length,1);
   await api('/api/resolve',{id:input.requestId});assert.equal((await api('/api/feed')).events.length,0);
-  const pickup={requestId:randomUUID(),token:'d'.repeat(64),mode:'takeaway',pickupLocation:cfg.locations[0].id,items:[{id:'lunch-v5-onsen-egg',qty:1}]};
+  const pickup={requestId:randomUUID(),token:'d'.repeat(64),mode:'takeaway',customer:{name:'Pickup QA',phone:'91234567'},pickupDate:cfg.pickupDays[0].date,pickupTime:cfg.pickupDays[0].slots[0],pickupLocation:cfg.locations[0].id,items:[{id:'lunch-v5-onsen-egg',qty:1}]};
   await api('/api/online',{...pickup,action:'checkout'});
   await api('/api/online',{...pickup,action:'preview-pay'});
   assert((await api('/api/online?id='+pickup.requestId,null,pickup.token)).order.pickup.number);

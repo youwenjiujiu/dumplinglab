@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { onlineConfig, onlineService, stripeCheckoutParams } from '../../web/server/online-production.js';
+import {catalogService} from '../../web/server/catalog-production.js';
+import {DEFAULT_PICKUP_HOURS} from '../../web/server/pickup-hours.js';
+const originalHours=catalogService.pickupHours;catalogService.pickupHours=async()=>structuredClone(DEFAULT_PICKUP_HOURS);
 import webhook from '../../web/api/payment-webhook.js';
 
 // Local fake credentials only. No Stripe, Vercel or durable-storage calls.
@@ -19,14 +22,14 @@ try {
   for (const flag of [undefined, 'false', 'TRUE', '1']) {
     if (flag === undefined) delete process.env.DL_PAYMENTS_ENABLED;
     else process.env.DL_PAYMENTS_ENABLED = flag;
-    assert.equal(onlineConfig().takeawayEnabled, false);
-    assert.equal(onlineConfig().deliveryEnabled, false);
+    assert.equal((await onlineConfig()).takeawayEnabled, false);
+    assert.equal((await onlineConfig()).deliveryEnabled, false);
   }
   process.env.DL_PAYMENTS_ENABLED = 'true';
-  assert.equal(onlineConfig().takeawayEnabled, true);
-  assert.equal(onlineConfig().deliveryEnabled, false, 'Delivery stays unavailable even with credentials');
+  assert.equal((await onlineConfig()).takeawayEnabled, true);
+  assert.equal((await onlineConfig()).deliveryEnabled, false, 'Delivery stays unavailable even with credentials');
   delete process.env.STRIPE_WEBHOOK_SECRET;
-  assert.equal(onlineConfig().takeawayEnabled, false);
+  assert.equal((await onlineConfig()).takeawayEnabled, false);
   process.env.STRIPE_WEBHOOK_SECRET = 'whsec_local_fixture';
   process.env.DL_PAYMENTS_ENABLED = 'false';
 
@@ -77,6 +80,7 @@ try {
   assert.equal((await webhook.fetch(new Request('https://restaurant.example/api/payment-webhook'))).status, 405);
   console.log('PASS: explicit checkout gate, app-scoped metadata, inclusive SGD total, signed foreign-event isolation, live/test isolation, paused-payment callback recovery. No external calls.');
 } finally {
+  catalogService.pickupHours=originalHours;
   globalThis.fetch = originalFetch;
   onlineService.paymentEvent = originalPaymentEvent;
   for (const key of Object.keys(process.env)) if (!(key in previous)) delete process.env[key];

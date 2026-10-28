@@ -2416,3 +2416,5 @@ dialog:has(> div > iframe[name^="__privateStripeFrame"]) > div { position: absol
 /* Dish names remain bilingual; the selected language leads. */
 .menu-section .dish-english{display:block!important;white-space:normal;overflow-wrap:anywhere;font:400 11px/1.5 var(--sans);color:var(--muted);margin-top:5px}
 #sheet[data-mode="dish"] .detail-top .detail-other{display:block!important;white-space:normal;font-size:13px;line-height:1.5;color:var(--muted)}
+
+.pickup-details{padding:24px 20px}.pickup-details h2{margin:0 0 24px}.pickup-details form{display:grid;gap:20px;max-width:560px;margin:auto}.pickup-details h2{max-width:560px;margin-inline:auto}

@@ -10,7 +10,7 @@ const records=new Map(),expired=[];let stripeState='expired';
 const online=createOnlineService({inventory:catalog,now,config:{origin:'https://example.test',locations:[{id:'shop',name:'Shop',address:'1 Road'}]},
  storage:{async read(id){return structuredClone(records.get(id)||null)},async write(id,value,etag){if(records.get(id)?.etag!==etag)throw Object.assign(new Error('Conflict'),{conflict:true});records.set(id,{value:structuredClone(value),etag:randomUUID()})},isConflict:e=>e.conflict,async all(){return [...records.values()].map(r=>structuredClone(r.value))}},
  payment:{ensureReady(){},async create(o){return {id:'cs_'+o.id.replaceAll('-',''),client_secret:'secret'}},async expire(id){expired.push(id);return stripeState==='complete'?{status:'complete',payment_status:'paid'}:{status:'expired',payment_status:'unpaid'}}}});
-const start=async()=>{const input={requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'takeaway',pickupLocation:'shop',items:[{id:dish.id,qty:2}]};await online.checkout(input);return input.requestId};
+const start=async()=>{const input={requestId:randomUUID(),token:randomBytes(32).toString('hex'),mode:'takeaway',customer:{name:'Pickup QA',phone:'91234567'},pickupDate:new Date(clock+86400000+8*3600000).toISOString().slice(0,10),pickupTime:'11:30',pickupLocation:'shop',items:[{id:dish.id,qty:2}]};await online.checkout(input);return input.requestId};
 const available=async()=>(await catalog.menu()).find(d=>d.id===dish.id).available;
 
 const first=await start();
@@ -35,6 +35,6 @@ assert.equal(await available(),1,'its stock stays held for the payment webhook')
 // Stripe's own expiry stays above its 30-minute minimum for any link we create in our window.
 process.env.DL_ORDER_ORIGIN||='https://example.test';
 const {stripeCheckoutParams}=await import('../../web/server/online-production.js');
-const at='2026-10-21T10:00:00.000Z',expiresAt=Number(stripeCheckoutParams({id:'x',no:'1',mode:'takeaway',at,total:3,subtotal:3,deliveryFee:0}).get('expires_at'));
+const at='2026-10-21T10:00:00.000Z',expiresAt=Number(stripeCheckoutParams({id:'x',no:'1',mode:'takeaway',customer:{name:'Pickup QA',phone:'91234567'},pickupDate:new Date(clock+86400000+8*3600000).toISOString().slice(0,10),pickupTime:'11:30',at,total:3,subtotal:3,deliveryFee:0}).get('expires_at'));
 assert(expiresAt-Date.parse(at)/1000-PAYMENT_WINDOW_MS/1000>=30*60,'Stripe minimum respected');
 console.log('PASS payment timeout: 15-minute hold, Stripe link voided before release, last-moment payments kept, Stripe expiry above its minimum.');
