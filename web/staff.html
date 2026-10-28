@@ -44,6 +44,7 @@
 <style>
 :root{--bg:#f5f6f8;--card:#fff;--line:#e7e8eb;--sesame:#952f2b;--ink:#25282d}
 .order-shell header{position:static;flex-wrap:wrap;background:white;gap:14px;padding:22px 28px}.order-shell header h1{font-size:22px}.order-shell #list{max-width:1100px;margin:auto;padding:24px}.order-shell .pickup-check{padding:24px 28px;background:white}.order-shell .pickup-check form{max-width:680px}.order-shell .pickup-check button,.order-shell #enable{background:#952f2b;color:white;border-radius:7px;min-height:44px}.order-shell .item .lines{color:#444950}.order-shell .item .done{background:#fbefee;color:#952f2b;min-height:44px}.order-shell .empty{color:#72767d}.order-shell .item .time{color:#72767d}.order-shell .item .note{color:#72767d}.order-shell .pickup-check input{background:white}.order-shell #pickupResult{max-width:680px}
+.order-actions{display:flex;gap:10px;margin-top:10px}.order-shell .item .order-actions .done{margin-top:0;flex:1;width:auto}.order-actions .clear-table{flex:1;min-height:44px;border:1px solid var(--line);border-radius:12px;background:white;color:var(--ink);font-size:13px;font-weight:600}.order-actions button:active{transform:scale(.97)}.clear-result{font-size:13px;line-height:1.6;margin-top:8px}.clear-result:empty{display:none}
 @media(max-width:600px){.order-shell header,.order-shell .pickup-check{padding:18px 16px}.order-shell #list{padding:16px}.order-shell .pickup-check form{flex-wrap:wrap}.order-shell .pickup-check input{flex-basis:100%}}
 </style>
 </head>
@@ -98,20 +99,24 @@ async function staffFetch(url,options={},mayPrompt=true){
 }
 dot.parentElement.onclick=()=>{ authCancelled=false; staffPassword=""; sessionStorage.removeItem("dl-staff-password"); stTxt.textContent="等待登录…"; };
 
-document.getElementById('endTableForm').onsubmit=async e=>{
-  e.preventDefault();
-  const table=document.getElementById('endTable').value.trim().toUpperCase(),group=document.getElementById('endGroup').value.trim().toUpperCase();
-  const result=document.getElementById('endTableResult'),button=e.target.querySelector('button');
+async function clearTable(table,group,result,button,orderId=null){
   button.disabled=true;result.textContent='核对中…';
   try{
     const current=await fetch(`/api/cart?table=${encodeURIComponent(table)}&group=${encodeURIComponent(group)}`,{cache:'no-store'});
     const snapshot=await current.json();if(!current.ok)throw Error(snapshot.error||'无法读取本桌');
+    if(orderId&&!snapshot.cart.orders.some(o=>o.id===orderId))throw Error('这笔订单不属于当前就餐，请使用上方清台入口核对桌号。');
     if(snapshot.cart.paymentPending)throw Error('本组有未确认付款，请先核实，暂不能清台。');
     if(!confirm(`确认 ${table} 桌 ${group} 组客人已离席？清台后，新客看不到本轮订单和选菜，后台账单保留。`)){result.textContent='未清台';return;}
     const response=await staffFetch('/api/online',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'end-table-session',table,group,tableSession:snapshot.cart.tableSession})});
     const out=await response.json();if(!response.ok)throw Error(out.error||'清台失败');
     result.textContent=`${table} 桌 ${group} 组已清台，可以接待下一组客人。`;
-  }catch(error){result.textContent=error.message;}finally{button.disabled=false;}
+    if(orderId)button.dataset.cleared='true';
+  }catch(error){result.textContent=error.message;}finally{button.disabled=button.dataset.cleared==='true';}
+};
+
+document.getElementById('endTableForm').onsubmit=async e=>{
+  e.preventDefault();
+  await clearTable(document.getElementById('endTable').value.trim().toUpperCase(),document.getElementById('endGroup').value.trim().toUpperCase(),document.getElementById('endTableResult'),e.target.querySelector('button'));
 };
 
 document.getElementById("enable").onclick=()=>{
@@ -169,8 +174,10 @@ function render(evt){
       ${evt.note?`<div class="note">备注：${esc(evt.note)}</div>`:""}
       ${evt.pricingVersion?`<div class="time">菜品 ${money(evt.subtotal)}${evt.discount?`（已减折扣 ${money(evt.discount)}）`:''}${evt.mode==='delivery'?` · 配送费 9% ${money(evt.deliveryFee)}`:''}${evt.gst!==undefined?` · GST 9% ${money(evt.gst)}`:evt.mode==='dinein'?` · 服务费 10% ${money(evt.serviceCharge)}`:''}</div>`:''}
       <div class="total">${money(evt.total||0)}</div>
-      <button class="done">${evt.pickup ? (evt.preparationStatus==='ready' ? '确认已交餐' : evt.preparationStatus==='preparing' ? '标记可取餐' : '开始制作') : '已完成'}</button>`;
+      <div class="order-actions"><button class="done">${evt.pickup ? (evt.preparationStatus==='ready' ? '确认已交餐' : evt.preparationStatus==='preparing' ? '标记可取餐' : '开始制作') : '已完成'}</button>${!online&&evt.table ? '<button class="clear-table">清台</button>' : ''}</div><div class="clear-result" role="status" aria-live="polite"></div>`;
   }
+  const clearButton=el.querySelector('.clear-table');
+  if(clearButton)clearButton.onclick=()=>clearTable(evt.table,evt.group||'A',el.querySelector('.clear-result'),clearButton,evt.id);
   el.querySelector(".done").onclick=async()=>{
     const button=el.querySelector(".done"), label=button.textContent; button.disabled=true; button.textContent="保存中…";
     try{

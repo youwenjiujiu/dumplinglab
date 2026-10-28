@@ -36,8 +36,13 @@ try{
  await peer.waitForFunction(()=>store.orders.length===1);
  const oldSession=await peer.evaluate(()=>store.remote.tableSession);
  staff.on('dialog',dialog=>dialog.accept());
- await staff.locator('#endTableForm button').click();
- await staff.waitForFunction(()=>document.querySelector('#endTableResult').textContent.includes('已清台'));
+ await staff.locator('.clear-table').first().waitFor();
+ await staff.locator('.order-actions').first().screenshot({path:fileURLToPath(new URL('adjacent-actions-phone.png',output))});
+ await staff.setViewportSize({width:1200,height:900});
+ await staff.screenshot({path:fileURLToPath(new URL('adjacent-actions-desktop.png',output))});
+ await staff.locator('.clear-table').first().click();
+ await staff.waitForFunction(()=>document.querySelector('.clear-result').textContent.includes('已清台'));
+ await staff.setViewportSize({width:390,height:844});
  await staff.screenshot({path:fileURLToPath(new URL('staff-cleared.png',output))});
  await peer.waitForFunction(()=>store.sessionEnded===true);
  await peer.evaluate(()=>showCart());
