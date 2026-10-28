@@ -113,3 +113,4 @@ dialog{position:fixed;inset:0 0 0 auto;margin:0;border:0;border-left:1px solid v
 
 .report-refund-form .refund-items{flex-basis:100%;min-width:0;border:0;padding:0;margin:0}.report-refund-form .refund-items[hidden]{display:none}.refund-items legend{font-weight:600;margin-bottom:12px}.report-refund-form .refund-item{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:20px;padding:10px 0;color:var(--ink)}.refund-item span{display:flex;flex-direction:column;gap:4px}.refund-item small,.refund-items>small{color:var(--muted);font-size:12px}.refund-item select{min-width:80px;min-height:44px}.refund-mode select{min-height:40px}.report-refund-form .refund-help{color:var(--muted)}
 .report-refund-form .refund-item select{width:90px;flex:0 0 90px}.report-refund-form .refund-item span{flex:1;min-width:0}
+.apology-admin small{overflow-wrap:anywhere}.apology-admin button{min-height:44px;margin:6px 0}.apology-admin select{margin-top:8px}

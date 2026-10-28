@@ -2413,3 +2413,6 @@ html[lang="en"] #lunchOptions [data-detail-filling] { line-height: 1.2; }
 /* Stripe's PayNow QR page fills the screen from the very top, and on iPhones its × stays hidden
    under the status bar. Start the page a further 44px below the safe area, on white. */
 dialog:has(> div > iframe[name^="__privateStripeFrame"]) > div { position: absolute; inset: env(safe-area-inset-top) 0 0; box-sizing: border-box; border-top: 44px solid #fff; }
+/* Dish names remain bilingual; the selected language leads. */
+.menu-section .dish-english{display:block!important;white-space:normal;overflow-wrap:anywhere;font:400 11px/1.5 var(--sans);color:var(--muted);margin-top:5px}
+#sheet[data-mode="dish"] .detail-top .detail-other{display:block!important;white-space:normal;font-size:13px;line-height:1.5;color:var(--muted)}

@@ -1,3 +1,4 @@
+import { APOLOGY_DAY, apologyEligible, apologyId, apologyReward } from './apology-core.js';
 import { createHash } from "node:crypto";
 import { RequestError } from "./order-core.js";
 import { waitForStorageRetry } from './storage-conflict.js';
@@ -217,6 +218,51 @@ export function createRewardsService(storage, { now = () => new Date() } = {}) {
         ),
         audit: s.audit,
       };
+    },
+    async apologyStatus(memberId=null){
+      const s=await read();
+      return {day:APOLOGY_DAY,requests:Object.values(s.apologyRequests||{}).filter(r=>!memberId||r.memberId===memberId),issued:Object.values(s.vouchers).filter(v=>v.source==='apology').length};
+    },
+    async requestApology(memberId,orderNo,orders){
+      if(!key(memberId))fail('请先登录',401);
+      if(typeof orderNo!=='string'||!/^\d{4,8}$/.test(orderNo.trim()))fail('请输入付款订单号',400);
+      const matches=orders.filter(o=>apologyEligible(o)&&String(o.no)===orderNo.trim()&&!o.memberId);
+      if(matches.length!==1)fail('无法自动匹配这笔订单，请联系店员核对',409);
+      const order=matches[0],id=apologyId(memberId);
+      await change(s=>{
+        if(s.vouchers[id])return false;
+        s.apologyRequests||={};
+        if(s.apologyRequests[id]?.status==='approved')return false;
+        s.apologyRequests[id]={id,memberId,orderId:order.id,orderNo:order.no,status:'pending',at:now().toISOString()};
+      });
+      return {requestId:id};
+    },
+    async grantApology(input,catalog,orders){
+      const reward=apologyReward(input,catalog),eligible=orders.filter(apologyEligible),issued=[];
+      await change(s=>{
+        issued.length=0;
+        s.apologyOrders||={};
+        let recipients;
+        if(input.requestId){
+          const request=s.apologyRequests?.[input.requestId];
+          if(!request)fail('找不到补发申请',404);
+          const order=eligible.find(o=>o.id===request.orderId&&!o.memberId);
+          if(!order)fail('原订单不符合补发条件');
+          const owner=s.apologyOrders[order.id];
+          if(owner&&owner!==request.memberId)fail('这笔匿名订单已补发，请勿重复发券');
+          recipients=[{memberId:request.memberId,orderId:order.id}];
+        }else recipients=eligible.filter(o=>key(o.memberId)).map(o=>({memberId:o.memberId,orderId:o.id}));
+        for(const r of recipients){
+          const id=apologyId(r.memberId);
+          if(!s.vouchers[id]){
+            s.vouchers[id]={id,...reward,memberId:r.memberId,source:'apology',status:'available',issuedAt:now().toISOString(),expiresAt:new Date(now().getTime()+30*86400000).toISOString(),sourceOrderId:r.orderId};
+            account(s,r.memberId);issued.push(id);
+            audit(s,'apology-grant',{orderId:r.orderId,voucherId:id});
+          }
+          if(input.requestId){s.apologyOrders[r.orderId]=r.memberId;s.apologyRequests[input.requestId].status='approved';}
+        }
+      });
+      return {issued:issued.length};
     },
     async save(input, catalog) {
       if (!Number.isInteger(input.revision)) fail("请刷新积分设置");

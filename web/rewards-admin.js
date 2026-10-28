@@ -37,6 +37,19 @@ globalThis.RewardAdmin = (() => {
           )
           .join("") || "<p>暂无积分操作。</p>"
       }</details>`;
+      const eligibleGifts=catalog.flatMap(d=>d.active!==false&&d.kind==='dumpling'?Object.entries(d.variants||{}).filter(([,v])=>v.pieces===5&&v.prep==='boiled'&&!v.noodles&&!v.legacy).map(([style])=>({dishId:d.id,style,label:d.cn+' · '+style})):[]);
+      const apology=document.createElement('section');apology.className='reward-admin-rules apology-admin';
+      apology.innerHTML=`<h2>10月28日致歉券</h2><p>每账号一张5颗水饺券，发放后30天有效，无最低消费。仅限当天已付款堂食订单。匿名订单须核对付款记录后批准，每单最多补发一次。</p><label>兑换菜品<select data-apology-gift>${eligibleGifts.map((g,i)=>`<option value="${i}">${esc(g.label)}</option>`).join('')}</select></label><button type="button" data-apology-batch>发给当天已关联账号的客人</button><p data-apology-result role="status"></p><div data-apology-pending></div>`;
+      panel.append(apology);
+      const result=apology.querySelector('[data-apology-result]');
+      async function send(requestId){const gift=eligibleGifts[Number(apology.querySelector('select').value)];if(!gift)throw Error('没有符合条件的5颗水饺');return request('/api/apology',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'grant',dishId:gift.dishId,style:gift.style,...(requestId?{requestId}:{})})});}
+      async function pending(){
+        const status=await request('/api/apology?admin=1');
+        apology.querySelector('[data-apology-pending]').innerHTML=`<p>已发 ${status.issued} 张</p>`+status.requests.filter(r=>r.status==='pending').map(r=>`<p>订单 #${esc(r.orderNo)} · 申请时间 ${esc(new Date(r.at).toLocaleString('zh-SG',{timeZone:'Asia/Singapore'}))}<br><small>申请编号 ${esc(r.id)}</small><br><button type="button" data-apology-approve="${esc(r.id)}">已核对付款记录，批准补发</button></p>`).join('');
+        apology.querySelectorAll('[data-apology-approve]').forEach(b=>b.onclick=async()=>{if(!confirm('已核对客人的付款记录及申请账号，确认补发？'))return;b.disabled=true;try{const out=await send(b.dataset.apologyApprove);result.textContent=`新增 ${out.issued} 张券（重复申请不会重复发券）`;await pending();}catch(e){result.textContent=e.message;b.disabled=false;}});
+      }
+      apology.querySelector('[data-apology-batch]').onclick=async e=>{if(!confirm('确认按所选菜品发放致歉券？同一账号只发一张。'))return;const b=e.currentTarget;b.disabled=true;try{const out=await send();result.textContent=`新增 ${out.issued} 张券`;await pending();}catch(e){result.textContent=e.message;}finally{b.disabled=false;}};
+      pending().catch(e=>result.textContent=e.message);
       const form = panel.querySelector("form"),
         message = form.querySelector("[role=status]");
       form.onsubmit = async (e) => {

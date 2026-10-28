@@ -25,7 +25,7 @@ globalThis.RewardsUI = (() => {
     return out;
   }
   // Vouchers now come from more than one issuer; the account panel says which.
-  const issuer = (r) => (r.source === "tiger" ? "TIGER" : "CanCan");
+  const issuer = (r) => (r.source === "apology" ? "Dumpling Lab" : r.source === "tiger" ? "TIGER" : "CanCan");
 
   /* Arriving from the printed voucher's QR. Signing in is the whole claim:
      one voucher per account, and it lands in 优惠券 where checkout will find
@@ -521,6 +521,10 @@ globalThis.RewardsUI = (() => {
     if(view === 'vouchers') {
       d.classList.add('coupon-page');
       body.innerHTML = list.length ? `${atelierCards(list)}<p class="rewards-error" role="alert"></p>` : `<section class="coupon-empty"><div class="coupon-ticket" aria-hidden="true"><span class="coupon-symbol"></span><span class="coupon-perforation"></span></div><h3>${text('暂无可用优惠券','No vouchers yet')}</h3><p>${text('在 CanCan 领取或兑换后，<br>餐饮券会显示在这里。','Food vouchers claimed or redeemed<br>on CanCan appear here.')}</p><button class="coupon-explore" data-coupon-explore>${text('查看积分兑换','Explore points rewards')} <span>↗</span></button></section><p class="rewards-error" role="alert"></p>`;
+      const apology=(data.vouchers||[]).find(v=>v.source==='apology');
+      body.insertAdjacentHTML('afterbegin',`<section class="apology-note"><h3>${text('致10月28日到店的客人','To our guests on 28 October')}</h3><p>${text('很抱歉，点餐和出单故障影响了您的用餐。我们准备了5颗水饺致歉券，发放后30天有效，无最低消费。','We are sorry that ordering and printing issues affected your visit. Our apology voucher covers five boiled dumplings, valid for 30 days from issue with no minimum spend.')}</p>${apology?`<p>${text('致歉券已存入您的账户。','Your apology voucher has been added to your account.')}</p>`:`<form data-apology-request><label>${text('当天未登录？填写付款订单号，由店员核实补发。','Ordered without signing in? Enter your paid order number for staff verification.')}<input name="orderNo" inputmode="numeric" pattern="[0-9]{4,8}" required placeholder="6979"></label><button type="submit">${text('申请补发','Request voucher')}</button><p role="status"></p></form>`}</section>`);
+      const apologyForm=body.querySelector('[data-apology-request]');
+      if(apologyForm)apologyForm.onsubmit=async e=>{e.preventDefault();const button=apologyForm.querySelector('button'),status=apologyForm.querySelector('[role=status]');button.disabled=true;try{const submitted=await request('/api/apology',{action:'request',orderNo:apologyForm.orderNo.value.trim()});status.textContent=text('申请已提交，请向店员出示付款记录。审核通过后券会出现在这里。','Request submitted. Show your payment record to staff; your voucher will appear here after approval.')+' '+text('申请编号：','Request ID: ')+submitted.requestId;}catch(e){status.textContent=e.message;}finally{button.disabled=false;}};
       body.querySelector('[data-coupon-explore]')?.addEventListener('click',()=>account().catch(e=>toast(e.message)));
     }
     if(view !== 'vouchers') {

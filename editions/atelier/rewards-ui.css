@@ -506,3 +506,5 @@
 .member-dumpling-mark,.rewards-bar .member-dumpling-mark{display:block;width:20px;height:26px;fill:currentColor;stroke:none;transform-origin:50% 75%;animation:dumpling-mark 2.4s ease-in-out infinite}
 @keyframes dumpling-mark{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(3deg) translateY(-1px)}}
 @media(prefers-reduced-motion:reduce){.member-dumpling-mark{animation:none}}
+.apology-note{margin:0 0 24px;padding:18px 0;border-bottom:1px solid var(--line)}.apology-note h3{font-size:18px}.apology-note p{font-size:13px;line-height:1.6;margin:10px 0}.apology-note label{display:grid;gap:8px;font-size:13px;line-height:1.6}.apology-note input{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font-size:16px}.apology-note button{margin-top:10px;min-height:44px;padding:10px 16px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}.apology-note button:active{transform:scale(.97)}
+.apology-note [role=status]{overflow-wrap:anywhere}

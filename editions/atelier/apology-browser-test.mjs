@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {readFile,mkdir} from 'node:fs/promises';
+import {launchBrowser} from './browser-test-runtime.mjs';
+const output=new URL('test-output/apology/',import.meta.url);await mkdir(output,{recursive:true});
+const browser=await launchBrowser();
+try{
+ const page=await browser.newPage({viewport:{width:390,height:844}});let submitted=null;
+ await page.route('**/api/rewards',r=>r.fulfill({json:{ok:true,enabled:true,member:{id:'fixture',email:'fixture@example.test'},rewards:[],vouchers:[],points:0,availablePoints:0,pointsPerDollar:1}}));
+ await page.route('**/api/apology',r=>{submitted=JSON.parse(r.request().postData());return r.fulfill({json:{ok:true,requestId:'apology-fixture'}})});
+ await page.goto('http://127.0.0.1:7898/?lang=zh');await page.locator('[data-fulfilment="takeaway"]').click();
+ const card=page.locator('[data-recommendation="chive-fried"].dish-open');
+ await card.locator('.dish-english').waitFor({state:'visible'});
+ assert((await card.innerText()).includes('Potstickers'));
+ await card.screenshot({path:new URL('bilingual-phone.png',output).pathname});
+ await page.evaluate(()=>RewardsUI.account('vouchers'));
+ await page.locator('[data-apology-request] input').fill('6979');await page.locator('[data-apology-request] button').click();
+ await page.waitForFunction(()=>document.querySelector('[data-apology-request] [role=status]').textContent.includes('apology-fixture'));
+ assert.equal(submitted.orderNo,'6979');
+ await page.locator('.apology-note').screenshot({path:new URL('guest-phone.png',output).pathname});
+ await page.setViewportSize({width:1280,height:900});await page.locator('.apology-note').screenshot({path:new URL('guest-desktop.png',output).pathname});
+ const admin=await browser.newPage({viewport:{width:1100,height:900}});await admin.goto('http://127.0.0.1:7898/catalog-admin.html');
+ await admin.setContent('<main><section id="rewardsPanel"></section></main>');
+ await admin.addStyleTag({content:await readFile(new URL('../../web/catalog-admin.css',import.meta.url),'utf8')});
+ await admin.addScriptTag({content:await readFile(new URL('../../web/rewards-admin.js',import.meta.url),'utf8')});
+ await admin.evaluate(()=>RewardAdmin.load(async(url,options)=>url.includes('/api/apology')?{ok:true,issued:3,requests:[{id:'apology-fixture',orderNo:'6979',status:'pending',at:new Date().toISOString()}]}:{revision:1,memberCount:3,totalPoints:20,rewards:{},pointsPerDollar:1,audit:[]},[{id:'dumpling',cn:'猪肉大葱',kind:'dumpling',price:5.8,variants:{'水煮 · 5颗':{pieces:5,prep:'boiled',price:5.8}}}]));
+ await admin.locator('[data-apology-approve]').waitFor();
+ await admin.locator('section.reward-admin-rules').screenshot({path:new URL('staff-desktop.png',output).pathname});
+ await admin.setViewportSize({width:390,height:844});await admin.locator('section.reward-admin-rules').screenshot({path:new URL('staff-phone.png',output).pathname});
+ console.log('PASS bilingual names visible; guest application submitted; staff verification controls render; mobile/desktop screenshots saved.');
+}finally{await browser.close()}

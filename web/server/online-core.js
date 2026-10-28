@@ -429,6 +429,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       return {cancelled:true};
     },
     // Staff-only sales summary; reads paid order snapshots.
+    async apologyOrders(){return (await storage.all()).map(o=>({id:o.id,no:o.no,type:o.type,mode:o.mode,status:o.status,total:o.total,refundedCents:o.refundedCents,freeRewardRefunded:o.freeRewardRefunded,paidAt:o.paidAt,at:o.at,memberId:o.memberId,table:o.table}));},
     async report(query){return summarizeOrders(await storage.all(),query,now());},
     async localPayments(){return (await storage.all()).filter(o=>o.status==='paid'&&(o.paymentMethod==='wallet'||o.total===0)).sort((a,b)=>b.at.localeCompare(a.at)).slice(0,100).map(publicOrder);},
     async confirmReward(input,memberId) {

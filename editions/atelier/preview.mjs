@@ -284,6 +284,13 @@ const server = createServer(async (req, res) => {
         if(input?.action==='redeem-paper')return json(200,{ok:true,...await vouchers.redeemPaper(input)});
         return json(400,{error:'操作无效'});
       }
+      if(url.pathname==='/api/apology'){
+        if(req.method==='POST'&&input.action==='request'){const member=await memberIdentity(req);return json(200,{ok:true,...await rewards.requestApology(member?.id,input.orderNo,await online.apologyOrders())});}
+        requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');
+        if(req.method==='GET')return json(200,{ok:true,...await rewards.apologyStatus()});
+        if(req.method==='POST'&&input.action==='grant')return json(200,{ok:true,...await rewards.grantApology(input,await catalog.menu(),await online.apologyOrders())});
+        return json(400,{error:'操作无效'});
+      }
       if(url.pathname==='/api/rewards'){
         if(req.method==='POST'||url.searchParams.get('admin')==='1'){requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');return json(200,{ok:true,...(req.method==='POST'?await rewards.save(input,await catalog.menu()):await rewards.admin())});}
         if(req.method!=='GET')return json(405,{ok:false,error:'Method not allowed'});
