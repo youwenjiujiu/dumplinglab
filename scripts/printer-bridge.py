@@ -4,7 +4,7 @@
 source may be a local orders.json (testing) or the live order site, e.g.
 "https://order.dumplinglab.sg": then paid orders are read from /api/feed with the
 staff password from DL_STAFF_PASSWORD (or "password" in the config)."""
-import argparse, datetime, fcntl, json, logging, math, os, socket, sqlite3, subprocess, time
+import argparse, datetime, fcntl, hashlib, json, logging, math, os, socket, sqlite3, subprocess, time
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
@@ -76,6 +76,39 @@ def raster(lines):
     bits = bytes(b ^ 255 for b in mono.tobytes())
     header = b'\x1b@\x1ba\x00\x1dv0\x00'+bytes([64, 0, height & 255, height >> 8])
     return header+bits+b'\n\n\n\x1dV\x00', im
+
+
+# Parse by the declared raster length: image bytes can themselves contain ESC/cut
+# sequences, so splitting on a delimiter would corrupt perfectly valid pictures.
+def print_frames(data):
+    frames = []; offset = 0
+    prefix = b'\x1b@\x1ba\x00\x1dv0\x00'
+    trailer = b'\n\n\n\x1dV\x00'
+    while offset < len(data):
+        if data[offset:] == b'\x1bB\x03\x03':
+            frames.append((data[offset:], False));break
+        if data[offset:offset+9] != prefix or len(data)-offset < 13:
+            raise ValueError('Invalid raster header')
+        width = int.from_bytes(data[offset+9:offset+11], 'little')
+        height = int.from_bytes(data[offset+11:offset+13], 'little')
+        end = offset+13+width*height
+        if width != 64 or not height or data[end:end+6] != trailer:
+            raise ValueError('Invalid raster length/cut boundary')
+        frames.append((data[offset:end+6], True));offset = end+6
+    if not frames:
+        raise ValueError('Empty print job')
+    return frames
+
+
+def send_paced(connection, frames, sleep=time.sleep):
+    # Conservative pacing for the shop's network printers. This is transport
+    # throttling, not a claim that the device acknowledged printing each slip.
+    for frame, is_slip in frames:
+        for offset in range(0, len(frame), 1024):
+            connection.sendall(frame[offset:offset+1024])
+            sleep(0.04)
+        if is_slip:
+            sleep(0.6)
 
 
 def stack(images):
@@ -173,6 +206,12 @@ class Bridge:
                 data += b'\x1bB\x03\x03'
             output = Path(self.config['receipts']);output.mkdir(parents=True, exist_ok=True)
             picture.save(output/(job['key'].replace(':', '-')+'.png'))
+            try:
+                frames = print_frames(data)
+            except ValueError as error:
+                self.finish(job, 'failed', str(error));continue
+            output.joinpath(job['key'].replace(':', '-')+'.bin').write_bytes(data)
+            logging.info('%s sending bytes=%s slips=%s sha256=%s transport=paced-v1', job['key'], len(data), sum(s for _, s in frames), hashlib.sha256(data).hexdigest())
             self.db.execute("UPDATE jobs SET status='sending',attempts=attempts+1,updated=? WHERE key=?", (time.time(), job['key']));self.db.commit()
             try:
                 connection = socket.create_connection((config['host'], config.get('port', 9100)), timeout=3)
@@ -183,7 +222,7 @@ class Bridge:
                 self.db.commit();logging.error('%s connection failed: %s', job['key'], error);continue
             try:
                 with connection:
-                    connection.settimeout(10);connection.sendall(data)
+                    connection.settimeout(10);send_paced(connection, frames)
             except OSError as error:
                 self.finish(job, 'uncertain', 'Send outcome unknown; do not auto-retry: '+str(error));continue
             self.finish(job, 'sent', '')
@@ -201,7 +240,7 @@ def main():
     except BlockingIOError:raise SystemExit('A printer bridge already owns this ledger')
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
     live = config['source'].startswith('https://')
-    bridge = Bridge(config);logging.info('Watching %s paid orders; history cutoff=%s; testMode=%s', 'live' if live else 'local', bridge.since, config.get('testMode', True))
+    bridge = Bridge(config);logging.info('Printer bridge paced-v1. Watching %s paid orders; history cutoff=%s; testMode=%s', 'live' if live else 'local', bridge.since, config.get('testMode', True))
     while True:
         try:
             bridge.enqueue(orders_from(load_source(config)), args.include_order);bridge.process()

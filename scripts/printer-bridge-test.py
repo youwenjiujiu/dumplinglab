@@ -34,3 +34,29 @@ with tempfile.TemporaryDirectory() as temp:
  single,_=m.receipt(mixed,'kitchen',mixed['items'],config['font'],False);assert single.count(b'\x1dV\x00')==1,'default stays one ticket per station'
  server.close()
  print('PASS printer bridge: per-dish slips (one cut each, 买一赠一 merged), paid-only, no history replay, duplicate feed deduplication, real loopback raster send, restart suppression, interrupted sends require manual review, captured kitchen/bar split and invalid route rejection.')
+
+# Pacing preserves all image bytes, even when bitmap pixels resemble cut commands.
+face=m.ImageFont.truetype('/System/Library/Fonts/Hiragino Sans GB.ttc',24)
+data,_=m.raster([('销魂皮蛋面',face)])
+bitmap=bytearray(data);bitmap[20:26]=b'\n\n\n\x1dV\x00'
+payload=bytes(bitmap)+data+b'\x1bB\x03\x03'
+frames=m.print_frames(payload);assert len(frames)==3
+class Wire:
+ def __init__(self):self.chunks=[]
+ def sendall(self,chunk):self.chunks.append(chunk)
+wire=Wire();delays=[];m.send_paced(wire,frames,delays.append)
+assert b''.join(wire.chunks)==payload
+assert max(map(len,wire.chunks))<=1024
+assert delays.count(.6)==2
+for bad in [b'',data[:-1],data[:9]+b'\x01\x00'+data[11:]]:
+ try:m.print_frames(bad);raise AssertionError('Malformed frame accepted')
+ except ValueError:pass
+class BrokenWire(Wire):
+ def sendall(self,chunk):
+  super().sendall(chunk)
+  if len(self.chunks)==2:raise OSError('connection interrupted')
+broken=BrokenWire()
+try:m.send_paced(broken,frames,lambda _:None);raise AssertionError('Failure ignored')
+except OSError:pass
+assert len(broken.chunks)==2,'no retry after possible partial send'
+print('PASS paced transport: exact bytes, <=1024-byte writes, per-slip pauses, embedded cut bytes, invalid lengths rejected, interrupted send stops without retry.')
