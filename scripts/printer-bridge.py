@@ -88,8 +88,9 @@ def stack(images):
 
 def receipt(order, station, items, font_path, test_mode=True, per_dish=False):
     font = ImageFont.truetype(font_path, 24)
-    large = ImageFont.truetype(font_path, 32)
-    huge = ImageFont.truetype(font_path, 48)
+    large = ImageFont.truetype(font_path, 40)
+    detail = ImageFont.truetype(font_path, 36)
+    huge = ImageFont.truetype(font_path, 64)
     place = '桌号 '+str(order['table']) if order.get('table') else '自取 '+str((order.get('pickup') or {}).get('number', ''))
     station_name = '厨房' if station == 'kitchen' else '吧台 · 饮品及凉菜'
     paid = datetime.datetime.fromtimestamp(paid_time(order), datetime.timezone(datetime.timedelta(hours=8))).strftime('%m-%d %H:%M') if paid_time(order) else ''
@@ -109,11 +110,11 @@ def receipt(order, station, items, font_path, test_mode=True, per_dish=False):
             lines = [('测试单 / DO NOT PREPARE', font)] if test_mode else []
             lines += [(place, huge), (dish(item), large)]
             if item.get('style'):
-                lines += [(str(item['style']), font)]
+                lines += [(str(item['style']), detail)]
             if item.get('note'):
                 lines += [('这份：'+str(item['note']), large)]
             if order.get('note'):
-                lines += [('备注：'+str(order['note']), font)]
+                lines += [('备注：'+str(order['note']), detail)]
             lines += [(station_name.split(' · ')[0]+' · 订单 '+str(order.get('no', order['id'][:8]))+' · '+paid, font)]
             slips.append(raster(lines))
         return b''.join(data for data, _ in slips), stack([im for _, im in slips])
@@ -124,11 +125,11 @@ def receipt(order, station, items, font_path, test_mode=True, per_dish=False):
     for item in items:
         lines += [(dish(item), large)]
         if item.get('style'):
-            lines += [(str(item['style']), font)]
+            lines += [(str(item['style']), detail)]
         if item.get('note'):
             lines += [('这份：'+str(item['note']), large)]
     if order.get('note'):
-        lines += [('备注：'+str(order['note']), font)]
+        lines += [('备注：'+str(order['note']), detail)]
     lines += [('付款 '+paid, font), ('ID '+order['id'][:18], font)]
     return raster(lines)
 
