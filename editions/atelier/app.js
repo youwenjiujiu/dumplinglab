@@ -56,7 +56,8 @@ const bi = (zh, en) => escapeHTML(tr(zh,en));
 const bilingualText = text => escapeHTML(text);
 const setBilingual = (node, text) => { if(node) node.innerHTML = bilingualText(text); };
 const name = (d) => tr(d.cn,d.name),
-  otherName = (d) => tr(d.name,d.cn);
+  otherName = () => "";
+const availableFirst = (a,b) => Number(Boolean(a.soldOut))-Number(Boolean(b.soldOut));
 const fromPrice = n => language === "en" ? `From ${foodMoney(n)}` : `${foodMoney(n)} 起`;
 // Explicit word boundaries keep ingredients intact at narrow widths.
 const dishNameParts = new Map([
@@ -562,7 +563,7 @@ function searchEntries() {
     const key = r.noodles ? `${r.dishId}:noodles` : r.dishId || r.id;
     if (!entries.has(key)) entries.set(key, { d: r, recommendation: true });
   }
-  return [...entries.values()];
+  return [...entries.values()].sort((a,b)=>availableFirst(a.d,b.d));
 }
 function renderSearchResults() {
   observer?.disconnect();
@@ -604,7 +605,7 @@ function renderMenu() {
       .map((c, ci) => {
         if (c === "lunchsets") return LunchMenu.lunchSetSection();
         if (c === "recommended") return LunchMenu.recommendationSection();
-        const candidates = MENU.filter((d) => d.section === c && matches(d));
+        const candidates = MENU.filter((d) => d.section === c && matches(d)).sort(availableFirst);
         // Sizes of one dish share a single card; the size is chosen in its detail.
         const items = candidates.filter(LunchMenu.visible).filter((d, i, all) => !d.sizeGroup || all.findIndex(x => x.sizeGroup?.[0] === d.sizeGroup[0]) === i);
         if (!candidates.length) return "";
@@ -1000,9 +1001,9 @@ function showPaper() {
     `<div class="sheet-content paper-menu"><h2 id="sheetTitle">${bi("今日菜单", "The menu")}</h2><p class="sheet-intro">${table || "—"} · ${bi("手工现做", "Made to order")}</p>${categories
       .map(
         (c, i) =>
-          `<div class="paper-heading"><small>${String(i + 1).padStart(2, "0")}</small><h3>${categoryName(c)}</h3><em>${categoryOther(c)}</em></div>${c === "lunchsets" ? (globalThis.LUNCH_SETS||[]).map(s=>`<button class="paper-row" data-lunch-set="${s.key}"><span>${s.name}</span><b>${bi("价格待定","Price pending")}</b></button>`).join("") : c === "recommended" ? LUNCH_RECOMMENDATIONS.map(r=>`<button class="paper-row" data-recommendation="${r.id}" ${r.pending ? "disabled" : ""}><span>${dishNameHTML(r)}<small>${otherName(r)}</small></span><i></i><b>${r.pending ? (r.soldOut ? bi("售罄", "Sold out") : bi("暂未开放", "Coming later")) : r.chooseFilling ? bi("选馅儿 ↗", "Choose filling ↗") : LunchMenu.recommendationPriceLabel(r)}</b></button>`).join("") : MENU.filter(
+          `<div class="paper-heading"><small>${String(i + 1).padStart(2, "0")}</small><h3>${categoryName(c)}</h3><em>${categoryOther(c)}</em></div>${c === "lunchsets" ? (globalThis.LUNCH_SETS||[]).map(s=>`<button class="paper-row" data-lunch-set="${s.key}"><span>${s.name}</span><b>${bi("价格待定","Price pending")}</b></button>`).join("") : c === "recommended" ? [...LUNCH_RECOMMENDATIONS].sort(availableFirst).map(r=>`<button class="paper-row" data-recommendation="${r.id}" ${r.pending ? "disabled" : ""}><span>${dishNameHTML(r)}<small>${otherName(r)}</small></span><i></i><b>${r.pending ? (r.soldOut ? bi("售罄", "Sold out") : bi("暂未开放", "Coming later")) : r.chooseFilling ? bi("选馅儿 ↗", "Choose filling ↗") : LunchMenu.recommendationPriceLabel(r)}</b></button>`).join("") : MENU.filter(
             (d) => d.section === c && d.active!==false,
-          )
+          ).sort(availableFirst)
             .map(
               (d) =>
                 `<button class="paper-row" data-dish="${d.id}"><span>${dishNameHTML(d)}<small>${otherName(d)}</small></span><i></i><b>${d.soldOut ? bi("售罄", "Sold out") : LunchMenu.menuPrice(d)}</b></button>`,

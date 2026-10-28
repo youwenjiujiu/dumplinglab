@@ -38,11 +38,20 @@ try{
  assert((await customer.locator('[data-lunch-set="dumpling-set"]').innerText()).includes('11:30–14:30'));
  await customer.locator('[data-lunch-set="dumpling-set"]').click();assert(await customer.locator('#sheetBody .primary').isDisabled());
  assert.equal(await customer.locator('.lunch-set-field select').last().locator('option').count(),1);
+ assert(!(await customer.locator('#sheetBody').innerText()).includes('加面'));
+ await customer.waitForTimeout(450);await customer.screenshot({path:resolve(out,'no-noodle-extra.png')});
  await customer.keyboard.press('Escape');
+ await page.locator('[data-edit-set="dumpling-set"]').click();
+ await page.locator('[name=optionalNoodlesEnabled]').selectOption('true');
+ await page.locator('#saveLunchSet').click();await page.locator('#lunchSetEditor').waitFor({state:'hidden'});
+ await customer.reload();await customer.locator('[data-lunch-set="dumpling-set"]').click();
+ assert((await customer.locator('#sheetBody').innerText()).includes('加面'));
+ await customer.keyboard.press('Escape');
+
  await page.locator('[data-edit-set="dumpling-set"]').click();await page.locator('#setResetPhoto').click();
  await page.locator('#lunchSetForm [name=start]').fill('11:00');await page.locator('#lunchSetForm [name=end]').fill('15:00');
  for(const option of await page.locator('#lunchSetForm [name=drinkChoices]').all())await option.check();
- await page.screenshot({path:resolve(out,'admin-editor.png')});await page.locator('#saveLunchSet').click();await page.locator('#lunchSetEditor').waitFor({state:'hidden'});
+ await page.locator('[name=optionalNoodlesEnabled]').scrollIntoViewIfNeeded();await page.screenshot({path:resolve(out,'admin-editor.png')});await page.locator('#saveLunchSet').click();await page.locator('#lunchSetEditor').waitFor({state:'hidden'});
  await customer.reload();for(const img of await customer.locator('#section-lunchsets img').all())await img.evaluate(i=>i.decode());
  await customer.screenshot({path:resolve(out,'customer-cards.png')});
  await page.locator('[data-edit-set="noodle-set"]').click();

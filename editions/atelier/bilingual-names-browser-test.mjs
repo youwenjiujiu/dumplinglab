@@ -8,11 +8,11 @@ try{
  for(const width of [390,1280]){
   await page.setViewportSize({width,height:900});
   for(const lang of ['zh','en']){
-   if(await page.locator('html').getAttribute('lang')!==lang)await page.locator('#languageButton').click();
-   await card.locator('.dish-english').waitFor({state:'visible'});
-   const text=await card.innerText();assert(text.includes('韭菜虾仁猪肉煎饺'));assert(text.includes('Potstickers'));
+   if(await page.locator('html').getAttribute('lang')!==(lang==='zh'?'zh-CN':'en'))await page.locator('#languageButton').click();
+   await card.locator('.dish-english').waitFor({state:'hidden'});
+   const text=await card.innerText();assert.equal(text.includes('韭菜虾仁猪肉煎饺'),lang==='zh');assert.equal(text.includes('Potstickers'),lang==='en');
    await card.screenshot({path:new URL(`${lang}-${width}.png`,out).pathname});
   }
  }
- console.log('PASS bilingual names: Chinese/English both visible at 390px and 1280px; language switch keeps both names.');
+ console.log('PASS separate Chinese and English dish names at 390px and 1280px.');
 }finally{await browser.close()}
