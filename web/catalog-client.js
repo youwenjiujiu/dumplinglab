@@ -6,13 +6,13 @@
  globalThis.liveRecommendations=(items,settings)=>{
    const list=recommendations.filter(r=>r.pending|| (r.chooseFilling?items.some(d=>d.kind==='dumpling'&&d.active!==false&&d.preparations?.includes('boiled')):items.some(d=>d.id===r.dishId&&d.active!==false&&d.recommended&&(!d.variants||!r.prep||d.preparations.includes(r.prep))))).map(r=>{
     const d=items.find(d=>d.id===r.dishId),original=base.find(d=>d.id===r.dishId);if(!d)return r;
-    return {...r,cn:original?.cn!==d.cn?d.cn:r.cn,name:original?.name!==d.name?d.name:r.name,...(r.ownPhoto?{}:{imageUrl:d.imageUrl,preparationImageUrls:d.preparationImageUrls}),pending:r.pending||d.soldOut||d.active===false,soldOut:!r.pending&&!!d.soldOut};
+    return {...r,cn:original?.cn!==d.cn?d.cn:r.cn,name:original?.name!==d.name?d.name:r.name,...(r.ownPhoto?{}:{imageUrl:d.imageUrl,preparationImageUrls:d.preparationImageUrls,fixedPreparation:d.fixedPreparation}),pending:r.pending||d.soldOut||d.active===false,soldOut:!r.pending&&!!d.soldOut};
    });
    const represented=new Set(list.map(r=>r.dishId+'|'+(r.prep||'')));
    for(const d of items.filter(d=>d.recommended&&d.active!==false)){
     const prep=d.fixedPreparation?.id||(d.preparations?.includes('boiled')?'boiled':d.preparations?.includes('soup')?'soup':d.preparations?.[0]);
     if(represented.has(d.id+'|'+(prep||'')))continue;
-    list.push({id:'merchant-'+d.id,dishId:d.id,cn:d.cn,name:d.name,prep,img:d.preparationImages?.[prep]||d.img,imageUrl:d.imageUrl,preparationImageUrls:d.preparationImageUrls,pending:d.soldOut,soldOut:d.soldOut});
+    list.push({id:'merchant-'+d.id,dishId:d.id,cn:d.cn,name:d.name,prep,img:d.preparationImages?.[prep]||d.img,fixedPreparation:d.fixedPreparation,imageUrl:d.imageUrl,preparationImageUrls:d.preparationImageUrls,pending:d.soldOut,soldOut:d.soldOut});
    }
    const order=settings?.recommendOrder||[],rank=r=>{const i=order.indexOf(r.id);return i<0?order.length:i};
    return list.map((r,i)=>[r,i]).sort((a,b)=>rank(a[0])-rank(b[0])||a[1]-b[1]).map(([r])=>r);

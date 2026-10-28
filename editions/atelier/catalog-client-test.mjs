@@ -15,3 +15,8 @@ const count=events.length;await ctx.CatalogClient.refresh();assert.equal(events.
 version++;await ctx.CatalogClient.refresh();assert.equal(events.length,count+1);
 fail=true;await ctx.CatalogClient.refresh();assert.equal(events.at(-1),'catalog-unavailable');assert.equal(ctx.MENU.find(d=>d.id===initial[1].id).price,12,'outage does not replace last known catalogue');
 console.log('PASS live catalogue client: shared prices, inactive recommendations, retained receipt IDs, revision gating, network failure');
+const fried=initial.find(d=>d.id==='lunch-v10-pork-chive-shrimp-fried');
+const live=ctx.liveRecommendations(initial.map(d=>d.id===fried.id?{...d,imageUrl:'/api/catalog-image?id=updated.png'}:d),{});
+const card=live.find(r=>r.dishId===fried.id);
+assert.equal(card.fixedPreparation.id,'fried');assert.equal(card.imageUrl,'/api/catalog-image?id=updated.png');
+console.log('PASS fixed potsticker recommendation retains uploaded cover and fixed preparation.');
