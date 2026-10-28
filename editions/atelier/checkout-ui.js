@@ -82,14 +82,14 @@ const CheckoutUI = (() => {
     });
   }
   function itemsHTML(order) {
-    const line = (i, qty) => `<article>${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="80" height="80">` : ''}<div><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}${i.note ? `<small class="cart-line-note">${escapeHTML(i.note)}</small>` : ''}<small>× ${qty}</small></div><b>${money(i.price * qty)}</b></article>`;
+    const line = (i, qty) => `<article>${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="80" height="80">` : ''}<div><strong>${bi(i.name,i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}${i.note ? `<small class="cart-line-note">${escapeHTML(i.note)}</small>` : ''}<small>× ${qty}</small></div><b>${money(i.price * qty)}</b></article>`;
     // A voucher pays for exactly one unit of its dish. That unit is a gift, not
     // a purchase, so it gets its own quieter line at $0 rather than sitting in
     // the list at full price.
     const l = order.loyalty, gift = l?.voucherId && l.discountCents ? order.items.find(i => i.id === l.dishId && (i.style || null) === (l.style || null)) : null;
-    const giftLine = i => `<article class="is-gift">${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="48" height="48">` : ''}<div><span class="gift-tag">${bi('赠品', 'Gift')}</span><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong></div><b>${money(0)}</b></article>`;
+    const giftLine = i => `<article class="is-gift">${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="48" height="48">` : ''}<div><span class="gift-tag">${bi('赠品', 'Gift')}</span><strong>${bi(i.name,i.englishName)}</strong></div><b>${money(0)}</b></article>`;
     // 买一赠一 units arrive from the server as their own $0 line.
-    const bogoLine = i => `<article class="is-gift">${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="48" height="48">` : ''}<div><span class="gift-tag">${bi('买一赠一', 'Buy 1 get 1')}</span><strong>${escapeHTML(language === 'zh' ? i.name : i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}<small>× ${i.qty}</small></div><b>${money(0)}</b></article>`;
+    const bogoLine = i => `<article class="is-gift">${dish(i.id)?.img ? `<img src="${escapeHTML(photo(dish(i.id), 's', i.style))}" alt="" width="48" height="48">` : ''}<div><span class="gift-tag">${bi('买一赠一', 'Buy 1 get 1')}</span><strong>${bi(i.name,i.englishName)}</strong>${i.style ? `<small>${escapeHTML(styleName(i.style))}</small>` : ''}<small>× ${i.qty}</small></div><b>${money(0)}</b></article>`;
     const paid = order.items.flatMap(i => i.promo === 'bogo' ? [bogoLine(i)] : i !== gift ? [line(i, i.qty)] : i.qty > 1 ? [line(i, i.qty - 1)] : []);
     return [...paid, ...(gift ? [giftLine(gift)] : [])].join('');
   }
