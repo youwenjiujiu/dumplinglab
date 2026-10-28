@@ -32,6 +32,7 @@ function fixture(options = {}) {
       if(path.startsWith('/api/cart?'))return {cart:{items:this.items,opIds:['op'],paymentPending:state.locked}};
       if(!input)return {config:{preview:false,dineinEnabled:true,publishableKey:'pk_live_fixture'}};
       if(input.action==='checkout'&&state.conflict)throw lock();
+      if(input.action==='checkout'&&state.cartChanged)throw Object.assign(new Error('购物车已更新，请重新确认。'),{status:409,code:'CHECKOUT_CART_CHANGED'});
       if(input.action==='cancel'){state.cancelled++;state.locked=false;return {cancelled:true};}
       return {order:order(input),clientSecret:'cs_fixture_secret'};
     },
@@ -136,3 +137,17 @@ const res={setHeader(){},status(code){this.code=code;return this;},json(body){re
 fail(res,Object.assign(new RequestError('本组正在付款，请等待付款确认。',409),{code:'PAYMENT_PENDING',cart:{token:'must-not-leak'}}));
 assert.equal(res.code,409);assert.equal(response.code,'PAYMENT_PENDING');assert(!response.cart);
 console.log('PASS checkout recovery: original-payer resume, cross-device locks, preserved drafts, safe race handling, retry, stopped loading, paid/expired recovery and polling after blocked edits. No live calls.');
+
+// A rejected pre-reservation snapshot is not a payment and must be replaceable.
+const stale = fixture({cartChanged:true});
+await stale.open();
+const rejected = stale.calls.find(c=>c.input?.action==='checkout').input;
+assert.equal(stale.owner.order,null);
+assert.match(stale.root.innerHTML,/购物车已更新/);
+stale.state.cartChanged=false;
+await stale.click('data-checkout-retry');
+assert.notEqual(stale.owner.order.requestId,rejected.requestId);
+assert.equal(stale.root.querySelector('[data-checkout-pay]').disabled,false);
+fail(res,Object.assign(new RequestError('购物车已更新，请重新确认。',409),{code:'CHECKOUT_CART_CHANGED'}));
+assert.equal(response.code,'CHECKOUT_CART_CHANGED');
+console.log('PASS stale checkout: explicit pre-reservation rejection releases failed request; retry creates fresh credentials and reaches payment.');

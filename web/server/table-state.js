@@ -13,16 +13,22 @@ const canonical = items => {
   return JSON.stringify([...units].sort(([a], [b]) => a.localeCompare(b)));
 };
 const cleanNote = note => typeof note === "string" ? note.trim().slice(0, 240) : "";
+const cartChanged = message => Object.assign(new RequestError(message, 409), { code: 'CHECKOUT_CART_CHANGED' });
 const paymentLocked = message => Object.assign(new RequestError(message, 409), { code: 'PAYMENT_PENDING' });
 
-export function createTableStore(storage, legacy) {
+export function createTableStore(storage, legacy, { now = () => Date.now() } = {}) {
+  const day = time => Math.floor((time + 8 * 3600000) / 86400000);
+  const today = record => day(Date.parse(record.at)) === day(now());
+  // Keep the ledger for staff/idempotency, but never share yesterday's meal
+  // with the next guests who scan the permanent table QR code.
+  const activeOperations = state => state.operations.filter(today);
   const pathFor = (table, group) => `${TABLE_STATE_PREFIX}${cleanTable(table)}/${cleanGroup(group)}.json`;
   const snapshot = (state,menu) => ({
-    ...reduceCartOperations(state.operations,menu),
-    orders: state.events.filter(e => e.type === "order"),
-    contributors: contributorsFor(state.operations),
-    activity: state.activity.slice(-40),
-    version: `v2:${globalThis.MENU_VERSION}:${state.revision}${menu?':'+createHash('sha256').update(JSON.stringify(menu)).digest('hex').slice(0,12):''}`,
+    ...reduceCartOperations(activeOperations(state),menu),
+    orders: state.events.filter(e => e.type === "order" && today(e)),
+    contributors: contributorsFor(activeOperations(state)),
+    activity: state.activity.filter(today).slice(-40),
+    version: `v2:${globalThis.MENU_VERSION}:${state.revision}:${day(now())}${menu?':'+createHash('sha256').update(JSON.stringify(menu)).digest('hex').slice(0,12):''}`,
     paymentPending: Boolean(state.paymentHold),
   });
   async function read(table, group) {
@@ -70,7 +76,7 @@ export function createTableStore(storage, legacy) {
       const { state } = await transact(op.table, op.group, state => {
         if (state.operations.some(o => o.id === op.id) || state.events.some(e => e.cartOpIds?.includes(op.id))) return { changed: false };
         if (state.paymentHold) throw paymentLocked("本组正在付款，请完成或取消付款后再修改菜品。");
-        if (op.kind === "note" && Object.hasOwn(input, "baseNote") && cleanNote(input.baseNote) !== cleanNote(reduceCartOperations(state.operations,menu).note)) {
+        if (op.kind === "note" && Object.hasOwn(input, "baseNote") && cleanNote(input.baseNote) !== cleanNote(reduceCartOperations(activeOperations(state),menu).note)) {
           const error = new RequestError("同桌修改了备注，请确认要保留的内容。", 409);
           error.code = "NOTE_CONFLICT"; error.cart = snapshot(state,menu); throw error;
         }
@@ -92,11 +98,11 @@ export function createTableStore(storage, legacy) {
           if (prior.type !== "order" || canonical(prior.items) !== canonical(order.items) || cleanNote(prior.note) !== cleanNote(order.note)) throw new RequestError("请求编号已用于另一份订单。", 409);
           return { changed: false, event: prior };
         }
-        if (ids.some(id => !state.operations.some(op => op.id === id))) throw new RequestError("同桌已经提交了这份菜单，请查看已下单。", 409);
-        const selectedOps = state.operations.filter(op => selectedIds.has(op.id));
+        if (ids.some(id => !activeOperations(state).some(op => op.id === id))) throw new RequestError("同桌已经提交了这份菜单，请查看已下单。", 409);
+        const selectedOps = activeOperations(state).filter(op => selectedIds.has(op.id));
         const selected = reduceCartOperations(selectedOps,menu);
-        if (canonical(selected.items) !== canonical(order.items)) throw new RequestError("购物车已更新，请重新确认。", 409);
-        if (state.operations.some(op => currentOperation(op,menu) && !selectedIds.has(op.id) && (op.kind === "note" || op.delta < 0))) throw new RequestError("同桌修改了菜品或备注，请重新确认订单。", 409);
+        if (canonical(selected.items) !== canonical(order.items)) throw cartChanged("购物车已更新，请重新确认。");
+        if (activeOperations(state).some(op => currentOperation(op,menu) && !selectedIds.has(op.id) && (op.kind === "note" || op.delta < 0))) throw new RequestError("同桌修改了菜品或备注，请重新确认订单。", 409);
         order.cartOpIds = ids;
         order.contributors = contributorsFor(selectedOps);
         order.actorName = cleanNickname(input.actorName);
@@ -122,11 +128,11 @@ export function createTableStore(storage, legacy) {
           throw paymentLocked("同桌正在支付本单，请勿重复付款。");
         }
         if (state.events.some(e => e.id === order.id)) throw new RequestError("此订单已提交，请查看已下单。", 409);
-        if (ids.some(id => !state.operations.some(op => op.id === id))) throw new RequestError("购物车已更新，请重新确认。", 409);
-        const selected = reduceCartOperations(state.operations.filter(op => selectedIds.has(op.id)),menu);
+        if (ids.some(id => !activeOperations(state).some(op => op.id === id))) throw cartChanged("购物车已更新，请重新确认。");
+        const selected = reduceCartOperations(activeOperations(state).filter(op => selectedIds.has(op.id)),menu);
         if (canonical(selected.items) !== canonical(order.items) || cleanNote(selected.note) !== cleanNote(order.note) ||
-            state.operations.some(op => currentOperation(op,menu) && !selectedIds.has(op.id) && (op.kind === 'note' || op.delta < 0)))
-          throw new RequestError("同桌修改了菜品或备注，请重新确认。", 409);
+            activeOperations(state).some(op => currentOperation(op,menu) && !selectedIds.has(op.id) && (op.kind === 'note' || op.delta < 0)))
+          throw cartChanged("同桌修改了菜品或备注，请重新确认。");
         state.paymentHold = { ...order, cartOpIds: ids };
         return { changed: true };
       });

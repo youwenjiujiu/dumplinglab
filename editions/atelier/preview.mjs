@@ -434,6 +434,7 @@ const server = createServer(async (req, res) => {
       ok: false,
       error: e.status ? e.message : "Local preview error",
       ...(process.env.DL_PREVIEW_TRACE==="1"&&!e.status?{trace:String(e.stack||e).slice(0,600)}:{}),
+      ...(["PAYMENT_PENDING", "CHECKOUT_CART_CHANGED"].includes(e.code) ? { code: e.code } : {}),
       ...(e.code === "NOTE_CONFLICT" ? { code: e.code, cart: e.cart } : {}),
     });
   }

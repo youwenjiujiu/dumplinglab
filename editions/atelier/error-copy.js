@@ -1,6 +1,8 @@
 // Presentation only: never change status codes, pending payments or retry keys.
 (() => {
   const pairs = [
+    ['购物车已更新，请重新确认。', 'Your selection has changed. Review it and try again.'],
+    ['同桌修改了菜品或备注，请重新确认。', 'Your table’s dishes or notes have changed. Review them and try again.'],
     ['付款正在确认，请稍后查询', 'Payment is being confirmed. Check its status shortly.'],
     ['订单已付款，请查询订单状态', 'This order is already paid. Please check its status.'],
     ['本组正在付款，请完成或取消付款后再修改菜品。', 'This group has a pending payment. Complete or cancel it before editing the dishes.'],

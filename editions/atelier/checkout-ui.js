@@ -34,7 +34,7 @@ const CheckoutUI = (() => {
     catch (e) {
       // PAYMENT_PENDING is raised before this request is reserved or persisted.
       // Do not retain a losing request as if it owned the other payer's session.
-      if (locked(e) && owner.order?.requestId === request.requestId) { owner.order = null; owner.emit(); }
+      if ((locked(e) || e?.code === 'CHECKOUT_CART_CHANGED') && owner.order?.requestId === request.requestId) { owner.order = null; owner.emit(); }
       throw e;
     }
   }

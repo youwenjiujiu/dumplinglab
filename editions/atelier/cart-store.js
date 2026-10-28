@@ -99,7 +99,10 @@ class TableCart extends EventTarget {
     );
   }
   get orders() {
-    return this.remote.orders || [];
+    const orders = this.remote.orders || [];
+    if (!this.table) return orders;
+    const day = time => Math.floor((time + 8 * 3600000) / 86400000);
+    return orders.filter(order => day(Date.parse(order.at)) === day(Date.now()));
   }
   setNickname(value) {
     this.nickname = String(value || "")
