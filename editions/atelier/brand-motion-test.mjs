@@ -65,10 +65,10 @@ for(const match of preview.matchAll(/<script(?: src="([^"]+)")?>([\s\S]*?)<\/scr
   vm.runInContext(code,previewContext);
 }
 assert(previewDocument.querySelector('#sheetBody').innerHTML.includes('<dl-pickup-slip'));
-assert(previewDocument.querySelector('#sheetBody').innerHTML.includes('pairing-banner-backdrop-v6.webp'));
-assert(previewDocument.querySelector('#sheetBody').innerHTML.includes('class="order-banner-dish" src="/img/l/potstickers-pork-shrimp-chive-cutaway-v1.webp"'),'Banner reuses the original menu photo directly');
-assert(/\.order-brand-banner \.order-banner-dish\s*\{[^}]*height: auto;[^}]*object-fit: contain;/.test(css),'Original plate is neither stretched nor cropped');
-assert(previewDocument.querySelector('#sheetBody').innerHTML.includes('class="order-banner-pattern" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i>'));
+assert(previewDocument.querySelector('#sheetBody').innerHTML.includes('class="paid-receipt'),'Paid order prints as a paper receipt');
+assert(previewDocument.querySelector('#sheetBody').innerHTML.includes('src="/brand/order-placed-stamp-v1.webp"'));
+assert(css.includes('@keyframes paid-print')&&css.includes('@keyframes paid-stamp'));
+assert(/prefers-reduced-motion: reduce\) \{ \.paid-receipt\.is-printing \.paid-paper, \.paid-receipt\.is-printing \.paid-stamp \{ animation: none; \} \}/.test(css),'Receipt motion respects reduced motion');
 // Entry scenes animate independent parts, but never intercept the real button.
 const entrySource=await read('entry-scenes-v2.js');vm.runInNewContext(entrySource,{});
 const entryDoc=new Node();entryDoc.hidden=false;

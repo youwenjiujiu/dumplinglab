@@ -48,11 +48,10 @@ for (const language of ['zh','en']) {
     vm.runInContext('Fulfilment.showPaidOrder(order)',ctx);
     assert.equal(opened.mode,'pickup');
     assert(body.innerHTML.includes(`data-stage="${stage}"`));
-    assert(body.innerHTML.indexOf('pickup-number')<body.innerHTML.indexOf('checkout-lines'));
-    assert(body.innerHTML.indexOf('order-brand-banner')>body.innerHTML.indexOf('pickup-number'));
-    assert(body.innerHTML.indexOf('order-brand-banner')<body.innerHTML.indexOf('checkout-lines'));
-    assert(body.innerHTML.includes('/brand/pairing-banner-backdrop-v6.webp')&&body.innerHTML.includes('class="order-banner-logo" src="/brand/order-packaging-lockup.svg"'),'Campaign banner uses the original vector brand lockup');
-    assert(body.innerHTML.includes('class="order-banner-dish" src="/img/l/potstickers-pork-shrimp-chive-cutaway-v1.webp"'),'Campaign dumplings use the unmodified menu asset');
+    assert(body.innerHTML.indexOf('class="paid-receipt')<body.innerHTML.indexOf('checkout-lines'),'Paper receipt carries the order lines');
+    assert(body.innerHTML.indexOf('checkout-lines')<body.innerHTML.indexOf('pickup-progress'),'Pickup progress follows the receipt');
+    assert(body.innerHTML.includes('<b>T0061</b>')&&body.innerHTML.includes('src="/brand/order-placed-stamp-v1.webp"'),'Receipt shows the pickup number and the order-placed stamp');
+    assert(body.innerHTML.includes('src="/brand/receipt-logo-v1.svg"'));
     assert(body.innerHTML.includes(language==='zh'?'实付金额':'Total paid'));
     assert(!body.innerHTML.includes(language==='zh'?'应付总额':'Total to pay'));
     assert(!body.innerHTML.includes('<script>'));
@@ -62,7 +61,7 @@ for (const language of ['zh','en']) {
   ctx.order={...order,mode:'dinein'};
   vm.runInContext('Fulfilment.showPaidOrder(order)',ctx);
   assert.equal(opened.mode,'success');
-  assert(body.innerHTML.includes('dinein-paid')&&body.innerHTML.includes('A1'));
+  assert(body.innerHTML.includes('class="paid-receipt')&&body.innerHTML.includes('<b>A1</b>')&&body.innerHTML.includes('order-placed-stamp-v1.webp'));
   assert(!body.innerHTML.includes('pickup-progress'),'Do not fabricate a preparation timeline for dine-in');
   const previous=body.innerHTML;
   ctx.order.status='awaiting_payment';vm.runInContext('Fulfilment.showPaidOrder(order)',ctx);

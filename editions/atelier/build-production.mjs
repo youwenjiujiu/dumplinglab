@@ -50,7 +50,7 @@ await copy(resolve(web,'vendor/three.module.js'),'vendor/three.module.js');
 await copy(resolve(web, "brand/dish-serving-v2.js"), "brand/dish-serving-v2.js");
 await copy(resolve(web, "brand/pickup-slip-v1.js"), "brand/pickup-slip-v1.js");
 for (const file of ['addon-illustration-v3.webp','addon-barley-v4.webp','addon-sour-plum-v3.webp','addon-soft-egg-v4.webp','addon-cucumber-v4.webp','pairing-banner-backdrop-v6.webp']) await copy(resolve(web,'brand',file),`brand/${file}`);
-for (const file of ["order-packaging-lockup.svg", "order-complete-seal.svg", "dumpling-symbol.svg"]) await copy(resolve(web, "brand", file), `brand/${file}`);
+for (const file of ["order-packaging-lockup.svg", "order-complete-seal.svg", "dumpling-symbol.svg", "receipt-logo-v1.svg", "order-placed-stamp-v1.webp"]) await copy(resolve(web, "brand", file), `brand/${file}`);
 for (const file of ["entry-dinein-v1.svg", "entry-takeaway-v1.svg", "entry-delivery-v1.svg", "header-dinein-v1.svg", "header-takeaway-v1.svg", "header-delivery-v1.svg"]) await copy(resolve(web, "brand", file), `brand/${file}`);
 let html = (await readFile(resolve(here, "index.html"), "utf8"))
   .replace('<html lang="zh-CN">', '<html lang="zh-CN" data-environment="production">')

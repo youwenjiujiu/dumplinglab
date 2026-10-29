@@ -71,6 +71,7 @@ class OnlineCart extends TableCart {
 const Fulfilment = (() => {
   const stores = new Map(); let config = null, formDraft = {}, quoted = null;
   const drafts = new Map();
+  const printedReceipts = new Set();
   const draftFields = {customerName:60, customerPhone:24, postalCode:6, address:180, unit:40, date:10, slot:40, pickupLocation:100};
   const draftKey = selected => `atelier:checkout-draft:${selected}`;
   const cleanDraft = value => Object.fromEntries(Object.entries(draftFields)
@@ -120,8 +121,8 @@ const Fulfilment = (() => {
       const open = current.pickupAvailability?.open !== false;
       const bilingual = Boolean(button.closest('.fulfilment-entry'));
       button.querySelector('strong').innerHTML = bilingual
-        ? entryText(open ? '打包外带' : '自提时间', open ? 'Takeaway' : 'Pickup hours')
-        : bi(open ? '打包自取' : '自提时间', open ? 'Pickup' : 'Pickup hours');
+        ? entryText('打包自取', 'Pickup')
+        : bi('打包自取', 'Pickup');
       let notice=button.querySelector('.pickup-icon-hours');
       if(!notice){notice=document.createElement('small');notice.className='pickup-icon-hours';button.append(notice);}
       notice.hidden=open;
@@ -282,15 +283,40 @@ const Fulfilment = (() => {
     const pickup = order.mode === 'takeaway';
     openModal(pickup ? 'pickup' : 'success', tr('订单详情', 'Order details'));
     const when = new Date(order.paidAt || order.at || order.createdAt);
-    const time = Number.isNaN(when.getTime()) ? '' : when.toLocaleString(language === 'zh' ? 'zh-CN' : 'en-SG', {timeZone:'Asia/Singapore',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const time = Number.isNaN(when.getTime()) ? '' : (p => `${p.day} ${p.month.toUpperCase()} ${p.year} · ${p.hour}:${p.minute} ${p.dayPeriod.toUpperCase()}`)(Object.fromEntries(new Intl.DateTimeFormat('en-SG', {timeZone:'Asia/Singapore',day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).formatToParts(when).map(p => [p.type, p.value])));
+    // The paper slip prints once, right after payment; reopening the order shows it settled.
+    const play = !printedReceipts.has(order.id) && Date.now() - when.getTime() < 10 * 60000;
+    printedReceipts.add(order.id);
+    const pair = (zh, en) => `${escapeHTML(zh)}<span class="receipt-en">${escapeHTML(en)}</span>`;
+    const id = pickup ? `<small>${pair('取餐号', 'Pickup no.')}</small><b>${escapeHTML(order.pickup?.number || '')}</b><p class="paid-hint">${pair('取餐时出示此页', 'Show this at the counter')}</p>`
+      : `<small>${pair('桌号', 'Table')}</small><b>${escapeHTML(order.table || '')}${order.group && order.group !== 'A' ? `<i> · ${escapeHTML(order.group)}</i>` : ''}</b>`;
     $('#sheetBody').innerHTML = `<div class="order-result ${pickup ? 'pickup-success' : 'dinein-success'}"><h2 id="sheetTitle" class="sr-only" tabindex="-1">${bi('订单详情', 'Order details')}</h2><div class="order-result-scroll">
-      ${order.freeRewardRefunded ? `<section class="dinein-paid"><h3>${bi('兑换已退还','Reward returned')}</h3><p>${bi('本单兑换券或积分已退回账户。','This order’s voucher or points have been returned.')}</p></section>` : pickup ? pickupTicket(order) : `<section class="dinein-paid"><img src="/brand/order-complete-seal.svg" alt="" width="42" height="42"><p class="eyebrow">${bi('已付款 · 堂食桌号', 'PAID · TABLE')}</p><strong>${escapeHTML(order.table || '')}</strong><p>${bi('下单成功，请在座位稍候。', 'Order placed. Please wait at your table.')}</p></section>`}
-      <div class="order-brand-banner"><img src="/brand/pairing-banner-backdrop-v6.webp" alt="" width="1200" height="400" loading="lazy"><span class="order-banner-pattern" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><img class="order-banner-dish" src="/img/l/potstickers-pork-shrimp-chive-cutaway-v1.webp" alt="${tr('韭菜虾仁猪肉煎饺', 'Pork, Shrimp & Chive Potstickers')}" width="1280" height="1280" loading="lazy"><img class="order-banner-logo" src="/brand/order-packaging-lockup.svg" alt="Dumpling Lab"></div>
-      <section class="checkout-block"><h3>${pickup ? escapeHTML(order.fulfilment?.pickupName || 'Dumpling Lab') : 'Dumpling Lab'}</h3>${pickup ? `<p class="pickup-location">${escapeHTML(order.fulfilment?.pickupAddress || '')}</p>` : ''}<div class="checkout-lines">${CheckoutUI.itemsHTML(order)}</div>${order.note ? `<p class="checkout-note">${bi('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}</section>
-      <section class="checkout-block checkout-totals"><h3>${bi('付款明细', 'Payment details')}</h3>${summary(order, true)}</section>${globalThis.RewardsUI?.receiptHTML(order)||''}
-      <section class="checkout-block"><dl class="order-result-meta">${time ? `<div><dt>${bi('付款时间', 'Payment time')}</dt><dd>${escapeHTML(time)}</dd></div>` : ''}<div><dt>${bi('订单编号', 'Order number')}</dt><dd>${escapeHTML(order.no || order.id)}</dd></div><div><dt>${bi('用餐方式', 'Order type')}</dt><dd>${escapeHTML(label(order.mode))}${pickup ? '' : ` · ${escapeHTML(order.table)} / ${escapeHTML(order.group)}`}</dd></div></dl></section>
+      ${order.freeRewardRefunded ? `<section class="dinein-paid"><h3>${bi('兑换已退还','Reward returned')}</h3><p>${bi('本单兑换券或积分已退回账户。','This order’s voucher or points have been returned.')}</p></section>` : ''}
+      <section class="paid-receipt${play ? ' is-printing' : ''}" aria-label="${tr('电子小票', 'Electronic receipt')}"><div class="paid-printer" aria-hidden="true"></div><div class="paid-paper-window"><article class="paid-paper">
+        <header class="paid-masthead"><img src="/brand/receipt-logo-v1.svg" alt="Dumpling Lab" width="143" height="50"><p>ELECTRONIC RECEIPT</p></header>
+        <div class="paid-heading${pickup ? ' is-pickup' : ''}"><div class="paid-id">${id}</div>${order.freeRewardRefunded ? '' : `<img class="paid-stamp" src="/brand/order-placed-stamp-v1.webp" alt="${tr('已下单', 'Order placed')}" width="116" height="116">`}</div>
+        <div class="paid-meta"><span>#${escapeHTML(order.no || order.id)}</span>${time ? `<span>${escapeHTML(time)}</span>` : ''}</div>
+        ${pickup && order.fulfilment?.pickupAddress ? `<p class="pickup-location">${escapeHTML(order.fulfilment.pickupAddress)}</p>` : ''}
+        <div class="checkout-lines">${bilingual(() => CheckoutUI.itemsHTML(order))}</div>${order.note ? `<p class="checkout-note">${pair('备注', 'Note')} · ${escapeHTML(order.note)}</p>` : ''}
+        <div class="checkout-totals">${bilingual(() => summary(order, true))}</div>${bilingual(() => globalThis.RewardsUI?.receiptHTML(order) || '')}
+        <footer>${pair('谢谢光临，祝用餐愉快。', 'Thank you. Enjoy your meal!')}</footer>
+      </article></div></section>
+      ${pickup && !order.freeRewardRefunded ? pickupTicket(order) : ''}
       </div><footer class="order-result-footer"><button class="primary" data-action="ordered">${bi('查看全部订单', 'View all orders')}</button></footer></div>`;
     $('#sheetTitle').focus({preventScroll:true});
+  }
+  // The receipt carries Chinese and English together. Renders the verified lines
+  // in each language and pairs every piece of copy that differs; if the two
+  // renders ever differ in structure, the current language is used alone.
+  function bilingual(render) {
+    const saved = language;
+    let zh, en;
+    try { language = 'zh'; zh = render(); language = 'en'; en = render(); }
+    catch { return render(); }
+    finally { try { language = saved; } catch { /* language cannot be switched here */ } }
+    const a = zh.split(/(<[^>]*>)/), b = en.split(/(<[^>]*>)/);
+    if (a.length !== b.length || a.some((t, i) => i % 2 && t.replace(/\s(alt|aria-label|title)="[^"]*"/g, '') !== b[i].replace(/\s(alt|aria-label|title)="[^"]*"/g, ''))) return render();
+    return a.map((t, i) => i % 2 || t === b[i] || !t.trim() || !b[i].trim() ? t : `${t}<span class="receipt-en">${b[i]}</span>`).join('');
   }
   function init() {
     stores.set('dinein',store); $('#fulfilmentButton').onclick = select;
