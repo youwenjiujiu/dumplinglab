@@ -46,7 +46,14 @@ try{
  cfg=(await api('/api/online')).config;assert.equal(cfg.pickupAvailability.open,false);
  await api('/api/online',{...ready,requestId:randomUUID(),action:'quote'},{},400);
  const paid=(await api('/api/online?id='+input.requestId,null,{authorization:'Bearer '+input.token})).order;assert.equal(paid.fulfilment.timing,'asap','setting changes do not rewrite paid pickups');
- const closedPage=await browser.newPage({viewport:{width:390,height:844}});await closedPage.goto(base+'/?lang=zh');await closedPage.locator('[data-fulfilment=takeaway]').click();await closedPage.locator('.dish-add[data-recommendation=chive-fried]').click();await closedPage.locator('[data-action=add-detail]').click();await closedPage.locator('#tray').click();await closedPage.locator('[data-action=review]').click();await closedPage.getByRole('heading',{name:'暂不可自提'}).waitFor();await closedPage.waitForTimeout(450);await closedPage.screenshot({path:data+'/pickup-closed.png'});
+ const closedPage=await browser.newPage({viewport:{width:390,height:844}});await closedPage.goto(base+'/?lang=zh');
+ await closedPage.waitForFunction(()=>document.querySelector('[data-fulfilment=takeaway]')?.dataset.pickupOpen==='false');
+ assert(await closedPage.locator('[data-fulfilment=takeaway]').isDisabled());assert((await closedPage.locator('[data-fulfilment=takeaway]').innerText()).includes('暂不可自提'));
+ await closedPage.waitForTimeout(450);await closedPage.screenshot({path:data+'/pickup-closed-entry.png'});
+ await api('/api/catalog',{action:'pickup-hours',pickupHours:{daily:[['00:00','23:59']],exceptions:{}}},staff);
+ await closedPage.reload();await closedPage.waitForFunction(()=>document.querySelector('[data-fulfilment=takeaway]')?.dataset.pickupOpen==='true');
+ assert(await closedPage.locator('[data-fulfilment=takeaway]').isEnabled());await closedPage.waitForTimeout(450);await closedPage.screenshot({path:data+'/pickup-open-entry.png'});
+
  await admin.screenshot({path:data+'/settings-desktop.png',fullPage:true});await admin.setViewportSize({width:390,height:844});await admin.locator('#pickupHoursForm').scrollIntoViewIfNeeded();await admin.screenshot({path:data+'/settings-phone.png'});
  assert(await admin.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await admin.locator('[data-view=counter]').click();await admin.locator('[data-mode=takeaway]').click();await admin.locator('[name=counterName]').fill('林 小姐');await admin.locator('[name=counterPhone]').fill('91234567');await admin.screenshot({path:data+'/counter-phone.png'});assert.deepEqual(errors,[]);
  console.log('PASS pickup contact required/normalized; saved and fed to printer; closed hours rejected; daily and exceptional hours editable; paid orders preserved; no date/time selectors; mobile/desktop UI checked.');console.log(data);

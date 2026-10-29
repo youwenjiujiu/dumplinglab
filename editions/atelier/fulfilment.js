@@ -111,16 +111,39 @@ const Fulfilment = (() => {
   }
   // Entry is bilingual before the guest has chosen the app language.
   const entryText = (zh, en) => `<span class="entry-copy"><span lang="zh-CN">${escapeHTML(zh)}</span><span lang="en" class="entry-en">${escapeHTML(en)}</span></span>`;
+  async function refreshPickupChoice(button, recurring = true) {
+    if (!button?.isConnected) return false;
+    button.disabled = true;
+    try {
+      const current = await getConfig();
+      if (!button.isConnected) return false;
+      const open = current.pickupAvailability?.open !== false;
+      const bilingual = Boolean(button.closest('.fulfilment-entry'));
+      button.querySelector('strong').innerHTML = bilingual
+        ? entryText(open ? '打包外带' : '暂不可自提', open ? 'Takeaway' : 'Pickup unavailable')
+        : bi(open ? '打包自取' : '暂不可自提', open ? 'Pickup' : 'Pickup unavailable');
+      button.disabled = !open;
+      button.dataset.pickupOpen = String(open);
+      return open;
+    } catch {
+      if (button.isConnected) { button.disabled = false; button.dataset.pickupOpen = 'unknown'; }
+      return false;
+    } finally {
+      if (recurring && button.isConnected) setTimeout(() => refreshPickupChoice(button), 30000);
+    }
+  }
   function select(options = {}) {
     openModal('fulfilment', '', {initialEntry: options.initialEntry === true});
     $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content fulfilment-entry" translate="no"><h2 id="sheetTitle">${entryText('选择用餐方式','Choose your order type')}</h2><div class="fulfilment-choices entry-choices"><button data-fulfilment="dinein"><dl-dinein-serving class="entry-art" aria-hidden="true"><img src="/brand/entry-dinein-v3.svg" width="260" height="220" alt="" draggable="false" style="width:100%;height:auto"></dl-dinein-serving><strong>${entryText('堂食','Dine-in')}</strong></button><button data-fulfilment="takeaway"><dl-takeaway-pickup class="entry-art" aria-hidden="true"><img src="/brand/entry-takeaway-v5.svg" width="260" height="220" alt="" draggable="false" style="width:100%;height:auto"></dl-takeaway-pickup><strong>${entryText('打包外带','Takeaway')}</strong></button></div></div>`;
     if (!remote()) $('#sheetBody .fulfilment-entry')?.insertAdjacentHTML('beforeend', `<button type="button" class="entry-change-table" data-action="table">${bi('桌号', 'Table')} ${escapeHTML(table || '—')}<span>${bi('更改桌号', 'Change table')} ↗</span></button>`);
     $('#closeSheet').ariaLabel = '关闭 / Close';
     const heading = $('#sheetTitle'); heading.tabIndex = -1; heading.focus({preventScroll:true});
+    refreshPickupChoice($('#sheetBody [data-fulfilment=takeaway]'));
   }
   function visit() {
     openModal('fulfilment', '');
     $('#sheetBody').innerHTML = `<div class="sheet-content fulfilment-content"><h2 id="sheetTitle">${bi('到店用餐','At the restaurant')}</h2><div class="fulfilment-choices"><button data-fulfilment="dinein"><strong>${bi('堂食','Dine-in')}</strong><small>${bi('按桌号下单','Order for your table')}</small></button><button data-fulfilment="takeaway"><strong>${bi('打包自取','Pickup')}</strong><small>${bi('无需桌号','No table number needed')}</small></button></div></div>`;
+    refreshPickupChoice($('#sheetBody [data-fulfilment=takeaway]'));
   }
   function switchTo(next, close = true) {
     // Preserve old delivery data, but reject retired entry actions before mutation.
@@ -288,7 +311,15 @@ const Fulfilment = (() => {
   document.addEventListener('submit', e => { if (e.target.id === 'onlineForm') { e.preventDefault(); quoteForm(e.target); } });
   document.addEventListener('click', async e => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.fulfilment) return b.dataset.fulfilment === 'visit' ? visit() : switchTo(b.dataset.fulfilment);
+    if (b.dataset.fulfilment) {
+      if (b.disabled) return;
+      if (b.dataset.fulfilment === 'takeaway' && !await refreshPickupChoice(b, false)) {
+        if (b.isConnected && b.dataset.pickupOpen === 'unknown') toast(tr('暂时无法确认自提开放状态，请重试','Unable to check pickup availability. Please retry.'));
+        return;
+      }
+      if (!b.isConnected) return;
+      return b.dataset.fulfilment === 'visit' ? visit() : switchTo(b.dataset.fulfilment);
+    }
     if (b.hasAttribute('data-online-start')) return checkout();
     if (b.hasAttribute('data-online-pay') || b.hasAttribute('data-online-retry') || b.hasAttribute('data-preview-pay')) {
       if (submitting) return; submitting = true; b.disabled = true;
