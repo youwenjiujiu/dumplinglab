@@ -208,7 +208,7 @@ const CheckoutUI = (() => {
       view.node.innerHTML=`<div class="checkout-scroll pickup-details"><h2 id="sheetTitle">${bi('暂不可自提','Pickup unavailable')}</h2><p>${bi('当前不在自提开放时段。','Pickup is currently closed.')}</p>${availability.windows?.length?`<p>${bi('今日自提时段：','Today’s pickup hours: ')}${escapeHTML(availability.windows.map(w=>w.join('–')).join(' / '))}</p>`:''}<button class="primary" data-action="cart">${bi('返回菜单清单','Back to your order')}</button></div>`;
       return Promise.resolve(null);
     }
-    view.node.innerHTML = `<div class="checkout-scroll pickup-details"><h2 id="sheetTitle">${bi('自提资料','Pickup details')}</h2><form id="pickupDetailsForm">
+    view.node.innerHTML = `<div class="checkout-scroll pickup-details"><h2 id="sheetTitle">${bi('自提资料','Pickup details')}</h2>${availability?.activeWindow?`<p class="pickup-hours-hint">${bi('当前自提时段：','Current pickup hours: ')}${escapeHTML(availability.activeWindow.join('–'))}${bi('（新加坡时间）',' (Singapore time)')}</p>`:''}<form id="pickupDetailsForm">
       <label class="online-field"><span>${bi('取餐人姓名','Pickup name')}</span><input name="customerName" autocomplete="name" required maxlength="60" value="${escapeHTML(draft.customerName || '')}"></label>
       <label class="online-field"><span>${bi('手机号码','Mobile number')}</span><input name="customerPhone" type="tel" autocomplete="tel" required maxlength="24" placeholder="91234567 / +65 91234567" value="${escapeHTML(draft.customerPhone || '')}"></label>
       <p class="field-error" data-checkout-error role="alert"></p>

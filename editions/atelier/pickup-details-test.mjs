@@ -8,6 +8,8 @@ import {DEFAULT_PICKUP_HOURS,cleanPickupHours,pickupAvailability,checkPickupTime
 const fixed=new Date('2026-10-28T06:31:00Z');
 assert.equal(pickupAvailability(DEFAULT_PICKUP_HOURS,fixed).open,false);
 for(const [time,open] of [['03:29:59',false],['03:30:00',true],['06:29:59',true],['06:30:00',false],['09:30:00',true],['13:00:00',false]])assert.equal(pickupAvailability(DEFAULT_PICKUP_HOURS,new Date('2026-10-28T'+time+'Z')).open,open);
+assert.deepEqual(pickupAvailability(DEFAULT_PICKUP_HOURS,new Date('2026-10-28T04:00:00Z')).activeWindow,['11:30','14:30']);
+assert.deepEqual(pickupAvailability(DEFAULT_PICKUP_HOURS,new Date('2026-10-28T10:00:00Z')).activeWindow,['17:30','21:00']);
 assert.deepEqual(checkPickupTime({},DEFAULT_PICKUP_HOURS,new Date('2026-10-28T04:00:00Z')),{timing:'asap'});
 assert.throws(()=>checkPickupTime({pickupDate:'2026-10-28',pickupTime:'16:00'},DEFAULT_PICKUP_HOURS,fixed),/自提/);
 assert.throws(()=>cleanPickupHours({daily:[['17:00','16:00']],exceptions:{}}));
@@ -33,7 +35,7 @@ try{
  await writeFile(data+'/paid-pickup.json',JSON.stringify(order));
  browser=await launchBrowser();const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/?lang=zh');await page.locator('[data-fulfilment=takeaway]').click();await page.locator('.dish-add[data-recommendation="chive-fried"]').click();await page.locator('[data-action=add-detail]').click();await page.locator('#tray').click();await page.locator('[data-action=review]').click();await page.locator('#pickupDetailsForm').waitFor();
- assert.equal(await page.locator('[name=pickupDate],[name=pickupTime]').count(),0);
+ assert.equal(await page.locator('[name=pickupDate],[name=pickupTime]').count(),0);assert((await page.locator('.pickup-hours-hint').innerText()).includes('00:00–23:59'));
  await page.locator('#pickupDetailsForm [type=submit]').click();assert.equal(await page.locator('[data-checkout-pay]').count(),0);
  await page.locator('[name=customerName]').fill('林 小姐');await page.locator('[name=customerPhone]').fill('+65 9123 4567');await page.screenshot({path:data+'/pickup-phone.png'});
  await page.locator('#pickupDetailsForm [type=submit]').click();await page.locator('[data-checkout-pay]').waitFor();assert((await page.locator('.pickup-contact').innerText()).includes('+6591234567'));await page.locator('.addon-skip').click();await page.screenshot({path:data+'/review-phone.png'});await page.locator('[data-checkout-pay]').click();await page.waitForFunction(()=>!document.querySelector('[data-checkout-pay]'));

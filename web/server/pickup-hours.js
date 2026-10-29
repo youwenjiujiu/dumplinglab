@@ -12,7 +12,8 @@ export function pickupAvailability(settings=DEFAULT_PICKUP_HOURS,now=new Date())
  const sg=new Date(now.getTime()+8*3600000),date=sg.toISOString().slice(0,10);
  const current=sg.getUTCHours()*60+sg.getUTCMinutes()+sg.getUTCSeconds()/60;
  const windows=settings.exceptions[date]??settings.daily;
- return {open:windows.some(([start,end])=>current>=minutes(start)&&current<minutes(end)),date,windows};
+ const activeWindow=windows.find(([start,end])=>current>=minutes(start)&&current<minutes(end))||null;
+ return {open:Boolean(activeWindow),date,windows,activeWindow};
 }
 export function checkPickupTime(input,settings,now){
  if(!pickupAvailability(settings,now).open)throw new RequestError('当前不在自提开放时段，暂不可自提');
