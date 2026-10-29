@@ -50,8 +50,11 @@ try{
  const paid=(await api('/api/online?id='+input.requestId,null,{authorization:'Bearer '+input.token})).order;assert.equal(paid.fulfilment.timing,'asap','setting changes do not rewrite paid pickups');
  const closedPage=await browser.newPage({viewport:{width:390,height:844}});await closedPage.goto(base+'/?lang=zh');
  await closedPage.waitForFunction(()=>document.querySelector('[data-fulfilment=takeaway]')?.dataset.pickupOpen==='false');
- assert(await closedPage.locator('[data-fulfilment=takeaway]').isDisabled());assert((await closedPage.locator('[data-fulfilment=takeaway]').innerText()).includes('暂不可自提'));
+ assert(await closedPage.locator('[data-fulfilment=takeaway]').isDisabled());assert((await closedPage.locator('.pickup-availability-note').innerText()).includes('今日暂停自提'));assert((await closedPage.locator('[data-fulfilment=takeaway]').innerText()).includes('暂不可自提'));
  await closedPage.waitForTimeout(450);await closedPage.screenshot({path:data+'/pickup-closed-entry.png'});
+ await closedPage.route('**/api/online',async route=>{const response=await route.fetch();const body=await response.json();if(body.config)body.config.pickupAvailability={open:false,windows:[['11:30','14:30'],['17:30','21:00']]};await route.fulfill({response,json:body});});
+ for(const lang of ['zh','en']){await closedPage.goto(base+'/?lang='+lang);await closedPage.waitForFunction(()=>document.querySelector('[data-fulfilment=takeaway]')?.dataset.pickupOpen==='false');assert((await closedPage.locator('.pickup-availability-note').innerText()).includes('11:30–14:30 / 17:30–21:00'));await closedPage.waitForTimeout(450);await closedPage.screenshot({path:data+'/pickup-hours-notice-'+lang+'.png'});}
+ await closedPage.unroute('**/api/online');
  await api('/api/catalog',{action:'pickup-hours',pickupHours:{daily:[['00:00','23:59']],exceptions:{}}},staff);
  await closedPage.reload();await closedPage.waitForFunction(()=>document.querySelector('[data-fulfilment=takeaway]')?.dataset.pickupOpen==='true');
  assert(await closedPage.locator('[data-fulfilment=takeaway]').isEnabled());await closedPage.waitForTimeout(450);await closedPage.screenshot({path:data+'/pickup-open-entry.png'});
