@@ -69,7 +69,7 @@
   <div class="st"><span class="dot" id="dot"></span><span id="stTxt">连接中…</span></div>
   <button id="enable">开启响铃</button>
 </header>
-<p class="dining-help">堂食按桌查看，客人离开后点一次「结束就餐」。</p>
+<p class="dining-help">每笔订单独立显示，最新订单在前。</p>
 <section class="pickup-check"><label for="pickupInput">核验取餐码</label><form id="pickupForm"><input id="pickupInput" autocomplete="off" placeholder="扫描顾客二维码，或粘贴取餐码链接"><button>核验</button></form><div id="pickupResult" role="status" aria-live="polite"></div></section>
 <div id="list"><div class="empty" id="empty">等待顾客呼叫与下单…<br><small>把这个页面开在收银台的手机或平板上</small></div></div>
 
@@ -101,30 +101,31 @@ async function staffFetch(url,options={},mayPrompt=true){
 dot.parentElement.onclick=()=>{ authCancelled=false; staffPassword=""; sessionStorage.removeItem("dl-staff-password"); stTxt.textContent="等待登录…"; };
 
 const closedDining = new Set();
-const diningKey = order => 'dining:'+JSON.stringify([order.table,order.group||'A',order.tableSession]);
+const diningKey = order => 'dining:'+order.id;
 async function endDining(orders,el,button){
   const order=orders[0], result=el.querySelector('.clear-result');
   button.disabled=true;button.textContent='结束中…';
   try{
-    const response=await staffFetch('/api/online',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:'end-table-session',table:order.table,group:order.group||'A',tableSession:order.tableSession})});
+    const response=await staffFetch('/api/resolve',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:order.id})});
     const out=await response.json();if(!response.ok)throw Error(out.error||'未能结束就餐，请重试');
-    const key=diningKey(order);closedDining.add(key);cards.get(key)?.remove();cards.delete(key);ensureEmpty();
+    const key=diningKey(order);closedDining.add(key);button.disabled=false;renderDining(orders.map(o=>({...o,diningEnded:true})));sortCards();
   }catch(error){result.textContent=error.message;button.disabled=false;button.textContent='结束就餐';}
 }
 function renderDining(orders){
-  orders.sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+  orders.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
   const order=orders[0],key=diningKey(order),signature=JSON.stringify(orders),previous=cards.get(key);
   const isNew=orders.some(o=>!seen.has(o.id));orders.forEach(o=>seen.add(o.id));
-  if(closedDining.has(key)||previous?.dataset.signature===signature)return false;
+  const ended=orders.every(o=>o.diningEnded)||closedDining.has(key);
+  if(previous?.dataset.signature===signature)return false;
   // Preserve an in-flight end action and its error/result during polling.
   if(previous?.querySelector('button:disabled'))return false;
   document.getElementById('empty')?.remove();
-  const el=document.createElement('section');el.className='item order dining';el.dataset.signature=signature;
-  el.innerHTML=`<div class="top"><span class="table">${esc(order.table)} 号桌${order.group&&order.group!=='A'?` · ${esc(order.group)}组`:''}</span><span class="dining-state">用餐中 · ${orders.length} 笔订单</span></div>
+  const el=document.createElement('section');el.className='item order dining';el.dataset.signature=signature;el.dataset.orderTime=String(Date.parse(order.at)||0);el.dataset.ended=String(ended);
+  el.innerHTML=`<div class="top"><span class="table">${esc(order.table)} 号桌${order.group&&order.group!=='A'?` · ${esc(order.group)}组`:''}</span><span class="dining-state">${ended?'已结束用餐':'用餐中'} · ${orders.length} 笔订单</span></div>
     ${orders.map(o=>`<div class="dining-order"><div class="time">${new Date(o.at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})} · #${esc(o.no||o.id.slice(0,8))}</div><div class="lines">${(o.items||[]).map(i=>`${esc(i.name||i.id)}${i.style?` · ${esc(i.style)}`:''} ×${esc(i.qty)}${i.promo==='bogo'?'（赠送）':''}${i.note?`<br><strong>备注：${esc(i.note)}</strong>`:''}`).join('<br>')}</div>${o.note?`<div class="note">备注：${esc(o.note)}</div>`:''}<div class="total">${money(o.total||0)}</div></div>`).join('')}
-    <div class="order-actions"><button class="end-dining">结束就餐</button></div><div class="clear-result" role="status" aria-live="polite"></div>`;
-  el.querySelector('button').onclick=()=>endDining(orders,el,el.querySelector('button'));
-  cards.set(key,el);if(previous)previous.replaceWith(el);else list.prepend(el);return isNew;
+    ${ended?'':'<div class="order-actions"><button class="end-dining">结束就餐</button></div>'}<div class="clear-result" role="status" aria-live="polite"></div>`;
+  if(!ended)el.querySelector('button').onclick=()=>endDining(orders,el,el.querySelector('button'));
+  cards.set(key,el);if(previous)previous.replaceWith(el);else list.prepend(el);return isNew&&!ended;
 }
 
 document.getElementById("enable").onclick=()=>{
@@ -194,9 +195,15 @@ function render(evt){
       const current=cards.get(evt.id); cards.delete(evt.id); current?.remove(); ensureEmpty();
     }catch(error){ button.disabled=false; button.textContent=label; stTxt.textContent="未能标记完成"; }
   };
+  el.dataset.orderTime=String(Date.parse(evt.at)||0);
   cards.set(evt.id,el);
   if(previous) previous.replaceWith(el); else list.prepend(el);
   return isNew;
+}
+
+function sortCards(){
+  const sorted=[...cards.values()].sort((a,b)=>Number(a.dataset.ended==='true')-Number(b.dataset.ended==='true')||Number(b.dataset.orderTime||0)-Number(a.dataset.orderTime||0));
+  for(const [index,el] of sorted.entries())if(list.children[index]!==el)list.insertBefore(el,list.children[index]||null);
 }
 
 async function poll(){
@@ -205,12 +212,13 @@ async function poll(){
     const out=await res.json().catch(()=>({})); if(!res.ok) throw new Error(out.error||`HTTP ${res.status}`);
     if(!Array.isArray(out.diningOrders))throw Error('工作台正在更新，请稍后刷新');
     const groups=new Map();
-    for(const order of out.diningOrders){const key=diningKey(order);if(!closedDining.has(key)){if(!groups.has(key))groups.set(key,[]);groups.get(key).push(order);}}
+    for(const order of out.diningOrders){const key=diningKey(order);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(order);}
     const individual=(out.events||[]).filter(e=>e.type==='call'||['takeaway','delivery'].includes(e.mode));
     const active=new Set([...individual.map(e=>e.id),...groups.keys()]);
     for(const [id,el] of cards) if(!active.has(id)){ cards.delete(id); el.remove(); }
     for(const orders of groups.values())if(renderDining(orders)&&!firstLoad){ding();flash();}
     for(const evt of individual) if(render(evt)&&!firstLoad){ ding(evt.type==="call"?3:1); flash(); if(navigator.vibrate) navigator.vibrate(evt.type==="call"?[100,60,100]:60); }
+    sortCards();
     cursor=Math.max(cursor,Number(out.cursor)||0); firstLoad=false; ensureEmpty();
     dot.classList.add("on"); stTxt.textContent="已连接";
   }catch(error){ dot.classList.remove("on"); stTxt.textContent=error.message||"重连中…"; }

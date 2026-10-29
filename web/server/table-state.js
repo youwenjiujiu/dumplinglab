@@ -175,13 +175,14 @@ export function createTableStore(storage, legacy, { now = () => Date.now() } = {
     async activeDiningOrders(orders = []) {
       const states = await storage.all(TABLE_STATE_PREFIX);
       const byTable = new Map(states.map(s => [JSON.stringify([s.table,s.group]),s]));
-      const receipts = states.flatMap(s => s.events.filter(e => e.type === 'order' && belongs(s,e))
-        .map(e => ({...e, tableSession:sessionOf(s)})));
+      const receipts = states.flatMap(s => s.events.filter(e => e.type === 'order' && today(e))
+        .map(e => ({...e, diningEnded:Boolean(e.resolvedAt)||!belongs(s,e), tableSession:e.tableSession||(belongs(s,e)?sessionOf(s):'ended:'+e.resolvedAt)})));
       for (const order of orders) {
         if (!today(order)) continue;
         const state = byTable.get(JSON.stringify([order.table,order.group || 'A']));
-        if (state?.endedAt && Date.parse(order.at) <= Date.parse(state.endedAt)) continue;
-        receipts.push({...order, tableSession:sessionOf(state || {})});
+        const ended=Boolean(order.resolvedAt||(state?.endedAt && Date.parse(order.at)<=Date.parse(state.endedAt)));
+        const pastSession=order.tableSession||state?.events.find(e=>e.resolvedAt&&e.resolvedAt===order.resolvedAt)?.tableSession||state?.lastEndedSession||('ended:'+order.resolvedAt);
+        receipts.push({...order,diningEnded:ended,tableSession:ended?pastSession:sessionOf(state||{})});
       }
       return receipts;
     },

@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       }
       if (req.query?.report === '1') {
         requireStaff(req);
-        return json(res, 200, { ok: true, report: await onlineService.report({ from: req.query.from, to: req.query.to }) });
+        return json(res, 200, { ok: true, report: await onlineService.report({ from: req.query.from, to: req.query.to, mode: req.query.mode }) });
       }
       if (req.query?.history === '1') {
         const member = await memberService().identity(req.headers);
@@ -33,6 +33,7 @@ export default async function handler(req, res) {
     if (input.action === 'staff-cancel') { requireStaff(req); return json(res, 200, { ok: true, ...await onlineService.staffCancel(input.id) }); }
     if (input.action === 'staff-quote') { requireStaff(req); return json(res, 200, { ok: true, order: await onlineService.staffQuote(input) }); }
     if (input.action === 'staff-order') { requireStaff(req); return json(res, 200, { ok: true, order: await onlineService.staffOrder(input) }); }
+    if (input.action === 'refund-receipt') { requireStaff(req); return json(res,200,{ok:true,...await onlineService.reprintRefund(input)}); }
     if (input.action === 'staff-refund') { requireStaff(req); return json(res, 200, { ok: true, order: await onlineService.staffRefund(input) }); }
     if (!['quote','checkout','confirm-reward','confirm-wallet'].includes(input.action)) throw new RequestError('操作无效');
     if (input.mode === 'delivery') throw new RequestError('目前仅支持堂食和打包自取', 409);

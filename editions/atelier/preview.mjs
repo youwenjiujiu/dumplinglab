@@ -288,7 +288,7 @@ const server = createServer(async (req, res) => {
       if(url.pathname==='/api/apology'){
         if(req.method==='POST'&&input.action==='request'){const member=await memberIdentity(req);return json(200,{ok:true,...await rewards.requestApology(member?.id,input.orderNo,await online.apologyOrders())});}
         requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');
-        if(req.method==='GET')return json(200,{ok:true,...await rewards.apologyStatus()});
+        if(req.method==='GET')return json(200,{ok:true,...await rewards.apologyStatus(null,await online.apologyOrders())});
         if(req.method==='POST'&&input.action==='grant')return json(200,{ok:true,...await rewards.grantApology(input,await catalog.menu(),await online.apologyOrders())});
         return json(400,{error:'操作无效'});
       }
@@ -306,7 +306,7 @@ const server = createServer(async (req, res) => {
       if (url.pathname === '/api/online') {
         if (req.method === 'GET') {
           if (url.searchParams.get('pending') === '1') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,orders:await online.pendingPayments()}); }
-          if (url.searchParams.get('report') === '1') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,report:await online.report({from:url.searchParams.get('from')||undefined,to:url.searchParams.get('to')||undefined})}); }
+          if (url.searchParams.get('report') === '1') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,report:await online.report({from:url.searchParams.get('from')||undefined,to:url.searchParams.get('to')||undefined,mode:url.searchParams.get('mode')||undefined})}); }
           if (url.searchParams.get('history') === '1') return json(200,{ok:true,...await online.memberOrders((await memberIdentity(req))?.id,url.searchParams.get('before') || '')});
           const id = url.searchParams.get('id');
           if (id && url.searchParams.get('progress') === '1') return json(200,{ok:true,progress:await online.progress(id,req.headers['x-pickup-code'])});
@@ -320,6 +320,7 @@ const server = createServer(async (req, res) => {
           if (input.action === 'staff-cancel') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,...await online.staffCancel(input.id)}); }
           if (input.action === 'staff-quote') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,order:await online.staffQuote(input)}); }
           if (input.action === 'staff-order') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,order:await online.staffOrder(input)}); }
+          if (input.action === 'refund-receipt') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,...await online.reprintRefund(input)}); }
           if (input.action === 'staff-refund') { requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only'); return json(200,{ok:true,order:await online.staffRefund(input)}); }
           if(input.action==='confirm-wallet')return json(200,{ok:true,...await online.confirmWallet(input,(await memberIdentity(req))?.id)});
           if(input.action==='confirm-reward')return json(200,{ok:true,...await online.confirmReward(input,(await memberIdentity(req))?.id)});
@@ -358,8 +359,11 @@ const server = createServer(async (req, res) => {
       }
       if (url.pathname === "/api/feed" && req.method === "GET") {
         await queue;
-        const events=[...(await dining.feed()).events,...await online.feed()];
-        return json(200, { events,activeIds:events.map(e=>e.id),cursor:Date.now(),...(url.searchParams.get('workbench')==='1'?{diningOrders:await online.workbenchOrders()}:{}) });
+        const includeRefunds=url.searchParams.get('refunds')==='1';
+        if(includeRefunds)requireStaff(req,process.env.DL_PREVIEW_STAFF_PASSWORD||'preview-only');
+        const onlineFeed=await online.feed(includeRefunds);
+        const events=[...(await dining.feed()).events,...(includeRefunds?onlineFeed.events:onlineFeed)];
+        return json(200, { events,...(includeRefunds?{refundPrintJobs:onlineFeed.refundPrintJobs}:{}),activeIds:events.map(e=>e.id),cursor:Date.now(),...(url.searchParams.get('workbench')==='1'?{diningOrders:await online.workbenchOrders()}:{}) });
       }
       if (url.pathname === '/api/pickup' && req.method === 'POST') {
         if (!['inspect','collect'].includes(input.action)) throw new RequestError('无效操作');

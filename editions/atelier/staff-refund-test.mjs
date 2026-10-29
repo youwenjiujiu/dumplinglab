@@ -58,3 +58,21 @@ const allocation=refundItems({total:10.01,items:[{id:'a',price:5,qty:3},{id:'b',
 assert.equal(allocation.rows.flatMap(r=>r.unitCents).reduce((s,c)=>s+c,0),1001);
 assert.deepEqual(allocation.rows[1].unitCents,[0]);
 console.log('PASS item refunds: service/discount allocation, quantities reserved, uncertain retry, duplicate prevention, amount tampering, rounding, free items.');
+// Receipt printing is independent from refund execution; it cannot refund money again.
+const {refundReceipts,refundPrintJobs}=await import('../../web/server/refund-receipt.js');
+const saved=records.get(id).value, receipts=refundReceipts(saved);
+assert(receipts.length>0);assert(receipts.every(r=>r.method==='original'));
+assert.equal(refundPrintJobs(saved).length,receipts.length);
+const attemptsBefore=calls.length, copyId=randomUUID(), print={id,refundId:receipts[0].refundId,copyId};
+assert.equal((await online.reprintRefund(print)).queued,true);
+await online.reprintRefund(print);
+assert.equal(calls.length,attemptsBefore,'printing never calls Stripe');
+assert.equal(Object.keys(records.get(id).value.refundReceiptCopies).length,1,'uncertain retry queues one copy');
+assert.equal(publicOrder(records.get(id).value).refundReceiptCopies,undefined);
+await assert.rejects(online.reprintRefund({...print,refundId:randomUUID(),copyId:randomUUID()}),/尚未确认/);
+const printerFeed=await online.feed(true);
+assert(printerFeed.refundPrintJobs.some(j=>j.reprint));
+assert(printerFeed.refundPrintJobs.every(j=>j.method==='original'));
+assert.deepEqual(refundReceipts({...saved,cardRefunds:{pending:{status:'reserved',amountCents:100},failed:{status:'failed',amountCents:100}}}),[]);
+assert.equal(refundReceipts({id:'cash',paymentMethod:'counter',counterMethod:'cash',refundCompleted:false,refundRequests:{r:{amountCents:100}}}).length,0);
+console.log('PASS refund receipts: confirmed-only, durable auto jobs, reprint idempotency, no additional refund call, private copies hidden, pending/failed excluded.');

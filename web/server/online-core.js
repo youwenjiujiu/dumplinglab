@@ -1,6 +1,7 @@
 import {checkPickupTime} from './pickup-hours.js';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import QRCode from 'qrcode';
+import { refundReceipts, refundPrintJobs } from './refund-receipt.js';
 import { validateRefundItems } from './refund-items.js';
 import { cleanItems, cleanOrder, RequestError } from './order-core.js';
 import { cleanCartOpIds, cleanTable } from './cart-core.js';
@@ -80,7 +81,7 @@ export const PAYMENT_WINDOW_MS = 15 * 60000;
 export const preparationState = order => order.collectedAt || order.resolvedAt ? 'collected'
   : order.readyAt ? 'ready' : order.preparingAt ? 'preparing' : 'received';
 export const publicOrder = order => {
-  const { tokenHash: secret, fingerprint, requestFingerprint, memberId, paymentIntentId, refundRequests, cardRefunds, localRefundCents, sessionId, clientSecret, ...view } = order;
+  const { tokenHash: secret, fingerprint, requestFingerprint, memberId, paymentIntentId, refundRequests, cardRefunds, refundReceiptCopies, localRefundCents, sessionId, clientSecret, ...view } = order;
   return { ...view, ...(order.mode === 'takeaway' && order.status === 'paid' ? { preparationStatus: preparationState(order) } : {}) };
 };
 export function createOnlineService({ storage, payment, checkAddress, config, dining, inventory, rewards, wallet, now = () => new Date() }) {
@@ -263,7 +264,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       for (const order of orders) {
         if (order.mode === 'dinein' && order.table === ended.table && (order.group || 'A') === ended.group &&
             order.status === 'paid' && Date.parse(order.at) <= Date.parse(ended.endedAt) && !order.resolvedAt)
-          await mutate(order.id, prior => ({...prior, resolvedAt:prior.resolvedAt || ended.endedAt}));
+          await mutate(order.id, prior => ({...prior, resolvedAt:prior.resolvedAt || ended.endedAt,tableSession:prior.tableSession||input.tableSession}));
       }
       return ended;
     },
@@ -358,7 +359,9 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
     },
     async refundLocal(input){
       if(!validId(input.id)||!validId(input.refundId)||!Number.isSafeInteger(input.amountCents)||input.amountCents<0||typeof input.reason!=='string'||!input.reason.trim()||input.reason.length>200)throw new RequestError('请填写有效的退款金额和原因');
-      const order=await mutate(input.id,prior=>{if(!prior||prior.status!=='paid'||(prior.paymentMethod!=='wallet'&&prior.paymentMethod!=='counter'&&prior.total!==0))throw new RequestError('此订单须通过原支付渠道退款',409);const requests={...prior.refundRequests};const selection=validateRefundItems(prior,input,requests[input.refundId]);if(requests[input.refundId]){if(requests[input.refundId].amountCents!==input.amountCents||requests[input.refundId].reason!==input.reason)throw new RequestError('退款请求不一致',409);return prior;}const amount=(prior.localRefundCents||0)+input.amountCents;if(amount>globalThis.OrderPricing.cents(prior.total)||(input.amountCents===0&&(prior.total!==0||prior.freeRewardRefunded)))throw new RequestError('超过可退金额',409);requests[input.refundId]={...selection,amountCents:input.amountCents,reason:input.reason,at:now().toISOString()};return {...prior,refundRequests:requests,localRefundCents:amount,refundCompleted:false,...(prior.total===0?{freeRewardRefunded:true}:{})};});return publicOrder(await finalize(order));
+      const order=await mutate(input.id,prior=>{if(!prior||prior.status!=='paid'||(prior.paymentMethod!=='wallet'&&prior.paymentMethod!=='counter'&&prior.total!==0))throw new RequestError('此订单须通过原支付渠道退款',409);const requests={...prior.refundRequests};const selection=validateRefundItems(prior,input,requests[input.refundId]);if(requests[input.refundId]){if(requests[input.refundId].amountCents!==input.amountCents||requests[input.refundId].reason!==input.reason)throw new RequestError('退款请求不一致',409);return prior;}const amount=(prior.localRefundCents||0)+input.amountCents;if(amount>globalThis.OrderPricing.cents(prior.total)||(input.amountCents===0&&(prior.total!==0||prior.freeRewardRefunded)))throw new RequestError('超过可退金额',409);requests[input.refundId]={...selection,amountCents:input.amountCents,reason:input.reason,at:now().toISOString()};return {...prior,refundRequests:requests,localRefundCents:amount,refundCompleted:false,...(prior.total===0?{freeRewardRefunded:true}:{})};});await finalize(order);
+      const ready=await mutate(order.id,prior=>({...prior,refundRequests:{...prior.refundRequests,[input.refundId]:{...prior.refundRequests[input.refundId],...(prior.paymentMethod!=='counter'||input.counterConfirmed===true?{receiptAt:prior.refundRequests[input.refundId].receiptAt||now().toISOString(),counterConfirmed:input.counterConfirmed===true}:{})}}}));
+      return publicOrder(ready);
     },
     async staffQuote(input){return publicOrder(await counterOrder(input));},
     // Staff takes an order at the counter and collects cash or card there; it prints at once.
@@ -419,7 +422,7 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       }
       if(refund.status==='failed'||refund.status==='canceled'){await mutate(order.id,prior=>({...prior,cardRefunds:{...prior.cardRefunds,[input.refundId]:{...prior.cardRefunds[input.refundId],status:'failed',stripeRefundId:refund.id}}}));throw new RequestError('退款失败，请到 Stripe 查看原因',409);}
       order=await mutate(order.id,prior=>({...prior,refundedCents:Math.max(prior.refundedCents||0,request.baseCents+input.amountCents),
-        cardRefunds:{...prior.cardRefunds,[input.refundId]:{...prior.cardRefunds[input.refundId],status:'succeeded',stripeRefundId:refund.id}}}));
+        cardRefunds:{...prior.cardRefunds,[input.refundId]:{...prior.cardRefunds[input.refundId],status:'succeeded',stripeRefundId:refund.id,receiptAt:prior.cardRefunds[input.refundId].receiptAt||now().toISOString()}}}));
       return publicOrder(await finalize(order));
     },
     // Staff view of payments started but not finished; each still holds stock.
@@ -510,7 +513,21 @@ export function createOnlineService({ storage, payment, checkAddress, config, di
       if(order.memberId&&rewards)await rewards.refund(order,charge.amount_refunded);
       return finalize(await mutate(id,prior=>({...prior,refundedCents:Math.max(prior.refundedCents||0,charge.amount_refunded)})));
     },
-    async feed() { return (await expireStale(await storage.all())).filter(o => (o.mode !== 'dinein' || o.paymentMethod === 'counter') && o.status === 'paid' && !o.resolvedAt && !o.freeRewardRefunded && (o.paymentMethod!=='wallet'||o.walletSettled) && (!o.refundedCents||o.refundedCents<globalThis.OrderPricing.cents(o.total))).map(publicOrder); },
+    async reprintRefund(input){
+      if(!validId(input.id)||!validId(input.refundId)||!validId(input.copyId))throw new RequestError('退款凭证编号无效');
+      const order=await mutate(input.id,prior=>{
+        if(!prior||!refundReceipts(prior).some(r=>r.refundId===input.refundId))throw new RequestError('退款尚未确认，不能打印凭证',409);
+        const copies={...prior.refundReceiptCopies},old=copies[input.copyId];
+        if(old){if(old.refundId!==input.refundId)throw new RequestError('补打请求不一致',409);return prior;}
+        copies[input.copyId]={refundId:input.refundId,at:now().toISOString()};return {...prior,refundReceiptCopies:copies};
+      });
+      return {queued:true,jobId:`refund:${order.id}:${input.refundId}:${input.copyId}`};
+    },
+    async feed(withRefunds=false) {
+      const all=await expireStale(await storage.all());
+      const events=all.filter(o => (o.mode !== 'dinein' || o.paymentMethod === 'counter') && o.status === 'paid' && !o.resolvedAt && !o.freeRewardRefunded && (o.paymentMethod!=='wallet'||o.walletSettled) && (!o.refundedCents||o.refundedCents<globalThis.OrderPricing.cents(o.total))).map(publicOrder);
+      return withRefunds?{events,refundPrintJobs:all.flatMap(refundPrintJobs)}:events;
+    },
     // A pickup credential grants status-only access, not staff authority or PII.
     // It also lets receipts created before status tracking refresh safely.
     async progress(id, code) {

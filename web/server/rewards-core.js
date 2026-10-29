@@ -219,9 +219,16 @@ export function createRewardsService(storage, { now = () => new Date() } = {}) {
         audit: s.audit,
       };
     },
-    async apologyStatus(memberId=null){
+    async apologyStatus(memberId=null,orders=null){
       const s=await read();
-      return {day:APOLOGY_DAY,requests:Object.values(s.apologyRequests||{}).filter(r=>!memberId||r.memberId===memberId),issued:Object.values(s.vouchers).filter(v=>v.source==='apology').length};
+      const recipients=new Map();
+      const eligible=orders?orders.filter(apologyEligible):[];
+      for(const o of eligible){
+        if(!key(o.memberId))continue;
+        if(!recipients.has(o.memberId))recipients.set(o.memberId,{memberId:o.memberId,issued:Boolean(s.vouchers[apologyId(o.memberId)]),orders:[]});
+        recipients.get(o.memberId).orders.push({no:o.no,table:o.table,at:o.paidAt||o.at,total:o.total});
+      }
+      return {day:APOLOGY_DAY,...(orders?{recipients:[...recipients.values()],unlinkedOrders:eligible.filter(o=>!key(o.memberId)).length}:{}),requests:Object.values(s.apologyRequests||{}).filter(r=>!memberId||r.memberId===memberId),issued:Object.values(s.vouchers).filter(v=>v.source==='apology').length};
     },
     async requestApology(memberId,orderNo,orders){
       if(!key(memberId))fail('请先登录',401);

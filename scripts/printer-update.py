@@ -24,6 +24,8 @@ def install(target, payload, bridge_only=False):
         except BlockingIOError:
             raise ValueError('原出单程序还开着。请等当前打印结束，在旧窗口按 Control+C，然后再双击本更新程序。')
         names = ['printer-bridge.py'] if bridge_only else ['printer-bridge.py', '双击启动出单.command']
+        if (payload / 'refund-logo.png').is_file():
+            names.append('refund-logo.png')
         for name in names:
             if not (payload / name).is_file():
                 raise ValueError('更新包不完整，请重新解压。')
@@ -74,7 +76,7 @@ def main():
     install(target, payload, args.bridge_only)
     print('更新完成，原配置和打印记录已保留。'+('请使用原文件夹里的启动文件。' if args.no_start else '正在启动新版…'), flush=True)
     if not args.no_start:
-        launcher = target / ('运行出单.sh' if args.bridge_only and (target/'运行出单.sh').is_file() else '双击启动出单.command')
+        launcher = next((target / name for name in (['运行出单.sh','双击恢复出单.command','双击启动出单.command'] if args.bridge_only else ['双击启动出单.command']) if (target / name).is_file()), target / '双击启动出单.command')
         if not launcher.is_file():
             print('代码已更新。请双击原文件夹里的启动文件。',flush=True);return
         os.execv('/bin/bash', ['bash', str(launcher)])

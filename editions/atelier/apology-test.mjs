@@ -13,6 +13,7 @@ const style=Object.keys(dish.variants).find(s=>dish.variants[s].pieces===5&&dish
 assert(style);const gift={dishId:dish.id,style};
 const paid={id:randomUUID(),no:'6979',type:'order',mode:'dinein',status:'paid',paidAt:'2026-10-28T04:00:00Z',total:20};
 const orders=[{...paid,memberId:'member-a'},{...paid,id:randomUUID(),no:'6980',memberId:'member-a'},{...paid,id:randomUUID(),no:'6981'}, {...paid,id:randomUUID(),memberId:'old',paidAt:'2026-10-27T04:00:00Z'},{...paid,id:randomUUID(),memberId:'unpaid',status:'awaiting_payment'}];
+const before=await rewards.apologyStatus(null,orders);assert.equal(before.recipients.length,1);assert.equal(before.recipients[0].orders.length,2);assert.equal(before.recipients[0].issued,false);assert.equal(before.unlinkedOrders,1);assert.equal(state,null,'listing must not write or grant');
 const concurrent=await Promise.all([rewards.grantApology(gift,catalog,orders),rewards.grantApology(gift,catalog,orders)]);
 assert.equal(concurrent.reduce((n,r)=>n+r.issued,0),1);
 let voucher=await rewards.findVoucher(apologyId('member-a'));assert.equal(voucher.style,style);assert.equal(Date.parse(voucher.expiresAt)-now.getTime(),30*86400000);

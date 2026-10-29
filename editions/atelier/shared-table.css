@@ -2426,3 +2426,14 @@ dialog:has(> div > iframe[name^="__privateStripeFrame"]) > div { position: absol
 
 .fulfilment-choices button[data-pickup-open="false"]{opacity:1;color:var(--muted)}
 .fulfilment-choices button[data-pickup-open="false"] .entry-art{opacity:.4}
+
+/* Keep dropdown arrows inset consistently across all forms. */
+:root select:not([multiple]):not([size]) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23202934' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px 12px;
+}

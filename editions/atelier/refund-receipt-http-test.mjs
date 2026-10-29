@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {mkdtemp} from 'node:fs/promises';import {tmpdir} from 'node:os';import {randomUUID} from 'node:crypto';
+const data=await mkdtemp(tmpdir()+'/dl-refund-http-'),child=spawn(process.execPath,[new URL('preview.mjs',import.meta.url).pathname],{env:{...process.env,PORT:'0',DL_PREVIEW_DATA:data},stdio:['ignore','pipe','pipe']});
+try{const base=await new Promise((resolve,reject)=>{let log='';const t=setTimeout(()=>reject(Error('preview timeout')),10000);child.stdout.on('data',b=>{log+=b;const m=log.match(/http:\/\/127.0.0.1:\d+/);if(m){clearTimeout(t);resolve(m[0]);}});});const staff={authorization:'Basic '+Buffer.from('staff:preview-only').toString('base64')};
+async function api(path,body,auth=staff,status=200){const r=await fetch(base+path,{method:body?'POST':'GET',headers:{...auth,'content-type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();assert.equal(r.status,status,JSON.stringify(d));return d;}
+const order=(await api('/api/online',{action:'staff-order',requestId:randomUUID(),mode:'dinein',table:'REFUND',counterMethod:'cash',items:[{id:'lunch-v2-water',qty:1}]})).order;
+const input={action:'staff-refund',id:order.id,refundId:randomUUID(),amountCents:Math.round(order.total*100),reason:'fixture refund',counterConfirmed:true};await api('/api/online',input);await api('/api/online',input);
+await api('/api/feed?refunds=1',null,{},401);const jobs=(await api('/api/feed?refunds=1')).refundPrintJobs;assert.equal(jobs.length,1);assert.equal(jobs[0].counterConfirmed,true);assert.equal(jobs[0].amountCents,input.amountCents);
+const copy={action:'refund-receipt',id:order.id,refundId:input.refundId,copyId:randomUUID()};await api('/api/online',copy,{},401);await api('/api/online',copy);await api('/api/online',copy);
+assert.equal((await api('/api/feed?refunds=1')).refundPrintJobs.length,2);const report=(await api('/api/online?report=1')).report;assert.equal(report.orders[0].refundCents,input.amountCents);assert.equal(report.orders[0].refundReceipts.length,1);
+console.log('PASS HTTP: cash refund -> one auto receipt; authenticated printer feed; authenticated reprint retry -> one extra copy; refund amount unchanged. No live mutations.');
+}finally{child.kill('SIGTERM');}

@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import {readFile,mkdtemp} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {summarizeOrders} from '../../web/server/report-core.js';
+import {launchBrowser,browserEngine} from './browser-test-runtime.mjs';
+const output=await mkdtemp(tmpdir()+'/dl-statistics-');
+const day=new Date(Date.now()+8*3600000).toISOString().slice(0,10);
+const orders=Array.from({length:5},(_,i)=>({id:'order'+i,no:'100'+i,type:'order',status:'paid',mode:i===4?'takeaway':'dinein',at:day+'T04:00:00Z',paidAt:day+'T04:00:00Z',table:'C3',total:12,foodTotal:12,items:[{id:'dumpling',name:'韭菜虾仁猪肉',style:['水煮 · 5颗','水煮 · 10颗','清汤 · 5颗','煎饺 · 5颗','红油 · 5颗'][i],qty:i+1,price:6},...(i===0?[{id:'tea',name:'老北京酸梅汤',qty:1,price:3},{id:'tea',name:'老北京酸梅汤',qty:1,price:0,promo:'bogo'}]:[])]}));
+const b=await launchBrowser();try{
+const p=await b.newPage({viewport:{width:1100,height:900}});let calls=[];
+await p.exposeFunction('reportRequest',url=>{calls.push(url);const u=new URL(url,'https://test');return {report:summarizeOrders(orders,Object.fromEntries(u.searchParams))};});
+await p.setContent('<main style="max-width:1100px;margin:auto"><section id="reportPanel"></section><section id="rewardsPanel"></section></main>');
+await p.addStyleTag({content:await readFile('web/catalog-admin.css','utf8')});await p.addScriptTag({content:await readFile('web/report-admin.js','utf8')});
+await p.evaluate(()=>ReportAdmin.load(window.reportRequest,[]));await p.locator('.dish-overview').waitFor();
+assert.equal(await p.locator('.report-full-ranking').getAttribute('open'),null);await p.locator('.report-full-ranking > summary').click();
+assert.equal(await p.locator('.dish-chart-row').count(),2);
+await p.locator('.report-breakdown summary').click();assert.equal(await p.locator('.report-breakdown li').count(),5);
+await p.selectOption('#reportSort','qty-asc');assert((await p.locator('.dish-chart-row').first().textContent()).includes('老北京酸梅汤'));
+await p.selectOption('#reportSort','sales');assert((await p.locator('.dish-chart-value').first().textContent()).includes('S$90.00'));assert.equal(await p.locator('.dish-chart-track > span').first().evaluate(e=>e.style.width),'100%');
+await p.fill('#reportSearch','虾仁');assert.equal(await p.locator('.dish-chart-row').count(),1);
+await p.fill('#reportSearch','');await p.selectOption('#reportMode','takeaway');await p.waitForFunction(()=>document.querySelectorAll('.report-order').length===1);assert(calls.at(-1).includes('mode=takeaway'));
+assert.equal(await p.locator('.dish-chart-row').count(),1);
+await p.selectOption('#reportMode','all');await p.waitForFunction(()=>document.querySelectorAll('.report-order').length===5);
+await p.screenshot({path:output+'/desktop.png',fullPage:true});
+await p.setViewportSize({width:390,height:844});await p.screenshot({path:output+'/phone.png',fullPage:true});assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+for(let i=0;i<25;i++)orders.push({...orders[0],id:'extra'+i,items:[{id:'dish'+i,name:'测试菜品 '+(i+1),qty:1,price:2}]});
+await p.evaluate(()=>ReportAdmin.load(window.reportRequest,[]));await p.waitForFunction(()=>document.querySelectorAll('[data-column]').length===11);
+assert.equal(await p.locator('.report-full-ranking').getAttribute('open'),null);assert.equal(await p.locator('.report-full-orders').getAttribute('open'),null);
+await p.locator('[data-column="10"]').click();assert((await p.locator('.dish-column-detail').textContent()).includes('其他 17 道菜 · 17 份 · S$34.00'));
+assert((await p.locator('.report-dishes').boundingBox()).height<600);
+await p.locator('.report-dishes').screenshot({path:output+'/compact-phone.png'});await p.setViewportSize({width:1100,height:900});await p.locator('.report-dishes').screenshot({path:output+'/compact-desktop.png'});
+console.log('PASS 27 dishes → 10 columns + other; other sums exact; detail lists collapsed; chart section under 600px on phone.');
+await p.addScriptTag({content:await readFile('web/rewards-admin.js','utf8')});await p.evaluate(()=>RewardAdmin.load(async u=>u.includes('apology')?{issued:0,requests:[],recipients:[]}:{memberCount:1,totalPoints:10,rewards:{},pointsPerDollar:1,audit:[]},[{id:'w',cn:'红油抄手',kind:'dumpling',price:5.8,variants:{'红油 · 5颗':{price:5.8,pieces:5,prep:'boiled'}}}]));
+const select=p.locator('[data-style]');const css=await select.evaluate(e=>{const s=getComputedStyle(e);return {img:s.backgroundImage,pad:s.paddingRight,pos:s.backgroundPosition}});assert.notEqual(css.img,'none');assert.equal(css.pad,'40px');assert(css.pos.includes('14px'));await select.screenshot({path:output+'/reward-arrow.png'});
+console.log('PASS '+browserEngine+': full five-style breakdown; low-sales sort; search; mode filter; no mobile overflow; actual rewards arrow visible with 14px inset.');console.log(output);
+}finally{await b.close()}

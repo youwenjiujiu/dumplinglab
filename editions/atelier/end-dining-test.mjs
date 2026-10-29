@@ -28,20 +28,20 @@ try{
  await page.addInitScript(()=>sessionStorage.setItem('dl-staff-password','preview-only'));
  await page.goto(base+'/staff.html');await page.locator('.dining').first().waitFor();
  const c2=page.locator('.dining').filter({has:page.locator('.table',{hasText:/^C2 号桌$/})});
- assert.equal(await c2.count(),1);assert.equal(await c2.locator('.dining-order').count(),4);
- assert.equal(await c2.locator('button').count(),1);assert.equal(await c2.locator('button').innerText(),'结束就餐');
- await page.screenshot({path:data+'/desktop.png',fullPage:true});
- await page.setViewportSize({width:390,height:844});await page.reload();await c2.waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:data+'/phone.png'});
- await c2.scrollIntoViewIfNeeded();await page.screenshot({path:data+'/phone-table.png'});
+ assert.equal(await c2.count(),4);assert.equal(await c2.locator('.dining-order').count(),4);
+ assert.equal(await c2.locator('button').count(),3);assert.equal(await c2.locator('button').first().innerText(),'结束就餐');
+ const times=await page.locator('.dining[data-ended=false]').evaluateAll(els=>els.map(e=>Number(e.dataset.orderTime)));assert.deepEqual(times,[...times].sort((a,b)=>b-a));await page.screenshot({path:data+'/desktop.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});await page.reload();await c2.first().waitFor();await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:data+'/phone.png'});
+ await c2.first().scrollIntoViewIfNeeded();await page.screenshot({path:data+'/phone-table.png'});
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- await c2.locator('button').click();await c2.waitFor({state:'detached'});
+ await api('/api/online',end,staff);await page.reload();await page.waitForFunction(()=>document.querySelectorAll('.dining[data-ended="true"]').length===4);assert.equal(await c2.locator('button').count(),0);assert((await c2.first().innerText()).includes('已结束用餐'));
  const fresh=await cart();assert.notEqual(fresh.tableSession,before.tableSession);assert.equal(fresh.items.length,0);assert.equal(fresh.orders.length,0);
  await api('/api/cart',{table:'C2',group:'A',tableSession:before.tableSession,opId:randomUUID(),deviceId:randomUUID(),kind:'delta',dishId:'lunch-v2-water',delta:1},{},409);
  assert.equal((await cart('D3')).orders.length,1);assert.equal((await cart('C2','B')).orders.length,1);
  const raw=await api('/api/feed',null,staff);assert(!raw.events.some(e=>e.table==='C2'&&(e.group||'A')==='A'));
  const report=(await api('/api/online?report=1',null,staff)).report;assert(report.orders.some(o=>o.id===counter.id));
  await pay();const next=await cart();await api('/api/online',end,staff);assert.equal((await cart()).orders.length,1,'retry old end cannot erase new party');assert.equal((await cart()).tableSession,next.tableSession);
- await page.reload();await page.locator('.dining').first().waitFor();assert.equal(await c2.locator('.dining-order').count(),1);
+ await page.reload();await page.locator('.dining').first().waitFor();assert.equal(await c2.filter({has:page.locator('.dining-state',{hasText:/^用餐中/})}).locator('.dining-order').count(),1);assert.equal(await page.locator('.dining[data-ended=true]').count(),4);await page.screenshot({path:data+'/ended-last.png',fullPage:true});
  assert.deepEqual(errors,[]);
- console.log('PASS: multiple orders + counter order grouped; previous completed order visible; one end button; pending-payment/auth guards; old devices rejected; next party empty; other tables/groups preserved; history retained; repeated end cannot close next party; desktop/mobile no overflow.');console.log(data);
+ console.log('PASS: independent orders + counter order; previous completed order visible; explicit table-session end API; pending-payment/auth guards; old devices rejected; next party empty; other tables/groups preserved; history retained; repeated end cannot close next party; desktop/mobile no overflow.');console.log(data);
 }finally{await browser?.close();child.kill('SIGTERM');}

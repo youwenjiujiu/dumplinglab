@@ -6,7 +6,7 @@ import {requireStaff} from '../server/staff-auth.js';
 import {bodyOf,fail,json,method} from '../server/http.js';
 export default async function handler(req,res){
  try{
-  if(req.method==='GET'&&req.query?.admin==='1'){requireStaff(req);return json(res,200,{ok:true,...await rewardsService.apologyStatus()});}
+  if(req.method==='GET'&&req.query?.admin==='1'){requireStaff(req);return json(res,200,{ok:true,...await rewardsService.apologyStatus(null,await onlineService.apologyOrders())});}
   if(req.method!=='POST')return method(res,'GET, POST');
   const input=bodyOf(req);
   if(input.action==='request'){

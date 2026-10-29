@@ -1,5 +1,6 @@
 // Sales summary for the back office: revenue and best-selling dishes over a
 // date range. Reads the paid order snapshots only; never recalculates prices.
+import { refundReceipts } from './refund-receipt.js';
 import { refundItems } from './refund-items.js';
 import { RequestError } from './order-core.js';
 
@@ -19,7 +20,9 @@ export function cleanRange(query, now = new Date()) {
 
 export function summarizeOrders(orders, query, now = new Date()) {
   const range = cleanRange(query, now);
-  const paid = orders.filter(o => o?.type === 'order' && o.status === 'paid' && !o.freeRewardRefunded)
+  const mode = query?.mode || 'all';
+  if (!['all','dinein','takeaway','delivery'].includes(mode)) throw new RequestError('请选择有效的用餐方式');
+  const paid = orders.filter(o => o?.type === 'order' && o.status === 'paid' && !o.freeRewardRefunded && (mode === 'all' || o.mode === mode))
     .filter(o => { const day = sgDate(o.paidAt || o.at); return day >= range.from && day <= range.to; });
   const totals = { orders: 0, grossCents: 0, refundCents: 0, foodCents: 0, discountCents: 0, serviceCents: 0, items: 0 };
   const byMode = {}, byDay = {}, dishes = {};
@@ -34,8 +37,8 @@ export function summarizeOrders(orders, query, now = new Date()) {
     d.orders++; d.netCents += gross - refund;
     for (const i of o.items || []) {
       const key = i.id;
-      const row = dishes[key] ||= { id: i.id, name: i.name, englishName: i.englishName || '', qty: 0, salesCents: 0, styles: {} };
-      row.qty += i.qty; row.salesCents += cents(i.price) * i.qty; totals.items += i.qty;
+      const row = dishes[key] ||= { id: i.id, name: i.name, englishName: i.englishName || '', qty: 0, giftQty: 0, salesCents: 0, styles: {} };
+      row.qty += i.qty; if (i.promo === 'bogo') row.giftQty += i.qty; row.salesCents += cents(i.price) * i.qty; totals.items += i.qty;
       if (i.style) row.styles[i.style] = (row.styles[i.style] || 0) + i.qty;
     }
   }
@@ -51,12 +54,12 @@ export function summarizeOrders(orders, query, now = new Date()) {
     at: o.paidAt || o.at, note: o.note || null, paymentMethod: o.paymentMethod || 'card',
     canRefund: o.paymentMethod === 'counter' || (o.paymentMethod !== 'wallet' && Boolean(o.paymentIntentId)),
     ...(o.counterMethod ? { counterMethod: o.counterMethod } : {}),
-    refundItems: refundItems(o),
+    refundItems: refundItems(o), refundReceipts: refundReceipts(o),
     totalCents: cents(o.total), refundCents: Math.min(cents(o.total), o.refundedCents || 0), discountCents: cents(o.discount) + (o.loyalty?.discountCents || 0),
     items: (o.items || []).map(i => ({ name: i.name, style: i.style || null, qty: i.qty, priceCents: cents(i.price), ...(i.promo ? { promo: i.promo } : {}), ...(i.note ? { note: i.note } : {}) })),
   }));
   return {
-    range, orders: orderList, ordersTruncated: paid.length > ORDER_LIST_LIMIT,
+    range, mode, orders: orderList, ordersTruncated: paid.length > ORDER_LIST_LIMIT,
     totals: { ...totals, netCents, averageCents: totals.orders ? Math.round(netCents / totals.orders) : 0 },
     byMode, byDay: days,
     dishes: Object.values(dishes).map(d => ({ ...d, styles: Object.entries(d.styles).sort((a, b) => b[1] - a[1]).map(([style, qty]) => ({ style, qty })) }))
