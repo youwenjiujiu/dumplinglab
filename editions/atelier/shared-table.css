@@ -2421,4 +2421,8 @@ dialog:has(> div > iframe[name^="__privateStripeFrame"]) > div { position: absol
 
 .menu-section .dish-english:empty{display:none!important}
 
-.pickup-availability-note{margin:16px 0 0;font:400 13px/1.65 var(--sans);color:var(--ink)}
+.fulfilment-choices .pickup-icon-hours{display:block;margin:8px -12px 0;font:400 11px/1.5 var(--sans);white-space:nowrap;letter-spacing:0}
+.fulfilment-choices .pickup-icon-hours[hidden]{display:none}
+
+.fulfilment-choices button[data-pickup-open="false"]{opacity:1;color:var(--muted)}
+.fulfilment-choices button[data-pickup-open="false"] .entry-art{opacity:.4}

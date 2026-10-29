@@ -120,18 +120,13 @@ const Fulfilment = (() => {
       const open = current.pickupAvailability?.open !== false;
       const bilingual = Boolean(button.closest('.fulfilment-entry'));
       button.querySelector('strong').innerHTML = bilingual
-        ? entryText(open ? '打包外带' : '暂不可自提', open ? 'Takeaway' : 'Pickup unavailable')
-        : bi(open ? '打包自取' : '暂不可自提', open ? 'Pickup' : 'Pickup unavailable');
-      const choices=button.closest('.fulfilment-choices');
-      let notice=choices.parentElement.querySelector('.pickup-availability-note');
-      if(!notice){notice=document.createElement('p');notice.className='pickup-availability-note';notice.setAttribute('role','status');choices.after(notice);}
+        ? entryText(open ? '打包外带' : '自提时间', open ? 'Takeaway' : 'Pickup hours')
+        : bi(open ? '打包自取' : '自提时间', open ? 'Pickup' : 'Pickup hours');
+      let notice=button.querySelector('.pickup-icon-hours');
+      if(!notice){notice=document.createElement('small');notice.className='pickup-icon-hours';button.append(notice);}
       notice.hidden=open;
-      if(!open){
-        const windows=current.pickupAvailability?.windows||[];
-        notice.innerHTML=bi('当前不在自提开放时段。','Pickup is currently outside opening hours.')+'<br>'+
-          (windows.length?bi('今日自提时间：','Today’s pickup hours: ')+escapeHTML(windows.map(w=>w.join('–')).join(' / ')):
-          bi('今日暂停自提。','Pickup is closed today.'));
-      }
+      const windows=current.pickupAvailability?.windows||[];
+      notice.textContent=windows.length?windows.map(w=>w.join('–')).join(' / '):tr('今日暂停自提','Closed today');
       button.disabled = !open;
       button.dataset.pickupOpen = String(open);
       return open;
