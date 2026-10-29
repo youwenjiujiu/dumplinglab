@@ -1,4 +1,4 @@
-import {pickupOptions} from './pickup-hours.js';
+import {pickupAvailability} from './pickup-hours.js';
 import { get, put, list } from '@vercel/blob';
 import { isStorageConflict } from './storage-conflict.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
@@ -49,7 +49,7 @@ const ready = () => Boolean(process.env.DL_PAYMENTS_ENABLED === 'true' && proces
   /^https:\/\//.test(process.env.DL_ORDER_ORIGIN || '') && process.env.DL_GST_REGISTERED === 'true');
 export async function onlineConfig() {
   const pickupHours=await catalogService.pickupHours();
-  return { ...settings(), pickupHours, pickupDays:pickupOptions(pickupHours), dates: bookingDates(), slots: SLOTS, preview: false,
+  return { ...settings(), pickupHours, pickupAvailability:pickupAvailability(pickupHours), dates: bookingDates(), slots: SLOTS, preview: false,
     dineinEnabled: ready(), publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || null,
     takeawayEnabled: ready() && settings().locations.length > 0,
     deliveryEnabled: false,

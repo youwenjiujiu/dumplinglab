@@ -8,14 +8,13 @@ export function cleanPickupHours(value){
  for(const [date,rows]of Object.entries(value.exceptions)){if(!dateValid(date))throw new RequestError('请选择有效的日期');exceptions[date]=windows(rows)}
  return {daily,exceptions};
 }
-export function pickupOptions(settings=DEFAULT_PICKUP_HOURS,now=new Date()){
- const sg=new Date(now.getTime()+8*3600000),today=sg.toISOString().slice(0,10),current=sg.getUTCHours()*60+sg.getUTCMinutes()+sg.getUTCSeconds()/60,days=[];
- for(let i=0;i<7;i++){const d=new Date(today+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+i);const date=d.toISOString().slice(0,10),slots=[];
- for(const [start,end]of settings.exceptions[date]??settings.daily){for(let n=minutes(start);n<=minutes(end);n+=15){if(i===0&&n<=current)continue;slots.push(String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0'))}}
- if(slots.length)days.push({date,slots});}
- return days;
+export function pickupAvailability(settings=DEFAULT_PICKUP_HOURS,now=new Date()){
+ const sg=new Date(now.getTime()+8*3600000),date=sg.toISOString().slice(0,10);
+ const current=sg.getUTCHours()*60+sg.getUTCMinutes()+sg.getUTCSeconds()/60;
+ const windows=settings.exceptions[date]??settings.daily;
+ return {open:windows.some(([start,end])=>current>=minutes(start)&&current<minutes(end)),date,windows};
 }
 export function checkPickupTime(input,settings,now){
- if(!pickupOptions(settings,now).some(d=>d.date===input.pickupDate&&d.slots.includes(input.pickupTime)))throw new RequestError('请选择有效的自提日期和时间');
- return {date:input.pickupDate,slot:input.pickupTime,timing:'scheduled'};
+ if(!pickupAvailability(settings,now).open)throw new RequestError('当前不在自提开放时段，暂不可自提');
+ return {timing:'asap'};
 }
